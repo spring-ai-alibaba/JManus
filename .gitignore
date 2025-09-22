@@ -1,2 +1,40 @@
 
+# IDE and Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build and target directories
+target/
+build/
+out/
+dist/
+
+# Logs
+logs/
+*.log
+
+# Playwright
+playwright/
+playwright-report/
+test-results/
+
+# Temporary files
+check-chinese-local.py
+optimized-file-manager-plan.json
+*.tmp
+*.temp
+
+# Data directories (keep h2-data copy ignored)
 h2-data copy/*
