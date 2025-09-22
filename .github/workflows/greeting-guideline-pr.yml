@@ -1,0 +1,49 @@
+# Copyright 2024-2026 the original author or authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+name: Greetings
+on: [pull_request]
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/first-interaction@v2.0.0
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          issue_message: |
+            # Welcome to JManus! 🎉
+            
+            Thank you for opening an issue in the JManus project. We appreciate your interest and contribution.
+            
+            Please make sure to:
+            - Provide a clear description of the issue
+            - Include steps to reproduce if it's a bug
+            - Check if the issue has already been reported
+            - Use appropriate labels if available
+            
+            We'll review your issue and get back to you as soon as possible!
+          pr_message: |-
+            🎉 Congratulations, @${{ github.actor }}, on your inaugural contribution to the JManus repository! Your efforts are sincerely appreciated.
+
+            To maintain the integrity and legibility of our codebase, we kindly request that you verify your code adheres to the established project formatting standards prior to merging. Please ensure:
+
+            - **Code Style**: Follow the project's coding conventions
+            - **Documentation**: Update relevant documentation if needed
+            - **Tests**: Include appropriate tests for your changes
+            - **License Headers**: Ensure all new files have proper license headers
+            - **No Chinese Content**: Keep all code and comments in English
+
+            Should you encounter any queries or require clarification, please do not hesitate to raise them. We extend our gratitude once more for your valuable contribution!
