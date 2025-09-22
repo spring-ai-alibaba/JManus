@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="9.3">
+<file name="/Users/whisper/Downloads/project/spring-ai-alibaba/spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/manus/runtime/entity/vo/ExecutionContext.java">
+</file>
+<file name="/Users/whisper/Downloads/project/spring-ai-alibaba/spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/manus/runtime/executor/AbstractPlanExecutor.java">
+</file>
+<file name="/Users/whisper/Downloads/project/spring-ai-alibaba/spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/manus/runtime/executor/DirectResponseExecutor.java">
+</file>
+<file name="/Users/whisper/Downloads/project/spring-ai-alibaba/spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/manus/runtime/executor/MapReducePlanExecutor.java">
+</file>
+<file name="/Users/whisper/Downloads/project/spring-ai-alibaba/spring-ai-alibaba-jmanus/src/main/java/com/alibaba/cloud/ai/manus/planning/service/PlanFinalizer.java">
+</file>
+</checkstyle>

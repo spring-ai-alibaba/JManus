@@ -1,0 +1,36 @@
+{
+
+    "search.exclude": {
+        "**/target/*": true,
+        "**/bin": true,
+        "**/build": true,
+        "**/dist": true,
+        "**/node_modules": true,
+        "**/.git": true
+    },
+    "files.exclude": {
+        "**/target": true,
+        "**/.classpath": true,
+        "**/.project": true,
+        "**/.settings": true,
+        "**/.factorypath": true
+    },
+    "java.test.config": [
+        {
+            "name": "default",
+            "workingDirectory": "${workspaceFolder}",
+            "vmargs": [
+                "-Dfile.encoding=UTF-8",
+                "-Dspring.profiles.active=test"
+            ],
+            "env": {
+                "SPRING_PROFILES_ACTIVE": "test"
+            }
+        }
+    ],
+    "java.test.defaultConfig": "default",
+    "java.compile.nullAnalysis.mode": "disabled",
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx16G -Xms100m -Xlog:disable",
+    "java.debug.settings.onBuildFailureProceed": true,
+    "java.configuration.updateBuildConfiguration": "automatic"
+}
