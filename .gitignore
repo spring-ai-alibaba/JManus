@@ -47,3 +47,6 @@ docs/test-case/
 # H2 database files
 h2-data/
 h2-data copy/
+
+# Extensions directory
+extensions/
