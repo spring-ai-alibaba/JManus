@@ -416,14 +416,23 @@ public class InteractiveElementRegistry {
 
 	private static final String CONVERSE_FRAME_TO_MARKDOWN_JS = """
 			    (() => {
-			        var documentClone = window.document.cloneNode(true);
-			        const reader = new Readability(documentClone);
-			        const article = reader.parse();
-			        const html = article.content;
-			        const turndownService = new TurndownService({
-			            headingStyle: 'atx',
-			        });
-			        return turndownService.turndown(html);
+			        try {
+			            const documentClone = window.document.cloneNode(true);
+			            const reader = new Readability(documentClone);
+			            const article = reader.parse();
+			            
+			            if (article && article.content) {
+			                const html = article.content;
+			                const turndownService = new TurndownService({
+			                    headingStyle: 'atx',
+			                });
+			                return turndownService.turndown(html);
+			            }
+			            return "";
+			        } catch (error) {
+			            console.error('Error converting frame to markdown:', error);
+			            return "";
+			        }
 			    })
 			""";
 
