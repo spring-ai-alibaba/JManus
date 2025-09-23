@@ -180,14 +180,18 @@ public class PlanFinalizer {
 			}
 
 			// Check if this is a direct response plan
-			if (context.getPlan() != null && context.getPlan().isDirectResponse()) {
+			else if (context.getPlan() != null && context.getPlan().isDirectResponse()) {
 				log.debug("Generating direct response for plan: {}", context.getCurrentPlanId());
 				generateDirectResponse(context, result);
 				return result;
 			}
-
-			log.debug("Post-execution processing completed for plan: {}", context.getCurrentPlanId());
-
+			else {
+				log.debug("No need to generate summary or direct response for plan: {}", context.getCurrentPlanId());
+				processAndRecordResult(context, result, result.getFinalResult(), "Final result: {}");
+	
+				return result;
+			}
+			
 		}
 		catch (Exception e) {
 			log.warn("Error during post-execution processing for plan: {}, but continuing", context.getCurrentPlanId(),
