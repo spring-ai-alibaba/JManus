@@ -420,7 +420,7 @@ public class InteractiveElementRegistry {
 			            const documentClone = window.document.cloneNode(true);
 			            const reader = new Readability(documentClone);
 			            const article = reader.parse();
-			            
+
 			            if (article && article.content) {
 			                const html = article.content;
 			                const turndownService = new TurndownService({
