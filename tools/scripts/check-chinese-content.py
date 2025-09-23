@@ -259,8 +259,8 @@ def main():
     parser = argparse.ArgumentParser(description='Check Chinese content in Java and frontend code')
     parser.add_argument('--dirs', '-d',
                        nargs='+',
-                       default=['spring-ai-alibaba-jmanus/src/main/java',
-                               'spring-ai-alibaba-jmanus/ui-vue3/src'],
+                       default=['src/main/java',
+                               'ui-vue3/src'],
                        help='Directory paths to check (relative to current directory)')
     parser.add_argument('--patterns', '-p',
                        nargs='+',
