@@ -30,53 +30,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
+          go-version: '1.21'
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Run license check
+      - name: Install license-eye
         run: |
-          mvn license:check
+          go install github.com/apache/skywalking-eyes/cmd/license-eye@v0.6.1-0.20250110091440-69f34abb75ec
 
-      - name: Check for missing license headers
+      - name: Run license check with license-eye
         run: |
-          echo "Checking for files without license headers..."
-          
-          # Find Java files without license headers
-          find src/main/java -name "*.java" -exec grep -L "Copyright.*the original author or authors" {} \; > missing_license.txt || true
-          
-          if [ -s missing_license.txt ]; then
-            echo "❌ Found Java files without license headers:"
-            cat missing_license.txt
-            echo ""
-            echo "Please add the following license header to these files:"
-            echo ""
-            echo "/*"
-            echo " * Copyright 2024-2025 the original author or authors."
-            echo " *"
-            echo " * Licensed under the Apache License, Version 2.0 (the \"License\");"
-            echo " * you may not use this file except in compliance with the License."
-            echo " * You may obtain a copy of the License at"
-            echo " *"
-            echo " *     https://www.apache.org/licenses/LICENSE-2.0"
-            echo " *"
-            echo " * Unless required by applicable law or agreed to in writing, software"
-            echo " * distributed under the License is distributed on an \"AS IS\" BASIS,"
-            echo " * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied."
-            echo " * See the License for the specific language governing permissions and"
-            echo " * limitations under the License."
-            echo " */"
-            exit 1
-          else
-            echo "✅ All Java files have proper license headers"
-          fi
+          license-eye --version
+          license-eye -c ./tools/linter/license/.licenserc.yaml header check
