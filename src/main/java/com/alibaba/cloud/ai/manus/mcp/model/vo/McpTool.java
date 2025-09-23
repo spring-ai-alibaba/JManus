@@ -118,4 +118,9 @@ public class McpTool extends AbstractBaseTool<Map<String, Object>> {
 		return serviceNameString;
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
 }

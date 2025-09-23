@@ -64,6 +64,12 @@ public interface ToolCallBiFunctionDef<I> extends BiFunction<I, ToolContext, Too
 	boolean isReturnDirect();
 
 	/**
+	 * Determine whether the tool is selectable
+	 * @return Returns true if the tool is selectable, otherwise false
+	 */
+	public boolean isSelectable();
+
+	/**
 	 * Set the associated Agent instance
 	 * @param planId The plan ID to associate
 	 */

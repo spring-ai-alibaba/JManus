@@ -474,4 +474,8 @@ public class TableProcessorTool extends AbstractBaseTool<TableProcessorTool.Tabl
 		return "default-service-group";
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
 }

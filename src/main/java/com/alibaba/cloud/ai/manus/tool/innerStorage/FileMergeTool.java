@@ -92,6 +92,11 @@ public class FileMergeTool extends AbstractBaseTool<FileMergeTool.FileMergeInput
 	}
 
 	@Override
+	public boolean isSelectable() {
+		return false;
+	}
+
+	@Override
 	public String getDescription() {
 		return """
 				Copy a single file to a specified target folder within the current plan directory.

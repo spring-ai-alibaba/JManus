@@ -365,4 +365,8 @@ public class DynamicAgentPlanningTool extends AbstractBaseTool<DynamicAgentPlann
 		return buildFunctionToolCallback(planningToolInterface);
 	}
 
+	@Override
+	public boolean isSelectable() {
+		throw new UnsupportedOperationException("DynamicAgentPlanningTool is not selectable");
+	}
 }

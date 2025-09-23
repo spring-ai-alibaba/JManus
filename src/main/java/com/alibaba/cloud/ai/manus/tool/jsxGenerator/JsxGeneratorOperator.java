@@ -18,13 +18,17 @@ package com.alibaba.cloud.ai.manus.tool.jsxGenerator;
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-public class JsxGeneratorOperator extends AbstractBaseTool<JsxGeneratorTool.JsxInput> {
+public class JsxGeneratorOperator extends AbstractBaseTool<JsxGeneratorOperator.JsxInput> {
 
 	private static final Logger log = LoggerFactory.getLogger(JsxGeneratorOperator.class);
 
@@ -46,7 +50,7 @@ public class JsxGeneratorOperator extends AbstractBaseTool<JsxGeneratorTool.JsxI
 	/**
 	 * Helper method to create detailed error messages
 	 */
-	private String createDetailedErrorMessage(String action, String missingParam, JsxGeneratorTool.JsxInput input) {
+	private String createDetailedErrorMessage(String action, String missingParam, JsxInput input) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Error: ")
 			.append(missingParam)
@@ -99,7 +103,7 @@ public class JsxGeneratorOperator extends AbstractBaseTool<JsxGeneratorTool.JsxI
 	 * Run the tool (accepts JsxInput object input)
 	 */
 	@Override
-	public ToolExecuteResult run(JsxGeneratorTool.JsxInput input) {
+	public ToolExecuteResult run(JsxInput input) {
 		log.info("JsxGeneratorOperator input: {}", input);
 		try {
 			String planId = this.currentPlanId;
@@ -251,8 +255,8 @@ public class JsxGeneratorOperator extends AbstractBaseTool<JsxGeneratorTool.JsxI
 	}
 
 	@Override
-	public Class<JsxGeneratorTool.JsxInput> getInputType() {
-		return JsxGeneratorTool.JsxInput.class;
+	public Class<JsxInput> getInputType() {
+		return JsxInput.class;
 	}
 
 	@Override
@@ -271,5 +275,139 @@ public class JsxGeneratorOperator extends AbstractBaseTool<JsxGeneratorTool.JsxI
 			jsxGeneratorService.closeComponentForPlan(planId);
 		}
 	}
+
+
+	/**
+	 * Internal input class for defining input parameters of Vue component generator tool
+	 */
+	public static class JsxInput {
+
+		private String action;
+
+		@JsonProperty("component_type")
+		private String componentType;
+
+		@JsonProperty("component_data")
+		private Map<String, Object> componentData;
+
+		@JsonProperty("template_name")
+		private String templateName;
+
+		@JsonProperty("template_data")
+		private Map<String, Object> templateData;
+
+		@JsonProperty("file_path")
+		private String filePath;
+
+		@JsonProperty("vue_sfc_code")
+		private String vueSfcCode;
+
+		@JsonProperty("section_type")
+		private String sectionType;
+
+		@JsonProperty("new_content")
+		private String newContent;
+
+		private Map<String, String> dependencies;
+
+		// Getters and setters
+		public String getAction() {
+			return action;
+		}
+
+		public void setAction(String action) {
+			this.action = action;
+		}
+
+		public String getComponentType() {
+			return componentType;
+		}
+
+		public void setComponentType(String componentType) {
+			this.componentType = componentType;
+		}
+
+		public Map<String, Object> getComponentData() {
+			return componentData;
+		}
+
+		public void setComponentData(Map<String, Object> componentData) {
+			this.componentData = componentData;
+		}
+
+		public String getTemplateName() {
+			return templateName;
+		}
+
+		public void setTemplateName(String templateName) {
+			this.templateName = templateName;
+		}
+
+		public Map<String, Object> getTemplateData() {
+			return templateData;
+		}
+
+		public void setTemplateData(Map<String, Object> templateData) {
+			this.templateData = templateData;
+		}
+
+		public String getFilePath() {
+			return filePath;
+		}
+
+		public void setFilePath(String filePath) {
+			this.filePath = filePath;
+		}
+
+		public String getVueSfcCode() {
+			return vueSfcCode;
+		}
+
+		public void setVueSfcCode(String vueSfcCode) {
+			this.vueSfcCode = vueSfcCode;
+		}
+
+		public String getSectionType() {
+			return sectionType;
+		}
+
+		public void setSectionType(String sectionType) {
+			this.sectionType = sectionType;
+		}
+
+		public String getNewContent() {
+			return newContent;
+		}
+
+		public void setNewContent(String newContent) {
+			this.newContent = newContent;
+		}
+
+		public Map<String, String> getDependencies() {
+			return dependencies;
+		}
+
+		public void setDependencies(Map<String, String> dependencies) {
+			this.dependencies = dependencies;
+		}
+
+		@Override
+		public String toString() {
+			return "JsxInput{" + "action='" + action + '\'' + ", componentType='" + componentType + '\''
+					+ ", componentData=" + componentData + ", templateName='" + templateName + '\'' + ", templateData="
+					+ templateData + ", filePath='" + filePath + '\'' + ", vueSfcCode='"
+					+ (vueSfcCode != null ? vueSfcCode.substring(0, Math.min(100, vueSfcCode.length())) + "..." : null)
+					+ '\'' + ", sectionType='" + sectionType + '\'' + ", newContent='" + newContent + '\''
+					+ ", dependencies=" + dependencies + '}';
+		}
+
+	}
+
+
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
 
 }

@@ -200,6 +200,11 @@ public class DataSplitTool extends AbstractBaseTool<DataSplitTool.DataSplitInput
 		return "z-data-processing";
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return false;
+	}
+
 	public static OpenAiApi.FunctionTool getToolDefinition() {
 		OpenAiApi.FunctionTool.Function function = new OpenAiApi.FunctionTool.Function(TOOL_DESCRIPTION, TOOL_NAME,
 				PARAMETERS_JSON);

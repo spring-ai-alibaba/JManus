@@ -219,6 +219,11 @@ public class MapOutputTool extends AbstractBaseTool<MapOutputTool.MapOutputInput
 		return "z-data-processing";
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return false;
+	}
+
 	public static OpenAiApi.FunctionTool getToolDefinition() {
 		String parameters = generateParametersJson();
 		String description = getToolDescription();

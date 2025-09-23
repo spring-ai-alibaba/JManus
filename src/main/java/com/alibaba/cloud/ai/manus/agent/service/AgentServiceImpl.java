@@ -51,6 +51,7 @@ import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
 import com.alibaba.cloud.ai.manus.model.model.vo.ModelConfig;
 import com.alibaba.cloud.ai.manus.namespace.namespace.vo.NamespaceConfig;
 import com.alibaba.cloud.ai.manus.namespace.service.NamespaceService;
+import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
 
 @Service
 public class AgentServiceImpl implements AgentService {
@@ -241,6 +242,8 @@ public class AgentServiceImpl implements AgentService {
 				tool.setDescription(entry.getValue().getFunctionInstance().getDescription());
 				tool.setEnabled(true);
 				tool.setServiceGroup(entry.getValue().getFunctionInstance().getServiceGroup());
+				
+				tool.setSelectable(entry.getValue().getFunctionInstance().isSelectable());
 				return tool;
 			}).collect(Collectors.toList());
 		}

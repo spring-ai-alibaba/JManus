@@ -68,7 +68,7 @@ public class DynamicAgent extends ReActAgent {
 
 	private final String nextStepPrompt;
 
-	private ToolCallbackProvider toolCallbackProvider;
+	protected ToolCallbackProvider toolCallbackProvider;
 
 	private final List<String> availableToolKeys;
 

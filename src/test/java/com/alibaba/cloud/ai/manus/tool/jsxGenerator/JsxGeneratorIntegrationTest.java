@@ -18,6 +18,7 @@ package com.alibaba.cloud.ai.manus.tool.jsxGenerator;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
+import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator.JsxInput;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.lang.reflect.Field;
@@ -127,7 +128,7 @@ public class JsxGeneratorIntegrationTest {
 		log.info("Prepare test data: planId={}", planId);
 
 		// Prepare input data
-		JsxGeneratorTool.JsxInput input = new JsxGeneratorTool.JsxInput();
+		JsxInput input = new JsxInput();
 		input.setAction("generate_vue");
 		input.setComponentType("button");
 
@@ -174,7 +175,7 @@ public class JsxGeneratorIntegrationTest {
 		log.info("Prepare test data: planId={}", planId);
 
 		// Prepare input data
-		JsxGeneratorTool.JsxInput input = new JsxGeneratorTool.JsxInput();
+		JsxInput input = new JsxInput();
 		input.setAction("apply_template");
 		input.setTemplateName("counter-button");
 
@@ -247,7 +248,7 @@ public class JsxGeneratorIntegrationTest {
 				""";
 
 		// Prepare input data
-		JsxGeneratorTool.JsxInput input = new JsxGeneratorTool.JsxInput();
+		JsxInput input = new JsxInput();
 		input.setAction("save");
 		input.setFilePath(fileName);
 		input.setVueSfcCode(vueSfcCode);
@@ -310,7 +311,7 @@ public class JsxGeneratorIntegrationTest {
 				""";
 
 		// Prepare input data
-		JsxGeneratorTool.JsxInput input = new JsxGeneratorTool.JsxInput();
+		JsxInput input = new JsxInput();
 		input.setAction("validate");
 		input.setVueSfcCode(validVueSfcCode);
 
@@ -354,7 +355,7 @@ public class JsxGeneratorIntegrationTest {
 		log.info("Prepare test data: planId={}", planId);
 
 		// Prepare input data
-		JsxGeneratorTool.JsxInput input = new JsxGeneratorTool.JsxInput();
+		JsxInput input = new JsxInput();
 		input.setAction("list_templates");
 
 		log.info("List operation data setup completed");
@@ -390,7 +391,7 @@ public class JsxGeneratorIntegrationTest {
 		log.info("Prepare test data: planId={}", planId);
 
 		// Prepare minimal input data
-		JsxGeneratorTool.JsxInput input = new JsxGeneratorTool.JsxInput();
+		JsxInput input = new JsxInput();
 		input.setAction("generate_vue");
 		input.setComponentType("button");
 		// Don't set componentData, should use default values
@@ -424,7 +425,7 @@ public class JsxGeneratorIntegrationTest {
 		log.info("Prepare test data: planId={}", planId);
 
 		// Test invalid action
-		JsxGeneratorTool.JsxInput input = new JsxGeneratorTool.JsxInput();
+		JsxInput input = new JsxInput();
 		input.setAction("invalid_action");
 
 		log.info("Invalid operation data setup completed: action={}", input.getAction());

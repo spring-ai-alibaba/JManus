@@ -562,4 +562,8 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 		return (ManusProperties) this.chromeDriverService.getManusProperties();
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
 }

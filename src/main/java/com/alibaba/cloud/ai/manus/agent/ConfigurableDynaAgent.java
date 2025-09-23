@@ -19,14 +19,19 @@ import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.llm.ILlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
+import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
+import com.alibaba.cloud.ai.manus.tool.TerminableTool;
+import com.alibaba.cloud.ai.manus.tool.TerminateTool;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.model.tool.ToolCallingManager;
+import org.springframework.ai.tool.ToolCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,16 +77,6 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 				toolCallingManager, initialAgentSetting, userInputService, promptService, model,
 				streamingResponseHandler, step, planIdDispatcher);
 		this.availableToolKeys = availableToolKeys != null ? new ArrayList<>(availableToolKeys) : new ArrayList<>();
-		boolean hasTerminateTool = false;
-		for (String toolKey : availableToolKeys) {
-			if (toolKey.equals(com.alibaba.cloud.ai.manus.tool.TerminateTool.name)) {
-				hasTerminateTool = true;
-				break;
-			}
-		}
-		if (!hasTerminateTool) {
-			availableToolKeys.add(com.alibaba.cloud.ai.manus.tool.TerminateTool.name);
-		}
 	}
 
 	/**
@@ -190,6 +185,64 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 	public String getToolConfigurationSummary() {
 		return String.format("Agent '%s' has %d tools: %s", getName(), availableToolKeys.size(),
 				availableToolKeys.isEmpty() ? "none" : String.join(", ", availableToolKeys));
+	}
+
+	/**
+	 * Override getToolCallList to handle null/empty availableToolKeys
+	 * If availableToolKeys is null or empty, return all available tools from toolCallbackProvider
+	 * Also ensures TerminateTool is always included
+	 * @return List of tool callbacks
+	 */
+	@Override
+	public List<ToolCallback> getToolCallList() {
+		List<ToolCallback> toolCallbacks = new ArrayList<>();
+		Map<String, ToolCallBackContext> toolCallBackContext = toolCallbackProvider.getToolCallBackContext();
+		
+		// Determine which tool keys to use
+		List<String> toolKeysToUse;
+		if (availableToolKeys == null || availableToolKeys.isEmpty()) {
+			// If availableToolKeys is null or empty, use all available tools
+			toolKeysToUse = new ArrayList<>(toolCallBackContext.keySet());
+			log.info("No specific tools configured, using all available tools: {}", toolKeysToUse);
+		} else {
+			// Use the configured availableToolKeys
+			toolKeysToUse = new ArrayList<>(availableToolKeys);
+		}
+		
+		// Check if any TerminableTool is already included
+		boolean hasTerminableTool = false;
+		for (String toolKey : toolKeysToUse) {
+			if (toolCallBackContext.containsKey(toolKey)) {
+				ToolCallBackContext toolCallback = toolCallBackContext.get(toolKey);
+				if (toolCallback != null && toolCallback.getFunctionInstance() instanceof TerminableTool) {
+					hasTerminableTool = true;
+					break;
+				}
+			}
+		}
+		
+		// Add TerminateTool if no TerminableTool is present
+		if (!hasTerminableTool) {
+			toolKeysToUse.add(TerminateTool.name);
+			log.debug("No TerminableTool found, added TerminateTool to tool list for agent {}", getName());
+		} else {
+			log.debug("Found existing TerminableTool in tool list for agent {}", getName());
+		}
+		
+		// Build the tool callbacks list
+		for (String toolKey : toolKeysToUse) {
+			if (toolCallBackContext.containsKey(toolKey)) {
+				ToolCallBackContext toolCallback = toolCallBackContext.get(toolKey);
+				if (toolCallback != null) {
+					toolCallbacks.add(toolCallback.getToolCallback());
+				}
+			} else {
+				log.warn("Tool callback for {} not found in the map.", toolKey);
+			}
+		}
+		
+		log.info("Agent {} configured with {} tools: {}", getName(), toolCallbacks.size(), toolKeysToUse);
+		return toolCallbacks;
 	}
 
 }

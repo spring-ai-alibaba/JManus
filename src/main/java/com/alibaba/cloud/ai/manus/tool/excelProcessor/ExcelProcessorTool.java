@@ -1182,6 +1182,11 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 		return "default-service-group";
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
 	/**
 	 * Handle parallel batch processing
 	 */

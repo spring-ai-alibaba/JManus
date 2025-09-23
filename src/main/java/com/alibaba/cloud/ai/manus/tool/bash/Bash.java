@@ -166,4 +166,8 @@ public class Bash extends AbstractBaseTool<Bash.BashInput> {
 		log.info("Cleaned up resources for plan: {}", planId);
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
 }
