@@ -52,7 +52,7 @@ public class PredefinedSubplanTools {
 				"Extract relevant content from file or directory with intelligent analysis and structured output");
 		tool.setPlanTemplateId("extract_relevant_content_template");
 		tool.setEndpoint("/api/subplan/extract-content");
-		tool.setServiceGroup("data-processing");
+		tool.setServiceGroup("z-data-processing");
 
 		// Define tool parameters
 		List<SubplanParamDef> parameters = new ArrayList<>();

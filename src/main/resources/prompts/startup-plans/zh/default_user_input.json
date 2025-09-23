@@ -1,0 +1,18 @@
+{
+  "title": "默认的用户输入(不要删除这个计划)",
+  "steps": [
+    {
+      "stepRequirement": "<<用户输入的要求>>",
+      "agentName": "ConfigurableDynaAgent",
+      "modelName": "",
+      "selectedToolKeys": [
+        "data_split_tool",
+        "extract_relevant_content"
+      ],
+      "terminateColumns": ""
+    }
+  ],
+  "directResponse": false,
+  "planType": "dynamic_agent",
+  "planTemplateId": "default-plan-id-001000222"
+}

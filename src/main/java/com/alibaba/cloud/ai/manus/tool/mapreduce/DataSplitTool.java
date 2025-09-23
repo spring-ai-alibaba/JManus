@@ -197,7 +197,7 @@ public class DataSplitTool extends AbstractBaseTool<DataSplitTool.DataSplitInput
 
 	@Override
 	public String getServiceGroup() {
-		return "data-processing";
+		return "z-data-processing";
 	}
 
 	public static OpenAiApi.FunctionTool getToolDefinition() {

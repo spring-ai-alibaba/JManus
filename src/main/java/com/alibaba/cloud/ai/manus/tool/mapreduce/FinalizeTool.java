@@ -172,7 +172,7 @@ public class FinalizeTool extends AbstractBaseTool<FinalizeTool.FinalizeInput> i
 
 	@Override
 	public String getServiceGroup() {
-		return "data-processing";
+		return "z-data-processing";
 	}
 
 	public static OpenAiApi.FunctionTool getToolDefinition() {
