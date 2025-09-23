@@ -401,6 +401,9 @@
                 <groupId>io.spring.javaformat</groupId>
                 <artifactId>spring-javaformat-maven-plugin</artifactId>
                 <version>${spring-javaformat-maven-plugin.version}</version>
+                <configuration>
+                    <lineLength>120</lineLength>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>validate</phase>
