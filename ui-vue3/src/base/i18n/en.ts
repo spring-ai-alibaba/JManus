@@ -910,7 +910,7 @@ const words: I18nType = {
   modelName: 'Model Name',
   modelNameDescription: 'Specify model name for handling specific tasks (such as image recognition, etc.). If not specified, the default model will be used.',
   noModelSelected: 'Empty',
-  noTools: 'No tools',
+  noTools: 'No tools selected. The model will autonomously select appropriate tools from all registered tools (including MCP tools) to perform tasks. For more precise results, please help the model select specific tools, which will provide better performance.',
   addTool: 'Add Tool',
   toolPlaceholder: 'Enter tool',
   addRemoveTools: 'Add/Remove Tools',

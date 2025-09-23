@@ -5,10 +5,6 @@
       "stepRequirement": "<<User Input Requirements>>",
       "agentName": "ConfigurableDynaAgent",
       "modelName": "",
-      "selectedToolKeys": [
-        "data_split_tool",
-        "extract_relevant_content"
-      ],
       "terminateColumns": ""
     }
   ],

@@ -202,7 +202,7 @@
                   :empty-text="$t('sidebar.noTools')"
                   :use-grid-layout="true"
                   @add-tools="showToolSelectionModal(index)"
-                  @tools-filtered="(filteredTools) => handleToolsFiltered(index, filteredTools)"
+                  @tools-filtered="(filteredTools: string[]) => handleToolsFiltered(index, filteredTools)"
                 />
               </div>
               
