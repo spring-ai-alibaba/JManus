@@ -62,7 +62,7 @@ jobs:
 
       - name: Run Java linting
         run: |
-          mvn checkstyle:check
+          mvn spring-javaformat:validate
 
       - name: Run frontend linting
         run: |
