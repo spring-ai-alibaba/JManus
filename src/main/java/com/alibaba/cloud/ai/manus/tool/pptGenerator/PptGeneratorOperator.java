@@ -273,4 +273,9 @@ public class PptGeneratorOperator extends AbstractBaseTool<PptInput> {
 		return "PPT Generator is ready";
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
 }

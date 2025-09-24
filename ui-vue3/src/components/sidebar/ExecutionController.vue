@@ -42,7 +42,7 @@
               v-model="parameterValues[param]"
               class="parameter-input"
               :class="{ 'error': parameterErrors[param] }"
-              :placeholder="`Enter value for ${param}`"
+              :placeholder="t('sidebar.enterValueFor', { param })"
               @input="updateParameterValue(param, ($event.target as HTMLInputElement).value)"
               required
             />
@@ -84,18 +84,18 @@
       <!-- Internal Call wrapper - only show when enableInternalToolcall is true -->
       <div v-if="toolInfo?.enableInternalToolcall" class="call-example-wrapper">
         <div class="call-example-header">
-          <h4 class="call-example-title">Internal Call</h4>
-          <p class="call-example-description">You have published this plan-act as an internal method. You can find this tool's method in the agent configuration's add tools section and add and use it.</p>
+          <h4 class="call-example-title">{{ t('sidebar.internalCall') }}</h4>
+          <p class="call-example-description">{{ t('sidebar.internalCallDescription') }}</p>
         </div>
         <div class="internal-call-wrapper">
           <div class="call-info">
-            <div class="call-method">Internal Method Call</div>
-            <div class="call-endpoint">Tool Name: {{ toolInfo?.toolName || currentPlanTemplateId }}</div>
-            <div v-if="toolInfo?.serviceGroup" class="call-endpoint">Service Group: {{ toolInfo.serviceGroup }}</div>
-            <div class="call-description">After adding this tool in agent configuration, you can directly call this method in the agent</div>
+            <div class="call-method">{{ t('sidebar.internalMethodCall') }}</div>
+            <div class="call-endpoint">{{ t('sidebar.toolName') }}: {{ toolInfo?.toolName || currentPlanTemplateId }}</div>
+            <div v-if="toolInfo?.serviceGroup" class="call-endpoint">{{ t('sidebar.serviceGroup') }}: {{ toolInfo.serviceGroup }}</div>
+            <div class="call-description">{{ t('sidebar.internalCallUsage') }}</div>
             <div class="call-example">
-              <strong>Usage:</strong>
-              <pre class="example-code">In the agent configuration's "Add Tools" section, search and add this tool, then call it directly in the agent</pre>
+              <strong>{{ t('sidebar.usage') }}:</strong>
+              <pre class="example-code">{{ t('sidebar.internalCallExample') }}</pre>
             </div>
           </div>
         </div>
@@ -104,8 +104,8 @@
       <!-- HTTP API URLs wrapper with tabs - only show when enableHttpService is true -->
       <div v-if="toolInfo?.enableHttpService" class="call-example-wrapper">
         <div class="call-example-header">
-          <h4 class="call-example-title">HTTP Call Example</h4>
-          <p class="call-example-description">You have published this plan-act as an HTTP service. You can call it according to the example below.</p>
+          <h4 class="call-example-title">{{ t('sidebar.httpCallExample') }}</h4>
+          <p class="call-example-description">{{ t('sidebar.httpCallDescription') }}</p>
         </div>
         <div class="http-api-urls-wrapper">
           <div class="tab-container">
@@ -126,7 +126,7 @@
                   <div class="api-endpoint">{{ tab.endpoint }}</div>
                   <div class="api-description">{{ tab.description }}</div>
                   <div v-if="tab.example" class="api-example">
-                    <strong>Example:</strong>
+                    <strong>{{ t('sidebar.example') }}:</strong>
                     <pre class="example-code">{{ tab.example }}</pre>
                   </div>
                 </div>
@@ -139,17 +139,17 @@
       <!-- MCP Call wrapper - only show when enableMcpService is true -->
       <div v-if="toolInfo?.enableMcpService" class="call-example-wrapper">
         <div class="call-example-header">
-          <h4 class="call-example-title">MCP Call</h4>
-          <p class="call-example-description">You have published this plan-act as an MCP service. You can use it through MCP streamable or SSE methods.</p>
+          <h4 class="call-example-title">{{ t('sidebar.mcpCall') }}</h4>
+          <p class="call-example-description">{{ t('sidebar.mcpCallDescription') }}</p>
         </div>
         <div class="mcp-call-wrapper">
           <div class="call-info">
-            <div class="call-method">MCP Service Call</div>
-            <div class="call-endpoint">MCP Endpoint: /mcp/execute</div>
-            <div class="call-description">Call through MCP protocol using streaming or SSE methods</div>
+            <div class="call-method">{{ t('sidebar.mcpServiceCall') }}</div>
+            <div class="call-endpoint">{{ t('sidebar.mcpEndpoint') }}: /mcp/execute</div>
+            <div class="call-description">{{ t('sidebar.mcpCallUsage') }}</div>
             <div class="call-example">
-              <strong>Usage:</strong>
-              <pre class="example-code">Connect to this service through MCP client, using streamable or SSE methods for calling</pre>
+              <strong>{{ t('sidebar.usage') }}:</strong>
+              <pre class="example-code">{{ t('sidebar.mcpCallExample') }}</pre>
             </div>
           </div>
         </div>

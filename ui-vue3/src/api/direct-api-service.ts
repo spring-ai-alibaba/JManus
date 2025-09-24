@@ -38,4 +38,33 @@ export class DirectApiService {
       return await response.json()
     })
   }
+
+  // Send task using executeByToolNameAsync with default plan template
+  public static async sendMessageWithDefaultPlan(query: InputMessage): Promise<any> {
+    return LlmCheckService.withLlmCheck(async () => {
+      // Use default plan template ID as toolName
+      const toolName = 'default-plan-id-001000222'
+      
+      // Create replacement parameters with user input
+      const replacementParams = {
+        '用户输入的要求': query.input
+      }
+      
+      const requestBody = {
+        toolName: toolName,
+        replacementParams: replacementParams,
+        isVueRequest: true
+      }
+      
+      console.log('[DirectApiService] Sending message with default plan:', requestBody)
+      
+      const response = await fetch(`${this.BASE_URL}/executeByToolNameAsync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      })
+      if (!response.ok) throw new Error(`API request failed: ${response.status}`)
+      return await response.json()
+    })
+  }
 }

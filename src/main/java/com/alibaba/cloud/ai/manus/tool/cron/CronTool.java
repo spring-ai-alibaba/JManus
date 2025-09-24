@@ -165,4 +165,9 @@ public class CronTool extends AbstractBaseTool<CronTool.CronToolInput> {
 		log.info("Cleaned up resources for plan: {}", planId);
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
 }

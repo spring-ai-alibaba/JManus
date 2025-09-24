@@ -29,7 +29,6 @@ import org.springframework.stereotype.Component;
 
 import com.alibaba.cloud.ai.manus.config.IConfigService;
 import com.alibaba.cloud.ai.manus.config.entity.ConfigEntity;
-import com.alibaba.cloud.ai.manus.agent.service.DynamicAgentScanner;
 
 @Component
 public class ConfigAppStartupListener implements ApplicationListener<ApplicationStartedEvent> {
@@ -39,13 +38,10 @@ public class ConfigAppStartupListener implements ApplicationListener<Application
 	@Autowired
 	private IConfigService configService;
 
-	@Autowired
-	private DynamicAgentScanner dynamicAgentScanner;
-
 	@Override
 	public void onApplicationEvent(ApplicationStartedEvent event) {
 		initializeConfigs();
-		initializeDynamicAgents();
+		// initializeDynamicAgents();
 	}
 
 	private void initializeConfigs() {
@@ -73,15 +69,15 @@ public class ConfigAppStartupListener implements ApplicationListener<Application
 		}
 	}
 
-	private void initializeDynamicAgents() {
-		try {
-			log.info("Starting to initialize dynamic agents...");
-			dynamicAgentScanner.scanAndSaveAgents();
-			log.info("Dynamic agents initialization completed");
-		}
-		catch (Exception e) {
-			log.error("Failed to initialize dynamic agents", e);
-		}
-	}
+	// private void initializeDynamicAgents() {
+	// try {
+	// log.info("Starting to initialize dynamic agents...");
+	// dynamicAgentScanner.scanAndSaveAgents();
+	// log.info("Dynamic agents initialization completed");
+	// }
+	// catch (Exception e) {
+	// log.error("Failed to initialize dynamic agents", e);
+	// }
+	// }
 
 }

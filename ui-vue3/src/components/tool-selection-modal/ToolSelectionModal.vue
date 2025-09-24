@@ -95,7 +95,7 @@
             :class="{ collapsed: collapsedGroups.has(groupName) }"
           >
             <div
-              v-for="tool in tools.filter(t => t && t.key)"
+              v-for="tool in tools"
               :key="tool.key"
               class="tool-selection-item"
             >
@@ -181,6 +181,9 @@ watch(
 // Filtered and sorted tools
 const filteredTools = computed(() => {
   let filtered = props.tools.filter(tool => tool.key) // Filter out invalid tools
+  
+  // Filter out non-selectable tools
+  filtered = filtered.filter(tool => tool.selectable === true)
 
   // Search filter
   if (searchQuery.value) {

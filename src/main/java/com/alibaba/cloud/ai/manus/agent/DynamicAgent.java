@@ -68,9 +68,9 @@ public class DynamicAgent extends ReActAgent {
 
 	private final String nextStepPrompt;
 
-	private ToolCallbackProvider toolCallbackProvider;
+	protected ToolCallbackProvider toolCallbackProvider;
 
-	private final List<String> availableToolKeys;
+	protected final List<String> availableToolKeys;
 
 	private ChatResponse response;
 
@@ -115,7 +115,12 @@ public class DynamicAgent extends ReActAgent {
 		this.agentName = name;
 		this.agentDescription = description;
 		this.nextStepPrompt = nextStepPrompt;
-		this.availableToolKeys = availableToolKeys;
+		if (availableToolKeys == null) {
+			this.availableToolKeys = new ArrayList<>();
+		}
+		else {
+			this.availableToolKeys = availableToolKeys;
+		}
 		this.toolCallingManager = toolCallingManager;
 		this.userInputService = userInputService;
 		this.model = model;

@@ -176,7 +176,12 @@ public class ReduceOperationTool extends AbstractBaseTool<ReduceOperationTool.Re
 
 	@Override
 	public String getServiceGroup() {
-		return "data-processing";
+		return "z-data-processing";
+	}
+
+	@Override
+	public boolean isSelectable() {
+		return false;
 	}
 
 	public static OpenAiApi.FunctionTool getToolDefinition() {

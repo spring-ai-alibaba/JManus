@@ -238,4 +238,9 @@ public class PythonExecute extends AbstractBaseTool<PythonExecute.PythonInput> {
 		return "default-service-group";
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
 }

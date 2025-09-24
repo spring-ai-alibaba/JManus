@@ -204,4 +204,9 @@ public class DocLoaderTool extends AbstractBaseTool<DocLoaderTool.DocLoaderInput
 		// do nothing
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
 }

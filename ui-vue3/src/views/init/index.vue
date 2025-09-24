@@ -306,7 +306,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 import { LlmCheckService } from '@/utils/llm-check'
-import { changeLanguageWithAgentReset, LOCAL_STORAGE_LOCALE } from '@/base/i18n'
+import { changeLanguageWithAgentReset, initializePlanTemplates, LOCAL_STORAGE_LOCALE } from '@/base/i18n'
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -354,6 +354,15 @@ const goToNextStep = async () => {
 
       // Use changeLanguageWithAgentReset function to switch language and reset agents
       await changeLanguageWithAgentReset(selectedLanguage.value)
+
+      // Initialize plan templates with the selected language (automatically discovers all plan names)
+      try {
+        await initializePlanTemplates(selectedLanguage.value)
+        console.log('Plan templates initialized successfully')
+      } catch (planTemplateErr: any) {
+        console.warn('Failed to initialize plan templates:', planTemplateErr)
+        // Continue even if plan template initialization fails
+      }
 
       // Move to next step
       currentStep.value = 2
