@@ -108,11 +108,27 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 		// Check if request is from Vue frontend
 		Boolean isVueRequest = (Boolean) request.get("isVueRequest");
-		if (isVueRequest == null) {
-			isVueRequest = false;
+		if (isVueRequest != null) {
+			return isVueRequest;
 		}
 
-		return isVueRequest == null ? false : isVueRequest;
+		// Intelligent judgment: If isVueRequest is not explicitly set, judge by other
+		// features
+		// 1. Check if there are any Vue-specific field combinations
+		String toolName = (String) request.get("toolName");
+		@SuppressWarnings("unchecked")
+		List<Map<String, Object>> uploadedFiles = (List<Map<String, Object>>) request.get("uploadedFiles");
+
+		// If the plan template is executed and there is an uploaded file, it is likely to
+		// be the Vue front-end
+		if (toolName != null && toolName.startsWith("planTemplate-") && uploadedFiles != null) {
+			logger.info("🔍 [AUTO-DETECT] Detected Vue request pattern: toolName={}, hasFiles={}", toolName,
+					uploadedFiles.size());
+			return true;
+		}
+
+		// By default, it is not a Vue request
+		return false;
 
 	}
 
@@ -139,18 +155,18 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 		String planId = null;
 		try {
-			// Use sessionPlanId from frontend if available, otherwise generate new one
+			// Check if we should reuse sessionPlanId for file upload scenarios
 			String sessionPlanId = (String) request.get("sessionPlanId");
 
 			if (sessionPlanId != null && !sessionPlanId.trim().isEmpty()) {
-				// Use existing sessionPlanId from file upload
+				// For file upload scenarios, reuse sessionPlanId to maintain file access
 				planId = sessionPlanId;
-				logger.info("🔄 Using existing sessionPlanId: {}", planId);
+				logger.info("🔄 Using existing sessionPlanId for file access: {}", planId);
 			}
 			else {
-				// Generate new plan ID
+				// Generate new plan ID for non-file scenarios
 				planId = planIdDispatcher.generatePlanId();
-				logger.info("🆕 Generated new planId: {}", planId);
+				logger.info("🆕 Generated new planId for user query: {}", planId);
 			}
 
 			String memoryId = (String) request.get("memoryId");
@@ -207,7 +223,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		logger.info("Execute tool '{}' synchronously with plan template ID '{}', parameters: {}", toolName,
 				planTemplateId, allParams);
 		// Execute synchronously and return result directly
-		return executePlanSyncAndBuildResponse(planTemplateId, null, null, false);
+		return executePlanSyncAndBuildResponse(planTemplateId, null, null, false, null);
 	}
 
 	/**
@@ -261,9 +277,11 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			@SuppressWarnings("unchecked")
 			Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
 
+			String providedPlanId = (String) request.get("planId");
+
 			// Execute the plan template using the new unified method
 			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, memoryId,
-					replacementParams, isVueRequest);
+					replacementParams, isVueRequest, providedPlanId);
 
 			// Start the async execution (fire and forget)
 			wrapper.getResult().whenComplete((result, throwable) -> {
@@ -346,12 +364,15 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		@SuppressWarnings("unchecked")
 		Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
 
-		logger.info(
-				"Executing tool '{}' synchronously with plan template ID '{}', uploadedFiles: {}, replacementParams: {}",
-				toolName, planTemplateId, uploadedFiles != null ? uploadedFiles.size() : "null",
-				replacementParams != null ? replacementParams.size() : "null");
+		String providedPlanId = (String) request.get("planId");
 
-		return executePlanSyncAndBuildResponse(planTemplateId, uploadedFiles, replacementParams, isVueRequest);
+		logger.info(
+				"Executing tool '{}' synchronously with plan template ID '{}', uploadedFiles: {}, replacementParams: {}, planId: {}",
+				toolName, planTemplateId, uploadedFiles != null ? uploadedFiles.size() : "null",
+				replacementParams != null ? replacementParams.size() : "null", providedPlanId);
+
+		return executePlanSyncAndBuildResponse(planTemplateId, uploadedFiles, replacementParams, isVueRequest,
+				providedPlanId);
 	}
 
 	/**
@@ -468,14 +489,16 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	 * @param uploadedFiles List of uploaded files (can be null)
 	 * @param replacementParams Parameters for <<>> replacement (can be null)
 	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
+	 * @param providedPlanId Optional planId provided by frontend (can be null)
 	 * @return ResponseEntity with execution result
 	 */
 	private ResponseEntity<Map<String, Object>> executePlanSyncAndBuildResponse(String planTemplateId,
-			List<Map<String, Object>> uploadedFiles, Map<String, Object> replacementParams, boolean isVueRequest) {
+			List<Map<String, Object>> uploadedFiles, Map<String, Object> replacementParams, boolean isVueRequest,
+			String providedPlanId) {
 		try {
 			// Execute the plan template using the new unified method
 			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, null, replacementParams,
-					isVueRequest);
+					isVueRequest, providedPlanId);
 			PlanExecutionResult planExecutionResult = wrapper.getResult().get();
 
 			// Return success with execution result
@@ -502,19 +525,31 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	 * @param memoryId Memory ID for the execution (can be null)
 	 * @param replacementParams Parameters for <<>> replacement (can be null)
 	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
+	 * @param providedPlanId Optional planId provided by frontend (can be null)
 	 * @return PlanExecutionWrapper containing both PlanExecutionResult and rootPlanId
 	 */
 	private PlanExecutionWrapper executePlanTemplate(String planTemplateId, List<Map<String, Object>> uploadedFiles,
-			String memoryId, Map<String, Object> replacementParams, boolean isVueRequest) {
+			String memoryId, Map<String, Object> replacementParams, boolean isVueRequest, String providedPlanId) {
 		if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
 			logger.error("Plan template ID is null or empty");
 			throw new IllegalArgumentException("Plan template ID cannot be null or empty");
 		}
 
 		try {
-			// Generate a unique plan ID for this execution
-			String currentPlanId = planIdDispatcher.generatePlanId();
-			String rootPlanId = currentPlanId;
+
+			String currentPlanId;
+			String rootPlanId;
+
+			if (StringUtils.hasText(providedPlanId)) {
+				currentPlanId = providedPlanId;
+				rootPlanId = providedPlanId;
+				logger.info("🔗 Using provided planId: {}", providedPlanId);
+			}
+			else {
+				currentPlanId = planIdDispatcher.generatePlanId();
+				rootPlanId = currentPlanId;
+				logger.info("🆕 Generated new planId: {}", currentPlanId);
+			}
 
 			// Generate memory ID if not provided
 			if (!StringUtils.hasText(memoryId)) {

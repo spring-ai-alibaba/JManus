@@ -14,7 +14,7 @@ spring:
     proxy-target-class: true
   servlet:
     multipart:
-      max-file-size: 5368709120
+      max-file-size: 1073741824
       max-request-size: 6442450944
       enabled: true
       file-size-threshold: 2048
@@ -72,6 +72,17 @@ manus:
       base-backoff-delay: 1000
       # 最大退避延迟（毫秒）
       max-backoff-delay: 10000
+
+  # 文件上传配置
+  file-upload:
+    # 最大文件大小（字节）1GB
+    max-file-size: 1073741824
+    # 每次上传最大文件数
+    max-files-per-upload: 10
+    # 上传文件存储目录名
+    upload-directory: uploaded_files
+    # 文件类型验证策略：code (代码配置) 或 config (配置文件)
+    validation-strategy: code
 
 namespace:
   value: default
