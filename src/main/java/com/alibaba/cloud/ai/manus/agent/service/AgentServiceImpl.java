@@ -242,7 +242,7 @@ public class AgentServiceImpl implements AgentService {
 				tool.setDescription(entry.getValue().getFunctionInstance().getDescription());
 				tool.setEnabled(true);
 				tool.setServiceGroup(entry.getValue().getFunctionInstance().getServiceGroup());
-				
+
 				tool.setSelectable(entry.getValue().getFunctionInstance().isSelectable());
 				return tool;
 			}).collect(Collectors.toList());

@@ -276,7 +276,6 @@ public class JsxGeneratorOperator extends AbstractBaseTool<JsxGeneratorOperator.
 		}
 	}
 
-
 	/**
 	 * Internal input class for defining input parameters of Vue component generator tool
 	 */
@@ -403,11 +402,9 @@ public class JsxGeneratorOperator extends AbstractBaseTool<JsxGeneratorOperator.
 
 	}
 
-
 	@Override
 	public boolean isSelectable() {
 		return true;
 	}
-
 
 }

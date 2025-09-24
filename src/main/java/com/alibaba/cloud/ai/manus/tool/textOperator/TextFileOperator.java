@@ -668,4 +668,5 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 	public boolean isSelectable() {
 		return true;
 	}
+
 }

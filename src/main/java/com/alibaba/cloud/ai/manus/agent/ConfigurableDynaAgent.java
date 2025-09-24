@@ -77,23 +77,23 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 	}
 
 	/**
-	 * Override getToolCallList to handle null/empty availableToolKeys
-	 * If availableToolKeys is null or empty, return all available tools from toolCallbackProvider
-	 * Also ensures TerminateTool is always included
+	 * Override getToolCallList to handle null/empty availableToolKeys If
+	 * availableToolKeys is null or empty, return all available tools from
+	 * toolCallbackProvider Also ensures TerminateTool is always included
 	 * @return List of tool callbacks
 	 */
 	@Override
 	public List<ToolCallback> getToolCallList() {
 		List<ToolCallback> toolCallbacks = new ArrayList<>();
 		Map<String, ToolCallBackContext> toolCallBackContext = toolCallbackProvider.getToolCallBackContext();
-		
+
 		// Add all available tool keys that are not already in availableToolKeys
 		if (availableToolKeys == null || availableToolKeys.isEmpty()) {
 			// If availableToolKeys is null or empty, add all available tools
 			availableToolKeys.addAll(toolCallBackContext.keySet());
 			log.info("No specific tools configured, added all available tools: {}", availableToolKeys);
-		} 
-		
+		}
+
 		// Check if any TerminableTool is already included
 		boolean hasTerminableTool = false;
 		for (String toolKey : availableToolKeys) {
@@ -105,15 +105,16 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 				}
 			}
 		}
-		
+
 		// Add TerminateTool if no TerminableTool is present
 		if (!hasTerminableTool) {
 			availableToolKeys.add(TerminateTool.name);
 			log.debug("No TerminableTool found, added TerminateTool to tool list for agent {}", getName());
-		} else {
+		}
+		else {
 			log.debug("Found existing TerminableTool in tool list for agent {}", getName());
 		}
-		
+
 		// Build the tool callbacks list
 		for (String toolKey : availableToolKeys) {
 			if (toolCallBackContext.containsKey(toolKey)) {
@@ -121,13 +122,14 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 				if (toolCallback != null) {
 					toolCallbacks.add(toolCallback.getToolCallback());
 				}
-			} else {
+			}
+			else {
 				log.warn("Tool callback for {} not found in the map.", toolKey);
 			}
 		}
-		
+
 		log.info("Agent {} configured with {} tools: {}", getName(), toolCallbacks.size(), availableToolKeys);
 		return toolCallbacks;
 	}
-	
+
 }

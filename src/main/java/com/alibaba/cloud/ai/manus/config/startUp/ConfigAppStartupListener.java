@@ -38,7 +38,6 @@ public class ConfigAppStartupListener implements ApplicationListener<Application
 	@Autowired
 	private IConfigService configService;
 
-
 	@Override
 	public void onApplicationEvent(ApplicationStartedEvent event) {
 		initializeConfigs();
@@ -71,14 +70,14 @@ public class ConfigAppStartupListener implements ApplicationListener<Application
 	}
 
 	// private void initializeDynamicAgents() {
-	// 	try {
-	// 		log.info("Starting to initialize dynamic agents...");
-	// 		dynamicAgentScanner.scanAndSaveAgents();
-	// 		log.info("Dynamic agents initialization completed");
-	// 	}
-	// 	catch (Exception e) {
-	// 		log.error("Failed to initialize dynamic agents", e);
-	// 	}
+	// try {
+	// log.info("Starting to initialize dynamic agents...");
+	// dynamicAgentScanner.scanAndSaveAgents();
+	// log.info("Dynamic agents initialization completed");
+	// }
+	// catch (Exception e) {
+	// log.error("Failed to initialize dynamic agents", e);
+	// }
 	// }
 
 }

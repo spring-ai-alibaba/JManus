@@ -277,4 +277,5 @@ public class PptGeneratorOperator extends AbstractBaseTool<PptInput> {
 	public boolean isSelectable() {
 		return true;
 	}
+
 }

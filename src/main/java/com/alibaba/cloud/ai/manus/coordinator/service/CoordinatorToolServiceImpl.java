@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  * CoordinatorToolEntity and SubplanToolDef operations with transaction support
  */
 @Service
-public class CoordinatorToolServiceImpl  {
+public class CoordinatorToolServiceImpl {
 
 	private static final Logger log = LoggerFactory.getLogger(CoordinatorToolServiceImpl.class);
 
@@ -53,7 +53,6 @@ public class CoordinatorToolServiceImpl  {
 	@Autowired
 	private ObjectMapper objectMapper;
 
-	
 	@Transactional
 	public CoordinatorToolVO createCoordinatorTool(CoordinatorToolVO toolVO) throws CoordinatorToolException {
 		int maxRetries = 3;
@@ -184,7 +183,6 @@ public class CoordinatorToolServiceImpl  {
 		}
 	}
 
-	
 	@Transactional
 	public void deleteCoordinatorTool(Long id) throws CoordinatorToolException {
 		try {
@@ -234,7 +232,6 @@ public class CoordinatorToolServiceImpl  {
 		}
 	}
 
-	
 	public Optional<CoordinatorToolVO> getCoordinatorToolById(Long id) {
 		try {
 			return coordinatorToolRepository.findById(id).map(CoordinatorToolVO::fromEntity);
@@ -245,7 +242,6 @@ public class CoordinatorToolServiceImpl  {
 		}
 	}
 
-	
 	public Optional<CoordinatorToolVO> getCoordinatorToolByPlanTemplateId(String planTemplateId) {
 		try {
 			List<CoordinatorToolEntity> entities = coordinatorToolRepository.findByPlanTemplateId(planTemplateId);
@@ -260,7 +256,6 @@ public class CoordinatorToolServiceImpl  {
 		}
 	}
 
-	
 	public CoordinatorToolVO getOrCreateCoordinatorToolByPlanTemplateId(String planTemplateId) {
 		try {
 			// Try to get existing tool
@@ -278,7 +273,6 @@ public class CoordinatorToolServiceImpl  {
 		}
 	}
 
-	
 	public List<CoordinatorToolVO> getAllCoordinatorTools() {
 		try {
 			return coordinatorToolRepository.findAll()
@@ -292,7 +286,6 @@ public class CoordinatorToolServiceImpl  {
 		}
 	}
 
-	
 	public List<String> getAllUniqueMcpEndpoints() {
 		try {
 			return coordinatorToolRepository.findAllUniqueMcpEndpoints();

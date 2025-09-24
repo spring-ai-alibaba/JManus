@@ -478,4 +478,5 @@ public class TableProcessorTool extends AbstractBaseTool<TableProcessorTool.Tabl
 	public boolean isSelectable() {
 		return true;
 	}
+
 }

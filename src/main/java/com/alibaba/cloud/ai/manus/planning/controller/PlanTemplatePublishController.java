@@ -35,143 +35,151 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class PlanTemplatePublishController {
 
-    private static final Logger log = LoggerFactory.getLogger(PlanTemplatePublishController.class);
+	private static final Logger log = LoggerFactory.getLogger(PlanTemplatePublishController.class);
 
-    @Autowired
-    private PlanTemplatePublishService planTemplatePublishService;
+	@Autowired
+	private PlanTemplatePublishService planTemplatePublishService;
 
-    @Autowired
-    private PlanTemplateInitializationService planTemplateInitializationService;
+	@Autowired
+	private PlanTemplateInitializationService planTemplateInitializationService;
 
-    /**
-     * Initialize and register plan templates as inner toolcalls
-     * @param request Request containing language (plan names are automatically discovered)
-     * @return Initialization and registration result
-     */
-    @PostMapping("/init-and-register")
-    public ResponseEntity<Map<String, Object>> initAndRegisterPlanTemplates(@RequestBody Map<String, Object> request) {
-        try {
-            String language = (String) request.get("language");
+	/**
+	 * Initialize and register plan templates as inner toolcalls
+	 * @param request Request containing language (plan names are automatically
+	 * discovered)
+	 * @return Initialization and registration result
+	 */
+	@PostMapping("/init-and-register")
+	public ResponseEntity<Map<String, Object>> initAndRegisterPlanTemplates(@RequestBody Map<String, Object> request) {
+		try {
+			String language = (String) request.get("language");
 
-            if (language == null || language.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Language is required"));
-            }
+			if (language == null || language.trim().isEmpty()) {
+				return ResponseEntity.badRequest().body(Map.of("error", "Language is required"));
+			}
 
-            log.info("Initializing and registering plan templates for language: {}", language);
+			log.info("Initializing and registering plan templates for language: {}", language);
 
-            // Step 1: Initialize plan templates (automatically finds all plan names)
-            Map<String, Object> initResult = planTemplateInitializationService.initializePlanTemplatesForLanguage(language);
-            
-            // Extract plan names from init result for registration
-            @SuppressWarnings("unchecked")
-            List<String> planNames = (List<String>) initResult.get("successList");
-            
-            // Step 2: Register initialized plan templates as inner toolcalls
-            Map<String, Object> registerResult = planTemplatePublishService.registerPlanTemplatesAsToolcalls(planNames);
+			// Step 1: Initialize plan templates (automatically finds all plan names)
+			Map<String, Object> initResult = planTemplateInitializationService
+				.initializePlanTemplatesForLanguage(language);
 
-            // Combine results
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("language", language);
-            response.put("planNames", planNames);
-            response.put("initResult", initResult);
-            response.put("registerResult", registerResult);
-            response.put("message", "Plan templates initialized and registered successfully");
+			// Extract plan names from init result for registration
+			@SuppressWarnings("unchecked")
+			List<String> planNames = (List<String>) initResult.get("successList");
 
-            return ResponseEntity.ok(response);
+			// Step 2: Register initialized plan templates as inner toolcalls
+			Map<String, Object> registerResult = planTemplatePublishService.registerPlanTemplatesAsToolcalls(planNames);
 
-        } catch (Exception e) {
-            log.error("Failed to initialize and register plan templates", e);
-            return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to initialize and register plan templates: " + e.getMessage()));
-        }
-    }
+			// Combine results
+			Map<String, Object> response = new HashMap<>();
+			response.put("success", true);
+			response.put("language", language);
+			response.put("planNames", planNames);
+			response.put("initResult", initResult);
+			response.put("registerResult", registerResult);
+			response.put("message", "Plan templates initialized and registered successfully");
 
-    /**
-     * Register specific plan templates as inner toolcalls
-     * @param request Request containing plan names
-     * @return Registration result
-     */
-    @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> registerPlanTemplates(@RequestBody Map<String, Object> request) {
-        try {
-            @SuppressWarnings("unchecked")
-            List<String> planNames = (List<String>) request.get("planNames");
+			return ResponseEntity.ok(response);
 
-            if (planNames == null || planNames.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Plan names are required"));
-            }
+		}
+		catch (Exception e) {
+			log.error("Failed to initialize and register plan templates", e);
+			return ResponseEntity.internalServerError()
+				.body(Map.of("error", "Failed to initialize and register plan templates: " + e.getMessage()));
+		}
+	}
 
-            log.info("Registering plan templates as inner toolcalls: {}", planNames);
+	/**
+	 * Register specific plan templates as inner toolcalls
+	 * @param request Request containing plan names
+	 * @return Registration result
+	 */
+	@PostMapping("/register")
+	public ResponseEntity<Map<String, Object>> registerPlanTemplates(@RequestBody Map<String, Object> request) {
+		try {
+			@SuppressWarnings("unchecked")
+			List<String> planNames = (List<String>) request.get("planNames");
 
-            Map<String, Object> result = planTemplatePublishService.registerPlanTemplatesAsToolcalls(planNames);
+			if (planNames == null || planNames.isEmpty()) {
+				return ResponseEntity.badRequest().body(Map.of("error", "Plan names are required"));
+			}
 
-            return ResponseEntity.ok(result);
+			log.info("Registering plan templates as inner toolcalls: {}", planNames);
 
-        } catch (Exception e) {
-            log.error("Failed to register plan templates", e);
-            return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to register plan templates: " + e.getMessage()));
-        }
-    }
+			Map<String, Object> result = planTemplatePublishService.registerPlanTemplatesAsToolcalls(planNames);
 
-    /**
-     * Unregister plan templates from inner toolcalls
-     * @param request Request containing plan names
-     * @return Unregistration result
-     */
-    @PostMapping("/unregister")
-    public ResponseEntity<Map<String, Object>> unregisterPlanTemplates(@RequestBody Map<String, Object> request) {
-        try {
-            @SuppressWarnings("unchecked")
-            List<String> planNames = (List<String>) request.get("planNames");
+			return ResponseEntity.ok(result);
 
-            if (planNames == null || planNames.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Plan names are required"));
-            }
+		}
+		catch (Exception e) {
+			log.error("Failed to register plan templates", e);
+			return ResponseEntity.internalServerError()
+				.body(Map.of("error", "Failed to register plan templates: " + e.getMessage()));
+		}
+	}
 
-            log.info("Unregistering plan templates from inner toolcalls: {}", planNames);
+	/**
+	 * Unregister plan templates from inner toolcalls
+	 * @param request Request containing plan names
+	 * @return Unregistration result
+	 */
+	@PostMapping("/unregister")
+	public ResponseEntity<Map<String, Object>> unregisterPlanTemplates(@RequestBody Map<String, Object> request) {
+		try {
+			@SuppressWarnings("unchecked")
+			List<String> planNames = (List<String>) request.get("planNames");
 
-            Map<String, Object> result = planTemplatePublishService.unregisterPlanTemplatesAsToolcalls(planNames);
+			if (planNames == null || planNames.isEmpty()) {
+				return ResponseEntity.badRequest().body(Map.of("error", "Plan names are required"));
+			}
 
-            return ResponseEntity.ok(result);
+			log.info("Unregistering plan templates from inner toolcalls: {}", planNames);
 
-        } catch (Exception e) {
-            log.error("Failed to unregister plan templates", e);
-            return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to unregister plan templates: " + e.getMessage()));
-        }
-    }
+			Map<String, Object> result = planTemplatePublishService.unregisterPlanTemplatesAsToolcalls(planNames);
 
-    /**
-     * Get status of plan template registrations
-     * @return Registration status
-     */
-    @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> getRegistrationStatus() {
-        try {
-            Map<String, Object> status = planTemplatePublishService.getRegistrationStatus();
-            return ResponseEntity.ok(status);
-        } catch (Exception e) {
-            log.error("Failed to get registration status", e);
-            return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to get registration status: " + e.getMessage()));
-        }
-    }
+			return ResponseEntity.ok(result);
 
-    /**
-     * Get all registered plan templates
-     * @return List of registered plan templates
-     */
-    @GetMapping("/registered")
-    public ResponseEntity<Map<String, Object>> getRegisteredPlanTemplates() {
-        try {
-            Map<String, Object> result = planTemplatePublishService.getRegisteredPlanTemplates();
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            log.error("Failed to get registered plan templates", e);
-            return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to get registered plan templates: " + e.getMessage()));
-        }
-    }
+		}
+		catch (Exception e) {
+			log.error("Failed to unregister plan templates", e);
+			return ResponseEntity.internalServerError()
+				.body(Map.of("error", "Failed to unregister plan templates: " + e.getMessage()));
+		}
+	}
+
+	/**
+	 * Get status of plan template registrations
+	 * @return Registration status
+	 */
+	@GetMapping("/status")
+	public ResponseEntity<Map<String, Object>> getRegistrationStatus() {
+		try {
+			Map<String, Object> status = planTemplatePublishService.getRegistrationStatus();
+			return ResponseEntity.ok(status);
+		}
+		catch (Exception e) {
+			log.error("Failed to get registration status", e);
+			return ResponseEntity.internalServerError()
+				.body(Map.of("error", "Failed to get registration status: " + e.getMessage()));
+		}
+	}
+
+	/**
+	 * Get all registered plan templates
+	 * @return List of registered plan templates
+	 */
+	@GetMapping("/registered")
+	public ResponseEntity<Map<String, Object>> getRegisteredPlanTemplates() {
+		try {
+			Map<String, Object> result = planTemplatePublishService.getRegisteredPlanTemplates();
+			return ResponseEntity.ok(result);
+		}
+		catch (Exception e) {
+			log.error("Failed to get registered plan templates", e);
+			return ResponseEntity.internalServerError()
+				.body(Map.of("error", "Failed to get registered plan templates: " + e.getMessage()));
+		}
+	}
+
 }

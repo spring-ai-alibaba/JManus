@@ -176,10 +176,10 @@ public class PlanFinalizer {
 			else {
 				log.debug("No need to generate summary or direct response for plan: {}", context.getCurrentPlanId());
 				processAndRecordResult(context, result, result.getFinalResult(), "Final result: {}");
-	
+
 				return result;
 			}
-			
+
 		}
 		catch (Exception e) {
 			log.warn("Error during post-execution processing for plan: {}, but continuing", context.getCurrentPlanId(),

@@ -504,4 +504,5 @@ public class FormInputTool extends AbstractBaseTool<FormInputTool.UserFormInput>
 	public boolean isSelectable() {
 		return true;
 	}
+
 }

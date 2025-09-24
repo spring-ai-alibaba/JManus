@@ -277,6 +277,7 @@ public class DynamicAgent extends ReActAgent {
 		long delay = Math.min(1000L * (1L << (attempt - 1)), 30000L);
 		return delay;
 	}
+
 	@Override
 	protected AgentExecResult act() {
 		ToolExecutionResult toolExecutionResult = null;

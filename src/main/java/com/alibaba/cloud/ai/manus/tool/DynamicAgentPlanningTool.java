@@ -369,4 +369,5 @@ public class DynamicAgentPlanningTool extends AbstractBaseTool<DynamicAgentPlann
 	public boolean isSelectable() {
 		throw new UnsupportedOperationException("DynamicAgentPlanningTool is not selectable");
 	}
+
 }
