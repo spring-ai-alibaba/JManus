@@ -499,8 +499,8 @@ const handleChatSendMessage = async (query: InputMessage) => {
     // Import and call DirectApiService to send message to backend
     const { DirectApiService } = await import('@/api/direct-api-service')
     
-    console.log('[DirectView] Calling DirectApiService.sendMessage')
-    const response = await DirectApiService.sendMessage(query)
+    console.log('[DirectView] Calling DirectApiService.sendMessageWithDefaultPlan')
+    const response = await DirectApiService.sendMessageWithDefaultPlan(query)
     console.log('[DirectView] API response received:', response)
 
     // Handle the response

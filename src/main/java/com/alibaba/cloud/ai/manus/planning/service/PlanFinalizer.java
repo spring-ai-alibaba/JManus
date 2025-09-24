@@ -95,18 +95,6 @@ public class PlanFinalizer {
 	}
 
 	/**
-	 * Generate code-based summary when LLM is not needed
-	 */
-	private void generateCodeBasedSummary(ExecutionContext context, PlanExecutionResult result) {
-		log.info("No need to generate summary, use code generate summary instead");
-		String summary = context.getPlan().getPlanExecutionStateStringFormat(false);
-
-		// Set result in PlanExecutionResult
-		result.setFinalResult(summary);
-		recordPlanCompletion(context, summary);
-	}
-
-	/**
 	 * Core method for generating LLM responses with common logic
 	 */
 	private String generateLlmResponse(ExecutionContext context, String promptName, Map<String, Object> variables,
