@@ -112,7 +112,7 @@ jobs:
               
               print("Checking frontend files...")
               for file_path in frontend_files:
-                  issues = check_file(file_path, ['i18n'])
+                  issues = check_file(file_path, ['i18n', 'direct-api-service.ts'])
                   if issues:
                       all_issues.append((file_path, issues))
               
