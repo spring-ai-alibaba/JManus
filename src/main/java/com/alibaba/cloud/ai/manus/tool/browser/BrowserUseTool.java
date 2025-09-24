@@ -76,6 +76,9 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 	}
 
 	private final String name = "browser_use";
+	
+	// Track if run method has been called at least once
+	private volatile boolean hasRunAtLeastOnce = false;
 
 	public static synchronized BrowserUseTool getInstance(ChromeDriverService chromeDriverService,
 			SmartContentSavingService innerStorageService, ObjectMapper objectMapper) {
@@ -85,6 +88,9 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	public ToolExecuteResult run(BrowserRequestVO requestVO) {
 		log.info("BrowserUseTool requestVO: action={}", requestVO.getAction());
+		
+		// Mark that run has been called at least once
+		hasRunAtLeastOnce = true;
 
 		// Get parameters from RequestVO
 		String action = requestVO.getAction();
@@ -497,6 +503,13 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	@Override
 	public String getCurrentToolStateString() {
+		// Only initialize browser if run method has been called at least once
+		if (!hasRunAtLeastOnce) {
+			return """
+				Browser tool context is empty
+				""";
+		}
+		
 		DriverWrapper driver = getDriver();
 		Map<String, Object> state = getCurrentState(driver.getCurrentPage());
 		// Build URL and title information
