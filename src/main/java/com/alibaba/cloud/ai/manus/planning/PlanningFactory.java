@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
@@ -85,7 +86,7 @@ import com.alibaba.cloud.ai.manus.tool.mapreduce.ReduceOperationTool;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
-
+import com.alibaba.cloud.ai.manus.tool.filesystem.UploadedFileLoaderTool;
 import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.excelProcessor.ExcelProcessorTool;
@@ -161,6 +162,9 @@ public class PlanningFactory implements IPlanningFactory {
 
 	@Autowired
 	private JsxGeneratorOperator jsxGeneratorOperator;
+
+	@Autowired
+	private ApplicationContext applicationContext;
 
 	public PlanningFactory(ChromeDriverService chromeDriverService, PlanExecutionRecorder recorder,
 			ManusProperties manusProperties, TextFileService textFileService, McpService mcpService,
@@ -249,9 +253,8 @@ public class PlanningFactory implements IPlanningFactory {
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
 			toolDefinitions.add(new TextFileOperator(textFileService, innerStorageService, objectMapper));
-			// remove temporarily , because it is hard to test.
-			// toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager));
-			// toolDefinitions.add(new TableProcessorTool(tableProcessingService));
+			toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager, applicationContext));
+			toolDefinitions.add(new TableProcessorTool(tableProcessingService));
 			// toolDefinitions.add(new InnerStorageTool(unifiedDirectoryManager));
 			// toolDefinitions.add(pptGeneratorOperator);
 			// toolDefinitions.add(jsxGeneratorOperator);
