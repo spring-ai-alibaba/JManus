@@ -554,4 +554,5 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 	public boolean isSelectable() {
 		return true;
 	}
+
 }
