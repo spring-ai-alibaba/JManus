@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.cloud.ai.manus.conversation.repository;
+package com.alibaba.cloud.ai.manus.workspace.conversation.repository;
 
-import com.alibaba.cloud.ai.manus.conversation.model.po.ConversationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import com.alibaba.cloud.ai.manus.workspace.conversation.model.po.ConversationEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;

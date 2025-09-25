@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.cloud.ai.manus.memory.controller;
+package com.alibaba.cloud.ai.manus.workspace.memory.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.alibaba.cloud.ai.manus.memory.entity.MemoryEntity;
-import com.alibaba.cloud.ai.manus.memory.service.MemoryService;
+import com.alibaba.cloud.ai.manus.workspace.memory.entity.po.MemoryEntity;
+import com.alibaba.cloud.ai.manus.workspace.memory.service.MemoryService;
 
 import java.util.List;
 

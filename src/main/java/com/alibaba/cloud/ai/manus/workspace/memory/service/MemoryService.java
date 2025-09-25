@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.cloud.ai.manus.memory.repository;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import com.alibaba.cloud.ai.manus.memory.entity.MemoryEntity;
+package com.alibaba.cloud.ai.manus.workspace.memory.service;
 
 import java.util.List;
+
+import com.alibaba.cloud.ai.manus.workspace.memory.entity.po.MemoryEntity;
 
 /**
  * @author dahua
  * @time 2025/8/5
- * @desc memory repository
+ * @desc memory service interface
  */
-@Repository
-public interface MemoryRepository extends JpaRepository<MemoryEntity, Long> {
+public interface MemoryService {
 
-	List<MemoryEntity> findAll();
+	List<MemoryEntity> getMemories();
 
-	void deleteByMemoryId(String memoryId);
+	void deleteMemory(String id);
 
-	MemoryEntity findByMemoryId(String memoryId);
+	MemoryEntity saveMemory(MemoryEntity memoryEntity);
+
+	MemoryEntity updateMemory(MemoryEntity memoryEntity);
+
+	MemoryEntity singleMemory(String memoryId);
 
 }

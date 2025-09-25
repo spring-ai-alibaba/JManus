@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.cloud.ai.manus.memory.service;
+package com.alibaba.cloud.ai.manus.workspace.memory.service;
 
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
@@ -21,8 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.alibaba.cloud.ai.manus.memory.entity.MemoryEntity;
-import com.alibaba.cloud.ai.manus.memory.repository.MemoryRepository;
+import com.alibaba.cloud.ai.manus.workspace.memory.entity.po.MemoryEntity;
+import com.alibaba.cloud.ai.manus.workspace.memory.repository.MemoryRepository;
 
 import java.util.List;
 

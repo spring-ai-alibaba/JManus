@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.cloud.ai.manus.conversation.controller;
+package com.alibaba.cloud.ai.manus.workspace.conversation.controller;
 
-import com.alibaba.cloud.ai.manus.conversation.service.ConversationService;
-import com.alibaba.cloud.ai.manus.conversation.vo.Conversation;
-import com.alibaba.cloud.ai.manus.conversation.vo.ConversationResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import com.alibaba.cloud.ai.manus.workspace.conversation.service.ConversationService;
+import com.alibaba.cloud.ai.manus.workspace.conversation.vo.Conversation;
+import com.alibaba.cloud.ai.manus.workspace.conversation.vo.ConversationResponse;
 
 import java.util.List;
 import java.util.Map;

@@ -13,62 +13,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.cloud.ai.manus.conversation.model.po;
+package com.alibaba.cloud.ai.manus.workspace.conversation.vo;
 
-import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 /**
- * Conversation entity for database persistence
- * Replaces MemoryEntity with conversation-focused design
+ * Conversation value object for API responses
+ * Replaces Memory VO with conversation-focused design
  */
-@Entity
-@Table(name = "conversations", uniqueConstraints = { 
-	@UniqueConstraint(columnNames = "conversation_id")
-})
-public class ConversationEntity {
+public class Conversation {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "conversation_id", unique = true, nullable = false)
+	@JsonProperty("conversation_id")
 	private String conversationId;
 
-	@Column(name = "conversation_name", nullable = false)
+	@JsonProperty("conversation_name")
 	private String conversationName;
 
-	@Column(name = "user_id", nullable = true)
+	@JsonProperty("user_id")
 	private Long userId;
 
-	@Column(name = "created_at", nullable = false)
+	@JsonProperty("created_at")
 	private LocalDateTime createdAt;
 
-	@Column(name = "updated_at")
+	@JsonProperty("updated_at")
 	private LocalDateTime updatedAt;
 
-	@Column(name = "last_activity_at")
+	@JsonProperty("last_activity_at")
 	private LocalDateTime lastActivityAt;
 
-	@Column(name = "status", nullable = false)
-	private String status = "active";
+	private String status;
 
-	@Column(name = "description")
 	private String description;
 
-
-	/**
-	 * Default constructor required by Hibernate/JPA
-	 */
-	public ConversationEntity() {
+	// Constructors
+	public Conversation() {
 	}
 
-	public ConversationEntity(String conversationId, String conversationName, Long userId) {
+	public Conversation(String conversationId, String conversationName, Long userId) {
 		this.conversationId = conversationId;
 		this.conversationName = conversationName;
 		this.userId = userId;
-		this.createdAt = LocalDateTime.now();
 		this.status = "active";
+		this.createdAt = LocalDateTime.now();
 	}
 
 	// Getters and Setters
@@ -146,7 +135,7 @@ public class ConversationEntity {
 
 	@Override
 	public String toString() {
-		return "ConversationEntity{" + "id=" + id + ", conversationId='" + conversationId + '\''
+		return "Conversation{" + "id=" + id + ", conversationId='" + conversationId + '\''
 				+ ", conversationName='" + conversationName + '\'' + ", userId=" + userId + ", status='" + status
 				+ '\'' + '}';
 	}
