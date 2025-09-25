@@ -258,7 +258,7 @@ public class ManusProperties implements IManusProperties {
 	// Infinite Context SubGroup
 	@ConfigProperty(group = "manus", subGroup = "infiniteContext", key = "enabled",
 			path = "manus.infiniteContext.enabled", description = "manus.infiniteContext.enabled.description",
-			defaultValue = "true", inputType = ConfigInputType.CHECKBOX,
+			defaultValue = "false", inputType = ConfigInputType.CHECKBOX,
 			options = { @ConfigOption(value = "true", label = "manus.infiniteContext.enabled.option.true"),
 					@ConfigOption(value = "false", label = "manus.infiniteContext.enabled.option.false") })
 	private volatile Boolean infiniteContextEnabled;
