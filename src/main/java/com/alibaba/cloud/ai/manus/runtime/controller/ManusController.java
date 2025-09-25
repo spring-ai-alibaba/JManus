@@ -203,6 +203,17 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		try {
 			String conversationId = (String) request.get("conversationId");
 
+
+			// Generate conversation ID if not provided
+			if (!StringUtils.hasText(conversationId)) {
+				conversationId = memoryService.generateConversationId();
+			}
+
+			String query = "Execute plan template: " + planTemplateId;
+			// Create Memory VO and save it
+			Memory memory = new Memory(conversationId, query);
+			memoryService.saveMemory(memory);
+
 			// Handle uploaded files if present
 			@SuppressWarnings("unchecked")
 			List<Map<String, Object>> uploadedFiles = (List<Map<String, Object>>) request.get("uploadedFiles");
@@ -226,16 +237,6 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 					logger.info("Async plan execution completed for planId: {}", wrapper.getRootPlanId());
 				}
 			});
-
-			// Generate conversation ID if not provided
-			if (!StringUtils.hasText(conversationId)) {
-				conversationId = memoryService.generateConversationId();
-			}
-
-			String query = "Execute plan template: " + planTemplateId;
-			// Create Memory VO and save it
-			Memory memory = new Memory(conversationId, query);
-			memoryService.saveMemory(memory);
 
 			// Return task ID and initial status
 			Map<String, Object> response = new HashMap<>();

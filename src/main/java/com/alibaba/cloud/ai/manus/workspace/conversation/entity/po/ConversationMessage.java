@@ -32,8 +32,6 @@ public class ConversationMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String conversationId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -49,7 +47,7 @@ public class ConversationMessage {
     private Date createTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "conversation_id", referencedColumnName = "conversationId", insertable = false, updatable = false)
+    @JoinColumn(name = "conversation_id", referencedColumnName = "conversationId")
     private MemoryEntity memoryEntity;
 
     public enum MessageType {
@@ -64,15 +62,13 @@ public class ConversationMessage {
         this.createTime = new Date();
     }
 
-    public ConversationMessage(String conversationId, MessageType messageType, String content) {
-        this.conversationId = conversationId;
+    public ConversationMessage(MessageType messageType, String content) {
         this.messageType = messageType;
         this.content = content;
         this.createTime = new Date();
     }
 
-    public ConversationMessage(String conversationId, MessageType messageType, String content, String metadata) {
-        this.conversationId = conversationId;
+    public ConversationMessage(MessageType messageType, String content, String metadata) {
         this.messageType = messageType;
         this.content = content;
         this.metadata = metadata;
@@ -88,11 +84,7 @@ public class ConversationMessage {
     }
 
     public String getConversationId() {
-        return conversationId;
-    }
-
-    public void setConversationId(String conversationId) {
-        this.conversationId = conversationId;
+        return memoryEntity != null ? memoryEntity.getConversationId() : null;
     }
 
     public MessageType getMessageType() {
@@ -139,7 +131,7 @@ public class ConversationMessage {
     public String toString() {
         return "ConversationMessage{" +
                 "id=" + id +
-                ", conversationId='" + conversationId + '\'' +
+                ", conversationId='" + getConversationId() + '\'' +
                 ", messageType=" + messageType +
                 ", content='" + content + '\'' +
                 ", metadata='" + metadata + '\'' +
