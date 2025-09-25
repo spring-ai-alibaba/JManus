@@ -239,7 +239,7 @@ public class OpenAIAdapterService {
 			// Execute the plan using PlanningCoordinator
 			CompletableFuture<com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult> future = planningCoordinator
 				.executeByUserQuery(context.getUserRequest(), context.getCurrentPlanId(), context.getCurrentPlanId(),
-						context.getCurrentPlanId(), context.getMemoryId(), null);
+						context.getCurrentPlanId(), context.getConversationId(), null);
 
 			// Wait for completion with extended timeout for complex tasks
 			logger.info("Waiting for plan execution to complete for planId: {}", context.getCurrentPlanId());
@@ -273,7 +273,7 @@ public class OpenAIAdapterService {
 
 			// Log additional context for debugging
 			logger.debug("Execution failure context - planId: {}, userRequest: {}, memoryId: {}", planId,
-					context.getUserRequest(), context.getMemoryId());
+					context.getUserRequest(), context.getConversationId());
 
 			// Return a simple fallback response when LLM is not configured
 			logger.info("Generating fallback response for planId {} due to execution failure", planId);
@@ -308,7 +308,7 @@ public class OpenAIAdapterService {
 
 					// Execute the plan using PlanningCoordinator
 					CompletableFuture<com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult> future = planningCoordinator
-						.executeByUserQuery(context.getUserRequest(), planId, planId, planId, context.getMemoryId(),
+						.executeByUserQuery(context.getUserRequest(), planId, planId, planId, context.getConversationId(),
 								null);
 
 					// Wait for completion

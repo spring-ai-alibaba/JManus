@@ -176,7 +176,7 @@ public class PlanningCoordinator {
 			}
 			// Generate a conversation ID if none exists, since we're using conversation
 			if (context.getConversationId() == null) {
-				String generatedConversationId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+				String generatedConversationId = j1
 				context.setConversationId(generatedConversationId);
 			}
 			context.setUseConversation(true);

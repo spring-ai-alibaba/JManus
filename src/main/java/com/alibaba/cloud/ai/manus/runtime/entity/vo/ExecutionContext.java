@@ -211,9 +211,9 @@ public class ExecutionContext {
 		this.userRequest = userRequest;
 	}
 
-	public boolean isUseConversation() {
-		return useConversation;
-	}
+	// public boolean isUseConversation() {
+	// 	return useConversation;
+	// }
 
 	public void setUseConversation(boolean useConversation) {
 		this.useConversation = useConversation;

@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.cloud.ai.manus.workspace.memory.entity.po;
+package com.alibaba.cloud.ai.manus.workspace.conversation.entity.po;
 
 import jakarta.persistence.*;
-import org.springframework.ai.chat.messages.Message;
 
 import java.util.Date;
-import java.util.List;
 
 /**
  * @author dahua
@@ -35,7 +33,7 @@ public class MemoryEntity {
 	private Long id;
 
 	@Column(nullable = false)
-	private String memoryId;
+	private String conversationId;
 
 	@Column(nullable = false)
 	private String memoryName;
@@ -43,15 +41,12 @@ public class MemoryEntity {
 	@Column(nullable = false)
 	private Date createTime;
 
-	@Transient
-	private List<Message> messages;
-
 	public MemoryEntity() {
 		this.createTime = new Date();
 	}
 
-	public MemoryEntity(String memoryId, String memoryName) {
-		this.memoryId = memoryId;
+	public MemoryEntity(String conversationId, String memoryName) {
+		this.conversationId = conversationId;
 		this.memoryName = memoryName;
 		this.createTime = new Date();
 	}
@@ -64,12 +59,12 @@ public class MemoryEntity {
 		this.id = id;
 	}
 
-	public String getMemoryId() {
-		return memoryId;
+	public String getConversationId() {
+		return conversationId;
 	}
 
-	public void setMemoryId(String memoryId) {
-		this.memoryId = memoryId;
+	public void setConversationId(String conversationId) {
+		this.conversationId = conversationId;
 	}
 
 	public String getMemoryName() {
@@ -78,14 +73,6 @@ public class MemoryEntity {
 
 	public void setMemoryName(String memoryName) {
 		this.memoryName = memoryName;
-	}
-
-	public List<Message> getMessages() {
-		return messages;
-	}
-
-	public void setMessages(List<Message> messages) {
-		this.messages = messages;
 	}
 
 	public Date getCreateTime() {

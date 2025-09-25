@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.cloud.ai.manus.workspace.conversation.vo;
+package com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Conversation response model for API responses
- * Contains conversation data with additional metadata
+ * Memory response model for API responses
+ * Contains memory data with additional metadata
  */
-public class ConversationResponse {
+public class MemoryResponse {
 
 	private boolean success;
 
 	private String message;
 
-	private Conversation data;
+	private Memory data;
 
-	private List<Conversation> conversations;
+	private List<Memory> memories;
 
 	@JsonProperty("total_count")
 	private Integer totalCount;
@@ -40,25 +40,25 @@ public class ConversationResponse {
 	private LocalDateTime responseTime;
 
 	// Constructors
-	public ConversationResponse() {
+	public MemoryResponse() {
 		this.responseTime = LocalDateTime.now();
 	}
 
-	public ConversationResponse(boolean success, String message) {
+	public MemoryResponse(boolean success, String message) {
 		this();
 		this.success = success;
 		this.message = message;
 	}
 
-	public ConversationResponse(boolean success, String message, Conversation data) {
+	public MemoryResponse(boolean success, String message, Memory data) {
 		this(success, message);
 		this.data = data;
 	}
 
-	public ConversationResponse(boolean success, String message, List<Conversation> conversations) {
+	public MemoryResponse(boolean success, String message, List<Memory> memories) {
 		this(success, message);
-		this.conversations = conversations;
-		this.totalCount = conversations != null ? conversations.size() : 0;
+		this.memories = memories;
+		this.totalCount = memories != null ? memories.size() : 0;
 	}
 
 	// Getters and Setters
@@ -78,21 +78,21 @@ public class ConversationResponse {
 		this.message = message;
 	}
 
-	public Conversation getData() {
+	public Memory getData() {
 		return data;
 	}
 
-	public void setData(Conversation data) {
+	public void setData(Memory data) {
 		this.data = data;
 	}
 
-	public List<Conversation> getConversations() {
-		return conversations;
+	public List<Memory> getMemories() {
+		return memories;
 	}
 
-	public void setConversations(List<Conversation> conversations) {
-		this.conversations = conversations;
-		this.totalCount = conversations != null ? conversations.size() : 0;
+	public void setMemories(List<Memory> memories) {
+		this.memories = memories;
+		this.totalCount = memories != null ? memories.size() : 0;
 	}
 
 	public Integer getTotalCount() {
@@ -112,20 +112,32 @@ public class ConversationResponse {
 	}
 
 	// Static factory methods
-	public static ConversationResponse success(Conversation conversation) {
-		return new ConversationResponse(true, "Conversation retrieved successfully", conversation);
+	public static MemoryResponse success(Memory memory) {
+		return new MemoryResponse(true, "Memory retrieved successfully", memory);
 	}
 
-	public static ConversationResponse success(List<Conversation> conversations) {
-		return new ConversationResponse(true, "Conversations retrieved successfully", conversations);
+	public static MemoryResponse success(List<Memory> memories) {
+		return new MemoryResponse(true, "Memories retrieved successfully", memories);
 	}
 
-	public static ConversationResponse error(String message) {
-		return new ConversationResponse(false, message);
+	public static MemoryResponse error(String message) {
+		return new MemoryResponse(false, message);
 	}
 
-	public static ConversationResponse notFound() {
-		return new ConversationResponse(false, "Conversation not found");
+	public static MemoryResponse notFound() {
+		return new MemoryResponse(false, "Memory not found");
+	}
+
+	public static MemoryResponse created(Memory memory) {
+		return new MemoryResponse(true, "Memory created successfully", memory);
+	}
+
+	public static MemoryResponse updated(Memory memory) {
+		return new MemoryResponse(true, "Memory updated successfully", memory);
+	}
+
+	public static MemoryResponse deleted() {
+		return new MemoryResponse(true, "Memory deleted successfully");
 	}
 
 }
