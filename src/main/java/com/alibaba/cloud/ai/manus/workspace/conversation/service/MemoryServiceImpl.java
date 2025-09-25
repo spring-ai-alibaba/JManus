@@ -103,12 +103,12 @@ public class MemoryServiceImpl implements MemoryService {
 	@Override
 	public void deleteMemory(String conversationId) {
 		chatMemory.clear(conversationId);
-		memoryRepository.deleteByMemoryId(conversationId);
+		memoryRepository.deleteByConversationId(conversationId);
 	}
 
 	@Override
 	public Memory saveMemory(Memory memory) {
-		MemoryEntity findEntity = memoryRepository.findByMemoryId(memory.getConversationId());
+		MemoryEntity findEntity = memoryRepository.findByConversationId(memory.getConversationId());
 		if (findEntity != null) {
 			// Update existing entity
 			findEntity.setMemoryName(memory.getMemoryName());
@@ -122,7 +122,7 @@ public class MemoryServiceImpl implements MemoryService {
 
 	@Override
 	public Memory updateMemory(Memory memory) {
-		MemoryEntity findEntity = memoryRepository.findByMemoryId(memory.getConversationId());
+		MemoryEntity findEntity = memoryRepository.findByConversationId(memory.getConversationId());
 		if (findEntity == null) {
 			throw new IllegalArgumentException("Memory not found with ID: " + memory.getConversationId());
 		}
@@ -133,7 +133,7 @@ public class MemoryServiceImpl implements MemoryService {
 
 	@Override
 	public Memory singleMemory(String conversationId) {
-		MemoryEntity findEntity = memoryRepository.findByMemoryId(conversationId);
+		MemoryEntity findEntity = memoryRepository.findByConversationId(conversationId);
 		if (findEntity == null) {
 			throw new IllegalArgumentException("Memory not found with ID: " + conversationId);
 		}

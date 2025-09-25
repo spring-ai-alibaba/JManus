@@ -22,6 +22,7 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.executor.PlanExecutorInterface;
 import com.alibaba.cloud.ai.manus.runtime.executor.factory.PlanExecutorFactory;
+import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 
 import java.util.concurrent.CompletableFuture;
@@ -46,15 +47,16 @@ public class PlanningCoordinator {
 
 	private final PlanFinalizer planFinalizer;
 
-	private final PlanIdDispatcher planIdDispatcher;
+	private final MemoryService memoryService;
+
 
 	@Autowired
 	public PlanningCoordinator(PlanningFactory planningFactory, PlanExecutorFactory planExecutorFactory,
-			PlanFinalizer planFinalizer, PlanIdDispatcher planIdDispatcher) {
+			PlanFinalizer planFinalizer, MemoryService memoryService) {
 		this.planningFactory = planningFactory;
 		this.planExecutorFactory = planExecutorFactory;
 		this.planFinalizer = planFinalizer;
-		this.planIdDispatcher = planIdDispatcher;
+		this.memoryService = memoryService;
 	}
 
 	/**
@@ -180,7 +182,7 @@ public class PlanningCoordinator {
 			}
 			// Generate a conversation ID if none exists, since we're using conversation
 			if (context.getConversationId() == null) {
-				String generatedConversationId = j1
+				String generatedConversationId = memoryService.generateConversationId();
 				context.setConversationId(generatedConversationId);
 			}
 			context.setUseConversation(true);

@@ -219,7 +219,6 @@ public class OpenAIAdapterService {
 			context.setUserRequest(userMessage);
 			context.setCurrentPlanId(planId);
 			context.setRootPlanId(planId);
-			context.setMemoryId(RandomStringUtils.randomAlphabetic(MEMORY_ID_LENGTH));
 			context.setNeedSummary(true);
 
 			logger.debug("Created execution context for planId: {}, messageLength: {}", planId, userMessage.length());

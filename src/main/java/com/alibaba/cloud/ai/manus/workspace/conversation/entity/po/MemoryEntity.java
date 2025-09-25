@@ -17,7 +17,9 @@ package com.alibaba.cloud.ai.manus.workspace.conversation.entity.po;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author dahua
@@ -40,6 +42,9 @@ public class MemoryEntity {
 
 	@Column(nullable = false)
 	private Date createTime;
+
+	@OneToMany(mappedBy = "memoryEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	private List<ConversationMessage> messages = new ArrayList<>();
 
 	public MemoryEntity() {
 		this.createTime = new Date();
@@ -81,6 +86,24 @@ public class MemoryEntity {
 
 	public void setCreateTime(Date createTime) {
 		this.createTime = createTime;
+	}
+
+	public List<ConversationMessage> getMessages() {
+		return messages;
+	}
+
+	public void setMessages(List<ConversationMessage> messages) {
+		this.messages = messages;
+	}
+
+	public void addMessage(ConversationMessage message) {
+		this.messages.add(message);
+		message.setMemoryEntity(this);
+	}
+
+	public void removeMessage(ConversationMessage message) {
+		this.messages.remove(message);
+		message.setMemoryEntity(null);
 	}
 
 }

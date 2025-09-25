@@ -32,8 +32,8 @@ public interface MemoryRepository extends JpaRepository<MemoryEntity, Long> {
 
 	List<MemoryEntity> findAll();
 
-	void deleteByMemoryId(String memoryId);
+	void deleteByConversationId(String conversationId);
 
-	MemoryEntity findByMemoryId(String memoryId);
+	MemoryEntity findByConversationId(String conversationId);
 
 }
