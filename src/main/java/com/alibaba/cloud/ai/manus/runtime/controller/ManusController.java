@@ -132,27 +132,30 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	}
 
-	/**
-	 * Asynchronous execution of Manus request using PlanningCoordinator
-	 * @param request Request containing user query
-	 * @return Task ID and status
-	 */
-	@PostMapping("/execute")
-	public ResponseEntity<Map<String, Object>> executeQuery(@RequestBody Map<String, Object> request) {
-		String query = (String) request.get("input");
-		if (query == null || query.trim().isEmpty()) {
-			return ResponseEntity.badRequest().body(Map.of("error", "Query content cannot be empty"));
-		}
-		boolean isVueRequest = isVue(request);
+	// /**
+	// * Asynchronous execution of Manus request using PlanningCoordinator
+	// * @param request Request containing user query
+	// * @return Task ID and status
+	// */
+	// @PostMapping("/execute")
+	// public ResponseEntity<Map<String, Object>> executeQuery(@RequestBody Map<String,
+	// Object> request) {
+	// String query = (String) request.get("input");
+	// if (query == null || query.trim().isEmpty()) {
+	// return ResponseEntity.badRequest().body(Map.of("error", "Query content cannot be
+	// empty"));
+	// }
+	// boolean isVueRequest = isVue(request);
 
-		// Log request source
-		if (isVueRequest) {
-			logger.info("🌐 [VUE] Received query request from Vue frontend: ");
-		}
-		else {
-			logger.info("🔗 [HTTP] Received query request from HTTP client: ");
-		}
+	// // Log request source
+	// if (isVueRequest) {
+	// logger.info("🌐 [VUE] Received query request from Vue frontend: ");
+	// }
+	// else {
+	// logger.info("🔗 [HTTP] Received query request from HTTP client: ");
+	// }
 
+<<<<<<< HEAD
 		String planId = null;
 		try {
 			// Check if we should reuse sessionPlanId for file upload scenarios
@@ -168,35 +171,53 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				planId = planIdDispatcher.generatePlanId();
 				logger.info("🆕 Generated new planId for user query: {}", planId);
 			}
+=======
+	// String planId = null;
+	// try {
+	// // Use sessionPlanId from frontend if available, otherwise generate new one
+	// String sessionPlanId = (String) request.get("sessionPlanId");
 
-			String memoryId = (String) request.get("memoryId");
+	// if (sessionPlanId != null && !sessionPlanId.trim().isEmpty()) {
+	// // Use existing sessionPlanId from file upload
+	// planId = sessionPlanId;
+	// logger.info("🔄 Using existing sessionPlanId: {}", planId);
+	// }
+	// else {
+	// // Generate new plan ID
+	// planId = planIdDispatcher.generatePlanId();
+	// logger.info("🆕 Generated new planId: {}", planId);
+	// }
+>>>>>>> upstream/main
 
-			if (!StringUtils.hasText(memoryId)) {
-				memoryId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-			}
-			memoryService.saveMemory(new MemoryEntity(memoryId, query));
+	// String memoryId = (String) request.get("memoryId");
 
-			// Execute the plan using PlanningCoordinator (fire and forget)
-			planningCoordinator.executeByUserQuery(query, planId, null, planId, memoryId, null);
+	// if (!StringUtils.hasText(memoryId)) {
+	// memoryId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+	// }
+	// memoryService.saveMemory(new MemoryEntity(memoryId, query));
 
-			// Return task ID and initial status
-			Map<String, Object> response = new HashMap<>();
-			response.put("planId", planId);
-			response.put("status", "processing");
-			response.put("message", "Task submitted, processing");
+	// // Execute the plan using PlanningCoordinator (fire and forget)
+	// planningCoordinator.executeByUserQuery(query, planId, null, planId, memoryId,
+	// null);
 
-			response.put("memoryId", memoryId);
-			return ResponseEntity.ok(response);
+	// // Return task ID and initial status
+	// Map<String, Object> response = new HashMap<>();
+	// response.put("planId", planId);
+	// response.put("status", "processing");
+	// response.put("message", "Task submitted, processing");
 
-		}
-		catch (Exception e) {
-			logger.error("Failed to start plan execution for planId: {}", planId, e);
-			Map<String, Object> errorResponse = new HashMap<>();
-			errorResponse.put("error", "Failed to start plan execution: " + e.getMessage());
-			errorResponse.put("planId", planId);
-			return ResponseEntity.internalServerError().body(errorResponse);
-		}
-	}
+	// response.put("memoryId", memoryId);
+	// return ResponseEntity.ok(response);
+
+	// }
+	// catch (Exception e) {
+	// logger.error("Failed to start plan execution for planId: {}", planId, e);
+	// Map<String, Object> errorResponse = new HashMap<>();
+	// errorResponse.put("error", "Failed to start plan execution: " + e.getMessage());
+	// errorResponse.put("planId", planId);
+	// return ResponseEntity.internalServerError().body(errorResponse);
+	// }
+	// }
 
 	/**
 	 * Execute plan by tool name synchronously (GET method)

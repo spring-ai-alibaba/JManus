@@ -36,6 +36,12 @@ public abstract class AbstractBaseTool<I> implements ToolCallBiFunctionDef<I> {
 	 */
 	protected String rootPlanId;
 
+	/**
+	 * Whether the tool is selectable in front end UI
+	 * @return
+	 */
+	public abstract boolean isSelectable();
+
 	@Override
 	public boolean isReturnDirect() {
 		return false;

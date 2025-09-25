@@ -198,6 +198,11 @@ public class DatabaseUseTool extends AbstractBaseTool<DatabaseRequest> {
 	}
 
 	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
+	@Override
 	public String getCurrentToolStateString() {
 		try {
 			// Get all data source information

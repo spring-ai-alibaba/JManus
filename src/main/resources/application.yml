@@ -53,6 +53,9 @@ logging:
     com.alibaba.cloud.ai.example.manus.inhouse.registry.McpToolRegistry: INFO
     com.alibaba.cloud.ai.example.manus.tool: DEBUG
     com.alibaba.cloud.ai.example.manus.inhouse.tool: DEBUG
+    com.alibaba.cloud.ai.manus.agent: DEBUG
+    com.alibaba.cloud.ai.manus.llm: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
 
 # 计划轮询配置
 manus:

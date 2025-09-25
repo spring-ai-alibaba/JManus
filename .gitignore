@@ -50,3 +50,5 @@ h2-data copy/
 
 # Extensions directory
 extensions/
+.vscode/*
+.cursor/rules/my-custom-rule.mdc

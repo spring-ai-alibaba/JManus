@@ -664,4 +664,9 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 		return "default-service-group";
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
 }

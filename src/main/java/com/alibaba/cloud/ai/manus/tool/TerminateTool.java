@@ -266,4 +266,9 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 		return true;
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
 }

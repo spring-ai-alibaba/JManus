@@ -27,6 +27,8 @@ public class Tool {
 
 	private String serviceGroup;
 
+	private boolean isSelectable = true;
+
 	// Getters and Setters
 	public String getKey() {
 		return key;
@@ -66,6 +68,14 @@ public class Tool {
 
 	public void setServiceGroup(String serviceGroup) {
 		this.serviceGroup = serviceGroup;
+	}
+
+	public boolean isSelectable() {
+		return isSelectable;
+	}
+
+	public void setSelectable(boolean isSelectable) {
+		this.isSelectable = isSelectable;
 	}
 
 }

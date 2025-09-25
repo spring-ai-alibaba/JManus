@@ -95,18 +95,6 @@ public class PlanFinalizer {
 	}
 
 	/**
-	 * Generate code-based summary when LLM is not needed
-	 */
-	private void generateCodeBasedSummary(ExecutionContext context, PlanExecutionResult result) {
-		log.info("No need to generate summary, use code generate summary instead");
-		String summary = context.getPlan().getPlanExecutionStateStringFormat(false);
-
-		// Set result in PlanExecutionResult
-		result.setFinalResult(summary);
-		recordPlanCompletion(context, summary);
-	}
-
-	/**
 	 * Core method for generating LLM responses with common logic
 	 */
 	private String generateLlmResponse(ExecutionContext context, String promptName, Map<String, Object> variables,
@@ -180,13 +168,17 @@ public class PlanFinalizer {
 			}
 
 			// Check if this is a direct response plan
-			if (context.getPlan() != null && context.getPlan().isDirectResponse()) {
+			else if (context.getPlan() != null && context.getPlan().isDirectResponse()) {
 				log.debug("Generating direct response for plan: {}", context.getCurrentPlanId());
 				generateDirectResponse(context, result);
 				return result;
 			}
+			else {
+				log.debug("No need to generate summary or direct response for plan: {}", context.getCurrentPlanId());
+				processAndRecordResult(context, result, result.getFinalResult(), "Final result: {}");
 
-			log.debug("Post-execution processing completed for plan: {}", context.getCurrentPlanId());
+				return result;
+			}
 
 		}
 		catch (Exception e) {

@@ -321,4 +321,9 @@ public class GoogleSearch extends AbstractBaseTool<GoogleSearch.GoogleSearchInpu
 
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
 }

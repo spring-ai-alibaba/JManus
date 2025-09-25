@@ -33,7 +33,8 @@ export interface Tool {
   name: string
   description: string
   enabled: boolean
-  serviceGroup?: string
+  serviceGroup: string
+  selectable: boolean
 }
 
 export interface ApiResponse<T> {

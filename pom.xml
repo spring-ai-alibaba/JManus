@@ -338,7 +338,7 @@
 
 
     <build>
-        <finalName>jmanus</finalName>
+        <finalName>jmanus-${version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

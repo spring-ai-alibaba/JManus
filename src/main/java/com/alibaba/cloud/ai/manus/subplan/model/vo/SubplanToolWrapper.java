@@ -247,4 +247,9 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 		}
 	}
 
+	@Override
+	public boolean isSelectable() {
+		return true;
+	}
+
 }

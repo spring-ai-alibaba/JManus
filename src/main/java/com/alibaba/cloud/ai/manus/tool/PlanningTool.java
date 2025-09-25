@@ -315,4 +315,9 @@ public class PlanningTool extends AbstractBaseTool<PlanningTool.PlanningInput> i
 		return buildFunctionToolCallback(planningToolInterface);
 	}
 
+	@Override
+	public boolean isSelectable() {
+		throw new UnsupportedOperationException("PlanningTool is not selectable");
+	}
+
 }

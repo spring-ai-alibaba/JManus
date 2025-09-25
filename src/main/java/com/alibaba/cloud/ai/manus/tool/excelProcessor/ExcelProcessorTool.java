@@ -1179,7 +1179,12 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 	@Override
 	public String getServiceGroup() {
-		return "office-processing";
+		return "default-service-group";
+	}
+
+	@Override
+	public boolean isSelectable() {
+		return true;
 	}
 
 	/**

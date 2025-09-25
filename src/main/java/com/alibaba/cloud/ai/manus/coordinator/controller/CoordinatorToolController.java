@@ -17,7 +17,7 @@ package com.alibaba.cloud.ai.manus.coordinator.controller;
 
 import com.alibaba.cloud.ai.manus.coordinator.entity.vo.CoordinatorToolVO;
 import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
-import com.alibaba.cloud.ai.manus.coordinator.service.ICoordinatorToolService;
+import com.alibaba.cloud.ai.manus.coordinator.service.CoordinatorToolServiceImpl;
 import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
 import com.alibaba.cloud.ai.manus.subplan.service.ISubplanToolService;
 import org.slf4j.Logger;
@@ -40,7 +40,7 @@ public class CoordinatorToolController {
 	private static final Logger log = LoggerFactory.getLogger(CoordinatorToolController.class);
 
 	@Autowired
-	private ICoordinatorToolService coordinatorToolService;
+	private CoordinatorToolServiceImpl coordinatorToolService;
 
 	@Autowired
 	private ISubplanToolService subplanToolService;

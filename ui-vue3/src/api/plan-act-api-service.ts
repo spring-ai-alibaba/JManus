@@ -70,6 +70,7 @@ export class PlanActApiService {
         requestBody.replacementParams = replacementParams
         console.log('[PlanActApiService] Including replacement params:', replacementParams)
       }
+      requestBody.isVueRequest = true
       
       console.log('[PlanActApiService] Making request to:', `/api/executor/executeByToolNameAsync`)
       console.log('[PlanActApiService] Request body:', requestBody)

@@ -19,14 +19,19 @@ import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.llm.ILlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
+import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
+import com.alibaba.cloud.ai.manus.tool.TerminableTool;
+import com.alibaba.cloud.ai.manus.tool.TerminateTool;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.model.tool.ToolCallingManager;
+import org.springframework.ai.tool.ToolCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,8 +46,6 @@ import java.util.Map;
 public class ConfigurableDynaAgent extends DynamicAgent {
 
 	private static final Logger log = LoggerFactory.getLogger(ConfigurableDynaAgent.class);
-
-	private final List<String> availableToolKeys;
 
 	/**
 	 * Constructor for ConfigurableDynaAgent with configurable parameters
@@ -71,125 +74,62 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 		super(llmService, planExecutionRecorder, manusProperties, name, description, nextStepPrompt, availableToolKeys,
 				toolCallingManager, initialAgentSetting, userInputService, promptService, model,
 				streamingResponseHandler, step, planIdDispatcher);
-		this.availableToolKeys = availableToolKeys != null ? new ArrayList<>(availableToolKeys) : new ArrayList<>();
-		boolean hasTerminateTool = false;
+	}
+
+	/**
+	 * Override getToolCallList to handle null/empty availableToolKeys If
+	 * availableToolKeys is null or empty, return all available tools from
+	 * toolCallbackProvider Also ensures TerminateTool is always included
+	 * @return List of tool callbacks
+	 */
+	@Override
+	public List<ToolCallback> getToolCallList() {
+		List<ToolCallback> toolCallbacks = new ArrayList<>();
+		Map<String, ToolCallBackContext> toolCallBackContext = toolCallbackProvider.getToolCallBackContext();
+
+		// Add all available tool keys that are not already in availableToolKeys
+		if (availableToolKeys == null || availableToolKeys.isEmpty()) {
+			// If availableToolKeys is null or empty, add all available tools
+			availableToolKeys.addAll(toolCallBackContext.keySet());
+			log.info("No specific tools configured, added all available tools: {}", availableToolKeys);
+		}
+
+		// Check if any TerminableTool is already included
+		boolean hasTerminableTool = false;
 		for (String toolKey : availableToolKeys) {
-			if (toolKey.equals(com.alibaba.cloud.ai.manus.tool.TerminateTool.name)) {
-				hasTerminateTool = true;
-				break;
+			if (toolCallBackContext.containsKey(toolKey)) {
+				ToolCallBackContext toolCallback = toolCallBackContext.get(toolKey);
+				if (toolCallback != null && toolCallback.getFunctionInstance() instanceof TerminableTool) {
+					hasTerminableTool = true;
+					break;
+				}
 			}
 		}
-		if (!hasTerminateTool) {
-			availableToolKeys.add(com.alibaba.cloud.ai.manus.tool.TerminateTool.name);
+
+		// Add TerminateTool if no TerminableTool is present
+		if (!hasTerminableTool) {
+			availableToolKeys.add(TerminateTool.name);
+			log.debug("No TerminableTool found, added TerminateTool to tool list for agent {}", getName());
 		}
-	}
-
-	/**
-	 * Add a single tool key to the available tools
-	 * @param toolKey Tool key to add
-	 */
-	public void addToolKey(String toolKey) {
-		if (toolKey != null && !availableToolKeys.contains(toolKey)) {
-			availableToolKeys.add(toolKey);
-			log.info("Added tool {} to agent {}", toolKey, getName());
+		else {
+			log.debug("Found existing TerminableTool in tool list for agent {}", getName());
 		}
-	}
 
-	/**
-	 * Remove a single tool key from the available tools
-	 * @param toolKey Tool key to remove
-	 */
-	public void removeToolKey(String toolKey) {
-		if (toolKey != null && availableToolKeys.remove(toolKey)) {
-			log.info("Removed tool {} from agent {}", toolKey, getName());
-		}
-	}
-
-	/**
-	 * Get the current available tool keys
-	 * @return List of currently available tool keys
-	 */
-	public List<String> getAvailableToolKeys() {
-		return new ArrayList<>(availableToolKeys);
-	}
-
-	/**
-	 * Clear all available tool keys
-	 */
-	public void clearToolKeys() {
-		availableToolKeys.clear();
-		log.info("Cleared all tools for agent {}", getName());
-	}
-
-	/**
-	 * Check if a specific tool key is available
-	 * @param toolKey Tool key to check
-	 * @return true if the tool is available, false otherwise
-	 */
-	public boolean hasToolKey(String toolKey) {
-		return availableToolKeys.contains(toolKey);
-	}
-
-	/**
-	 * Get the number of available tools
-	 * @return Number of available tools
-	 */
-	public int getToolCount() {
-		return availableToolKeys.size();
-	}
-
-	/**
-	 * Set the available tool keys for this agent This allows overriding the default tools
-	 * with user-selected tools
-	 * @param toolKeys List of tool keys to make available to this agent
-	 */
-	public void setAvailableToolKeys(List<String> toolKeys) {
-		availableToolKeys.clear();
-		if (toolKeys != null) {
-			availableToolKeys.addAll(toolKeys);
-		}
-		log.info("Updated available tools for agent {}: {}", getName(), availableToolKeys);
-	}
-
-	/**
-	 * Add multiple tool keys at once
-	 * @param toolKeys List of tool keys to add
-	 */
-	public void addToolKeys(List<String> toolKeys) {
-		if (toolKeys != null) {
-			for (String toolKey : toolKeys) {
-				addToolKey(toolKey);
+		// Build the tool callbacks list
+		for (String toolKey : availableToolKeys) {
+			if (toolCallBackContext.containsKey(toolKey)) {
+				ToolCallBackContext toolCallback = toolCallBackContext.get(toolKey);
+				if (toolCallback != null) {
+					toolCallbacks.add(toolCallback.getToolCallback());
+				}
+			}
+			else {
+				log.warn("Tool callback for {} not found in the map.", toolKey);
 			}
 		}
-	}
 
-	/**
-	 * Remove multiple tool keys at once
-	 * @param toolKeys List of tool keys to remove
-	 */
-	public void removeToolKeys(List<String> toolKeys) {
-		if (toolKeys != null) {
-			for (String toolKey : toolKeys) {
-				removeToolKey(toolKey);
-			}
-		}
-	}
-
-	/**
-	 * Check if the agent has any tools configured
-	 * @return true if the agent has tools, false otherwise
-	 */
-	public boolean hasTools() {
-		return !availableToolKeys.isEmpty();
-	}
-
-	/**
-	 * Get a copy of the current tool configuration as a string
-	 * @return String representation of current tool configuration
-	 */
-	public String getToolConfigurationSummary() {
-		return String.format("Agent '%s' has %d tools: %s", getName(), availableToolKeys.size(),
-				availableToolKeys.isEmpty() ? "none" : String.join(", ", availableToolKeys));
+		log.info("Agent {} configured with {} tools: {}", getName(), toolCallbacks.size(), availableToolKeys);
+		return toolCallbacks;
 	}
 
 }
