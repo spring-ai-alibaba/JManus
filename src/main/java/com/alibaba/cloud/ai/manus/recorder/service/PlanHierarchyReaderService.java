@@ -126,7 +126,7 @@ public class PlanHierarchyReaderService {
 				.orElse(null);
 
 			if (rootPlan != null) {
-				logger.info("Successfully converted root plan with {} sub-plans for rootPlanId: {}",
+				logger.debug("Successfully converted root plan with {} sub-plans for rootPlanId: {}",
 						planRecords.size() - 1, rootPlanId);
 			}
 			else {
