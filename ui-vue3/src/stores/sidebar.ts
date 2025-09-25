@@ -19,6 +19,7 @@ import { reactive } from 'vue'
 import { PlanActApiService } from '@/api/plan-act-api-service'
 import type { PlanTemplate } from '@/types/plan-template'
 import { i18n } from '@/base/i18n'
+import { Tool } from '@/api/agent-api-service'
 
 type TabType = 'list' | 'config'
 
@@ -52,7 +53,8 @@ export class SidebarStore {
     name: string
     description: string
     enabled: boolean
-    serviceGroup?: string
+    serviceGroup: string
+    selectable: boolean
   }> = []
   isLoadingTools = false
   toolsLoadError = ''
@@ -410,7 +412,15 @@ export class SidebarStore {
       if (response.ok) {
         const tools = await response.json()
         console.log('[SidebarStore] Loaded available tools:', tools)
-        this.availableTools = tools
+        // Transform tools to ensure they have all required fields
+        this.availableTools = tools.map((tool: Tool) => ({
+          key: tool.key || '',
+          name: tool.name || '',
+          description: tool.description || '',
+          enabled: tool.enabled || false,
+          serviceGroup: tool.serviceGroup || 'default',
+          selectable: tool.selectable !== undefined ? tool.selectable : true
+        }))
       } else {
         console.error('[SidebarStore] Failed to load tools:', response.statusText)
         this.toolsLoadError = `Failed to load tools: ${response.statusText}`
