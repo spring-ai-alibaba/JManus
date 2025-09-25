@@ -229,7 +229,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 			// Generate memory ID if not provided
 			if (!StringUtils.hasText(memoryId)) {
-				memoryId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+				memoryId = 1;
 			}
 
 			String query = "Execute plan template: " + planTemplateId;
@@ -487,7 +487,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 			// Generate memory ID if not provided
 			if (!StringUtils.hasText(memoryId)) {
-				memoryId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+				memoryId = 2;
 			}
 
 			// Get the latest plan version JSON string
