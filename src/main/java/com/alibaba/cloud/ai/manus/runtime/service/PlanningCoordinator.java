@@ -63,13 +63,13 @@ public class PlanningCoordinator {
 	 * @param rootPlanId The root plan ID for the execution context
 	 * @param parentPlanId The ID of the parent plan (can be null for root plans)
 	 * @param currentPlanId The current plan ID for execution
-	 * @param memoryId The memory ID for the execution context
+	 * @param conversationId The conversation ID for the execution context
 	 * @param toolcallId The ID of the tool call that triggered this plan execution
 	 * @return A CompletableFuture that completes with the execution result
 	 */
 	public CompletableFuture<PlanExecutionResult> executeByUserQuery(String userQuery, String rootPlanId,
-			String parentPlanId, String currentPlanId, String memoryId, String toolcallId) {
-		return executeByUserQuery(userQuery, rootPlanId, parentPlanId, currentPlanId, memoryId, toolcallId, "simple");
+			String parentPlanId, String currentPlanId, String conversationId, String toolcallId) {
+		return executeByUserQuery(userQuery, rootPlanId, parentPlanId, currentPlanId, conversationId, toolcallId, "simple");
 	}
 
 	/**
@@ -78,13 +78,13 @@ public class PlanningCoordinator {
 	 * @param rootPlanId The root plan ID for the execution context
 	 * @param parentPlanId The ID of the parent plan (can be null for root plans)
 	 * @param currentPlanId The current plan ID for execution
-	 * @param memoryId The memory ID for the execution context
+	 * @param conversationId The conversation ID for the execution context
 	 * @param toolcallId The ID of the tool call that triggered this plan execution
 	 * @param planType The type of plan to create ("simple" or "dynamic_agent")
 	 * @return A CompletableFuture that completes with the execution result
 	 */
 	public CompletableFuture<PlanExecutionResult> executeByUserQuery(String userQuery, String rootPlanId,
-			String parentPlanId, String currentPlanId, String memoryId, String toolcallId, String planType) {
+			String parentPlanId, String currentPlanId, String conversationId, String toolcallId, String planType) {
 		try {
 			log.info("Starting plan execution for user query: {}", userQuery);
 
@@ -99,8 +99,8 @@ public class PlanningCoordinator {
 			context.setRootPlanId(rootPlanId);
 			context.setUserRequest(userQuery);
 			context.setNeedSummary(true);
-			context.setUseMemory(false);
-			context.setMemoryId(memoryId);
+			context.setUseConversation(false);
+			context.setConversationId(conversationId);
 			context.setParentPlanId(parentPlanId);
 			context.setToolCallId(toolcallId);
 
@@ -174,12 +174,12 @@ public class PlanningCoordinator {
 				// in sub plan or non-Vue request, we don't need to generate summary
 				context.setNeedSummary(false);
 			}
-			// Generate a memory ID if none exists, since we're using memory
-			if (context.getMemoryId() == null) {
-				String generatedMemoryId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-				context.setMemoryId(generatedMemoryId);
+			// Generate a conversation ID if none exists, since we're using conversation
+			if (context.getConversationId() == null) {
+				String generatedConversationId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+				context.setConversationId(generatedConversationId);
 			}
-			context.setUseMemory(true);
+			context.setUseConversation(true);
 			context.setParentPlanId(parentPlanId);
 			context.setToolCallId(toolcallId);
 

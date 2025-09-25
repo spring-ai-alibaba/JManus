@@ -18,8 +18,7 @@ package com.alibaba.cloud.ai.manus.runtime.controller;
 import com.alibaba.cloud.ai.manus.event.JmanusListener;
 import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
 import com.alibaba.cloud.ai.manus.exception.PlanException;
-import com.alibaba.cloud.ai.manus.memory.entity.MemoryEntity;
-import com.alibaba.cloud.ai.manus.memory.service.MemoryService;
+import com.alibaba.cloud.ai.manus.conversation.service.ConversationService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
@@ -79,7 +78,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	private UserInputService userInputService;
 
 	@Autowired
-	private MemoryService memoryService;
+	private ConversationService conversationService;
 
 	@Autowired
 	private NewRepoPlanExecutionRecorder planExecutionRecorder;
@@ -254,7 +253,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		}
 
 		try {
-			String memoryId = (String) request.get("memoryId");
+			String conversationId = (String) request.get("conversationId");
 
 			// Handle uploaded files if present
 			@SuppressWarnings("unchecked")
@@ -265,7 +264,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
 
 			// Execute the plan template using the new unified method
-			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, memoryId,
+			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, conversationId,
 					replacementParams, isVueRequest);
 
 			// Start the async execution (fire and forget)
@@ -278,20 +277,20 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				}
 			});
 
-			// Generate memory ID if not provided
-			if (!StringUtils.hasText(memoryId)) {
-				memoryId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+			// Generate conversation ID if not provided
+			if (!StringUtils.hasText(conversationId)) {
+				conversationId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 			}
 
 			String query = "Execute plan template: " + planTemplateId;
-			memoryService.saveMemory(new MemoryEntity(memoryId, query));
+			conversationService.createConversation(query, null);
 
 			// Return task ID and initial status
 			Map<String, Object> response = new HashMap<>();
 			response.put("planId", wrapper.getRootPlanId());
 			response.put("status", "processing");
 			response.put("message", "Task submitted, processing");
-			response.put("memoryId", memoryId);
+			response.put("conversationId", conversationId);
 			response.put("toolName", toolName);
 			response.put("planTemplateId", planTemplateId);
 
@@ -508,7 +507,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	 * @return PlanExecutionWrapper containing both PlanExecutionResult and rootPlanId
 	 */
 	private PlanExecutionWrapper executePlanTemplate(String planTemplateId, List<Map<String, Object>> uploadedFiles,
-			String memoryId, Map<String, Object> replacementParams, boolean isVueRequest) {
+			String conversationId, Map<String, Object> replacementParams, boolean isVueRequest) {
 		if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
 			logger.error("Plan template ID is null or empty");
 			throw new IllegalArgumentException("Plan template ID cannot be null or empty");
@@ -519,9 +518,9 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			String currentPlanId = planIdDispatcher.generatePlanId();
 			String rootPlanId = currentPlanId;
 
-			// Generate memory ID if not provided
-			if (!StringUtils.hasText(memoryId)) {
-				memoryId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+			// Generate conversation ID if not provided
+			if (!StringUtils.hasText(conversationId)) {
+				conversationId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 			}
 
 			// Get the latest plan version JSON string
