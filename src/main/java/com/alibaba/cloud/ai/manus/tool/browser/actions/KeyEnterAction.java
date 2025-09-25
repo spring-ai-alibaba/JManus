@@ -18,6 +18,7 @@ package com.alibaba.cloud.ai.manus.tool.browser.actions;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.browser.InteractiveElement;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.microsoft.playwright.Locator;
 
 public class KeyEnterAction extends BrowserAction {
 
@@ -35,14 +36,31 @@ public class KeyEnterAction extends BrowserAction {
 		if (enterElement == null) {
 			return new ToolExecuteResult("Element with index " + index + " not found");
 		}
-		// Execute the enter operation
+		
+		// Execute the enter operation with timeout handling
 		try {
-			enterElement.getLocator().press("Enter");
+			// Wait for element to be visible and enabled before pressing Enter
+			enterElement.getLocator().waitFor(new Locator.WaitForOptions().setTimeout(getBrowserTimeoutMs()));
+			
+			// Check if element is visible and enabled
+			if (!enterElement.getLocator().isVisible()) {
+				return new ToolExecuteResult("Element at index " + index + " is not visible");
+			}
+			
+			// Press Enter with explicit timeout
+			enterElement.getLocator().press("Enter", new Locator.PressOptions().setTimeout(getBrowserTimeoutMs()));
+			
+			// Add small delay to ensure the action is processed
+			Thread.sleep(500);
+			
+		}
+		catch (com.microsoft.playwright.TimeoutError e) {
+			return new ToolExecuteResult("Timeout waiting for element at index " + index + " to be ready for Enter key press. " + e.getMessage());
 		}
 		catch (Exception e) {
 			return new ToolExecuteResult("Failed to press Enter on element at index " + index + ": " + e.getMessage());
 		}
-		return new ToolExecuteResult("Hit the enter key at index " + index);
+		return new ToolExecuteResult("Successfully pressed Enter key at index " + index);
 	}
 
 }
