@@ -130,7 +130,7 @@ build_frontend() {
 
     # Check build result
     if [ ! -d "ui" ]; then
-        log_error "Build failed, ui directory does not exist"
+        log_error "Build failed, ui directory does not exist , the directory is: $PROJECT_ROOT/ui-vue3/ui"
         exit 1
     fi
 
