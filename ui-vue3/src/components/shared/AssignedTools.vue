@@ -59,8 +59,9 @@ interface Props {
     key: string
     name: string
     description: string
-    enabled?: boolean
-    serviceGroup?: string
+    enabled: boolean
+    serviceGroup: string
+    selectable: boolean
   }>
   addButtonText?: string
   emptyText?: string

@@ -83,7 +83,7 @@ import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { memoryStore } from "@/stores/memory"
 import type { InputMessage } from "@/stores/memory"
-import { setUploadedFiles, clearUploadedFiles, type UploadedFile } from "@/stores/uploadedFiles"
+import { setUploadedFiles, clearUploadedFiles, clearUploadedFilesPlanId, setUploadedFilesPlanId, type UploadedFile } from "@/stores/uploadedFiles"
 import { FileUploadApiService } from "@/api/file-upload-api-service"
 
 const { t } = useI18n()
