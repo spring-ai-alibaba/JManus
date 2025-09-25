@@ -27,6 +27,9 @@ export interface UploadedFile {
 // Global state for uploaded files
 const uploadedFilesState = ref<UploadedFile[]>([])
 
+// Global state for uploaded files planId
+const uploadedFilesPlanId = ref<string | null>(null)
+
 // Helper functions
 export const setUploadedFiles = (files: UploadedFile[]) => {
   uploadedFilesState.value = [...files]
@@ -38,6 +41,8 @@ export const addUploadedFiles = (files: UploadedFile[]) => {
 
 export const clearUploadedFiles = () => {
   uploadedFilesState.value = []
+  // clean planId
+  uploadedFilesPlanId.value = null
 }
 
 export const getUploadedFiles = () => {
@@ -46,4 +51,20 @@ export const getUploadedFiles = () => {
 
 export const hasUploadedFiles = () => {
   return uploadedFilesState.value.length > 0
+}
+
+export const setUploadedFilesPlanId = (planId: string) => {
+  uploadedFilesPlanId.value = planId
+}
+
+export const getUploadedFilesPlanId = (): string | undefined => {
+  return uploadedFilesPlanId.value || undefined
+}
+
+export const hasUploadedFilesPlanId = () => {
+  return uploadedFilesPlanId.value !== null && uploadedFilesPlanId.value.trim() !== ''
+}
+
+export const clearUploadedFilesPlanId = () => {
+  uploadedFilesPlanId.value = null
 }

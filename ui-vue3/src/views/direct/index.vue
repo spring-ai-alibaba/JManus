@@ -114,13 +114,14 @@ import InputArea from '@/components/input/InputArea.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
 import CronTaskModal from '@/components/cron-task-modal/CronTaskModal.vue'
 import { PlanActApiService } from '@/api/plan-act-api-service'
+import { CommonApiService } from '@/api/common-api-service'
 import { useTaskStore } from '@/stores/task'
 import { sidebarStore } from '@/stores/sidebar'
 import { planExecutionManager } from '@/utils/plan-execution-manager'
 import { useMessage } from '@/composables/useMessage'
 import { memoryStore } from "@/stores/memory";
 import type { InputMessage } from "@/stores/memory";
-import { getUploadedFiles, hasUploadedFiles } from '@/stores/uploadedFiles'
+import { getUploadedFiles, hasUploadedFiles, getUploadedFilesPlanId, hasUploadedFilesPlanId } from '@/stores/uploadedFiles'
 
 const route = useRoute()
 const router = useRouter()
@@ -150,20 +151,20 @@ const computedLeftPanelWidth = computed(() => {
   if (sidebarStore.isCollapsed) {
     return leftPanelWidth.value
   }
-  
+
   // When sidebar is expanded, calculate available width for left panel
   // Get sidebar width from the sidebar component if available
   let sidebarWidth = 26 // Default sidebar width
-  
+
   // Try to get actual sidebar width from the sidebar component
   if (sidebarRef.value && sidebarRef.value.sidebarWidth !== undefined) {
     sidebarWidth = sidebarRef.value.sidebarWidth
   }
-  
+
   // Calculate maximum available width for left panel
   // Total width is 100%, so left panel max = 100% - sidebar width
   const maxAvailableWidth = 100 - sidebarWidth
-  
+
   // Ensure left panel width doesn't exceed available space
   // Also maintain minimum width of 20%
   return Math.max(20, Math.min(maxAvailableWidth, leftPanelWidth.value))
@@ -214,15 +215,47 @@ onMounted(() => {
       // Call chat component's handlePlanCompleted method
       if (chatRef.value && typeof chatRef.value.handlePlanCompleted === 'function') {
         const planDetails = planExecutionManager.getCachedPlanRecord(rootPlanId)
-        console.log('[Direct] Calling chatRef.handlePlanCompleted with details:', planDetails)
-        chatRef.value.handlePlanCompleted(planDetails ?? { planId: rootPlanId })
+
+        // Retrieved plan details from cache for processing
+        if (planDetails && planDetails.completed) {
+          if (planDetails.summary && planDetails.summary.trim().length > 0) {
+            console.log('[Direct]  Plan details are valid and complete from polling cache, updating UI')
+            chatRef.value.handlePlanCompleted(planDetails)
+          } else {
+            console.warn('[Direct]  Plan completed but summary is empty, still proceeding with available data')
+            chatRef.value.handlePlanCompleted(planDetails)
+          }
+        } else {
+          console.warn('[Direct]  Plan details incomplete in cache, attempting API fallback')
+          // Fallback: try getting it from the API (maybe it has been deleted)
+          CommonApiService.getDetails(rootPlanId).then(freshDetails => {
+            console.log('[Direct]  Got fresh details from API:', freshDetails)
+            if (freshDetails && freshDetails.completed) {
+              console.log('[Direct] Fresh details from API are valid, updating UI')
+              planExecutionManager.setCachedPlanRecord(rootPlanId, freshDetails)
+              chatRef.value.handlePlanCompleted(freshDetails)
+            } else {
+              console.warn('[Direct]  API details also incomplete, using best available data')
+              chatRef.value.handlePlanCompleted(planDetails ?? { planId: rootPlanId })
+            }
+          }).catch(error => {
+            console.error('[Direct] API call failed (likely record deleted), using cached data:', error)
+            chatRef.value.handlePlanCompleted(planDetails ?? { planId: rootPlanId })
+          })
+        }
       } else {
         console.warn('[Direct] chatRef.handlePlanCompleted method not available')
       }
 
       // Clear current root plan ID when plan is completed
       currentRootPlanId.value = null
-      console.log('[Direct] Cleared currentRootPlanId after plan completion')
+      console.log('[Direct] 🧹 Cleared currentRootPlanId after plan completion')
+
+      //Clear sessionPlanId to ensure that subsequent file uploads use the new planId
+      if (inputRef.value && typeof inputRef.value.resetSession === 'function') {
+        console.log('[Direct] 🧹 Calling inputRef.resetSession to clear sessionPlanId')
+        inputRef.value.resetSession()
+      }
     },
 
     onDialogRoundStart: (rootPlanId: string) => {
@@ -477,10 +510,10 @@ const shouldProcessEventForCurrentPlan = (rootPlanId: string, allowSpecialIds: b
 // Handle message sending from ChatContainer via event
 const handleChatSendMessage = async (query: InputMessage) => {
   let assistantMessage: any = null
-  
+
   try {
     console.log('[DirectView] Processing send-message event:', query)
-    
+
     // Add user message to UI
     const userMessage = chatRef.value?.addMessage('user', query.input)
     if ((query as any).attachments && userMessage) {
@@ -498,7 +531,6 @@ const handleChatSendMessage = async (query: InputMessage) => {
 
     // Import and call DirectApiService to send message to backend
     const { DirectApiService } = await import('@/api/direct-api-service')
-    
     console.log('[DirectView] Calling DirectApiService.sendMessageWithDefaultPlan')
     const response = await DirectApiService.sendMessageWithDefaultPlan(query)
     console.log('[DirectView] API response received:', response)
@@ -508,17 +540,17 @@ const handleChatSendMessage = async (query: InputMessage) => {
       // Plan mode: Update message with plan execution info
       chatRef.value?.updateMessage(assistantMessage.id, {
         thinking: t('chat.planningExecution'),
-        planExecution: { 
+        planExecution: {
           currentPlanId: response.planId,
           rootPlanId: response.planId,
           status: 'running'
         }
       })
-      
+
       // Set current root plan ID for the new plan execution
       currentRootPlanId.value = response.planId
       console.log('[DirectView] Set currentRootPlanId to:', response.planId)
-      
+
       // Start polling for plan updates
       planExecutionManager.handlePlanExecutionRequested(response.planId, query.input)
       console.log('[DirectView] Started polling for plan execution updates')
@@ -529,10 +561,10 @@ const handleChatSendMessage = async (query: InputMessage) => {
       })
       chatRef.value?.stopStreaming(assistantMessage.id)
     }
-    
+
   } catch (error: any) {
     console.error('[DirectView] Send message failed:', error)
-    
+
     // Show error message
     chatRef.value?.addMessage('assistant', `Error: ${error?.message || 'Failed to send message'}`)
     if (assistantMessage) {
@@ -637,16 +669,16 @@ const handlePlanExecutionRequested = async (payload: {
   // Add user and assistant messages using the same pattern as handleChatSendMessage
   try {
     console.log('[DirectView] Adding messages for plan execution:', payload.title)
-    
+
     // Add user message
     chatRef.value?.addMessage('user', payload.title)
     userMessageAdded = true;
-    
+
     // Add assistant message to show system feedback
     assistantMessage = chatRef.value?.addMessage('assistant', '', {
       thinking: t('chat.planningExecution')
     })
-    
+
     if (assistantMessage) {
       chatRef.value?.startStreaming(assistantMessage.id)
       console.log('[DirectView] Added assistant message for plan execution:', assistantMessage.id)
@@ -671,19 +703,23 @@ const handlePlanExecutionRequested = async (payload: {
 
     // Call real API to execute plan
     console.log('[Direct] About to call PlanActApiService.executePlan')
-    
+
     // Get uploaded files from global state
     const uploadedFiles = hasUploadedFiles() ? getUploadedFiles() : undefined
     console.log('[Direct] Executing with uploaded files:', uploadedFiles?.length ?? 0)
     console.log('[Direct] Executing with replacement params:', payload.replacementParams)
-    
+
+    //Get the planId of the uploaded file
+    const uploadedFilesPlanId = hasUploadedFilesPlanId() ? getUploadedFilesPlanId() : undefined
+    console.log('[Direct] Executing with uploaded files planId:', uploadedFilesPlanId)
+
     let response
     if (payload.params?.trim()) {
       console.log('[Direct] Calling executePlan with rawParam:', payload.params.trim())
-      response = await PlanActApiService.executePlan(planTemplateId, payload.params.trim(), uploadedFiles, payload.replacementParams)
+      response = await PlanActApiService.executePlan(planTemplateId, payload.params.trim(), uploadedFiles, payload.replacementParams, uploadedFilesPlanId)
     } else {
       console.log('[Direct] Calling executePlan without rawParam')
-      response = await PlanActApiService.executePlan(planTemplateId, undefined, uploadedFiles, payload.replacementParams)
+      response = await PlanActApiService.executePlan(planTemplateId, undefined, uploadedFiles, payload.replacementParams, uploadedFilesPlanId)
     }
 
     console.log('[Direct] Plan execution API response:', response)
@@ -695,7 +731,7 @@ const handlePlanExecutionRequested = async (payload: {
       // Update assistant message with plan execution info
       chatRef.value?.updateMessage(assistantMessage.id, {
         thinking: t('chat.planningExecution'),
-        planExecution: { 
+        planExecution: {
           currentPlanId: response.planId,
           rootPlanId: response.planId,
           status: 'running'
@@ -723,12 +759,12 @@ const handlePlanExecutionRequested = async (payload: {
     // Handle error messages using consistent pattern
     try {
       console.log('[Direct] Adding error messages to chat')
-      
+
       // Only add user message if it hasn't been added before
       if (!userMessageAdded) {
         chatRef.value?.addMessage('user', payload.title)
       }
-      
+
       // Update assistant message with error or add new error message
       if (assistantMessage) {
         chatRef.value?.updateMessage(assistantMessage.id, {
