@@ -43,25 +43,28 @@ public class ClickByElementAction extends BrowserAction {
 		String clickResultMessage = clickAndSwitchToNewTabIfOpened(page, () -> {
 			try {
 				log.info("Executing click action on: {}", element.getText());
-				
+
 				// Wait for element to be visible and enabled before clicking
-				element.getLocator().waitFor(new com.microsoft.playwright.Locator.WaitForOptions().setTimeout(getBrowserTimeoutMs()));
-				
+				element.getLocator()
+					.waitFor(new com.microsoft.playwright.Locator.WaitForOptions().setTimeout(getBrowserTimeoutMs()));
+
 				// Check if element is visible and enabled
 				if (!element.getLocator().isVisible()) {
 					throw new RuntimeException("Element is not visible");
 				}
-				
+
 				// Click with explicit timeout
-				element.getLocator().click(new com.microsoft.playwright.Locator.ClickOptions().setTimeout(getBrowserTimeoutMs()));
-				
+				element.getLocator()
+					.click(new com.microsoft.playwright.Locator.ClickOptions().setTimeout(getBrowserTimeoutMs()));
+
 				// Add small delay to ensure the action is processed
 				Thread.sleep(500);
-				
+
 				log.info("Click action completed for element: {}", element.getText());
 			}
 			catch (com.microsoft.playwright.TimeoutError e) {
-				log.error("Timeout waiting for element {} to be ready for click: {}", element.getText(), e.getMessage());
+				log.error("Timeout waiting for element {} to be ready for click: {}", element.getText(),
+						e.getMessage());
 				throw new RuntimeException("Timeout waiting for element to be ready for click: " + e.getMessage(), e);
 			}
 			catch (Exception e) {
