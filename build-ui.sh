@@ -289,8 +289,8 @@ main() {
     build_frontend
     clean_static_directory
     copy_build_files
-    auto_resolve_git_conflicts
-    commit_ui_changes
+    
+    
     show_summary
 
     log_success "All steps completed!"
