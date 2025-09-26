@@ -47,7 +47,7 @@ export class DirectApiService {
       
       // Create replacement parameters with user input
       const replacementParams = {
-        '用户输入的要求': query.input
+        'userRequirement': query.input
       }
       
       const requestBody: Record<string, any> = {

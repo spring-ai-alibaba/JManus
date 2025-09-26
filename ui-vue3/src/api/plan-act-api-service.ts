@@ -62,7 +62,7 @@ export class PlanActApiService {
         if (!replacementParams) {
           replacementParams = {}
         }
-        replacementParams['用户输入的要求'] = rawParam
+        replacementParams['userRequirement'] = rawParam
         console.log('[PlanActApiService] Added rawParam to replacementParams:', rawParam)
       }
       
