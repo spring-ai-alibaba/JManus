@@ -234,14 +234,17 @@ const uploadFiles = async (files: File[]) => {
       if (!uploadKey.value && result.uploadKey) {
         uploadKey.value = result.uploadKey
         console.log('[FileUpload] Set uploadKey:', uploadKey.value)
+        // New upload session - replace entire array
+        uploadedFiles.value = result.uploadedFiles
       } else if (uploadKey.value) {
         console.log('[FileUpload] Using existing uploadKey:', uploadKey.value)
+        // Existing upload session - append to existing files
+        uploadedFiles.value = [...uploadedFiles.value, ...result.uploadedFiles]
       } else {
         console.warn('[FileUpload] No uploadKey returned from upload')
+        // Fallback - replace entire array
+        uploadedFiles.value = result.uploadedFiles
       }
-      uploadedFiles.value = result.uploadedFiles;
-
-      uploadedFiles.value = [...uploadedFiles.value, ...result.uploadedFiles]
 
       // Save uploadKey locally
       if (result.uploadKey) {

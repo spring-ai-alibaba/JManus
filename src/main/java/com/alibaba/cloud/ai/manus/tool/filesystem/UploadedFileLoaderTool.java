@@ -51,8 +51,6 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 
 	private static final String TOOL_NAME = "uploaded_file_loader";
 
-	private static final String UPLOADED_FILES_DIR = "uploaded_files";
-
 	// Simple jmanus dependencies
 	private final UnifiedDirectoryManager directoryManager;
 
@@ -118,10 +116,10 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 	private ToolExecuteResult listUploadedFiles() throws IOException {
 		List<String> fileList = new ArrayList<>();
 
-		// 1. Prioritize checking current plan files
-		Path currentUploadDir = directoryManager.getRootPlanDirectory(currentPlanId).resolve(UPLOADED_FILES_DIR);
-		if (Files.exists(currentUploadDir)) {
-			addFilesFromDirectory(currentUploadDir, fileList, "Current Plan");
+		// 1. Prioritize checking current plan files (directly in plan directory)
+		Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
+		if (Files.exists(currentPlanDir)) {
+			addFilesFromDirectory(currentPlanDir, fileList);
 		}
 
 		// 2. If current plan has files, prioritize using current plan files
@@ -386,14 +384,14 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 
 	// ===== Helper Methods (jmanus style: simple utilities) =====
 
-	private void addFilesFromDirectory(Path uploadDir, List<String> fileList, String source) throws IOException {
+	private void addFilesFromDirectory(Path uploadDir, List<String> fileList) throws IOException {
 		Files.list(uploadDir).filter(Files::isRegularFile).forEach(filePath -> {
 			try {
 				String fileName = filePath.getFileName().toString();
 				long size = Files.size(filePath);
 				String sizeStr = formatFileSize(size);
-				fileList.add(String.format("%s (%s) - from %s", fileName, sizeStr, source));
-				log.info("Found file: {} ({}) in {}", fileName, sizeStr, source);
+				fileList.add(String.format("%s (%s)", fileName, sizeStr));
+				log.info("Found file: {} ({})", fileName, sizeStr);
 			}
 			catch (IOException e) {
 				log.warn("Error reading file info: {}", filePath, e);
@@ -449,9 +447,8 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 	 * Find uploaded file location
 	 */
 	private FileLocation findUploadedFileLocation(String fileName) {
-		// 1. Check current plan
+		// 1. Check current plan (directly in plan directory)
 		Path currentFile = directoryManager.getRootPlanDirectory(currentPlanId)
-			.resolve(UPLOADED_FILES_DIR)
 			.resolve(fileName);
 
 		if (Files.exists(currentFile)) {
@@ -475,14 +472,14 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 						return Files.getLastModifiedTime(p2).compareTo(Files.getLastModifiedTime(p1));
 					}
 					catch (IOException e) {
-						return 0;
+						return 0; 
 					}
 				})
 				.limit(10)
 				.toList();
 
 			for (Path planDir : recentPlans) {
-				Path candidate = planDir.resolve(UPLOADED_FILES_DIR).resolve(fileName);
+				Path candidate = planDir.resolve(fileName);
 				if (Files.exists(candidate)) {
 					String planId = planDir.getFileName().toString();
 					log.info("Found file {} in recent plan: {}", fileName, planId);
