@@ -59,6 +59,19 @@
         </div>
         
       </div>
+      
+      <!-- File Upload Component -->
+      <FileUploadComponent
+        ref="fileUploadRef"
+        :disabled="props.isExecuting || props.isGenerating"
+        @files-uploaded="handleFilesUploaded"
+        @files-removed="handleFilesRemoved"
+        @upload-key-changed="handleUploadKeyChanged"
+        @upload-started="handleUploadStarted"
+        @upload-completed="handleUploadCompleted"
+        @upload-error="handleUploadError"
+      />
+      
       <button
         class="btn btn-primary execute-btn"
         @click="handleExecutePlan"
@@ -164,6 +177,8 @@ import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { PlanParameterApiService, type ParameterRequirements } from '@/api/plan-parameter-api-service'
 import type { CoordinatorToolVO } from '@/api/coordinator-tool-api-service'
+import { FileInfo } from '@/api/file-upload-api-service'
+import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
 
 const { t } = useI18n()
 
@@ -196,7 +211,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Emits
 const emit = defineEmits<{
-  executePlan: [replacementParams?: Record<string, string>]
+  executePlan: [replacementParams?: Record<string, string>, uploadedFiles?: FileInfo[], uploadKey?: string | null]
   publishMcpService: []
   clearParams: []
   updateExecutionParams: [params: string]
@@ -214,6 +229,11 @@ const isLoadingParameters = ref(false)
 const activeTab = ref('get-sync')
 const parameterErrors = ref<Record<string, string>>({})
 const isValidationError = ref(false)
+
+// File upload state
+const fileUploadRef = ref<InstanceType<typeof FileUploadComponent>>()
+const uploadedFiles = ref<FileInfo[]>([])
+const uploadKey = ref<string | null>(null)
 
 // API tabs configuration
 const apiTabs = ref([
@@ -316,6 +336,35 @@ const canExecute = computed(() => {
   return true
 })
 
+// File upload event handlers
+const handleFilesUploaded = (files: FileInfo[], key: string | null) => {
+  uploadedFiles.value = files
+  uploadKey.value = key
+  console.log('[ExecutionController] Files uploaded:', files.length, 'uploadKey:', key)
+}
+
+const handleFilesRemoved = (files: FileInfo[]) => {
+  uploadedFiles.value = files
+  console.log('[ExecutionController] Files removed, remaining:', files.length)
+}
+
+const handleUploadKeyChanged = (key: string | null) => {
+  uploadKey.value = key
+  console.log('[ExecutionController] Upload key changed:', key)
+}
+
+const handleUploadStarted = () => {
+  console.log('[ExecutionController] Upload started')
+}
+
+const handleUploadCompleted = () => {
+  console.log('[ExecutionController] Upload completed')
+}
+
+const handleUploadError = (error: any) => {
+  console.error('[ExecutionController] Upload error:', error)
+}
+
 // Methods
 const handleExecutePlan = () => {
   // Validate parameters before execution
@@ -328,7 +377,16 @@ const handleExecutePlan = () => {
   const replacementParams = parameterRequirements.value.hasParameters && Object.keys(parameterValues.value).length > 0 
     ? parameterValues.value 
     : undefined
-  emit('executePlan', replacementParams)
+  
+  // Include file upload information in the execution
+  const executionData = {
+    replacementParams,
+    uploadedFiles: uploadedFiles.value,
+    uploadKey: uploadKey.value
+  }
+  
+  console.log('[ExecutionController] Executing with data:', executionData)
+  emit('executePlan', replacementParams, uploadedFiles.value, uploadKey.value)
 }
 
 const handlePublishMcpService = () => {
@@ -456,7 +514,10 @@ onMounted(() => {
 defineExpose({
   executionParams,
   clearExecutionParams,
-  loadParameterRequirements
+  loadParameterRequirements,
+  fileUploadRef,
+  uploadedFiles,
+  uploadKey
 })
 </script>
 

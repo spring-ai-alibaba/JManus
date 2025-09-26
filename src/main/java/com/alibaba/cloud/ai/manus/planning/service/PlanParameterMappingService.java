@@ -162,6 +162,26 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 		return PLACEHOLDER_SUFFIX;
 	}
 
+	/**
+	 * Escape special JSON characters in a string to prevent JSON parsing errors
+	 * @param input The input string to escape
+	 * @return The escaped string safe for JSON parsing
+	 */
+	private String escapeJsonString(String input) {
+		if (input == null) {
+			return null;
+		}
+		
+		return input
+			.replace("\\", "\\\\")  // Backslash must be first
+			.replace("\"", "\\\"")  // Double quote
+			.replace("\b", "\\b")   // Backspace
+			.replace("\f", "\\f")   // Form feed
+			.replace("\n", "\\n")   // Newline
+			.replace("\r", "\\r")   // Carriage return
+			.replace("\t", "\\t");  // Tab
+	}
+
 	@Override
 	public String replaceParametersInJson(String planJson, Map<String, Object> rawParams) {
 		if (planJson == null || rawParams == null) {
@@ -190,12 +210,14 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 			Object paramValue = rawParams.get(paramName);
 
 			if (paramValue != null) {
-				// Replace placeholder
+				// Replace placeholder with properly escaped JSON value
 				String stringValue = paramValue.toString();
-				result = result.replace(placeholder, stringValue);
+				// Escape special JSON characters to prevent parsing errors
+				String escapedValue = escapeJsonString(stringValue);
+				result = result.replace(placeholder, escapedValue);
 				replacementCount++;
 
-				logger.debug("Parameter replacement successful: {} -> {}", placeholder, stringValue);
+				logger.debug("Parameter replacement successful: {} -> {}", placeholder, escapedValue);
 			}
 			else {
 				missingParams.add(paramName);
