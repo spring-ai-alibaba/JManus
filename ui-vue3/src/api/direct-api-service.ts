@@ -50,10 +50,22 @@ export class DirectApiService {
         '用户输入的要求': query.input
       }
       
-      const requestBody = {
+      const requestBody: Record<string, any> = {
         toolName: toolName,
         replacementParams: replacementParams,
         isVueRequest: true
+      }
+      
+      // Include uploaded files if present
+      if (query.uploadedFiles && query.uploadedFiles.length > 0) {
+        requestBody.uploadedFiles = query.uploadedFiles
+        console.log('[DirectApiService] Including uploaded files:', query.uploadedFiles.length)
+      }
+      
+      // Include planId if present
+      if (query.sessionPlanId) {
+        requestBody.planId = query.sessionPlanId
+        console.log('[DirectApiService] Including planId:', query.sessionPlanId)
       }
       
       console.log('[DirectApiService] Sending message with default plan:', requestBody)

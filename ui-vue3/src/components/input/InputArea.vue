@@ -58,9 +58,9 @@
         <span>{{ t('input.attachedFiles') }} ({{ uploadedFiles.length }})</span>
       </div>
       <div class="files-list">
-        <div v-for="file in uploadedFiles" :key="file.name" class="file-item">
+        <div v-for="file in uploadedFiles" :key="file.originalName" class="file-item">
           <Icon icon="carbon:document" class="file-icon" />
-          <span class="file-name">{{ file.name }}</span>
+          <span class="file-name">{{ file.originalName }}</span>
           <span class="file-size">({{ formatFileSize(file.size) }})</span>
           <button @click="removeFile(file)" class="remove-btn" :title="t('input.removeFile')">
             <Icon icon="carbon:close" />
@@ -83,8 +83,7 @@ import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { memoryStore } from "@/stores/memory"
 import type { InputMessage } from "@/stores/memory"
-import { setUploadedFiles, clearUploadedFiles, clearUploadedFilesPlanId, setUploadedFilesPlanId, type UploadedFile } from "@/stores/uploadedFiles"
-import { FileUploadApiService } from "@/api/file-upload-api-service"
+import { FileInfo, FileUploadApiService, type DeleteFileResponse, type FileUploadResult } from "@/api/file-upload-api-service"
 
 const { t } = useI18n()
 
@@ -99,7 +98,6 @@ interface Emits {
   (e: 'clear'): void
   (e: 'update-state', enabled: boolean, placeholder?: string): void
   (e: 'plan-mode-clicked'): void
-  (e: 'files-uploaded', files: UploadedFile[]): void
 }
 
 
@@ -117,25 +115,21 @@ const fileInputRef = ref<HTMLInputElement>()
 const currentInput = ref('')
 const defaultPlaceholder = computed(() => props.placeholder || t('input.placeholder'))
 const currentPlaceholder = ref(defaultPlaceholder.value)
-const uploadedFiles = ref<UploadedFile[]>([])
+const uploadedFiles = ref<FileInfo[]>([])
 const isUploading = ref(false)
-const sessionPlanId = ref<string | null>(null)
+const uploadKey = ref<string | null>(null)
 
-// Function to reset sessionPlanId when starting a new conversation session
+// Function to reset session when starting a new conversation session
 const resetSession = () => {
-  console.log('[FileUpload] Resetting session and clearing sessionPlanId')
-  sessionPlanId.value = null
+  console.log('[FileUpload] Resetting session and clearing uploadKey')
   uploadedFiles.value = []
-  clearUploadedFiles()
-  // At the same time, clear the global planId
-  clearUploadedFilesPlanId()
+  uploadKey.value = null
 }
 
 // Auto-reset session when component is unmounted to prevent memory leaks
 onUnmounted(() => {
   resetSession()
 })
-
 // Watch for specific conditions to auto-reset session
 watch(() => uploadedFiles.value.length, (newCount, oldCount) => {
   // If files were removed and now there are no files, keep session alive for follow-up questions
@@ -174,16 +168,16 @@ const handleSend = () => {
 
   // If files are uploaded, add file information to the query
   if (uploadedFiles.value.length > 0) {
-    const fileInfo = uploadedFiles.value.map(f => `${f.name} (${f.relativePath})`).join(', ')
-    finalInput += `\n\n[Uploaded files: ${fileInfo}]`
+    const fileInfo = uploadedFiles.value.map(f => `${f.originalName}`).join(', ')
+    finalInput += ` [Uploaded files: ${fileInfo}]`
   }
 
-  const query = {
+  const query: InputMessage = {
     input: finalInput,
     memoryId: memoryStore.selectMemoryId,
-    uploadedFiles: uploadedFiles.value,
-    sessionPlanId: sessionPlanId.value
+    uploadedFiles: uploadedFiles.value
   }
+
 
   // Use Vue's emit to send a message
   emit('send', query)
@@ -191,9 +185,8 @@ const handleSend = () => {
   // Clear the input and uploaded files
   clearInput()
   uploadedFiles.value = []
-  // Don't clear sessionPlanId immediately - keep it for potential follow-up conversations
-  // sessionPlanId.value = null
-  clearUploadedFiles()
+  // Don't clear uploadKey immediately - keep it for potential follow-up conversations
+  // uploadKey.value = null
 }
 
 const handlePlanModeClick = () => {
@@ -233,62 +226,27 @@ const uploadFiles = async (files: File[]) => {
   isUploading.value = true
 
   try {
-    // Create FormData for file upload
-    const formData = new FormData()
-    files.forEach(file => {
-      formData.append('files', file)
-    })
+    // Upload files using the new API service
+    const result: FileUploadResult = await FileUploadApiService.uploadFiles(files)
 
-    // Upload files - use existing sessionPlanId for batch uploads, create new one if needed
-    let uploadUrl = '/api/file-upload/upload'
-    if (sessionPlanId.value) {
-      uploadUrl = `/api/file-upload/upload/${sessionPlanId.value}`
-      console.log('[FileUpload] Using existing sessionPlanId for batch upload:', sessionPlanId.value)
-    } else {
-      console.log('[FileUpload] Creating new planId for file upload')
-    }
-
-    const response = await fetch(uploadUrl, {
-      method: 'POST',
-      body: formData
-    })
-
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.statusText}`)
-    }
-
-    const result = await response.json()
-
-    if (result.uploadedFiles) {
-      // Set sessionPlanId if not already set
-      if (!sessionPlanId.value && result.planId) {
-        sessionPlanId.value = result.planId
-        console.log('[FileUpload] Set sessionPlanId:', sessionPlanId.value)
-      } else if (sessionPlanId.value) {
-        console.log('[FileUpload] Using existing sessionPlanId:', sessionPlanId.value)
+    if (result.success && result.uploadedFiles) {
+      // Set uploadKey for file management
+      if (!uploadKey.value && result.uploadKey) {
+        uploadKey.value = result.uploadKey
+        console.log('[FileUpload] Set uploadKey:', uploadKey.value)
+      } else if (uploadKey.value) {
+        console.log('[FileUpload] Using existing uploadKey:', uploadKey.value)
       } else {
-        console.warn('[FileUpload] No planId returned from upload')
+        console.warn('[FileUpload] No uploadKey returned from upload')
       }
+      uploadedFiles.value = result.uploadedFiles;
 
-      // Convert uploaded files to our format
-      const newFiles: UploadedFile[] = result.uploadedFiles.map((file: any) => ({
-        name: file.originalName,
-        size: file.size,
-        type: file.extension,
-        planId: result.planId,
-        relativePath: file.relativePath
-      }))
+      uploadedFiles.value = [...uploadedFiles.value, ...result.uploadedFiles]
 
-      uploadedFiles.value = [...uploadedFiles.value, ...newFiles]
-      emit('files-uploaded', newFiles)
-
-      // Update global state
-      setUploadedFiles(uploadedFiles.value)
-
-      // Save planId to global state
-      if (result.planId) {
-        setUploadedFilesPlanId(result.planId)
-        console.log('[Input] Saved planId to global state:', result.planId)
+      // Save uploadKey locally
+      if (result.uploadKey) {
+        uploadKey.value = result.uploadKey
+        console.log('[Input] Saved uploadKey locally:', result.uploadKey)
       }
 
       console.log('[Input] Updated global uploadedFiles state:', uploadedFiles.value)
@@ -311,29 +269,31 @@ const uploadFiles = async (files: File[]) => {
 }
 
 // File management functions
-const removeFile = async (fileToRemove: UploadedFile) => {
+const removeFile = async (fileToRemove: FileInfo) => {
   try {
-    console.log('🗑️ Removing file:', fileToRemove.name, 'from plan:', fileToRemove.planId)
+    console.log('🗑️ Removing file:', fileToRemove.originalName, 'from uploadKey:', uploadKey)
 
-    // Call backend API to delete the file from server
-    if (fileToRemove.planId) {
-      await FileUploadApiService.deleteFile(fileToRemove.planId, fileToRemove.name)
-      console.log('✅ File deleted from server successfully')
+    // Call backend API to delete the file from the server
+    if (uploadKey.value) {
+      const result: DeleteFileResponse = await FileUploadApiService.deleteFile(uploadKey.value, fileToRemove.originalName)
+      if (result.success) {
+        console.log('✅ File deleted from server successfully')
+      } else {
+        console.error('❌ Failed to delete file from server:', result.error)
+      }
     }
 
     // Update frontend state
-    uploadedFiles.value = uploadedFiles.value.filter(file => file.name !== fileToRemove.name)
+    uploadedFiles.value = uploadedFiles.value.filter(file => file.originalName !== fileToRemove.originalName)
 
-    // Update placeholder and clear sessionPlanId to force new plan for new files
+    // Update placeholder and clear uploadKey to force new plan for new files
     if (uploadedFiles.value.length === 0) {
       currentPlaceholder.value = defaultPlaceholder.value
-      //Clear sessionPlanId to ensure that a new planId is generated when a new file is uploaded to avoid reusing old execution records
-      console.log('[FileUpload] 🧹 Clearing sessionPlanId to force new plan for new files')
-      sessionPlanId.value = null
-      clearUploadedFiles()
+      //Clear uploadKey to ensure that a new uploadKey is generated when a new file is uploaded to avoid reusing old execution records
+      console.log('[FileUpload] 🧹 Clearing uploadKey to force new plan for new files')
+      uploadKey.value = null
     } else {
       currentPlaceholder.value = t('input.filesAttached', { count: uploadedFiles.value.length })
-      setUploadedFiles(uploadedFiles.value)
     }
 
     console.log('🎉 File removal completed, remaining files:', uploadedFiles.value.length)
@@ -409,7 +369,9 @@ defineExpose({
   setInputValue,
   getQuery,
   resetSession,
-  focus: () => inputRef.value?.focus()
+  focus: () => inputRef.value?.focus(),
+  uploadedFiles,
+  uploadKey
 })
 
 onMounted(() => {

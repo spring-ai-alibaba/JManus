@@ -50,6 +50,7 @@ public class PlanningCoordinator {
 	private final MemoryService memoryService;
 
 
+	//TODO 沈询 ： 这里应该去掉
 	@Autowired
 	public PlanningCoordinator(PlanningFactory planningFactory, PlanExecutorFactory planExecutorFactory,
 			PlanFinalizer planFinalizer, MemoryService memoryService) {
@@ -152,10 +153,11 @@ public class PlanningCoordinator {
 	 * @param currentPlanId The current plan ID for execution
 	 * @param toolcallId The ID of the tool call that triggered this plan execution
 	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
+	 * @param uploadKey The upload key for file upload context (can be null)
 	 * @return A CompletableFuture that completes with the execution result
 	 */
 	public CompletableFuture<PlanExecutionResult> executeByPlan(PlanInterface plan, String rootPlanId,
-			String parentPlanId, String currentPlanId, String toolcallId, boolean isVueRequest) {
+			String parentPlanId, String currentPlanId, String toolcallId, boolean isVueRequest, String uploadKey) {
 		try {
 			log.info("Starting direct plan execution for plan: {}", plan.getCurrentPlanId());
 
@@ -188,10 +190,16 @@ public class PlanningCoordinator {
 			context.setUseConversation(true);
 			context.setParentPlanId(parentPlanId);
 			context.setToolCallId(toolcallId);
+			context.setUploadKey(uploadKey);
 
 			// Log toolcallId if provided
 			if (toolcallId != null) {
 				log.debug("Plan execution triggered by tool call: {}", toolcallId);
+			}
+
+			// Log uploadKey if provided
+			if (uploadKey != null) {
+				log.debug("Plan execution with upload key: {}", uploadKey);
 			}
 
 			// Execute the plan using PlanExecutorFactory

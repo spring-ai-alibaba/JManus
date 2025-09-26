@@ -23,6 +23,7 @@ import com.alibaba.cloud.ai.manus.llm.ILlmService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
+import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -49,8 +50,8 @@ public class DirectResponseExecutor extends AbstractPlanExecutor {
 	 */
 	public DirectResponseExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			AgentService agentService, ILlmService llmService, ManusProperties manusProperties,
-			LevelBasedExecutorPool levelBasedExecutorPool) {
-		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool);
+			LevelBasedExecutorPool levelBasedExecutorPool, FileUploadService fileUploadService) {
+		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
 	}
 
 	/**
@@ -68,6 +69,8 @@ public class DirectResponseExecutor extends AbstractPlanExecutor {
 			BaseAgent lastExecutor = null;
 
 			try {
+				// Synchronize uploaded files to plan directory at the beginning of execution
+				syncUploadedFilesToPlan(context);
 				// Record plan execution start
 				recorder.recordPlanExecutionStart(context.getCurrentPlanId(), context.getPlan().getTitle(),
 						context.getUserRequest(), context.getPlan().getAllSteps(), context.getParentPlanId(),

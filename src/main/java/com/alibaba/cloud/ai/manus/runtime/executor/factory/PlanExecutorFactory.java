@@ -28,6 +28,7 @@ import com.alibaba.cloud.ai.manus.runtime.executor.LevelBasedExecutorPool;
 import com.alibaba.cloud.ai.manus.runtime.executor.MapReducePlanExecutor;
 import com.alibaba.cloud.ai.manus.runtime.executor.PlanExecutor;
 import com.alibaba.cloud.ai.manus.runtime.executor.PlanExecutorInterface;
+import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.slf4j.Logger;
@@ -60,9 +61,11 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final DynamicModelRepository dynamicModelRepository;
 
+	private final FileUploadService fileUploadService;
+
 	public PlanExecutorFactory(ILlmService llmService, AgentService agentService, PlanExecutionRecorder recorder,
 			ManusProperties manusProperties, ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
-			DynamicModelRepository dynamicModelRepository) {
+			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService) {
 		this.llmService = llmService;
 		this.agentService = agentService;
 		this.recorder = recorder;
@@ -70,6 +73,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		this.objectMapper = objectMapper;
 		this.levelBasedExecutorPool = levelBasedExecutorPool;
 		this.dynamicModelRepository = dynamicModelRepository;
+		this.fileUploadService = fileUploadService;
 	}
 
 	/**
@@ -79,7 +83,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 	private PlanExecutorInterface createSimpleExecutor() {
 		log.debug("Creating simple plan executor");
 		List<DynamicAgentEntity> agents = agentService.getAllAgents();
-		return new PlanExecutor(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool);
+		return new PlanExecutor(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
 	}
 
 	/**
@@ -90,7 +94,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		log.debug("Creating direct response executor");
 		List<DynamicAgentEntity> agents = agentService.getAllAgents();
 		return new DirectResponseExecutor(agents, recorder, agentService, llmService, manusProperties,
-				levelBasedExecutorPool);
+				levelBasedExecutorPool, fileUploadService);
 	}
 
 	/**
@@ -101,7 +105,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		log.debug("Creating advanced MapReduce plan executor");
 		List<DynamicAgentEntity> agents = agentService.getAllAgents();
 		return new MapReducePlanExecutor(agents, recorder, agentService, llmService, manusProperties, objectMapper,
-				levelBasedExecutorPool);
+				levelBasedExecutorPool, fileUploadService);
 	}
 
 	/**
@@ -112,7 +116,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		log.debug("Creating dynamic agent plan executor");
 		List<DynamicAgentEntity> agents = agentService.getAllAgents();
 		return new DynamicToolPlanExecutor(agents, recorder, agentService, llmService, manusProperties,
-				levelBasedExecutorPool, dynamicModelRepository);
+				levelBasedExecutorPool, dynamicModelRepository, fileUploadService);
 	}
 
 	/**

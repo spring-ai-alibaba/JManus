@@ -48,27 +48,39 @@ export class PlanActApiService {
   }
 
   // Execute generated plan using ManusController.executeByToolNameAsync
-  public static async executePlan(planTemplateId: string, rawParam?: string, uploadedFiles?: any[], replacementParams?: Record<string, string>, planId?: string): Promise<any> {
+  public static async executePlan(planTemplateId: string, rawParam?: string, uploadedFiles?: any[], replacementParams?: Record<string, string>, uploadKey?: string): Promise<any> {
     return LlmCheckService.withLlmCheck(async () => {
-      console.log('[PlanActApiService] executePlan called with:', { planTemplateId, rawParam, uploadedFiles, replacementParams, planId })
+      console.log('[PlanActApiService] executePlan called with:', { planTemplateId, rawParam, uploadedFiles, replacementParams, uploadKey})
       
       // Use planTemplateId as toolName to call executeByToolNameAsync
       const requestBody: Record<string, any> = { 
         toolName: planTemplateId  // Use planTemplateId as toolName
       }
       
-      if (planId && planId.trim()) {
-        requestBody.planId = planId
-        console.log('[PlanActApiService] Including planId in request:', planId)
+      // Add rawParam to replacementParams if provided (backend expects it in replacementParams)
+      if (rawParam) {
+        if (!replacementParams) {
+          replacementParams = {}
+        }
+        replacementParams['用户输入的要求'] = rawParam
+        console.log('[PlanActApiService] Added rawParam to replacementParams:', rawParam)
       }
-      if (rawParam) requestBody.rawParam = rawParam
+      
       if (uploadedFiles && uploadedFiles.length > 0) {
         requestBody.uploadedFiles = uploadedFiles
         console.log('[PlanActApiService] Including uploaded files:', uploadedFiles.length)
+        console.log('[PlanActApiService] 🔍 DEBUG - uploadedFiles content:', uploadedFiles)
+      } else {
+        console.log('[PlanActApiService] 🔍 DEBUG - No uploaded files to include')
+        console.log('[PlanActApiService] 🔍 DEBUG - uploadedFiles value:', uploadedFiles)
       }
       if (replacementParams && Object.keys(replacementParams).length > 0) {
         requestBody.replacementParams = replacementParams
         console.log('[PlanActApiService] Including replacement params:', replacementParams)
+      }
+      if (uploadKey) {
+        requestBody.uploadKey = uploadKey
+        console.log('[PlanActApiService] Including uploadKey:', uploadKey)
       }
       requestBody.isVueRequest = true
       

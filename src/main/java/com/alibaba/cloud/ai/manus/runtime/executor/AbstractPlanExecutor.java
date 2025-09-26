@@ -28,6 +28,7 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.StepResult;
+import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -65,6 +66,8 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 
 	protected final ManusProperties manusProperties;
 
+	protected final FileUploadService fileUploadService;
+
 	// Define static final strings for the keys used in executorParams
 	public static final String PLAN_STATUS_KEY = "planStatus";
 
@@ -78,13 +81,14 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 
 	public AbstractPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			AgentService agentService, ILlmService llmService, ManusProperties manusProperties,
-			LevelBasedExecutorPool levelBasedExecutorPool) {
+			LevelBasedExecutorPool levelBasedExecutorPool, FileUploadService fileUploadService) {
 		this.agents = agents;
 		this.recorder = recorder;
 		this.agentService = agentService;
 		this.llmService = llmService;
 		this.manusProperties = manusProperties;
 		this.levelBasedExecutorPool = levelBasedExecutorPool;
+		this.fileUploadService = fileUploadService;
 	}
 
 	/**
@@ -131,6 +135,28 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 			return matcher.group(1).trim().toUpperCase();
 		}
 		return "DEFAULT_AGENT";
+	}
+
+	/**
+	 * Synchronize uploaded files to plan directory if uploadKey is provided
+	 * @param context The execution context containing uploadKey and rootPlanId
+	 */
+	protected void syncUploadedFilesToPlan(ExecutionContext context) {
+		String uploadKey = context.getUploadKey();
+		String rootPlanId = context.getRootPlanId();
+		
+		if (uploadKey != null && !uploadKey.trim().isEmpty() && rootPlanId != null && !rootPlanId.trim().isEmpty()) {
+			try {
+				logger.info("Synchronizing uploaded files from uploadKey: {} to rootPlanId: {}", uploadKey, rootPlanId);
+				fileUploadService.syncUploadedFilesToPlan(uploadKey, rootPlanId);
+				logger.info("Successfully synchronized uploaded files for plan execution");
+			} catch (Exception e) {
+				logger.warn("Failed to synchronize uploaded files from uploadKey: {} to rootPlanId: {}. Continuing execution without file sync.", 
+					uploadKey, rootPlanId, e);
+			}
+		} else {
+			logger.debug("No uploadKey provided or rootPlanId missing, skipping file synchronization");
+		}
 	}
 
 	/**
@@ -217,6 +243,8 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 			plan.updateStepIndices();
 
 			try {
+				// Synchronize uploaded files to plan directory at the beginning of execution
+				syncUploadedFilesToPlan(context);
 				List<ExecutionStep> steps = plan.getAllSteps();
 
 				recorder.recordPlanExecutionStart(context.getCurrentPlanId(), context.getPlan().getTitle(),

@@ -80,6 +80,11 @@ public class ExecutionContext {
 	private String conversationId;
 
 	/**
+	 * Upload key for file upload context
+	 */
+	private String uploadKey;
+
+	/**
 	 * Get plan ID
 	 * @return Unique identifier of the plan
 	 */
@@ -233,6 +238,22 @@ public class ExecutionContext {
 
 	public void setPlanDepth(int planDepth) {
 		this.planDepth = planDepth;
+	}
+
+	/**
+	 * Get upload key
+	 * @return Upload key for file upload context
+	 */
+	public String getUploadKey() {
+		return uploadKey;
+	}
+
+	/**
+	 * Set upload key
+	 * @param uploadKey Upload key for file upload context
+	 */
+	public void setUploadKey(String uploadKey) {
+		this.uploadKey = uploadKey;
 	}
 
 }
