@@ -177,6 +177,14 @@ const handleSend = () => {
     memoryId: memoryStore.selectMemoryId,
     uploadedFiles: uploadedFiles.value
   }
+  
+  // Add uploadKey if it exists
+  if (uploadKey.value) {
+    query.uploadKey = uploadKey.value
+    console.log('[InputArea] Including uploadKey in message:', uploadKey.value)
+  } else {
+    console.log('[InputArea] No uploadKey available for message')
+  }
 
 
   // Use Vue's emit to send a message

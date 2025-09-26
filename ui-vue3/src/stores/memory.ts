@@ -23,6 +23,7 @@ export interface InputMessage {
     input: string
     memoryId?: string
     uploadedFiles?: any[]
+    uploadKey?: string
 }
 
 export class MemoryStore {

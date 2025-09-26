@@ -251,9 +251,8 @@ public class PlanningFactory implements IPlanningFactory {
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
 			toolDefinitions.add(new TextFileOperator(textFileService, innerStorageService, objectMapper));
-			toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager, applicationContext));
-			toolDefinitions.add(new TableProcessorTool(tableProcessingService));
-			// toolDefinitions.add(new InnerStorageTool(unifiedDirectoryManager));
+			// toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager, applicationContext));
+			// toolDefinitions.add(new TableProcessorTool(tableProcessingService));
 			// toolDefinitions.add(pptGeneratorOperator);
 			// toolDefinitions.add(jsxGeneratorOperator);
 			// toolDefinitions.add(new FileMergeTool(unifiedDirectoryManager));
@@ -268,7 +267,7 @@ public class PlanningFactory implements IPlanningFactory {
 				.add(new ReduceOperationTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
 			toolDefinitions.add(new FinalizeTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
 			toolDefinitions.add(new CronTool(cronService, objectMapper));
-			toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
+			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
 		}
 		else {
 			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo));

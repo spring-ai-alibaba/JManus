@@ -62,10 +62,10 @@ export class DirectApiService {
         console.log('[DirectApiService] Including uploaded files:', query.uploadedFiles.length)
       }
       
-      // Include planId if present
-      if (query.sessionPlanId) {
-        requestBody.planId = query.sessionPlanId
-        console.log('[DirectApiService] Including planId:', query.sessionPlanId)
+      // Include uploadKey if present
+      if (query.uploadKey) {
+        requestBody.uploadKey = query.uploadKey
+        console.log('[DirectApiService] Including uploadKey:', query.uploadKey)
       }
       
       console.log('[DirectApiService] Sending message with default plan:', requestBody)
