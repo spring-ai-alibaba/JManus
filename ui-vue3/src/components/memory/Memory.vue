@@ -41,21 +41,21 @@
               <div
                   class="message-item"
                   v-for="message in filteredMessages"
-                  :key="message.memoryId"
+                  :key="message.conversation_id"
                   :class="{ 'expanded': message.expanded }"
               >
                 <div class="message-header">
                   <div class="message-content">
                     <div class="sender-info">
-                      <div class="sender-div" @click.stop="selectMemory(message.memoryId)">
+                      <div class="sender-div" @click.stop="selectMemory(message.conversation_id)">
                         <h3
                             class="sender-name"
                         >
-                          {{ message.memoryName }}
+                          {{ message.memory_name }}
                         </h3>
                       </div>
 
-                      <div class="toggle-container" @click.stop="showNameEditModal(message.memoryId, message.memoryName)">
+                      <div class="toggle-container" @click.stop="showNameEditModal(message.conversation_id, message.memory_name)">
                         <Icon
                             icon="carbon:edit"
                             class="edit-btn"
@@ -65,9 +65,9 @@
                       <div class="action-buttons">
                         <button
                             class="delete-btn"
-                            @click.stop="toggleMessage(message.memoryId)"
+                            @click.stop="toggleMessage(message.conversation_id)"
                         >
-                          <Icon :id="'toggle-' + message.memoryId"
+                          <Icon :id="'toggle-' + message.conversation_id"
                                 icon="carbon:chevron-down"
                                 class="down-btn"
                           ></Icon>
@@ -76,7 +76,7 @@
                       <div class="action-buttons">
                         <button
                             class="delete-btn"
-                            @click.stop="showDeleteConfirm(message.memoryId)"
+                            @click.stop="showDeleteConfirm(message.conversation_id)"
                         >
                           <Icon icon="carbon:delete"></Icon>
                         </button>
@@ -85,31 +85,31 @@
 
                     <div class="message-preview">
                       <p class="preview-line">
-                        {{ message.messages.length > 0 ? message.messages[0].text : 'none message' }}
+                        {{ message.messages && message.messages.length > 0 ? message.messages[0].text : 'none message' }}
                       </p>
                       <p
                           class="preview-line"
                           style="opacity: 0.8;"
-                          v-if="message.messages.length > 1"
+                          v-if="message.messages && message.messages.length > 1"
                       >
                         {{ message.messages[1].text }}
                       </p>
                     </div>
 
                     <div class="message-meta">
-                      <span class="message-id">ID: {{ message.memoryId }}</span>
+                      <span class="message-id">ID: {{ message.conversation_id }}</span>
                       <div class="meta-right">
-                      <span class="unread-count" v-if="message.messages.length > 0">
+                      <span class="unread-count" v-if="message.messages && message.messages.length > 0">
                         {{ message.messages.length }} {{$t('memory.size')}}
                       </span>
-                        <span class="message-time">{{ formatTimestamp(message.createTime) }}</span>
+                        <span class="message-time">{{ formatTimestamp(message.create_time) }}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div
-                    :id="'content-' + message.memoryId"
+                    :id="'content-' + message.conversation_id"
                     class="expanded-content"
                     v-if="message.expanded"
                 >
@@ -212,15 +212,20 @@
 <script setup lang="ts">
 import {onMounted, onUnmounted, ref} from 'vue';
 import {MemoryApiService} from '@/api/memory-api-service'
-import type { Message} from '@/api/memory-api-service'
+import type { Memory} from '@/api/memory-api-service'
+
+// Extended interface for UI state
+interface MemoryWithExpanded extends Memory {
+  expanded: boolean;
+}
 import {Icon} from '@iconify/vue'
 import {memoryStore} from "@/stores/memory";
 import type {MemoryEmits} from "@/stores/memory";
 
 const showTitleEdit = ref(false);
 const searchQuery = ref('');
-const messages = ref<Message[]>([]);
-const filteredMessages = ref<Message[]>([]);
+const messages = ref<MemoryWithExpanded[]>([]);
+const filteredMessages = ref<MemoryWithExpanded[]>([]);
 
 const showNameModal = ref(false);
 const currentEditMessageId = ref<string | null>(null);
@@ -255,14 +260,14 @@ const loadMessages = async () => {
   try {
     const mes = await MemoryApiService.getMemories()
     if(messages.value){
-      messages.value = mes.map((mesMsg: Message) => ({
+      messages.value = mes.map((mesMsg: Memory): MemoryWithExpanded => ({
         ...mesMsg,
-        expanded: expandedMap.has(mesMsg.memoryId)
-            ? expandedMap.get(mesMsg.memoryId)
+        expanded: expandedMap.has(mesMsg.conversation_id)
+            ? expandedMap.get(mesMsg.conversation_id)
             : false
       }));
     } else {
-      messages.value = mes.map((msg: Message) => ({...msg, expanded: false}));
+      messages.value = mes.map((msg: Memory): MemoryWithExpanded => ({...msg, expanded: false}));
     }
     filteredMessages.value = [...messages.value];
     handleSearch()
@@ -274,8 +279,8 @@ const loadMessages = async () => {
   }
 };
 
-const selectMemory = (memoryId: string) => {
-  memoryStore.selectMemory(memoryId);
+const selectMemory = (conversationId: string) => {
+  memoryStore.selectMemory(conversationId);
   emit('memory-selected')
 };
 
@@ -310,11 +315,11 @@ const handleSearch = () => {
   }
 
   filteredMessages.value = messages.value.filter(message => {
-    const matchesName = message.memoryName.toLowerCase().includes(query);
-    const matchesId = message.memoryId.toLowerCase().includes(query);
-    const matchesContent = message.messages.some(bubble =>
+    const matchesName = message.memory_name.toLowerCase().includes(query);
+    const matchesId = message.conversation_id.toLowerCase().includes(query);
+    const matchesContent = message.messages?.some(bubble =>
         bubble.text.toLowerCase().includes(query)
-    );
+    ) || false;
     return matchesName || matchesId || matchesContent;
   });
 };
@@ -334,16 +339,16 @@ const saveName = async () => {
   if (!currentEditMessageId.value) return;
   const newName = nameInput.value.trim() || 'unknow name';
   const messageIndex = messages.value.findIndex(
-      msg => msg.memoryId === currentEditMessageId.value
+      msg => msg.conversation_id === currentEditMessageId.value
   );
   if (messageIndex !== -1) {
     const currentMessage = messages.value[messageIndex]
     try {
-      const returnMemory = await MemoryApiService.update(currentMessage.memoryId, newName)
+      const returnMemory = await MemoryApiService.updateMemory(currentMessage.conversation_id, newName)
       if (!returnMemory.messages) {
         returnMemory.messages = [];
       }
-      messages.value[messageIndex] = {...returnMemory, expanded: currentMessage.expanded};
+      messages.value[messageIndex] = {...returnMemory, expanded: currentMessage.expanded} as MemoryWithExpanded;
       handleSearch();
       showNameModal.value = false;
     } catch (error) {
@@ -353,11 +358,11 @@ const saveName = async () => {
 };
 
 const toggleMessage = (id: string) => {
-  const message = messages.value.find(msg => msg.memoryId === id);
+  const message = messages.value.find(msg => msg.conversation_id === id);
   if (message) {
     message.expanded = !message.expanded;
     expandedMap.set(id, message.expanded)
-    const filteredIndex = filteredMessages.value.findIndex(msg => msg.memoryId === id);
+    const filteredIndex = filteredMessages.value.findIndex(msg => msg.conversation_id === id);
     if (filteredIndex !== -1) {
       filteredMessages.value[filteredIndex] = {...message};
     }
@@ -378,8 +383,8 @@ const confirmDelete = async () => {
   if (!currentDeleteId.value) return;
 
   try {
-    await MemoryApiService.delete(currentDeleteId.value);
-    messages.value = messages.value.filter(msg => msg.memoryId !== currentDeleteId.value);
+    await MemoryApiService.deleteMemory(currentDeleteId.value);
+    messages.value = messages.value.filter(msg => msg.conversation_id !== currentDeleteId.value);
     handleSearch();
     if(messages.value.length === 0){
       memoryStore.clearMemoryId()

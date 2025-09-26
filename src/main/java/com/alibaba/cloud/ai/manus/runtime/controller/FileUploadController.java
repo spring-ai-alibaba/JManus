@@ -15,10 +15,9 @@
  */
 package com.alibaba.cloud.ai.manus.runtime.controller;
 
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.FileUploadResult;
 import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 import com.alibaba.cloud.ai.manus.runtime.service.FileValidationService;
-import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,21 +47,15 @@ public class FileUploadController {
 	@Autowired
 	private FileValidationService fileValidationService;
 
-	@Autowired
-	private PlanIdDispatcher planIdDispatcher;
-
-	@Autowired
-	private UnifiedDirectoryManager directoryManager;
-
 	/**
-	 * Upload files and create a new plan ID
+	 * Upload files
 	 * @param files The uploaded files
-	 * @return Upload result with plan ID and file information
+	 * @return Upload result with file information
 	 */
 	@PostMapping("/upload")
-	public ResponseEntity<Map<String, Object>> uploadFiles(@RequestParam("files") MultipartFile[] files) {
+	public ResponseEntity<FileUploadResult> uploadFiles(@RequestParam("files") MultipartFile[] files) {
 		try {
-			logger.info("Uploading {} files with new plan ID", files.length);
+			logger.info("Uploading {} files", files.length);
 
 			// 1. Validate file types
 			List<FileValidationService.FileValidationResult> validationResults = fileValidationService
@@ -76,171 +69,95 @@ public class FileUploadController {
 
 			if (!errors.isEmpty()) {
 				logger.warn("File validation failed: {}", errors);
-				Map<String, Object> errorResponse = new HashMap<>();
-				errorResponse.put("success", false);
-				errorResponse.put("error", "File validation failed");
-				errorResponse.put("validationErrors", errors);
-				return ResponseEntity.badRequest().body(errorResponse);
+				FileUploadResult errorResult = new FileUploadResult();
+				errorResult.setSuccess(false);
+				errorResult.setMessage("File validation failed: " + String.join(", ", errors));
+				return ResponseEntity.badRequest().body(errorResult);
 			}
 
-			// Generate new plan ID
-			String planId = planIdDispatcher.generatePlanId();
-			logger.info("Generated new planId for file upload: {}", planId);
+			// Upload files
+			FileUploadResult result = fileUploadService.uploadFiles(files);
 
-			// Upload files to the new plan directory
-			List<Map<String, Object>> uploadedFiles = fileUploadService.uploadFiles(files, planId);
-
-			// Build response
-			Map<String, Object> response = new HashMap<>();
-			response.put("success", true);
-			response.put("planId", planId);
-			response.put("uploadedFiles", uploadedFiles);
-			response.put("message", "Files uploaded successfully");
-			response.put("totalFiles", uploadedFiles.size());
-
-			logger.info("Successfully uploaded {} files to planId: {}", uploadedFiles.size(), planId);
-			return ResponseEntity.ok(response);
+			logger.info("Successfully uploaded {} files with uploadKey: {}", result.getSuccessfulFiles(),
+					result.getUploadKey());
+			return ResponseEntity.ok(result);
 
 		}
 		catch (Exception e) {
 			logger.error("Error uploading files", e);
-			Map<String, Object> errorResponse = new HashMap<>();
-			errorResponse.put("success", false);
-			errorResponse.put("error", "File upload failed: " + e.getMessage());
-			return ResponseEntity.internalServerError().body(errorResponse);
+			FileUploadResult errorResult = new FileUploadResult();
+			errorResult.setSuccess(false);
+			errorResult.setMessage("File upload failed: " + e.getMessage());
+			return ResponseEntity.internalServerError().body(errorResult);
 		}
 	}
 
 	/**
-	 * Upload files to an existing plan
-	 * @param planId The existing plan ID
-	 * @param files The uploaded files
-	 * @return Upload result with file information
-	 */
-	@PostMapping("/upload/{planId}")
-	public ResponseEntity<Map<String, Object>> uploadFilesToPlan(@PathVariable("planId") String planId,
-			@RequestParam("files") MultipartFile[] files) {
-		try {
-			logger.info("Uploading {} files to existing planId: {}", files.length, planId);
-
-			// Validate plan ID
-			if (planId == null || planId.trim().isEmpty()) {
-				Map<String, Object> errorResponse = new HashMap<>();
-				errorResponse.put("success", false);
-				errorResponse.put("error", "Plan ID cannot be empty");
-				return ResponseEntity.badRequest().body(errorResponse);
-			}
-
-			// 1. Validate file types
-			List<FileValidationService.FileValidationResult> validationResults = fileValidationService
-				.validateFiles(Arrays.asList(files));
-
-			// Check if there are validation failed files
-			List<String> errors = validationResults.stream()
-				.filter(result -> !result.isValid())
-				.map(FileValidationService.FileValidationResult::getMessage)
-				.collect(Collectors.toList());
-
-			if (!errors.isEmpty()) {
-				logger.warn("File validation failed for planId {}: {}", planId, errors);
-				Map<String, Object> errorResponse = new HashMap<>();
-				errorResponse.put("success", false);
-				errorResponse.put("error", "File validation failed");
-				errorResponse.put("validationErrors", errors);
-				errorResponse.put("planId", planId);
-				return ResponseEntity.badRequest().body(errorResponse);
-			}
-
-			// Upload files to the existing plan directory
-			List<Map<String, Object>> uploadedFiles = fileUploadService.uploadFiles(files, planId);
-
-			// Build response
-			Map<String, Object> response = new HashMap<>();
-			response.put("success", true);
-			response.put("planId", planId);
-			response.put("uploadedFiles", uploadedFiles);
-			response.put("message", "Files uploaded successfully to existing plan");
-			response.put("totalFiles", uploadedFiles.size());
-
-			logger.info("Successfully uploaded {} files to existing planId: {}", uploadedFiles.size(), planId);
-			return ResponseEntity.ok(response);
-
-		}
-		catch (Exception e) {
-			logger.error("Error uploading files to planId: {}", planId, e);
-			Map<String, Object> errorResponse = new HashMap<>();
-			errorResponse.put("success", false);
-			errorResponse.put("error", "File upload failed: " + e.getMessage());
-			return ResponseEntity.internalServerError().body(errorResponse);
-		}
-	}
-
-	/**
-	 * Get uploaded files for a plan
-	 * @param planId The plan ID
+	 * Get uploaded files for a specific upload key
+	 * @param uploadKey The upload key to get files for
 	 * @return List of uploaded files
 	 */
-	@GetMapping("/files/{planId}")
-	public ResponseEntity<Map<String, Object>> getUploadedFiles(@PathVariable("planId") String planId) {
+	@GetMapping("/files/{uploadKey}")
+	public ResponseEntity<GetUploadedFilesResponse> getUploadedFiles(@PathVariable("uploadKey") String uploadKey) {
 		try {
-			logger.info("Getting uploaded files for planId: {}", planId);
+			logger.info("Getting uploaded files for uploadKey: {}", uploadKey);
 
-			List<Map<String, Object>> files = fileUploadService.getUploadedFiles(planId);
+			List<FileUploadResult.FileInfo> files = fileUploadService.getUploadedFiles(uploadKey);
 
-			Map<String, Object> response = new HashMap<>();
-			response.put("success", true);
-			response.put("planId", planId);
-			response.put("files", files);
-			response.put("totalCount", files.size());
+			GetUploadedFilesResponse response = new GetUploadedFilesResponse();
+			response.setSuccess(true);
+			response.setUploadKey(uploadKey);
+			response.setFiles(files);
+			response.setTotalCount(files.size());
 
-			logger.info("Found {} uploaded files for planId: {}", files.size(), planId);
+			logger.info("Found {} uploaded files for uploadKey: {}", files.size(), uploadKey);
 			return ResponseEntity.ok(response);
 
 		}
 		catch (Exception e) {
-			logger.error("Error getting uploaded files for planId: {}", planId, e);
-			Map<String, Object> errorResponse = new HashMap<>();
-			errorResponse.put("success", false);
-			errorResponse.put("error", "Failed to get uploaded files: " + e.getMessage());
+			logger.error("Error getting uploaded files for uploadKey: {}", uploadKey, e);
+			GetUploadedFilesResponse errorResponse = new GetUploadedFilesResponse();
+			errorResponse.setSuccess(false);
+			errorResponse.setError("Failed to get uploaded files: " + e.getMessage());
 			return ResponseEntity.internalServerError().body(errorResponse);
 		}
 	}
 
 	/**
-	 * Delete an uploaded file
-	 * @param planId The plan ID
+	 * Delete an uploaded file from a specific upload key directory
+	 * @param uploadKey The upload key directory
 	 * @param fileName The file name to delete
 	 * @return Delete result
 	 */
-	@DeleteMapping("/files/{planId}/{fileName}")
-	public ResponseEntity<Map<String, Object>> deleteFile(@PathVariable("planId") String planId,
+	@DeleteMapping("/files/{uploadKey}/{fileName}")
+	public ResponseEntity<DeleteFileResponse> deleteFile(@PathVariable("uploadKey") String uploadKey,
 			@PathVariable("fileName") String fileName) {
 		try {
-			logger.info("Deleting file: {} from planId: {}", fileName, planId);
+			logger.info("Deleting file: {} from uploadKey: {}", fileName, uploadKey);
 
-			boolean deleted = fileUploadService.deleteFile(planId, fileName);
+			boolean deleted = fileUploadService.deleteFile(fileName, uploadKey);
 
-			Map<String, Object> response = new HashMap<>();
+			DeleteFileResponse response = new DeleteFileResponse();
 			if (deleted) {
-				response.put("success", true);
-				response.put("message", "File deleted successfully");
-				response.put("planId", planId);
-				response.put("fileName", fileName);
-				logger.info("Successfully deleted file: {} from planId: {}", fileName, planId);
+				response.setSuccess(true);
+				response.setMessage("File deleted successfully");
+				response.setUploadKey(uploadKey);
+				response.setFileName(fileName);
+				logger.info("Successfully deleted file: {} from uploadKey: {}", fileName, uploadKey);
 				return ResponseEntity.ok(response);
 			}
 			else {
-				response.put("success", false);
-				response.put("error", "File not found or could not be deleted");
+				response.setSuccess(false);
+				response.setError("File not found or could not be deleted");
 				return ResponseEntity.notFound().build();
 			}
 
 		}
 		catch (Exception e) {
-			logger.error("Error deleting file: {} from planId: {}", fileName, planId, e);
-			Map<String, Object> errorResponse = new HashMap<>();
-			errorResponse.put("success", false);
-			errorResponse.put("error", "Failed to delete file: " + e.getMessage());
+			logger.error("Error deleting file: {} from uploadKey: {}", fileName, uploadKey, e);
+			DeleteFileResponse errorResponse = new DeleteFileResponse();
+			errorResponse.setSuccess(false);
+			errorResponse.setError("Failed to delete file: " + e.getMessage());
 			return ResponseEntity.internalServerError().body(errorResponse);
 		}
 	}
@@ -261,6 +178,122 @@ public class FileUploadController {
 		config.put("success", true);
 
 		return ResponseEntity.ok(config);
+	}
+
+	/**
+	 * Inner class for get uploaded files response
+	 */
+	public static class GetUploadedFilesResponse {
+
+		private boolean success;
+
+		private String uploadKey;
+
+		private List<FileUploadResult.FileInfo> files;
+
+		private int totalCount;
+
+		private String error;
+
+		// Getters and setters
+		public boolean isSuccess() {
+			return success;
+		}
+
+		public void setSuccess(boolean success) {
+			this.success = success;
+		}
+
+		public String getUploadKey() {
+			return uploadKey;
+		}
+
+		public void setUploadKey(String uploadKey) {
+			this.uploadKey = uploadKey;
+		}
+
+		public List<FileUploadResult.FileInfo> getFiles() {
+			return files;
+		}
+
+		public void setFiles(List<FileUploadResult.FileInfo> files) {
+			this.files = files;
+		}
+
+		public int getTotalCount() {
+			return totalCount;
+		}
+
+		public void setTotalCount(int totalCount) {
+			this.totalCount = totalCount;
+		}
+
+		public String getError() {
+			return error;
+		}
+
+		public void setError(String error) {
+			this.error = error;
+		}
+
+	}
+
+	/**
+	 * Inner class for delete file response
+	 */
+	public static class DeleteFileResponse {
+
+		private boolean success;
+
+		private String message;
+
+		private String error;
+
+		private String uploadKey;
+
+		private String fileName;
+
+		// Getters and setters
+		public boolean isSuccess() {
+			return success;
+		}
+
+		public void setSuccess(boolean success) {
+			this.success = success;
+		}
+
+		public String getMessage() {
+			return message;
+		}
+
+		public void setMessage(String message) {
+			this.message = message;
+		}
+
+		public String getError() {
+			return error;
+		}
+
+		public void setError(String error) {
+			this.error = error;
+		}
+
+		public String getUploadKey() {
+			return uploadKey;
+		}
+
+		public void setUploadKey(String uploadKey) {
+			this.uploadKey = uploadKey;
+		}
+
+		public String getFileName() {
+			return fileName;
+		}
+
+		public void setFileName(String fileName) {
+			this.fileName = fileName;
+		}
+
 	}
 
 }

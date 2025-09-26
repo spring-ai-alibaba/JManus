@@ -20,7 +20,6 @@ import com.alibaba.cloud.ai.manus.agent.model.Tool;
 import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.llm.ILlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
-import com.alibaba.cloud.ai.manus.memory.advisor.CustomMessageChatMemoryAdvisor;
 import com.alibaba.cloud.ai.manus.prompt.model.enums.PromptEnum;
 import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
@@ -28,6 +27,7 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.DynamicAgentExecutionPlan;
 import com.alibaba.cloud.ai.manus.tool.PlanningToolInterface;
+import com.alibaba.cloud.ai.manus.workspace.conversation.advisor.CustomMessageChatMemoryAdvisor;
 import com.alibaba.cloud.ai.manus.tool.DynamicAgentPlanningTool;
 
 import org.slf4j.Logger;
@@ -135,9 +135,9 @@ public class DynamicAgentPlanCreator implements IPlanCreator {
 						.prompt(prompt)
 						.toolCallbacks(List.of(planningTool.getFunctionToolCallback(planningTool)));
 
-					if (useMemory && attempt == 1 && context.getMemoryId() != null) {
-						requestSpec
-							.advisors(memoryAdvisor -> memoryAdvisor.param(CONVERSATION_ID, context.getMemoryId()));
+					if (useMemory && attempt == 1 && context.getConversationId() != null) {
+						requestSpec.advisors(
+								memoryAdvisor -> memoryAdvisor.param(CONVERSATION_ID, context.getConversationId()));
 						requestSpec.advisors(CustomMessageChatMemoryAdvisor
 							.builder(llmService.getConversationMemory(manusProperties.getMaxMemory()),
 									context.getUserRequest(), CustomMessageChatMemoryAdvisor.AdvisorType.BEFORE)

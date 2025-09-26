@@ -271,7 +271,7 @@ public class DynamicCronTaskScheduler {
 			}
 
 			// Execute using the PlanningCoordinator's common execution logic
-			return planningCoordinator.executeByPlan(plan, rootPlanId, parentPlanId, currentPlanId, null, false);
+			return planningCoordinator.executeByPlan(plan, rootPlanId, parentPlanId, currentPlanId, null, false, null);
 
 		}
 		catch (Exception e) {

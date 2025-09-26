@@ -51,7 +51,6 @@ import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
 import com.alibaba.cloud.ai.manus.model.model.vo.ModelConfig;
 import com.alibaba.cloud.ai.manus.namespace.namespace.vo.NamespaceConfig;
 import com.alibaba.cloud.ai.manus.namespace.service.NamespaceService;
-import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
 
 @Service
 public class AgentServiceImpl implements AgentService {

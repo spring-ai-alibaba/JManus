@@ -23,9 +23,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.alibaba.cloud.ai.manus.memory.repository.H2ChatMemoryRepository;
-import com.alibaba.cloud.ai.manus.memory.repository.MysqlChatMemoryRepository;
-import com.alibaba.cloud.ai.manus.memory.repository.PostgresChatMemoryRepository;
+import com.alibaba.cloud.ai.manus.workspace.conversation.repository.H2ChatMemoryRepository;
+import com.alibaba.cloud.ai.manus.workspace.conversation.repository.MysqlChatMemoryRepository;
+import com.alibaba.cloud.ai.manus.workspace.conversation.repository.PostgresChatMemoryRepository;
 
 /**
  * @author dahua

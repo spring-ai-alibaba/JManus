@@ -27,6 +27,7 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionPlan;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
+import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.mapreduce.ExecutionNode;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.mapreduce.MapReduceExecutionPlan;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.mapreduce.MapReduceNode;
@@ -108,8 +109,9 @@ public class MapReducePlanExecutor extends AbstractPlanExecutor {
 
 	public MapReducePlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			AgentService agentService, ILlmService llmService, ManusProperties manusProperties,
-			ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool) {
-		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool);
+			ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
+			FileUploadService fileUploadService) {
+		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
 		OBJECT_MAPPER = objectMapper;
 
 		// Initialize thread pool with current configuration
@@ -145,6 +147,9 @@ public class MapReducePlanExecutor extends AbstractPlanExecutor {
 			plan.updateStepIndices();
 
 			try {
+				// Synchronize uploaded files to plan directory at the beginning of
+				// execution
+				syncUploadedFilesToPlan(context);
 				recorder.recordPlanExecutionStart(context.getCurrentPlanId(), context.getPlan().getTitle(),
 						context.getUserRequest(), context.getPlan().getAllSteps(), context.getParentPlanId(),
 						context.getRootPlanId(), context.getToolCallId());
@@ -858,8 +863,6 @@ public class MapReducePlanExecutor extends AbstractPlanExecutor {
 		copiedContext.setUserRequest(originalContext.getUserRequest());
 		copiedContext.setNeedSummary(originalContext.isNeedSummary());
 		copiedContext.setSuccess(originalContext.isSuccess());
-		copiedContext.setUseMemory(originalContext.isUseMemory());
-
 		// Copy tool context
 		if (originalContext.getToolsContext() != null) {
 			Map<String, String> copiedToolsContext = new HashMap<>(originalContext.getToolsContext());

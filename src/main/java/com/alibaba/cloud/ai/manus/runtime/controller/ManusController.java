@@ -18,8 +18,6 @@ package com.alibaba.cloud.ai.manus.runtime.controller;
 import com.alibaba.cloud.ai.manus.event.JmanusListener;
 import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
 import com.alibaba.cloud.ai.manus.exception.PlanException;
-import com.alibaba.cloud.ai.manus.memory.entity.MemoryEntity;
-import com.alibaba.cloud.ai.manus.memory.service.MemoryService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
@@ -33,6 +31,8 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.UserInputWaitState;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
 import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
+import com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo.Memory;
+import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
 import com.alibaba.cloud.ai.manus.coordinator.repository.CoordinatorToolRepository;
 import com.alibaba.cloud.ai.manus.coordinator.entity.po.CoordinatorToolEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -201,21 +201,39 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		}
 
 		try {
-			String memoryId = (String) request.get("memoryId");
+			String conversationId = (String) request.get("conversationId");
 
 			// Handle uploaded files if present
 			@SuppressWarnings("unchecked")
 			List<Map<String, Object>> uploadedFiles = (List<Map<String, Object>>) request.get("uploadedFiles");
 
+			String uploadKey = (String) request.get("uploadKey");
+
+			// Debug logging for uploaded files
+			logger.info("🔍 [DEBUG] Request keys: {}", request.keySet());
+			logger.info("🔍 [DEBUG] uploadedFiles from request: {}", uploadedFiles);
+			logger.info("🔍 [DEBUG] uploadedFiles is null: {}", uploadedFiles == null);
+			if (uploadedFiles != null) {
+				logger.info("🔍 [DEBUG] uploadedFiles size: {}", uploadedFiles.size());
+			}
+
+			// Generate conversation ID if not provided
+			if (!StringUtils.hasText(conversationId)) {
+				conversationId = memoryService.generateConversationId();
+			}
+
+			String query = "Execute plan template: " + planTemplateId;
+			// Create Memory VO and save it
+			Memory memory = new Memory(conversationId, query);
+			memoryService.saveMemory(memory);
+
 			// Get replacement parameters for <<>> replacement
 			@SuppressWarnings("unchecked")
 			Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
 
-			String providedPlanId = (String) request.get("planId");
-
 			// Execute the plan template using the new unified method
-			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, memoryId,
-					replacementParams, isVueRequest, providedPlanId);
+			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, conversationId,
+					replacementParams, isVueRequest, uploadKey);
 
 			// Start the async execution (fire and forget)
 			wrapper.getResult().whenComplete((result, throwable) -> {
@@ -227,20 +245,12 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				}
 			});
 
-			// Generate memory ID if not provided
-			if (!StringUtils.hasText(memoryId)) {
-				memoryId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-			}
-
-			String query = "Execute plan template: " + planTemplateId;
-			memoryService.saveMemory(new MemoryEntity(memoryId, query));
-
 			// Return task ID and initial status
 			Map<String, Object> response = new HashMap<>();
 			response.put("planId", wrapper.getRootPlanId());
 			response.put("status", "processing");
 			response.put("message", "Task submitted, processing");
-			response.put("memoryId", memoryId);
+			response.put("conversationId", conversationId);
 			response.put("toolName", toolName);
 			response.put("planTemplateId", planTemplateId);
 
@@ -294,19 +304,19 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		@SuppressWarnings("unchecked")
 		List<Map<String, Object>> uploadedFiles = (List<Map<String, Object>>) request.get("uploadedFiles");
 
+		String uploadKey = (String) request.get("uploadKey");
+
 		// Get replacement parameters for <<>> replacement
 		@SuppressWarnings("unchecked")
 		Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
 
-		String providedPlanId = (String) request.get("planId");
-
 		logger.info(
-				"Executing tool '{}' synchronously with plan template ID '{}', uploadedFiles: {}, replacementParams: {}, planId: {}",
+				"Executing tool '{}' synchronously with plan template ID '{}', uploadedFiles: {}, replacementParams: {}, uploadKey: {}",
 				toolName, planTemplateId, uploadedFiles != null ? uploadedFiles.size() : "null",
-				replacementParams != null ? replacementParams.size() : "null", providedPlanId);
+				replacementParams != null ? replacementParams.size() : "null", uploadKey);
 
 		return executePlanSyncAndBuildResponse(planTemplateId, uploadedFiles, replacementParams, isVueRequest,
-				providedPlanId);
+				uploadKey);
 	}
 
 	/**
@@ -423,16 +433,16 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	 * @param uploadedFiles List of uploaded files (can be null)
 	 * @param replacementParams Parameters for <<>> replacement (can be null)
 	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
-	 * @param providedPlanId Optional planId provided by frontend (can be null)
+	 * @param uploadKey Optional uploadKey provided by frontend (can be null)
 	 * @return ResponseEntity with execution result
 	 */
 	private ResponseEntity<Map<String, Object>> executePlanSyncAndBuildResponse(String planTemplateId,
 			List<Map<String, Object>> uploadedFiles, Map<String, Object> replacementParams, boolean isVueRequest,
-			String providedPlanId) {
+			String uploadKey) {
 		try {
 			// Execute the plan template using the new unified method
 			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, null, replacementParams,
-					isVueRequest, providedPlanId);
+					isVueRequest, uploadKey);
 			PlanExecutionResult planExecutionResult = wrapper.getResult().get();
 
 			// Return success with execution result
@@ -456,42 +466,34 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	 * Execute a plan template by its ID with parameter replacement support
 	 * @param planTemplateId The ID of the plan template to execute
 	 * @param uploadedFiles List of uploaded files (can be null)
-	 * @param memoryId Memory ID for the execution (can be null)
+	 * @param conversationId Conversation ID for the execution (can be null)
 	 * @param replacementParams Parameters for <<>> replacement (can be null)
 	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
-	 * @param providedPlanId Optional planId provided by frontend (can be null)
+	 * @param uploadKey Optional uploadKey provided by frontend (can be null)
 	 * @return PlanExecutionWrapper containing both PlanExecutionResult and rootPlanId
 	 */
 	private PlanExecutionWrapper executePlanTemplate(String planTemplateId, List<Map<String, Object>> uploadedFiles,
-			String memoryId, Map<String, Object> replacementParams, boolean isVueRequest, String providedPlanId) {
+			String conversationId, Map<String, Object> replacementParams, boolean isVueRequest, String uploadKey) {
 		if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
 			logger.error("Plan template ID is null or empty");
 			throw new IllegalArgumentException("Plan template ID cannot be null or empty");
 		}
-
+		String planJson = null;
 		try {
 
 			String currentPlanId;
 			String rootPlanId;
+			currentPlanId = planIdDispatcher.generatePlanId();
+			rootPlanId = currentPlanId;
+			logger.info("🆕 Generated new planId: {}", currentPlanId);
 
-			if (StringUtils.hasText(providedPlanId)) {
-				currentPlanId = providedPlanId;
-				rootPlanId = providedPlanId;
-				logger.info("🔗 Using provided planId: {}", providedPlanId);
-			}
-			else {
-				currentPlanId = planIdDispatcher.generatePlanId();
-				rootPlanId = currentPlanId;
-				logger.info("🆕 Generated new planId: {}", currentPlanId);
-			}
-
-			// Generate memory ID if not provided
-			if (!StringUtils.hasText(memoryId)) {
-				memoryId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+			// Generate conversation ID if not provided
+			if (!StringUtils.hasText(conversationId)) {
+				conversationId = memoryService.generateConversationId();
 			}
 
 			// Get the latest plan version JSON string
-			String planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
+			planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
 			if (planJson == null) {
 				throw new RuntimeException("Plan template not found: " + planTemplateId);
 			}
@@ -534,9 +536,14 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 						uploadedFiles.size());
 			}
 
+			// Log uploadKey if provided
+			if (uploadKey != null) {
+				logger.info("Executing plan with upload key: {}", uploadKey);
+			}
+
 			// Execute using the PlanningCoordinator
 			CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId, null,
-					currentPlanId, null, isVueRequest);
+					currentPlanId, null, isVueRequest, uploadKey);
 
 			// Return the wrapper containing both the future and rootPlanId
 			return new PlanExecutionWrapper(future, rootPlanId);
@@ -544,6 +551,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		}
 		catch (Exception e) {
 			logger.error("Failed to execute plan template: {}", planTemplateId, e);
+			logger.error("Failed to execute plan json : {}", planJson);
 			CompletableFuture<PlanExecutionResult> failedFuture = new CompletableFuture<>();
 			failedFuture.completeExceptionally(new RuntimeException("Plan execution failed: " + e.getMessage(), e));
 			return new PlanExecutionWrapper(failedFuture, null);

@@ -25,7 +25,6 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -219,7 +218,6 @@ public class OpenAIAdapterService {
 			context.setUserRequest(userMessage);
 			context.setCurrentPlanId(planId);
 			context.setRootPlanId(planId);
-			context.setMemoryId(RandomStringUtils.randomAlphabetic(MEMORY_ID_LENGTH));
 			context.setNeedSummary(true);
 
 			logger.debug("Created execution context for planId: {}, messageLength: {}", planId, userMessage.length());
@@ -239,7 +237,7 @@ public class OpenAIAdapterService {
 			// Execute the plan using PlanningCoordinator
 			CompletableFuture<com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult> future = planningCoordinator
 				.executeByUserQuery(context.getUserRequest(), context.getCurrentPlanId(), context.getCurrentPlanId(),
-						context.getCurrentPlanId(), context.getMemoryId(), null);
+						context.getCurrentPlanId(), context.getConversationId(), null);
 
 			// Wait for completion with extended timeout for complex tasks
 			logger.info("Waiting for plan execution to complete for planId: {}", context.getCurrentPlanId());
@@ -273,7 +271,7 @@ public class OpenAIAdapterService {
 
 			// Log additional context for debugging
 			logger.debug("Execution failure context - planId: {}, userRequest: {}, memoryId: {}", planId,
-					context.getUserRequest(), context.getMemoryId());
+					context.getUserRequest(), context.getConversationId());
 
 			// Return a simple fallback response when LLM is not configured
 			logger.info("Generating fallback response for planId {} due to execution failure", planId);
@@ -308,8 +306,8 @@ public class OpenAIAdapterService {
 
 					// Execute the plan using PlanningCoordinator
 					CompletableFuture<com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult> future = planningCoordinator
-						.executeByUserQuery(context.getUserRequest(), planId, planId, planId, context.getMemoryId(),
-								null);
+						.executeByUserQuery(context.getUserRequest(), planId, planId, planId,
+								context.getConversationId(), null);
 
 					// Wait for completion
 					com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult result = future.get();
