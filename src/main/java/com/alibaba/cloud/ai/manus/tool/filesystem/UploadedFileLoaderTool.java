@@ -448,8 +448,7 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 	 */
 	private FileLocation findUploadedFileLocation(String fileName) {
 		// 1. Check current plan (directly in plan directory)
-		Path currentFile = directoryManager.getRootPlanDirectory(currentPlanId)
-			.resolve(fileName);
+		Path currentFile = directoryManager.getRootPlanDirectory(currentPlanId).resolve(fileName);
 
 		if (Files.exists(currentFile)) {
 			log.info("Found file in current plan: {}", fileName);
@@ -472,7 +471,7 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 						return Files.getLastModifiedTime(p2).compareTo(Files.getLastModifiedTime(p1));
 					}
 					catch (IOException e) {
-						return 0; 
+						return 0;
 					}
 				})
 				.limit(10)

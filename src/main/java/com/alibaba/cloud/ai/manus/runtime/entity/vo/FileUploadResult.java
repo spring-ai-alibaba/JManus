@@ -98,11 +98,17 @@ public class FileUploadResult {
 	 * Inner class for individual file information
 	 */
 	public static class FileInfo {
+
 		private String originalName;
+
 		private long size;
+
 		private String type;
+
 		private LocalDateTime uploadTime;
+
 		private boolean success;
+
 		private String error;
 
 		// Getters and setters
@@ -130,7 +136,6 @@ public class FileUploadResult {
 			this.type = type;
 		}
 
-
 		public LocalDateTime getUploadTime() {
 			return uploadTime;
 		}
@@ -154,5 +159,7 @@ public class FileUploadResult {
 		public void setError(String error) {
 			this.error = error;
 		}
+
 	}
+
 }

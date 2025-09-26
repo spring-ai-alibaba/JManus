@@ -35,346 +35,354 @@ import java.util.List;
 
 /**
  * Word to Markdown Processor
- * 
- * Converts Word documents (.doc, .docx) to Markdown format
- * Uses Apache POI to extract text content and images, then formats as Markdown
- * Images are saved in a subfolder with the same name as the filename (without extension)
+ *
+ * Converts Word documents (.doc, .docx) to Markdown format Uses Apache POI to extract
+ * text content and images, then formats as Markdown Images are saved in a subfolder with
+ * the same name as the filename (without extension)
  */
 public class WordToMarkdownProcessor {
 
-    private static final Logger log = LoggerFactory.getLogger(WordToMarkdownProcessor.class);
+	private static final Logger log = LoggerFactory.getLogger(WordToMarkdownProcessor.class);
 
-    private final UnifiedDirectoryManager directoryManager;
+	private final UnifiedDirectoryManager directoryManager;
 
-    public WordToMarkdownProcessor(UnifiedDirectoryManager directoryManager, ApplicationContext applicationContext) {
-        this.directoryManager = directoryManager;
-    }
+	public WordToMarkdownProcessor(UnifiedDirectoryManager directoryManager, ApplicationContext applicationContext) {
+		this.directoryManager = directoryManager;
+	}
 
-    /**
-     * Convert Word document to Markdown
-     * 
-     * @param sourceFile The source Word document file
-     * @param additionalRequirement Optional additional requirements for conversion
-     * @param currentPlanId Current plan ID for file operations
-     * @return ToolExecuteResult with conversion status
-     */
-    public ToolExecuteResult convertToMarkdown(Path sourceFile, String additionalRequirement, String currentPlanId) {
-        try {
-            log.info("Converting Word document to Markdown: {}", sourceFile.getFileName());
+	/**
+	 * Convert Word document to Markdown
+	 * @param sourceFile The source Word document file
+	 * @param additionalRequirement Optional additional requirements for conversion
+	 * @param currentPlanId Current plan ID for file operations
+	 * @return ToolExecuteResult with conversion status
+	 */
+	public ToolExecuteResult convertToMarkdown(Path sourceFile, String additionalRequirement, String currentPlanId) {
+		try {
+			log.info("Converting Word document to Markdown: {}", sourceFile.getFileName());
 
-            // Step 0: Check if content.md already exists
-            String originalFilename = sourceFile.getFileName().toString();
-            String markdownFilename = generateMarkdownFilename(originalFilename);
-            if (markdownFileExists(currentPlanId, markdownFilename)) {
-                log.info("Markdown file already exists, skipping conversion: {}", markdownFilename);
-                return new ToolExecuteResult("Skipped conversion - content.md file already exists: " + markdownFilename);
-            }
+			// Step 0: Check if content.md already exists
+			String originalFilename = sourceFile.getFileName().toString();
+			String markdownFilename = generateMarkdownFilename(originalFilename);
+			if (markdownFileExists(currentPlanId, markdownFilename)) {
+				log.info("Markdown file already exists, skipping conversion: {}", markdownFilename);
+				return new ToolExecuteResult(
+						"Skipped conversion - content.md file already exists: " + markdownFilename);
+			}
 
-            // Step 1: Read the Word document using Apache POI
-            String content = extractWordContent(sourceFile, currentPlanId);
-            if (content == null || content.trim().isEmpty()) {
-                return new ToolExecuteResult("Error: Could not extract content from Word document");
-            }
+			// Step 1: Read the Word document using Apache POI
+			String content = extractWordContent(sourceFile, currentPlanId);
+			if (content == null || content.trim().isEmpty()) {
+				return new ToolExecuteResult("Error: Could not extract content from Word document");
+			}
 
-            // Step 2: Convert content to Markdown format
-            String markdownContent = convertToMarkdownFormat(content, additionalRequirement);
+			// Step 2: Convert content to Markdown format
+			String markdownContent = convertToMarkdownFormat(content, additionalRequirement);
 
-            // Step 3: Generate output filename (already declared above)
-            markdownFilename = generateMarkdownFilename(originalFilename);
+			// Step 3: Generate output filename (already declared above)
+			markdownFilename = generateMarkdownFilename(originalFilename);
 
-            // Step 4: Save Markdown file
-            Path outputFile = saveMarkdownFile(markdownContent, markdownFilename, currentPlanId);
-            if (outputFile == null) {
-                return new ToolExecuteResult("Error: Failed to save Markdown file");
-            }
+			// Step 4: Save Markdown file
+			Path outputFile = saveMarkdownFile(markdownContent, markdownFilename, currentPlanId);
+			if (outputFile == null) {
+				return new ToolExecuteResult("Error: Failed to save Markdown file");
+			}
 
-            // Step 5: Return success result
-            String result = String.format(
-                "Successfully converted Word document to Markdown\n\n" +
-                "**Output File**: %s\n\n",
-                markdownFilename
-            );
+			// Step 5: Return success result
+			String result = String.format(
+					"Successfully converted Word document to Markdown\n\n" + "**Output File**: %s\n\n",
+					markdownFilename);
 
-            // Add content if less than 1000 characters
-            if (markdownContent.length() < 1000) {
-                result += "**Content**:\n\n" + markdownContent;
-            }
+			// Add content if less than 1000 characters
+			if (markdownContent.length() < 1000) {
+				result += "**Content**:\n\n" + markdownContent;
+			}
 
-            log.info("Word to Markdown conversion completed: {} -> {}", originalFilename, markdownFilename);
-            return new ToolExecuteResult(result);
+			log.info("Word to Markdown conversion completed: {} -> {}", originalFilename, markdownFilename);
+			return new ToolExecuteResult(result);
 
-        } catch (Exception e) {
-            log.error("Error converting Word document to Markdown: {}", sourceFile.getFileName(), e);
-            return new ToolExecuteResult("Error: " + e.getMessage());
-        }
-    }
+		}
+		catch (Exception e) {
+			log.error("Error converting Word document to Markdown: {}", sourceFile.getFileName(), e);
+			return new ToolExecuteResult("Error: " + e.getMessage());
+		}
+	}
 
-    /**
-     * Extract content from Word document using Apache POI
-     */
-    private String extractWordContent(Path sourceFile, String currentPlanId) {
-        try (FileInputStream fis = new FileInputStream(sourceFile.toFile());
-             XWPFDocument document = new XWPFDocument(fis)) {
-            
-            StringBuilder content = new StringBuilder();
-            String imageFolderName = getImageFolderName(sourceFile);
-            Path imageFolder = createImageFolder(currentPlanId, imageFolderName);
-            
-            // Process all paragraphs
-            List<XWPFParagraph> paragraphs = document.getParagraphs();
-            for (XWPFParagraph paragraph : paragraphs) {
-                String paragraphText = processParagraph(paragraph, imageFolder);
-                if (!paragraphText.trim().isEmpty()) {
-                    content.append(paragraphText).append("\n");
-                }
-            }
-            
-            return content.toString();
-        } catch (Exception e) {
-            log.error("Error extracting content from Word document: {}", sourceFile.getFileName(), e);
-            return null;
-        }
-    }
+	/**
+	 * Extract content from Word document using Apache POI
+	 */
+	private String extractWordContent(Path sourceFile, String currentPlanId) {
+		try (FileInputStream fis = new FileInputStream(sourceFile.toFile());
+				XWPFDocument document = new XWPFDocument(fis)) {
 
-    /**
-     * Check if markdown file already exists
-     */
-    private boolean markdownFileExists(String currentPlanId, String markdownFilename) {
-        try {
-            Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-            Path markdownFile = currentPlanDir.resolve(markdownFilename);
-            return Files.exists(markdownFile);
-        } catch (Exception e) {
-            log.error("Error checking if markdown file exists: {}", markdownFilename, e);
-            return false;
-        }
-    }
+			StringBuilder content = new StringBuilder();
+			String imageFolderName = getImageFolderName(sourceFile);
+			Path imageFolder = createImageFolder(currentPlanId, imageFolderName);
 
-    /**
-     * Get image folder name based on filename without extension
-     */
-    private String getImageFolderName(Path sourceFile) {
-        String filename = sourceFile.getFileName().toString();
-        int lastDotIndex = filename.lastIndexOf('.');
-        if (lastDotIndex > 0) {
-            return filename.substring(0, lastDotIndex);
-        }
-        return filename;
-    }
+			// Process all paragraphs
+			List<XWPFParagraph> paragraphs = document.getParagraphs();
+			for (XWPFParagraph paragraph : paragraphs) {
+				String paragraphText = processParagraph(paragraph, imageFolder);
+				if (!paragraphText.trim().isEmpty()) {
+					content.append(paragraphText).append("\n");
+				}
+			}
 
-    /**
-     * Create image folder for storing extracted images
-     */
-    private Path createImageFolder(String currentPlanId, String imageFolderName) {
-        try {
-            Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-            Path imageFolder = currentPlanDir.resolve(imageFolderName);
-            Files.createDirectories(imageFolder);
-            return imageFolder;
-        } catch (IOException e) {
-            log.error("Error creating image folder: {}", imageFolderName, e);
-            return null;
-        }
-    }
+			return content.toString();
+		}
+		catch (Exception e) {
+			log.error("Error extracting content from Word document: {}", sourceFile.getFileName(), e);
+			return null;
+		}
+	}
 
-    /**
-     * Process a single paragraph and handle images
-     */
-    private String processParagraph(XWPFParagraph paragraph, Path imageFolder) {
-        StringBuilder paragraphText = new StringBuilder();
-        List<XWPFRun> runs = paragraph.getRuns();
-        
-        for (XWPFRun run : runs) {
-            String text = run.getText(0);
-            if (text != null && !text.trim().isEmpty()) {
-                paragraphText.append(text);
-            }
-            
-            // Handle images
-            List<XWPFPicture> pictures = run.getEmbeddedPictures();
-            for (XWPFPicture picture : pictures) {
-                String imageMarkdown = saveImageAndGetMarkdown(picture, imageFolder);
-                if (imageMarkdown != null) {
-                    paragraphText.append("\n").append(imageMarkdown).append("\n");
-                }
-            }
-        }
-        
-        return paragraphText.toString();
-    }
+	/**
+	 * Check if markdown file already exists
+	 */
+	private boolean markdownFileExists(String currentPlanId, String markdownFilename) {
+		try {
+			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
+			Path markdownFile = currentPlanDir.resolve(markdownFilename);
+			return Files.exists(markdownFile);
+		}
+		catch (Exception e) {
+			log.error("Error checking if markdown file exists: {}", markdownFilename, e);
+			return false;
+		}
+	}
 
-    /**
-     * Save image and return markdown reference
-     */
-    private String saveImageAndGetMarkdown(XWPFPicture picture, Path imageFolder) {
-        try {
-            if (imageFolder == null) {
-                return null;
-            }
-            
-            byte[] imageData = picture.getPictureData().getData();
-            String extension = getImageExtension(picture.getPictureData().getPictureType());
-            String imageName = "image_" + System.currentTimeMillis() + extension;
-            Path imagePath = imageFolder.resolve(imageName);
-            
-            try (FileOutputStream fos = new FileOutputStream(imagePath.toFile())) {
-                fos.write(imageData);
-            }
-            
-            String relativePath = imageFolder.getFileName().toString() + "/" + imageName;
-            return "![" + imageName + "](" + relativePath + ")";
-            
-        } catch (Exception e) {
-            log.error("Error saving image: {}", e.getMessage());
-            return null;
-        }
-    }
+	/**
+	 * Get image folder name based on filename without extension
+	 */
+	private String getImageFolderName(Path sourceFile) {
+		String filename = sourceFile.getFileName().toString();
+		int lastDotIndex = filename.lastIndexOf('.');
+		if (lastDotIndex > 0) {
+			return filename.substring(0, lastDotIndex);
+		}
+		return filename;
+	}
 
-    /**
-     * Get image extension based on picture type
-     */
-    private String getImageExtension(int pictureType) {
-        switch (pictureType) {
-            case 1: return ".png";
-            case 2: return ".jpg";
-            case 3: return ".gif";
-            case 4: return ".bmp";
-            case 5: return ".emf";
-            case 6: return ".wmf";
-            default: return ".png";
-        }
-    }
+	/**
+	 * Create image folder for storing extracted images
+	 */
+	private Path createImageFolder(String currentPlanId, String imageFolderName) {
+		try {
+			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
+			Path imageFolder = currentPlanDir.resolve(imageFolderName);
+			Files.createDirectories(imageFolder);
+			return imageFolder;
+		}
+		catch (IOException e) {
+			log.error("Error creating image folder: {}", imageFolderName, e);
+			return null;
+		}
+	}
 
-    /**
-     * Convert extracted content to Markdown format
-     */
-    private String convertToMarkdownFormat(String content, String additionalRequirement) {
-        StringBuilder markdown = new StringBuilder();
+	/**
+	 * Process a single paragraph and handle images
+	 */
+	private String processParagraph(XWPFParagraph paragraph, Path imageFolder) {
+		StringBuilder paragraphText = new StringBuilder();
+		List<XWPFRun> runs = paragraph.getRuns();
 
-        // Add header if additional requirements specify it
-        if (additionalRequirement != null && !additionalRequirement.trim().isEmpty()) {
-            markdown.append("# Document Conversion\n\n");
-            markdown.append("**Additional Requirements**: ").append(additionalRequirement).append("\n\n");
-            markdown.append("---\n\n");
-        }
+		for (XWPFRun run : runs) {
+			String text = run.getText(0);
+			if (text != null && !text.trim().isEmpty()) {
+				paragraphText.append(text);
+			}
 
-        // Process content line by line
-        String[] lines = content.split("\n");
-        boolean inList = false;
-        boolean inCodeBlock = false;
+			// Handle images
+			List<XWPFPicture> pictures = run.getEmbeddedPictures();
+			for (XWPFPicture picture : pictures) {
+				String imageMarkdown = saveImageAndGetMarkdown(picture, imageFolder);
+				if (imageMarkdown != null) {
+					paragraphText.append("\n").append(imageMarkdown).append("\n");
+				}
+			}
+		}
 
-        for (String line : lines) {
-            String trimmedLine = line.trim();
-            
-            if (trimmedLine.isEmpty()) {
-                markdown.append("\n");
-                inList = false;
-                continue;
-            }
+		return paragraphText.toString();
+	}
 
-            // Detect code blocks
-            if (trimmedLine.startsWith("```") || trimmedLine.startsWith("`")) {
-                inCodeBlock = !inCodeBlock;
-                markdown.append(line).append("\n");
-                continue;
-            }
+	/**
+	 * Save image and return markdown reference
+	 */
+	private String saveImageAndGetMarkdown(XWPFPicture picture, Path imageFolder) {
+		try {
+			if (imageFolder == null) {
+				return null;
+			}
 
-            if (inCodeBlock) {
-                markdown.append(line).append("\n");
-                continue;
-            }
+			byte[] imageData = picture.getPictureData().getData();
+			String extension = getImageExtension(picture.getPictureData().getPictureType());
+			String imageName = "image_" + System.currentTimeMillis() + extension;
+			Path imagePath = imageFolder.resolve(imageName);
 
-            // Detect headers (lines that look like titles)
-            if (isHeader(trimmedLine)) {
-                markdown.append("## ").append(trimmedLine).append("\n\n");
-                inList = false;
-                continue;
-            }
+			try (FileOutputStream fos = new FileOutputStream(imagePath.toFile())) {
+				fos.write(imageData);
+			}
 
-            // Detect lists
-            if (isListItem(trimmedLine)) {
-                if (!inList) {
-                    markdown.append("\n");
-                }
-                markdown.append("- ").append(trimmedLine.replaceFirst("^[\\-\\*\\+]\\s*", "")).append("\n");
-                inList = true;
-                continue;
-            }
+			String relativePath = imageFolder.getFileName().toString() + "/" + imageName;
+			return "![" + imageName + "](" + relativePath + ")";
 
-            // Detect numbered lists
-            if (isNumberedListItem(trimmedLine)) {
-                if (!inList) {
-                    markdown.append("\n");
-                }
-                markdown.append(trimmedLine).append("\n");
-                inList = true;
-                continue;
-            }
+		}
+		catch (Exception e) {
+			log.error("Error saving image: {}", e.getMessage());
+			return null;
+		}
+	}
 
-            // Regular paragraph
-            if (inList) {
-                markdown.append("\n");
-                inList = false;
-            }
-            markdown.append(trimmedLine).append("\n\n");
-        }
+	/**
+	 * Get image extension based on picture type
+	 */
+	private String getImageExtension(int pictureType) {
+		switch (pictureType) {
+			case 1:
+				return ".png";
+			case 2:
+				return ".jpg";
+			case 3:
+				return ".gif";
+			case 4:
+				return ".bmp";
+			case 5:
+				return ".emf";
+			case 6:
+				return ".wmf";
+			default:
+				return ".png";
+		}
+	}
 
-        return markdown.toString();
-    }
+	/**
+	 * Convert extracted content to Markdown format
+	 */
+	private String convertToMarkdownFormat(String content, String additionalRequirement) {
+		StringBuilder markdown = new StringBuilder();
 
-    /**
-     * Check if line looks like a header
-     */
-    private boolean isHeader(String line) {
-        return line.length() > 3 && 
-               line.length() < 100 && 
-               !line.startsWith("-") && 
-               !line.startsWith("*") && 
-               !line.startsWith("+") &&
-               !line.matches("^\\d+\\.") &&
-               Character.isUpperCase(line.charAt(0));
-    }
+		// Add header if additional requirements specify it
+		if (additionalRequirement != null && !additionalRequirement.trim().isEmpty()) {
+			markdown.append("# Document Conversion\n\n");
+			markdown.append("**Additional Requirements**: ").append(additionalRequirement).append("\n\n");
+			markdown.append("---\n\n");
+		}
 
-    /**
-     * Check if line is a list item
-     */
-    private boolean isListItem(String line) {
-        return line.matches("^[\\-\\*\\+]\\s+.+");
-    }
+		// Process content line by line
+		String[] lines = content.split("\n");
+		boolean inList = false;
+		boolean inCodeBlock = false;
 
-    /**
-     * Check if line is a numbered list item
-     */
-    private boolean isNumberedListItem(String line) {
-        return line.matches("^\\d+\\.\\s+.+");
-    }
+		for (String line : lines) {
+			String trimmedLine = line.trim();
 
-    /**
-     * Generate markdown filename by replacing extension with .md
-     */
-    private String generateMarkdownFilename(String originalFilename) {
-        int lastDotIndex = originalFilename.lastIndexOf('.');
-        if (lastDotIndex > 0) {
-            return originalFilename.substring(0, lastDotIndex) + ".md";
-        }
-        return originalFilename + ".md";
-    }
+			if (trimmedLine.isEmpty()) {
+				markdown.append("\n");
+				inList = false;
+				continue;
+			}
 
-    /**
-     * Save Markdown content to file
-     */
-    private Path saveMarkdownFile(String content, String filename, String currentPlanId) {
-        try {
-            Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-            Path outputFile = currentPlanDir.resolve(filename);
+			// Detect code blocks
+			if (trimmedLine.startsWith("```") || trimmedLine.startsWith("`")) {
+				inCodeBlock = !inCodeBlock;
+				markdown.append(line).append("\n");
+				continue;
+			}
 
-            Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+			if (inCodeBlock) {
+				markdown.append(line).append("\n");
+				continue;
+			}
 
-            log.info("Markdown file saved: {}", outputFile);
-            return outputFile;
-        } catch (IOException e) {
-            log.error("Error saving Markdown file: {}", filename, e);
-            return null;
-        }
-    }
+			// Detect headers (lines that look like titles)
+			if (isHeader(trimmedLine)) {
+				markdown.append("## ").append(trimmedLine).append("\n\n");
+				inList = false;
+				continue;
+			}
+
+			// Detect lists
+			if (isListItem(trimmedLine)) {
+				if (!inList) {
+					markdown.append("\n");
+				}
+				markdown.append("- ").append(trimmedLine.replaceFirst("^[\\-\\*\\+]\\s*", "")).append("\n");
+				inList = true;
+				continue;
+			}
+
+			// Detect numbered lists
+			if (isNumberedListItem(trimmedLine)) {
+				if (!inList) {
+					markdown.append("\n");
+				}
+				markdown.append(trimmedLine).append("\n");
+				inList = true;
+				continue;
+			}
+
+			// Regular paragraph
+			if (inList) {
+				markdown.append("\n");
+				inList = false;
+			}
+			markdown.append(trimmedLine).append("\n\n");
+		}
+
+		return markdown.toString();
+	}
+
+	/**
+	 * Check if line looks like a header
+	 */
+	private boolean isHeader(String line) {
+		return line.length() > 3 && line.length() < 100 && !line.startsWith("-") && !line.startsWith("*")
+				&& !line.startsWith("+") && !line.matches("^\\d+\\.") && Character.isUpperCase(line.charAt(0));
+	}
+
+	/**
+	 * Check if line is a list item
+	 */
+	private boolean isListItem(String line) {
+		return line.matches("^[\\-\\*\\+]\\s+.+");
+	}
+
+	/**
+	 * Check if line is a numbered list item
+	 */
+	private boolean isNumberedListItem(String line) {
+		return line.matches("^\\d+\\.\\s+.+");
+	}
+
+	/**
+	 * Generate markdown filename by replacing extension with .md
+	 */
+	private String generateMarkdownFilename(String originalFilename) {
+		int lastDotIndex = originalFilename.lastIndexOf('.');
+		if (lastDotIndex > 0) {
+			return originalFilename.substring(0, lastDotIndex) + ".md";
+		}
+		return originalFilename + ".md";
+	}
+
+	/**
+	 * Save Markdown content to file
+	 */
+	private Path saveMarkdownFile(String content, String filename, String currentPlanId) {
+		try {
+			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
+			Path outputFile = currentPlanDir.resolve(filename);
+
+			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
+					StandardOpenOption.TRUNCATE_EXISTING);
+
+			log.info("Markdown file saved: {}", outputFile);
+			return outputFile;
+		}
+		catch (IOException e) {
+			log.error("Error saving Markdown file: {}", filename, e);
+			return null;
+		}
+	}
+
 }

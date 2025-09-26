@@ -83,7 +83,8 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 	private PlanExecutorInterface createSimpleExecutor() {
 		log.debug("Creating simple plan executor");
 		List<DynamicAgentEntity> agents = agentService.getAllAgents();
-		return new PlanExecutor(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
+		return new PlanExecutor(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool,
+				fileUploadService);
 	}
 
 	/**

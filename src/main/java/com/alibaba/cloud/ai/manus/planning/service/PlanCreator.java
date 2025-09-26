@@ -130,8 +130,8 @@ public class PlanCreator implements IPlanCreator {
 						.toolCallbacks(List.of(planningTool.getFunctionToolCallback(planningTool)));
 
 					if (useMemory && attempt == 1 && context.getConversationId() != null) {
-						requestSpec
-							.advisors(memoryAdvisor -> memoryAdvisor.param(CONVERSATION_ID, context.getConversationId()));
+						requestSpec.advisors(
+								memoryAdvisor -> memoryAdvisor.param(CONVERSATION_ID, context.getConversationId()));
 						requestSpec.advisors(CustomMessageChatMemoryAdvisor
 							.builder(llmService.getConversationMemory(manusProperties.getMaxMemory()),
 									context.getUserRequest(), CustomMessageChatMemoryAdvisor.AdvisorType.BEFORE)

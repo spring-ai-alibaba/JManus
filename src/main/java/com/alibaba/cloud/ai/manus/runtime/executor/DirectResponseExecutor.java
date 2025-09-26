@@ -69,7 +69,8 @@ public class DirectResponseExecutor extends AbstractPlanExecutor {
 			BaseAgent lastExecutor = null;
 
 			try {
-				// Synchronize uploaded files to plan directory at the beginning of execution
+				// Synchronize uploaded files to plan directory at the beginning of
+				// execution
 				syncUploadedFilesToPlan(context);
 				// Record plan execution start
 				recorder.recordPlanExecutionStart(context.getCurrentPlanId(), context.getPlan().getTitle(),

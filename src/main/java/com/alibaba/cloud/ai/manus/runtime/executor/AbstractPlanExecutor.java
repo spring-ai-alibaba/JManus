@@ -144,17 +144,20 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 	protected void syncUploadedFilesToPlan(ExecutionContext context) {
 		String uploadKey = context.getUploadKey();
 		String rootPlanId = context.getRootPlanId();
-		
+
 		if (uploadKey != null && !uploadKey.trim().isEmpty() && rootPlanId != null && !rootPlanId.trim().isEmpty()) {
 			try {
 				logger.info("Synchronizing uploaded files from uploadKey: {} to rootPlanId: {}", uploadKey, rootPlanId);
 				fileUploadService.syncUploadedFilesToPlan(uploadKey, rootPlanId);
 				logger.info("Successfully synchronized uploaded files for plan execution");
-			} catch (Exception e) {
-				logger.warn("Failed to synchronize uploaded files from uploadKey: {} to rootPlanId: {}. Continuing execution without file sync.", 
-					uploadKey, rootPlanId, e);
 			}
-		} else {
+			catch (Exception e) {
+				logger.warn(
+						"Failed to synchronize uploaded files from uploadKey: {} to rootPlanId: {}. Continuing execution without file sync.",
+						uploadKey, rootPlanId, e);
+			}
+		}
+		else {
 			logger.debug("No uploadKey provided or rootPlanId missing, skipping file synchronization");
 		}
 	}
@@ -243,7 +246,8 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 			plan.updateStepIndices();
 
 			try {
-				// Synchronize uploaded files to plan directory at the beginning of execution
+				// Synchronize uploaded files to plan directory at the beginning of
+				// execution
 				syncUploadedFilesToPlan(context);
 				List<ExecutionStep> steps = plan.getAllSteps();
 

@@ -109,7 +109,8 @@ public class MapReducePlanExecutor extends AbstractPlanExecutor {
 
 	public MapReducePlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			AgentService agentService, ILlmService llmService, ManusProperties manusProperties,
-			ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool, FileUploadService fileUploadService) {
+			ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
+			FileUploadService fileUploadService) {
 		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
 		OBJECT_MAPPER = objectMapper;
 
@@ -146,7 +147,8 @@ public class MapReducePlanExecutor extends AbstractPlanExecutor {
 			plan.updateStepIndices();
 
 			try {
-				// Synchronize uploaded files to plan directory at the beginning of execution
+				// Synchronize uploaded files to plan directory at the beginning of
+				// execution
 				syncUploadedFilesToPlan(context);
 				recorder.recordPlanExecutionStart(context.getCurrentPlanId(), context.getPlan().getTitle(),
 						context.getUserRequest(), context.getPlan().getAllSteps(), context.getParentPlanId(),

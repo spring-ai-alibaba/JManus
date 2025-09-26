@@ -23,6 +23,7 @@ import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 
 import java.util.List;
+
 /**
  * Basic implementation class responsible for executing plans Now uses level-based
  * executor pools for different hierarchy depths
@@ -39,7 +40,8 @@ public class PlanExecutor extends AbstractPlanExecutor {
 	 * @param levelBasedExecutorPool Level-based executor pool for depth-based execution
 	 */
 	public PlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder, AgentService agentService,
-			ILlmService llmService, ManusProperties manusProperties, LevelBasedExecutorPool levelBasedExecutorPool, FileUploadService fileUploadService) {
+			ILlmService llmService, ManusProperties manusProperties, LevelBasedExecutorPool levelBasedExecutorPool,
+			FileUploadService fileUploadService) {
 		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
 
 	}

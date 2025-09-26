@@ -43,7 +43,8 @@ public class MemoryController {
 		try {
 			List<Memory> memories = memoryService.getMemories();
 			return ResponseEntity.ok(MemoryResponse.success(memories));
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			return ResponseEntity.ok(MemoryResponse.error("Failed to retrieve memories: " + e.getMessage()));
 		}
 	}
@@ -53,9 +54,11 @@ public class MemoryController {
 		try {
 			Memory memory = memoryService.singleMemory(conversationId);
 			return ResponseEntity.ok(MemoryResponse.success(memory));
-		} catch (IllegalArgumentException e) {
+		}
+		catch (IllegalArgumentException e) {
 			return ResponseEntity.ok(MemoryResponse.notFound());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			return ResponseEntity.ok(MemoryResponse.error("Failed to retrieve memory: " + e.getMessage()));
 		}
 	}
@@ -65,7 +68,8 @@ public class MemoryController {
 		try {
 			Memory createdMemory = memoryService.saveMemory(memory);
 			return ResponseEntity.ok(MemoryResponse.created(createdMemory));
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			return ResponseEntity.ok(MemoryResponse.error("Failed to create memory: " + e.getMessage()));
 		}
 	}
@@ -75,9 +79,11 @@ public class MemoryController {
 		try {
 			Memory updatedMemory = memoryService.updateMemory(memory);
 			return ResponseEntity.ok(MemoryResponse.updated(updatedMemory));
-		} catch (IllegalArgumentException e) {
+		}
+		catch (IllegalArgumentException e) {
 			return ResponseEntity.ok(MemoryResponse.notFound());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			return ResponseEntity.ok(MemoryResponse.error("Failed to update memory: " + e.getMessage()));
 		}
 	}
@@ -87,7 +93,8 @@ public class MemoryController {
 		try {
 			memoryService.deleteMemory(conversationId);
 			return ResponseEntity.ok(MemoryResponse.deleted());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			return ResponseEntity.ok(MemoryResponse.error("Failed to delete memory: " + e.getMessage()));
 		}
 	}
@@ -100,7 +107,8 @@ public class MemoryController {
 			MemoryResponse response = new MemoryResponse(true, "Conversation ID generated successfully");
 			response.setData(new Memory(conversationId, "Generated Conversation"));
 			return ResponseEntity.ok(response);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			return ResponseEntity.ok(MemoryResponse.error("Failed to generate conversation ID: " + e.getMessage()));
 		}
 	}

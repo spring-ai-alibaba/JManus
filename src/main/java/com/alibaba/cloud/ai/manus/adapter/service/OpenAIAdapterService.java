@@ -306,8 +306,8 @@ public class OpenAIAdapterService {
 
 					// Execute the plan using PlanningCoordinator
 					CompletableFuture<com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult> future = planningCoordinator
-						.executeByUserQuery(context.getUserRequest(), planId, planId, planId, context.getConversationId(),
-								null);
+						.executeByUserQuery(context.getUserRequest(), planId, planId, planId,
+								context.getConversationId(), null);
 
 					// Wait for completion
 					com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult result = future.get();

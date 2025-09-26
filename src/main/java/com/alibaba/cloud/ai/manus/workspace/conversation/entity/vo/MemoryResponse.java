@@ -20,8 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Memory response model for API responses
- * Contains memory data with additional metadata
+ * Memory response model for API responses Contains memory data with additional metadata
  */
 public class MemoryResponse {
 

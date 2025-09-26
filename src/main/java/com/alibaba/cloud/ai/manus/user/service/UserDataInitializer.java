@@ -28,8 +28,8 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 
 /**
- * User data initializer to create default users
- * Follows the same pattern as PromptDataInitializer
+ * User data initializer to create default users Follows the same pattern as
+ * PromptDataInitializer
  */
 @Component
 public class UserDataInitializer implements CommandLineRunner {

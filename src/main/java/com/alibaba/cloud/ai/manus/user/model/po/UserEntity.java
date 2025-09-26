@@ -20,14 +20,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * User entity for database persistence
- * Follows the same pattern as PromptEntity
+ * User entity for database persistence Follows the same pattern as PromptEntity
  */
 @Entity
-@Table(name = "users", uniqueConstraints = { 
-	@UniqueConstraint(columnNames = "username"),
-	@UniqueConstraint(columnNames = "email")
-})
+@Table(name = "users",
+		uniqueConstraints = { @UniqueConstraint(columnNames = "username"), @UniqueConstraint(columnNames = "email") })
 public class UserEntity {
 
 	@Id
@@ -150,7 +147,8 @@ public class UserEntity {
 	@Override
 	public String toString() {
 		return "UserEntity{" + "id=" + id + ", username='" + username + '\'' + ", email='" + email + '\''
-				+ ", displayName='" + displayName + '\'' + ", status='" + status + '\'' + ", currentConversationId='" + currentConversationId + '\'' + '}';
+				+ ", displayName='" + displayName + '\'' + ", status='" + status + '\'' + ", currentConversationId='"
+				+ currentConversationId + '\'' + '}';
 	}
 
 }

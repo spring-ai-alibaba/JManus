@@ -206,9 +206,8 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			// Handle uploaded files if present
 			@SuppressWarnings("unchecked")
 			List<Map<String, Object>> uploadedFiles = (List<Map<String, Object>>) request.get("uploadedFiles");
-			
-			String uploadKey = (String) request.get("uploadKey");
 
+			String uploadKey = (String) request.get("uploadKey");
 
 			// Debug logging for uploaded files
 			logger.info("🔍 [DEBUG] Request keys: {}", request.keySet());
@@ -231,7 +230,6 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			// Get replacement parameters for <<>> replacement
 			@SuppressWarnings("unchecked")
 			Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
-
 
 			// Execute the plan template using the new unified method
 			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, conversationId,
@@ -307,11 +305,10 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		List<Map<String, Object>> uploadedFiles = (List<Map<String, Object>>) request.get("uploadedFiles");
 
 		String uploadKey = (String) request.get("uploadKey");
-		
+
 		// Get replacement parameters for <<>> replacement
 		@SuppressWarnings("unchecked")
 		Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
-
 
 		logger.info(
 				"Executing tool '{}' synchronously with plan template ID '{}', uploadedFiles: {}, replacementParams: {}, uploadKey: {}",
@@ -489,14 +486,14 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			currentPlanId = planIdDispatcher.generatePlanId();
 			rootPlanId = currentPlanId;
 			logger.info("🆕 Generated new planId: {}", currentPlanId);
-			
+
 			// Generate conversation ID if not provided
 			if (!StringUtils.hasText(conversationId)) {
 				conversationId = memoryService.generateConversationId();
 			}
 
 			// Get the latest plan version JSON string
-			 planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
+			planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
 			if (planJson == null) {
 				throw new RuntimeException("Plan template not found: " + planTemplateId);
 			}

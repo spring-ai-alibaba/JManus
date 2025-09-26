@@ -28,114 +28,107 @@ import java.util.Date;
 @Table(name = "conversation_messages")
 public class ConversationMessage {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private MessageType messageType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private MessageType messageType;
+	@Column(columnDefinition = "TEXT")
+	private String content;
 
-    @Column(columnDefinition = "TEXT")
-    private String content;
+	@Column(columnDefinition = "TEXT")
+	private String metadata;
 
-    @Column(columnDefinition = "TEXT")
-    private String metadata;
+	@Column(nullable = false)
+	private Date createTime;
 
-    @Column(nullable = false)
-    private Date createTime;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "conversation_id", referencedColumnName = "conversationId")
+	private MemoryEntity memoryEntity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "conversation_id", referencedColumnName = "conversationId")
-    private MemoryEntity memoryEntity;
+	public enum MessageType {
 
-    public enum MessageType {
-        USER,
-        ASSISTANT,
-        SYSTEM,
-        TOOL_CALL,
-        TOOL_RESPONSE
-    }
+		USER, ASSISTANT, SYSTEM, TOOL_CALL, TOOL_RESPONSE
 
-    public ConversationMessage() {
-        this.createTime = new Date();
-    }
+	}
 
-    public ConversationMessage(MessageType messageType, String content) {
-        this.messageType = messageType;
-        this.content = content;
-        this.createTime = new Date();
-    }
+	public ConversationMessage() {
+		this.createTime = new Date();
+	}
 
-    public ConversationMessage(MessageType messageType, String content, String metadata) {
-        this.messageType = messageType;
-        this.content = content;
-        this.metadata = metadata;
-        this.createTime = new Date();
-    }
+	public ConversationMessage(MessageType messageType, String content) {
+		this.messageType = messageType;
+		this.content = content;
+		this.createTime = new Date();
+	}
 
-    public Long getId() {
-        return id;
-    }
+	public ConversationMessage(MessageType messageType, String content, String metadata) {
+		this.messageType = messageType;
+		this.content = content;
+		this.metadata = metadata;
+		this.createTime = new Date();
+	}
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+	public Long getId() {
+		return id;
+	}
 
-    public String getConversationId() {
-        return memoryEntity != null ? memoryEntity.getConversationId() : null;
-    }
+	public void setId(Long id) {
+		this.id = id;
+	}
 
-    public MessageType getMessageType() {
-        return messageType;
-    }
+	public String getConversationId() {
+		return memoryEntity != null ? memoryEntity.getConversationId() : null;
+	}
 
-    public void setMessageType(MessageType messageType) {
-        this.messageType = messageType;
-    }
+	public MessageType getMessageType() {
+		return messageType;
+	}
 
-    public String getContent() {
-        return content;
-    }
+	public void setMessageType(MessageType messageType) {
+		this.messageType = messageType;
+	}
 
-    public void setContent(String content) {
-        this.content = content;
-    }
+	public String getContent() {
+		return content;
+	}
 
-    public String getMetadata() {
-        return metadata;
-    }
+	public void setContent(String content) {
+		this.content = content;
+	}
 
-    public void setMetadata(String metadata) {
-        this.metadata = metadata;
-    }
+	public String getMetadata() {
+		return metadata;
+	}
 
-    public Date getCreateTime() {
-        return createTime;
-    }
+	public void setMetadata(String metadata) {
+		this.metadata = metadata;
+	}
 
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
+	public Date getCreateTime() {
+		return createTime;
+	}
 
-    public MemoryEntity getMemoryEntity() {
-        return memoryEntity;
-    }
+	public void setCreateTime(Date createTime) {
+		this.createTime = createTime;
+	}
 
-    public void setMemoryEntity(MemoryEntity memoryEntity) {
-        this.memoryEntity = memoryEntity;
-    }
+	public MemoryEntity getMemoryEntity() {
+		return memoryEntity;
+	}
 
-    @Override
-    public String toString() {
-        return "ConversationMessage{" +
-                "id=" + id +
-                ", conversationId='" + getConversationId() + '\'' +
-                ", messageType=" + messageType +
-                ", content='" + content + '\'' +
-                ", metadata='" + metadata + '\'' +
-                ", createTime=" + createTime +
-                '}';
-    }
+	public void setMemoryEntity(MemoryEntity memoryEntity) {
+		this.memoryEntity = memoryEntity;
+	}
+
+	@Override
+	public String toString() {
+		return "ConversationMessage{" + "id=" + id + ", conversationId='" + getConversationId() + '\''
+				+ ", messageType=" + messageType + ", content='" + content + '\'' + ", metadata='" + metadata + '\''
+				+ ", createTime=" + createTime + '}';
+	}
+
 }

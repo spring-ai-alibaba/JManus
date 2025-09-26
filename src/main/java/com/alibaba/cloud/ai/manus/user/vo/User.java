@@ -20,8 +20,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * User value object representing basic user information
- * Simple structure without complex user management features
+ * User value object representing basic user information Simple structure without complex
+ * user management features
  */
 public class User {
 
@@ -134,8 +134,9 @@ public class User {
 
 	@Override
 	public String toString() {
-		return "User{" + "id=" + id + ", username='" + username + '\'' + ", email='" + email + '\''
-				+ ", displayName='" + displayName + '\'' + ", status='" + status + '\'' + ", currentConversationId='" + currentConversationId + '\'' + '}';
+		return "User{" + "id=" + id + ", username='" + username + '\'' + ", email='" + email + '\'' + ", displayName='"
+				+ displayName + '\'' + ", status='" + status + '\'' + ", currentConversationId='"
+				+ currentConversationId + '\'' + '}';
 	}
 
 }

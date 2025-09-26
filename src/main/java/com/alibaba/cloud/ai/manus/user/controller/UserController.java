@@ -248,23 +248,26 @@ public class UserController {
 	 * @return Success response
 	 */
 	@PostMapping("/{userId}/conversation")
-	public ResponseEntity<Map<String, Object>> setCurrentConversation(@PathVariable Long userId, @RequestBody Map<String, Object> request) {
+	public ResponseEntity<Map<String, Object>> setCurrentConversation(@PathVariable Long userId,
+			@RequestBody Map<String, Object> request) {
 		try {
 			String conversationId = (String) request.get("conversationId");
 			logger.info("Setting current conversation for user {} to {}", userId, conversationId);
-			
+
 			boolean success = userService.setCurrentConversation(userId, conversationId);
 			if (success) {
-				return ResponseEntity.ok(Map.of("success", true, "message", "Current conversation updated successfully"));
-			} else {
+				return ResponseEntity
+					.ok(Map.of("success", true, "message", "Current conversation updated successfully"));
+			}
+			else {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-						.body(Map.of("success", false, "error", "User not found"));
+					.body(Map.of("success", false, "error", "User not found"));
 			}
 		}
 		catch (Exception e) {
 			logger.error("Error setting current conversation for user: {}", userId, e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(Map.of("success", false, "error", "Failed to update current conversation: " + e.getMessage()));
+				.body(Map.of("success", false, "error", "Failed to update current conversation: " + e.getMessage()));
 		}
 	}
 
@@ -279,16 +282,18 @@ public class UserController {
 			logger.info("Clearing current conversation for user {}", userId);
 			boolean success = userService.clearCurrentConversation(userId);
 			if (success) {
-				return ResponseEntity.ok(Map.of("success", true, "message", "Current conversation cleared successfully"));
-			} else {
+				return ResponseEntity
+					.ok(Map.of("success", true, "message", "Current conversation cleared successfully"));
+			}
+			else {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-						.body(Map.of("success", false, "error", "User not found"));
+					.body(Map.of("success", false, "error", "User not found"));
 			}
 		}
 		catch (Exception e) {
 			logger.error("Error clearing current conversation for user: {}", userId, e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(Map.of("success", false, "error", "Failed to clear current conversation: " + e.getMessage()));
+				.body(Map.of("success", false, "error", "Failed to clear current conversation: " + e.getMessage()));
 		}
 	}
 
@@ -307,7 +312,7 @@ public class UserController {
 		catch (Exception e) {
 			logger.error("Error getting current conversation for user: {}", userId, e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(Map.of("error", "Failed to get current conversation: " + e.getMessage()));
+				.body(Map.of("error", "Failed to get current conversation: " + e.getMessage()));
 		}
 	}
 

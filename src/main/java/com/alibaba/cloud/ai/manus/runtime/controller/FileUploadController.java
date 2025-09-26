@@ -47,7 +47,6 @@ public class FileUploadController {
 	@Autowired
 	private FileValidationService fileValidationService;
 
-
 	/**
 	 * Upload files
 	 * @param files The uploaded files
@@ -79,7 +78,8 @@ public class FileUploadController {
 			// Upload files
 			FileUploadResult result = fileUploadService.uploadFiles(files);
 
-			logger.info("Successfully uploaded {} files with uploadKey: {}", result.getSuccessfulFiles(), result.getUploadKey());
+			logger.info("Successfully uploaded {} files with uploadKey: {}", result.getSuccessfulFiles(),
+					result.getUploadKey());
 			return ResponseEntity.ok(result);
 
 		}
@@ -91,7 +91,6 @@ public class FileUploadController {
 			return ResponseEntity.internalServerError().body(errorResult);
 		}
 	}
-
 
 	/**
 	 * Get uploaded files for a specific upload key
@@ -185,10 +184,15 @@ public class FileUploadController {
 	 * Inner class for get uploaded files response
 	 */
 	public static class GetUploadedFilesResponse {
+
 		private boolean success;
+
 		private String uploadKey;
+
 		private List<FileUploadResult.FileInfo> files;
+
 		private int totalCount;
+
 		private String error;
 
 		// Getters and setters
@@ -231,16 +235,22 @@ public class FileUploadController {
 		public void setError(String error) {
 			this.error = error;
 		}
+
 	}
 
 	/**
 	 * Inner class for delete file response
 	 */
 	public static class DeleteFileResponse {
+
 		private boolean success;
+
 		private String message;
+
 		private String error;
+
 		private String uploadKey;
+
 		private String fileName;
 
 		// Getters and setters
@@ -283,6 +293,7 @@ public class FileUploadController {
 		public void setFileName(String fileName) {
 			this.fileName = fileName;
 		}
+
 	}
 
 }

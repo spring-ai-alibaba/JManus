@@ -124,8 +124,8 @@ public class FileUploadService {
 		// Create result
 		FileUploadResult result = new FileUploadResult();
 		result.setSuccess(failedFiles == 0);
-		result.setMessage(failedFiles == 0 ? "Files uploaded successfully" : 
-			String.format("Upload completed with %d successful and %d failed files", successfulFiles, failedFiles));
+		result.setMessage(failedFiles == 0 ? "Files uploaded successfully" : String
+			.format("Upload completed with %d successful and %d failed files", successfulFiles, failedFiles));
 		result.setUploadKey(uploadKey);
 		result.setUploadedFiles(uploadedFiles);
 		result.setTotalFiles(files.length);
@@ -145,8 +145,7 @@ public class FileUploadService {
 	 * @return File information
 	 * @throws IOException if upload fails
 	 */
-	private FileUploadResult.FileInfo uploadSingleFile(MultipartFile file, Path uploadDirectory)
-			throws IOException {
+	private FileUploadResult.FileInfo uploadSingleFile(MultipartFile file, Path uploadDirectory) throws IOException {
 		// Validate single file
 		validateSingleFile(file);
 
@@ -161,7 +160,7 @@ public class FileUploadService {
 
 		// Copy file to target location
 		Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-;
+		;
 
 		// Create file information
 		FileUploadResult.FileInfo fileInfo = new FileUploadResult.FileInfo();
@@ -218,9 +217,12 @@ public class FileUploadService {
 		files.sort((a, b) -> {
 			LocalDateTime timeA = a.getUploadTime();
 			LocalDateTime timeB = b.getUploadTime();
-			if (timeA == null && timeB == null) return 0;
-			if (timeA == null) return 1;
-			if (timeB == null) return -1;
+			if (timeA == null && timeB == null)
+				return 0;
+			if (timeA == null)
+				return 1;
+			if (timeB == null)
+				return -1;
 			return timeB.compareTo(timeA);
 		});
 
@@ -249,7 +251,9 @@ public class FileUploadService {
 				return false;
 			}
 
-			Path uploadDirectory = directoryManager.getWorkingDirectory().resolve(UPLOADED_FILES_DIR).resolve(uploadKey);
+			Path uploadDirectory = directoryManager.getWorkingDirectory()
+				.resolve(UPLOADED_FILES_DIR)
+				.resolve(uploadKey);
 
 			if (!Files.exists(uploadDirectory)) {
 				logger.warn("Upload directory not found for uploadKey: {}", uploadKey);
@@ -389,24 +393,24 @@ public class FileUploadService {
 	}
 
 	/**
-	 * Synchronize uploaded files from upload directory to plan execution directory
-	 * This method copies files from upload_files/uploadKey to extensions/inner_storage/rootPlanId
+	 * Synchronize uploaded files from upload directory to plan execution directory This
+	 * method copies files from upload_files/uploadKey to
+	 * extensions/inner_storage/rootPlanId
 	 * @param uploadKey The upload key for the uploaded files
 	 * @param rootPlanId The root plan ID for the target directory
 	 * @return List of synchronized file information
 	 * @throws IOException if synchronization fails
 	 * @throws IllegalArgumentException if parameters are invalid
 	 */
-	public List<FileUploadResult.FileInfo> syncUploadedFilesToPlan(String uploadKey, String rootPlanId) throws IOException {
+	public List<FileUploadResult.FileInfo> syncUploadedFilesToPlan(String uploadKey, String rootPlanId)
+			throws IOException {
 		logger.info("Starting file synchronization from uploadKey: {} to rootPlanId: {}", uploadKey, rootPlanId);
 
 		// Validate parameters
 		validateSyncParameters(uploadKey, rootPlanId);
 
 		// Get source directory (upload_files/uploadKey)
-		Path sourceDirectory = directoryManager.getWorkingDirectory()
-			.resolve(UPLOADED_FILES_DIR)
-			.resolve(uploadKey);
+		Path sourceDirectory = directoryManager.getWorkingDirectory().resolve(UPLOADED_FILES_DIR).resolve(uploadKey);
 
 		if (!Files.exists(sourceDirectory)) {
 			logger.warn("Source upload directory not found: {}", sourceDirectory);
@@ -431,20 +435,21 @@ public class FileUploadService {
 				return synchronizedFiles;
 			}
 
-			logger.info("Found {} files to synchronize from uploadKey: {} to rootPlanId: {}", 
-				files.size(), uploadKey, rootPlanId);
+			logger.info("Found {} files to synchronize from uploadKey: {} to rootPlanId: {}", files.size(), uploadKey,
+					rootPlanId);
 
 			for (Path sourceFile : files) {
 				try {
 					FileUploadResult.FileInfo fileInfo = syncSingleFile(sourceFile, targetDirectory, uploadKey);
 					synchronizedFiles.add(fileInfo);
 					successfulSyncs++;
-					logger.info("Successfully synchronized file: {} from uploadKey: {} to rootPlanId: {}", 
-						sourceFile.getFileName(), uploadKey, rootPlanId);
-				} catch (Exception e) {
-					logger.error("Failed to synchronize file: {} from uploadKey: {} to rootPlanId: {}", 
-						sourceFile.getFileName(), uploadKey, rootPlanId, e);
-					
+					logger.info("Successfully synchronized file: {} from uploadKey: {} to rootPlanId: {}",
+							sourceFile.getFileName(), uploadKey, rootPlanId);
+				}
+				catch (Exception e) {
+					logger.error("Failed to synchronize file: {} from uploadKey: {} to rootPlanId: {}",
+							sourceFile.getFileName(), uploadKey, rootPlanId, e);
+
 					// Create error file info
 					FileUploadResult.FileInfo errorInfo = new FileUploadResult.FileInfo();
 					errorInfo.setOriginalName(sourceFile.getFileName().toString());
@@ -456,8 +461,9 @@ public class FileUploadService {
 			}
 		}
 
-		logger.info("Completed file synchronization. Successfully synchronized: {}/{} files from uploadKey: {} to rootPlanId: {}", 
-			successfulSyncs, successfulSyncs + failedSyncs, uploadKey, rootPlanId);
+		logger.info(
+				"Completed file synchronization. Successfully synchronized: {}/{} files from uploadKey: {} to rootPlanId: {}",
+				successfulSyncs, successfulSyncs + failedSyncs, uploadKey, rootPlanId);
 
 		return synchronizedFiles;
 	}
@@ -470,7 +476,8 @@ public class FileUploadService {
 	 * @return File information for the synchronized file
 	 * @throws IOException if synchronization fails
 	 */
-	private FileUploadResult.FileInfo syncSingleFile(Path sourceFile, Path targetDirectory, String uploadKey) throws IOException {
+	private FileUploadResult.FileInfo syncSingleFile(Path sourceFile, Path targetDirectory, String uploadKey)
+			throws IOException {
 		String fileName = sourceFile.getFileName().toString();
 		Path targetFile = targetDirectory.resolve(fileName);
 
@@ -548,7 +555,8 @@ public class FileUploadService {
 				try {
 					FileUploadResult.FileInfo fileInfo = createFileInfo(filePath);
 					files.add(fileInfo);
-				} catch (IOException e) {
+				}
+				catch (IOException e) {
 					logger.warn("Error reading file info for: {}", filePath, e);
 				}
 			});
@@ -558,9 +566,12 @@ public class FileUploadService {
 		files.sort((a, b) -> {
 			LocalDateTime timeA = a.getUploadTime();
 			LocalDateTime timeB = b.getUploadTime();
-			if (timeA == null && timeB == null) return 0;
-			if (timeA == null) return 1;
-			if (timeB == null) return -1;
+			if (timeA == null && timeB == null)
+				return 0;
+			if (timeA == null)
+				return 1;
+			if (timeB == null)
+				return -1;
 			return timeB.compareTo(timeA);
 		});
 

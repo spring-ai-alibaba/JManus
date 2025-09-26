@@ -96,7 +96,8 @@ public class UserService {
 			return getAllUsers();
 		}
 
-		return userRepository.findByDisplayNameContaining(displayName).stream()
+		return userRepository.findByDisplayNameContaining(displayName)
+			.stream()
 			.map(this::mapToUser)
 			.collect(Collectors.toList());
 	}
@@ -143,7 +144,7 @@ public class UserService {
 		Map<String, Object> stats = new HashMap<>();
 		long totalUsers = userRepository.count();
 		long activeUsers = userRepository.countByStatus("active");
-		
+
 		stats.put("total_users", totalUsers);
 		stats.put("active_users", activeUsers);
 		stats.put("inactive_users", totalUsers - activeUsers);
@@ -156,7 +157,8 @@ public class UserService {
 				.average()
 				.orElse(0.0);
 			stats.put("avg_days_since_creation", Math.round(avgDaysSinceCreation));
-		} else {
+		}
+		else {
 			stats.put("avg_days_since_creation", 0);
 		}
 
@@ -185,7 +187,7 @@ public class UserService {
 			logger.warn("User not found: {}", userId);
 			return false;
 		}
-		
+
 		UserEntity entity = entityOpt.get();
 		entity.setCurrentConversationId(conversationId);
 		userRepository.save(entity);

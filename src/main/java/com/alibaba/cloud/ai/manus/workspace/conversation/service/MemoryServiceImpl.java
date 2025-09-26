@@ -58,14 +58,12 @@ public class MemoryServiceImpl implements MemoryService {
 		memory.setId(entity.getId());
 		memory.setConversationId(entity.getConversationId());
 		memory.setMemoryName(entity.getMemoryName());
-		
+
 		// Convert Date to LocalDateTime
 		if (entity.getCreateTime() != null) {
-			memory.setCreateTime(entity.getCreateTime().toInstant()
-				.atZone(ZoneId.systemDefault())
-				.toLocalDateTime());
+			memory.setCreateTime(entity.getCreateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
 		}
-		
+
 		return memory;
 	}
 
@@ -80,19 +78,19 @@ public class MemoryServiceImpl implements MemoryService {
 		entity.setId(memory.getId());
 		entity.setConversationId(memory.getConversationId());
 		entity.setMemoryName(memory.getMemoryName());
-		
+
 		// Convert LocalDateTime to Date
 		if (memory.getCreateTime() != null) {
 			entity.setCreateTime(java.sql.Timestamp.valueOf(memory.getCreateTime()));
 		}
-		
+
 		return entity;
 	}
 
 	@Override
 	public List<Memory> getMemories() {
 		List<MemoryEntity> memoryEntities = memoryRepository.findAll();
-		
+
 		// Convert to Memory VO and sort by create time
 		return memoryEntities.stream()
 			.map(this::convertToMemory)

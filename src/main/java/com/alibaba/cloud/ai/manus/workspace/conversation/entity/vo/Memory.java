@@ -22,8 +22,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Memory value object representing conversation memory information
- * Simple structure for memory data transfer and API responses
+ * Memory value object representing conversation memory information Simple structure for
+ * memory data transfer and API responses
  */
 public class Memory {
 
@@ -100,8 +100,8 @@ public class Memory {
 
 	@Override
 	public String toString() {
-		return "Memory{" + "id=" + id + ", conversationId='" + conversationId + '\'' + ", memoryName='" + memoryName + '\''
-				+ ", createTime=" + createTime + '}';
+		return "Memory{" + "id=" + id + ", conversationId='" + conversationId + '\'' + ", memoryName='" + memoryName
+				+ '\'' + ", createTime=" + createTime + '}';
 	}
 
 }

@@ -56,7 +56,8 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 	 */
 	public DynamicToolPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			AgentService agentService, ILlmService llmService, ManusProperties manusProperties,
-			LevelBasedExecutorPool levelBasedExecutorPool, DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService) {
+			LevelBasedExecutorPool levelBasedExecutorPool, DynamicModelRepository dynamicModelRepository,
+			FileUploadService fileUploadService) {
 		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
 		this.dynamicModelRepository = dynamicModelRepository;
 	}

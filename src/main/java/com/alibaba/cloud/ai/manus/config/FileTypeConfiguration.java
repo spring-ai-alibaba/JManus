@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 public class FileTypeConfiguration {
 
 	// Document files
-	public static final Set<String> DOCUMENTS = Set.of("pdf", "txt", "md", "markdown", "rst", "adoc","doc","docx");
+	public static final Set<String> DOCUMENTS = Set.of("pdf", "txt", "md", "markdown", "rst", "adoc", "doc", "docx");
 
 	// Spreadsheet files
 	public static final Set<String> SPREADSHEETS = Set.of("xlsx", "xls", "csv", "tsv");

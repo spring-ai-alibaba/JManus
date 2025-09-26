@@ -69,8 +69,8 @@ public class ExecutionContext {
 	private int planDepth = 0;
 
 	/**
-	 * Whether to use conversation, scenario is if only building plan, then conversation should not be
-	 * used, otherwise conversation cannot be deleted
+	 * Whether to use conversation, scenario is if only building plan, then conversation
+	 * should not be used, otherwise conversation cannot be deleted
 	 */
 	private boolean useConversation = false;
 
@@ -217,7 +217,7 @@ public class ExecutionContext {
 	}
 
 	// public boolean isUseConversation() {
-	// 	return useConversation;
+	// return useConversation;
 	// }
 
 	public void setUseConversation(boolean useConversation) {
