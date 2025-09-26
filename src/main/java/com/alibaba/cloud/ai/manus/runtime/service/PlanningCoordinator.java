@@ -49,7 +49,7 @@ public class PlanningCoordinator {
 
 	private final MemoryService memoryService;
 
-	// TODO 沈询 ： 这里应该去掉
+	// TODO shenxun : this should be removed
 	@Autowired
 	public PlanningCoordinator(PlanningFactory planningFactory, PlanExecutorFactory planExecutorFactory,
 			PlanFinalizer planFinalizer, MemoryService memoryService) {
