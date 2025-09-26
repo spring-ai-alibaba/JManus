@@ -85,12 +85,12 @@
 
                     <div class="message-preview">
                       <p class="preview-line">
-                        {{ message.messages.length > 0 ? message.messages[0].text : 'none message' }}
+                        {{ message.messages && message.messages.length > 0 ? message.messages[0].text : 'none message' }}
                       </p>
                       <p
                           class="preview-line"
                           style="opacity: 0.8;"
-                          v-if="message.messages.length > 1"
+                          v-if="message.messages && message.messages.length > 1"
                       >
                         {{ message.messages[1].text }}
                       </p>
@@ -99,7 +99,7 @@
                     <div class="message-meta">
                       <span class="message-id">ID: {{ message.conversation_id }}</span>
                       <div class="meta-right">
-                      <span class="unread-count" v-if="message.messages.length > 0">
+                      <span class="unread-count" v-if="message.messages && message.messages.length > 0">
                         {{ message.messages.length }} {{$t('memory.size')}}
                       </span>
                         <span class="message-time">{{ formatTimestamp(message.create_time) }}</span>
