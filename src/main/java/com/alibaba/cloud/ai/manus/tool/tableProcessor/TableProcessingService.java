@@ -207,6 +207,15 @@ public class TableProcessingService implements ITableProcessingService {
 	}
 
 	/**
+	 * Get root plan directory for a given plan ID
+	 * @param planId Plan ID
+	 * @return Root plan directory path
+	 */
+	public Path getRootPlanDirectory(String planId) {
+		return unifiedDirectoryManager.getRootPlanDirectory(planId);
+	}
+
+	/**
 	 * Get last operation result for a plan
 	 * @param planId plan ID
 	 * @return last operation result

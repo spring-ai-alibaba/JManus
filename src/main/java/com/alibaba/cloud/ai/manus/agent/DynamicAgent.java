@@ -16,6 +16,8 @@
 package com.alibaba.cloud.ai.manus.agent;
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.manus.event.PlanExceptionClearedEvent;
 import com.alibaba.cloud.ai.manus.llm.ILlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
@@ -88,6 +90,8 @@ public class DynamicAgent extends ReActAgent {
 
 	private final StreamingResponseHandler streamingResponseHandler;
 
+	private JmanusEventPublisher jmanusEventPublisher;
+
 	public void clearUp(String planId) {
 		Map<String, ToolCallBackContext> toolCallBackContext = toolCallbackProvider.getToolCallBackContext();
 		for (ToolCallBackContext toolCallBack : toolCallBackContext.values()) {
@@ -109,7 +113,7 @@ public class DynamicAgent extends ReActAgent {
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
 			Map<String, Object> initialAgentSetting, UserInputService userInputService, PromptService promptService,
 			DynamicModelEntity model, StreamingResponseHandler streamingResponseHandler, ExecutionStep step,
-			PlanIdDispatcher planIdDispatcher) {
+			PlanIdDispatcher planIdDispatcher, JmanusEventPublisher jmanusEventPublisher) {
 		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, promptService, step,
 				planIdDispatcher);
 		this.agentName = name;
@@ -125,6 +129,7 @@ public class DynamicAgent extends ReActAgent {
 		this.userInputService = userInputService;
 		this.model = model;
 		this.streamingResponseHandler = streamingResponseHandler;
+		this.jmanusEventPublisher = jmanusEventPublisher;
 	}
 
 	@Override
@@ -217,6 +222,13 @@ public class DynamicAgent extends ReActAgent {
 					ThinkActRecordParams paramsN = new ThinkActRecordParams(thinkActId, stepId, thinkInput,
 							responseByLLm, null, actToolInfoList);
 					planExecutionRecorder.recordThinkingAndAction(step, paramsN);
+
+					// Clear exception cache if this was a retry attempt
+					if (attempt > 1 && jmanusEventPublisher != null) {
+						log.info("Retry successful for planId: {}, clearing exception cache", getCurrentPlanId());
+						jmanusEventPublisher.publish(new PlanExceptionClearedEvent(getCurrentPlanId()));
+					}
+
 					return true;
 				}
 				log.warn("Attempt {}: No tools selected. Retrying...", attempt);

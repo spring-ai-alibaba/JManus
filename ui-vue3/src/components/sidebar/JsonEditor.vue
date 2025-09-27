@@ -37,7 +37,7 @@
         <div class="form-row">
           <label class="form-label">{{ $t('sidebar.title') }}</label>
           <input 
-            v-model="parsedData.title" 
+            v-model="displayData.title" 
             type="text" 
             class="form-input"
             :placeholder="$t('sidebar.titlePlaceholder')"
@@ -53,7 +53,7 @@
         
         <div class="steps-container">
           <div 
-            v-for="(step, index) in parsedData.steps" 
+            v-for="(step, index) in displayData.steps" 
             :key="index"
             class="step-item"
           >
@@ -70,7 +70,7 @@
                 </button>
                 <button 
                   @click="moveStepDown(index)"
-                  :disabled="index === parsedData.steps.length - 1"
+                  :disabled="index === displayData.steps.length - 1"
                   class="btn btn-xs"
                   :title="$t('sidebar.moveDown')"
                 >
@@ -137,7 +137,7 @@
           </div>
           
           <!-- Empty State -->
-          <div v-if="parsedData.steps.length === 0" class="empty-steps">
+          <div v-if="displayData.steps.length === 0" class="empty-steps">
             <Icon icon="carbon:add-alt" width="32" class="empty-icon" />
             <p>{{ $t('sidebar.noSteps') }}</p>
             <button @click="addStep" class="btn btn-primary">
@@ -153,7 +153,7 @@
         <div class="form-row">
           <label class="form-label">{{ $t('sidebar.planId') }}</label>
           <input 
-            v-model="parsedData.planTemplateId" 
+            v-model="displayData.planTemplateId" 
             type="text" 
             class="form-input"
             placeholder="planTemplate-1756109892045"
@@ -234,7 +234,7 @@ const emit = defineEmits<{
 
 const {
   showJsonPreview,
-  parsedData,
+  displayData,
   formattedJsonOutput,
   addStep,
   removeStep,

@@ -25,6 +25,7 @@ import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
+import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -55,8 +56,9 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 	 */
 	public DynamicToolPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			AgentService agentService, ILlmService llmService, ManusProperties manusProperties,
-			LevelBasedExecutorPool levelBasedExecutorPool, DynamicModelRepository dynamicModelRepository) {
-		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool);
+			LevelBasedExecutorPool levelBasedExecutorPool, DynamicModelRepository dynamicModelRepository,
+			FileUploadService fileUploadService) {
+		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
 		this.dynamicModelRepository = dynamicModelRepository;
 	}
 

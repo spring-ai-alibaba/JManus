@@ -15,6 +15,7 @@
  */
 
 // Plan template related type definitions
+import type { PlanExecutionRequestPayload } from './plan-execution'
 
 export interface PlanTemplate {
   id: string
@@ -46,5 +47,5 @@ export interface PlanTemplateEvents {
   jsonContentClear: []
   planTemplateConfigRequested: [payload: { templateId: string; template: PlanTemplate }]
   configTabClosed: []
-  planExecutionRequested: [payload: { title: string; planData: any; params?: string; replacementParams?: Record<string, string> }]
+  planExecutionRequested: [payload: PlanExecutionRequestPayload]
 }

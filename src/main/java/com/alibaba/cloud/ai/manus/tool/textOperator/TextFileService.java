@@ -211,6 +211,15 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 	}
 
 	/**
+	 * Get root plan directory for a given plan ID
+	 * @param planId Plan ID
+	 * @return Root plan directory path
+	 */
+	public Path getRootPlanDirectory(String planId) {
+		return unifiedDirectoryManager.getRootPlanDirectory(planId);
+	}
+
+	/**
 	 * Clean up directory and file status for specified plan
 	 * @param planId Plan ID
 	 */

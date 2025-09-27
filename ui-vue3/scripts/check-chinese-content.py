@@ -55,6 +55,7 @@ class ChineseContentChecker:
             'index.ts',  # i18n index file
             'type.ts',  # i18n type definitions
             'sortI18n.ts',  # i18n sorting utility
+            'plan-act-api-service.ts',  # API service file with Chinese content
         ]
 
         # Exclude directories

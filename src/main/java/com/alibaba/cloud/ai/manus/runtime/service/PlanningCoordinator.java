@@ -22,6 +22,7 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.executor.PlanExecutorInterface;
 import com.alibaba.cloud.ai.manus.runtime.executor.factory.PlanExecutorFactory;
+import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 
 import java.util.concurrent.CompletableFuture;
@@ -46,15 +47,16 @@ public class PlanningCoordinator {
 
 	private final PlanFinalizer planFinalizer;
 
-	private final PlanIdDispatcher planIdDispatcher;
+	private final MemoryService memoryService;
 
+	// TODO shenxun : this should be removed
 	@Autowired
 	public PlanningCoordinator(PlanningFactory planningFactory, PlanExecutorFactory planExecutorFactory,
-			PlanFinalizer planFinalizer, PlanIdDispatcher planIdDispatcher) {
+			PlanFinalizer planFinalizer, MemoryService memoryService) {
 		this.planningFactory = planningFactory;
 		this.planExecutorFactory = planExecutorFactory;
 		this.planFinalizer = planFinalizer;
-		this.planIdDispatcher = planIdDispatcher;
+		this.memoryService = memoryService;
 	}
 
 	/**
@@ -63,13 +65,14 @@ public class PlanningCoordinator {
 	 * @param rootPlanId The root plan ID for the execution context
 	 * @param parentPlanId The ID of the parent plan (can be null for root plans)
 	 * @param currentPlanId The current plan ID for execution
-	 * @param memoryId The memory ID for the execution context
+	 * @param conversationId The conversation ID for the execution context
 	 * @param toolcallId The ID of the tool call that triggered this plan execution
 	 * @return A CompletableFuture that completes with the execution result
 	 */
 	public CompletableFuture<PlanExecutionResult> executeByUserQuery(String userQuery, String rootPlanId,
-			String parentPlanId, String currentPlanId, String memoryId, String toolcallId) {
-		return executeByUserQuery(userQuery, rootPlanId, parentPlanId, currentPlanId, memoryId, toolcallId, "simple");
+			String parentPlanId, String currentPlanId, String conversationId, String toolcallId) {
+		return executeByUserQuery(userQuery, rootPlanId, parentPlanId, currentPlanId, conversationId, toolcallId,
+				"simple");
 	}
 
 	/**
@@ -78,13 +81,13 @@ public class PlanningCoordinator {
 	 * @param rootPlanId The root plan ID for the execution context
 	 * @param parentPlanId The ID of the parent plan (can be null for root plans)
 	 * @param currentPlanId The current plan ID for execution
-	 * @param memoryId The memory ID for the execution context
+	 * @param conversationId The conversation ID for the execution context
 	 * @param toolcallId The ID of the tool call that triggered this plan execution
 	 * @param planType The type of plan to create ("simple" or "dynamic_agent")
 	 * @return A CompletableFuture that completes with the execution result
 	 */
 	public CompletableFuture<PlanExecutionResult> executeByUserQuery(String userQuery, String rootPlanId,
-			String parentPlanId, String currentPlanId, String memoryId, String toolcallId, String planType) {
+			String parentPlanId, String currentPlanId, String conversationId, String toolcallId, String planType) {
 		try {
 			log.info("Starting plan execution for user query: {}", userQuery);
 
@@ -99,8 +102,8 @@ public class PlanningCoordinator {
 			context.setRootPlanId(rootPlanId);
 			context.setUserRequest(userQuery);
 			context.setNeedSummary(true);
-			context.setUseMemory(false);
-			context.setMemoryId(memoryId);
+			context.setUseConversation(false);
+			context.setConversationId(conversationId);
 			context.setParentPlanId(parentPlanId);
 			context.setToolCallId(toolcallId);
 
@@ -150,10 +153,11 @@ public class PlanningCoordinator {
 	 * @param currentPlanId The current plan ID for execution
 	 * @param toolcallId The ID of the tool call that triggered this plan execution
 	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
+	 * @param uploadKey The upload key for file upload context (can be null)
 	 * @return A CompletableFuture that completes with the execution result
 	 */
 	public CompletableFuture<PlanExecutionResult> executeByPlan(PlanInterface plan, String rootPlanId,
-			String parentPlanId, String currentPlanId, String toolcallId, boolean isVueRequest) {
+			String parentPlanId, String currentPlanId, String toolcallId, boolean isVueRequest, String uploadKey) {
 		try {
 			log.info("Starting direct plan execution for plan: {}", plan.getCurrentPlanId());
 
@@ -178,18 +182,24 @@ public class PlanningCoordinator {
 				log.debug("Setting needSummary=false for planId: {}, toolcallId: {}, isVueRequest: {}", currentPlanId,
 						toolcallId, isVueRequest);
 			}
-			// Generate a memory ID if none exists, since we're using memory
-			if (context.getMemoryId() == null) {
-				String generatedMemoryId = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-				context.setMemoryId(generatedMemoryId);
+			// Generate a conversation ID if none exists, since we're using conversation
+			if (context.getConversationId() == null) {
+				String generatedConversationId = memoryService.generateConversationId();
+				context.setConversationId(generatedConversationId);
 			}
-			context.setUseMemory(true);
+			context.setUseConversation(true);
 			context.setParentPlanId(parentPlanId);
 			context.setToolCallId(toolcallId);
+			context.setUploadKey(uploadKey);
 
 			// Log toolcallId if provided
 			if (toolcallId != null) {
 				log.debug("Plan execution triggered by tool call: {}", toolcallId);
+			}
+
+			// Log uploadKey if provided
+			if (uploadKey != null) {
+				log.debug("Plan execution with upload key: {}", uploadKey);
 			}
 
 			// Execute the plan using PlanExecutorFactory
