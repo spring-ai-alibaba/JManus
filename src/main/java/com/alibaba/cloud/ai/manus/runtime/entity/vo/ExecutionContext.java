@@ -69,15 +69,20 @@ public class ExecutionContext {
 	private int planDepth = 0;
 
 	/**
-	 * Whether to use memory, scenario is if only building plan, then memory should not be
-	 * used, otherwise memory cannot be deleted
+	 * Whether to use conversation, scenario is if only building plan, then conversation
+	 * should not be used, otherwise conversation cannot be deleted
 	 */
-	private boolean useMemory = false;
+	private boolean useConversation = false;
 
 	/**
-	 * Memory ID for memory usage
+	 * Conversation ID for conversation usage
 	 */
-	private String memoryId;
+	private String conversationId;
+
+	/**
+	 * Upload key for file upload context
+	 */
+	private String uploadKey;
 
 	/**
 	 * Get plan ID
@@ -211,20 +216,20 @@ public class ExecutionContext {
 		this.userRequest = userRequest;
 	}
 
-	public boolean isUseMemory() {
-		return useMemory;
+	// public boolean isUseConversation() {
+	// return useConversation;
+	// }
+
+	public void setUseConversation(boolean useConversation) {
+		this.useConversation = useConversation;
 	}
 
-	public void setUseMemory(boolean useMemory) {
-		this.useMemory = useMemory;
+	public String getConversationId() {
+		return conversationId;
 	}
 
-	public String getMemoryId() {
-		return memoryId;
-	}
-
-	public void setMemoryId(String memoryId) {
-		this.memoryId = memoryId;
+	public void setConversationId(String conversationId) {
+		this.conversationId = conversationId;
 	}
 
 	public int getPlanDepth() {
@@ -233,6 +238,22 @@ public class ExecutionContext {
 
 	public void setPlanDepth(int planDepth) {
 		this.planDepth = planDepth;
+	}
+
+	/**
+	 * Get upload key
+	 * @return Upload key for file upload context
+	 */
+	public String getUploadKey() {
+		return uploadKey;
+	}
+
+	/**
+	 * Set upload key
+	 * @param uploadKey Upload key for file upload context
+	 */
+	public void setUploadKey(String uploadKey) {
+		this.uploadKey = uploadKey;
 	}
 
 }

@@ -367,16 +367,7 @@ export class SidebarStore {
         planData = JSON.parse(this.jsonContent)
         planData.planTemplateId = this.selectedTemplate.id
       } catch {
-        planData = {
-          planTemplateId: this.selectedTemplate.id,
-          title: this.selectedTemplate.title ?? i18n.global.t('sidebar.defaultExecutionPlanTitle'),
-          steps: [
-            { stepRequirement: '[BROWSER_AGENT] Visit Baidu to search for Alibaba\'s latest stock price' },
-            { stepRequirement: '[DEFAULT_AGENT] Extract and organize stock price information from search results' },
-            { stepRequirement: '[TEXT_FILE_AGENT] Create a text file to record query results' },
-            { stepRequirement: '[DEFAULT_AGENT] Report query results to user' },
-          ],
-        }
+        throw new Error('Failed to parse plan data')
       }
       const title = this.selectedTemplate.title ?? planData.title ?? 'Execution Plan'
       return {
@@ -395,7 +386,6 @@ export class SidebarStore {
   finishPlanExecution() {
     this.isExecuting = false
   }
-
   // Load available tools from backend
   async loadAvailableTools() {
     if (this.isLoadingTools) {

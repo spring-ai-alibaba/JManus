@@ -29,10 +29,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import com.alibaba.cloud.ai.manus.coordinator.tool.CoordinatorTool;
-import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
-import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
 import com.alibaba.cloud.ai.manus.recorder.repository.ThinkActRecordRepository;
 import com.alibaba.cloud.ai.manus.recorder.entity.po.ThinkActRecordEntity;
@@ -63,13 +61,7 @@ public class CoordinatorToolExecutor {
 	private static final String PLAN_NOT_FOUND_ERROR = "Plan not found: %s";
 
 	@Autowired
-	private PlanExecutionRecorder planExecutionRecorder;
-
-	@Autowired
 	private CoordinatorProperties coordinatorProperties;
-
-	@Autowired
-	private IPlanParameterMappingService planParameterMappingService;
 
 	@Autowired
 	private PlanHierarchyReaderService planHierarchyReaderService;

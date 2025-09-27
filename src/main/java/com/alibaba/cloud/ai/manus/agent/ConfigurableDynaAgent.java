@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.manus.agent;
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
 import com.alibaba.cloud.ai.manus.llm.ILlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
@@ -70,10 +71,10 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
 			Map<String, Object> initialAgentSetting, UserInputService userInputService, PromptService promptService,
 			DynamicModelEntity model, StreamingResponseHandler streamingResponseHandler, ExecutionStep step,
-			PlanIdDispatcher planIdDispatcher) {
+			PlanIdDispatcher planIdDispatcher, JmanusEventPublisher jmanusEventPublisher) {
 		super(llmService, planExecutionRecorder, manusProperties, name, description, nextStepPrompt, availableToolKeys,
 				toolCallingManager, initialAgentSetting, userInputService, promptService, model,
-				streamingResponseHandler, step, planIdDispatcher);
+				streamingResponseHandler, step, planIdDispatcher, jmanusEventPublisher);
 	}
 
 	/**

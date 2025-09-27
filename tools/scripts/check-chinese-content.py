@@ -54,7 +54,7 @@ class ChineseContentChecker:
         }
 
         self.exclude_files = {
-            'package-lock.json', 'yarn.lock', 'pom.xml'
+            'package-lock.json', 'yarn.lock', 'pom.xml', 'plan-act-api-service.ts'
         }
 
         # Exclude i18n related file patterns

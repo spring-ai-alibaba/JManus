@@ -7,7 +7,7 @@
     <groupId>com.jmanus</groupId>
     <name>JManus - AI Agent Management System</name>
     <artifactId>jmanus</artifactId>
-    <version>4.0.2-SNAPSHOT</version>
+    <version>4.0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -20,6 +20,8 @@
     <description>JManus - AI Agent Management System built on Spring AI Alibaba</description>
     <properties>
         <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <jsoup-version>1.18.1</jsoup-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessorTool;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
@@ -61,7 +60,6 @@ import com.alibaba.cloud.ai.manus.planning.service.IPlanCreator;
 import com.alibaba.cloud.ai.manus.planning.service.DynamicAgentPlanCreator;
 import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
-import com.alibaba.cloud.ai.manus.tool.DocLoaderTool;
 import com.alibaba.cloud.ai.manus.tool.FormInputTool;
 import com.alibaba.cloud.ai.manus.tool.PlanningTool;
 import com.alibaba.cloud.ai.manus.tool.PlanningToolInterface;
@@ -77,20 +75,19 @@ import com.alibaba.cloud.ai.manus.tool.database.DatabaseUseTool;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.manus.tool.cron.CronTool;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
-import com.alibaba.cloud.ai.manus.tool.innerStorage.FileMergeTool;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.DataSplitTool;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.FinalizeTool;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.MapOutputTool;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.MapReduceSharedStateManager;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.ReduceOperationTool;
+import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessorTool;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UploadedFileLoaderTool;
 import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
-import com.alibaba.cloud.ai.manus.tool.excelProcessor.ExcelProcessorTool;
 import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
+import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.MarkdownConverterTool;
 import com.alibaba.cloud.ai.manus.subplan.service.ISubplanToolService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -235,6 +232,8 @@ public class PlanningFactory implements IPlanningFactory {
 
 	public Map<String, ToolCallBackContext> toolCallbackMap(String planId, String rootPlanId,
 			String expectedReturnInfo) {
+
+		Boolean infiniteContextEnabled = manusProperties.getInfiniteContextEnabled();
 		Map<String, ToolCallBackContext> toolCallbackMap = new HashMap<>();
 		List<ToolCallBiFunctionDef<?>> toolDefinitions = new ArrayList<>();
 		if (chromeDriverService == null) {
@@ -253,24 +252,29 @@ public class PlanningFactory implements IPlanningFactory {
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
 			toolDefinitions.add(new TextFileOperator(textFileService, innerStorageService, objectMapper));
-			toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager, applicationContext));
-			toolDefinitions.add(new TableProcessorTool(tableProcessingService));
-			// toolDefinitions.add(new InnerStorageTool(unifiedDirectoryManager));
+			// toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager,
+			// applicationContext));
+			// toolDefinitions.add(new TableProcessorTool(tableProcessingService));
 			// toolDefinitions.add(pptGeneratorOperator);
 			// toolDefinitions.add(jsxGeneratorOperator);
 			// toolDefinitions.add(new FileMergeTool(unifiedDirectoryManager));
 			// toolDefinitions.add(new GoogleSearch());
 			// toolDefinitions.add(new PythonExecute());
 			toolDefinitions.add(new FormInputTool(objectMapper));
-			toolDefinitions.add(new DataSplitTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager,
-					objectMapper, tableProcessingService));
-			toolDefinitions.add(new MapOutputTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager,
-					objectMapper));
-			toolDefinitions
-				.add(new ReduceOperationTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
-			toolDefinitions.add(new FinalizeTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
+			if (infiniteContextEnabled) {
+				toolDefinitions.add(new DataSplitTool(planId, manusProperties, sharedStateManager,
+						unifiedDirectoryManager, objectMapper, tableProcessingService));
+				toolDefinitions.add(new MapOutputTool(planId, manusProperties, sharedStateManager,
+						unifiedDirectoryManager, objectMapper));
+				toolDefinitions
+					.add(new ReduceOperationTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
+				toolDefinitions
+					.add(new FinalizeTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
+
+			}
 			toolDefinitions.add(new CronTool(cronService, objectMapper));
-			toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
+			toolDefinitions.add(new MarkdownConverterTool(unifiedDirectoryManager, applicationContext));
+			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
 		}
 		else {
 			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo));
@@ -288,6 +292,7 @@ public class PlanningFactory implements IPlanningFactory {
 		}
 		// Create FunctionToolCallback for each tool
 		for (ToolCallBiFunctionDef<?> toolDefinition : toolDefinitions) {
+
 			try {
 				FunctionToolCallback<?, ToolExecuteResult> functionToolcallback = FunctionToolCallback
 					.builder(toolDefinition.getName(), toolDefinition)

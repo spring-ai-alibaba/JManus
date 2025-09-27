@@ -20,6 +20,7 @@ import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.llm.ILlmService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
+import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 
 import java.util.List;
 
@@ -39,8 +40,9 @@ public class PlanExecutor extends AbstractPlanExecutor {
 	 * @param levelBasedExecutorPool Level-based executor pool for depth-based execution
 	 */
 	public PlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder, AgentService agentService,
-			ILlmService llmService, ManusProperties manusProperties, LevelBasedExecutorPool levelBasedExecutorPool) {
-		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool);
+			ILlmService llmService, ManusProperties manusProperties, LevelBasedExecutorPool levelBasedExecutorPool,
+			FileUploadService fileUploadService) {
+		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
 
 	}
 

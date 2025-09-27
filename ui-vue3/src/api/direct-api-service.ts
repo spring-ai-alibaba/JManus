@@ -47,13 +47,25 @@ export class DirectApiService {
       
       // Create replacement parameters with user input
       const replacementParams = {
-        '用户输入的要求': query.input
+        'userRequirement': query.input
       }
       
-      const requestBody = {
+      const requestBody: Record<string, any> = {
         toolName: toolName,
         replacementParams: replacementParams,
         isVueRequest: true
+      }
+      
+      // Include uploaded files if present
+      if (query.uploadedFiles && query.uploadedFiles.length > 0) {
+        requestBody.uploadedFiles = query.uploadedFiles
+        console.log('[DirectApiService] Including uploaded files:', query.uploadedFiles.length)
+      }
+      
+      // Include uploadKey if present
+      if (query.uploadKey) {
+        requestBody.uploadKey = query.uploadKey
+        console.log('[DirectApiService] Including uploadKey:', query.uploadKey)
       }
       
       console.log('[DirectApiService] Sending message with default plan:', requestBody)

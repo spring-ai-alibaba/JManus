@@ -121,8 +121,7 @@ import { planExecutionManager } from '@/utils/plan-execution-manager'
 import { useMessage } from '@/composables/useMessage'
 import { memoryStore } from "@/stores/memory";
 import type { InputMessage } from "@/stores/memory";
-import { getUploadedFiles, hasUploadedFiles, getUploadedFilesPlanId, hasUploadedFilesPlanId } from '@/stores/uploadedFiles'
-
+import type { PlanExecutionRequestPayload } from '@/types/plan-execution';
 const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()
@@ -646,12 +645,7 @@ const handleConfig = () => {
   router.push('/configs')
 }
 
-const handlePlanExecutionRequested = async (payload: {
-  title: string
-  planData: any
-  params?: string | undefined
-  replacementParams?: Record<string, string> | undefined
-}) => {
+const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload) => {
   console.log('[DirectView] Plan execution requested:', payload)
 
   // Prevent duplicate execution
@@ -688,7 +682,7 @@ const handlePlanExecutionRequested = async (payload: {
   }
   try {
     // Get the plan template ID
-    const planTemplateId = payload.planData?.planTemplateId || payload.planData?.id || payload.planData?.planId
+    const planTemplateId = payload.planData?.planTemplateId
 
     if (!planTemplateId) {
       throw new Error(t('direct.planTemplateIdNotFound'))
@@ -704,22 +698,24 @@ const handlePlanExecutionRequested = async (payload: {
     // Call real API to execute plan
     console.log('[Direct] About to call PlanActApiService.executePlan')
 
-    // Get uploaded files from global state
-    const uploadedFiles = hasUploadedFiles() ? getUploadedFiles() : undefined
+    // Get uploaded files from InputArea component
+    const uploadedFiles = payload.uploadedFiles || []
+    const uploadKey = payload.uploadKey || undefined
+
+    
+    console.log('[Direct] 🔍 DEBUG - InputArea uploadedFiles:', uploadedFiles)
+    console.log('[Direct] 🔍 DEBUG - InputArea uploadKey:', uploadKey)
     console.log('[Direct] Executing with uploaded files:', uploadedFiles?.length ?? 0)
     console.log('[Direct] Executing with replacement params:', payload.replacementParams)
 
-    //Get the planId of the uploaded file
-    const uploadedFilesPlanId = hasUploadedFilesPlanId() ? getUploadedFilesPlanId() : undefined
-    console.log('[Direct] Executing with uploaded files planId:', uploadedFilesPlanId)
 
     let response
     if (payload.params?.trim()) {
       console.log('[Direct] Calling executePlan with rawParam:', payload.params.trim())
-      response = await PlanActApiService.executePlan(planTemplateId, payload.params.trim(), uploadedFiles, payload.replacementParams, uploadedFilesPlanId)
+      response = await PlanActApiService.executePlan(planTemplateId, payload.params.trim(), uploadedFiles, payload.replacementParams, uploadKey)
     } else {
       console.log('[Direct] Calling executePlan without rawParam')
-      response = await PlanActApiService.executePlan(planTemplateId, undefined, uploadedFiles, payload.replacementParams, uploadedFilesPlanId)
+      response = await PlanActApiService.executePlan(planTemplateId, undefined, uploadedFiles, payload.replacementParams, uploadKey)
     }
 
     console.log('[Direct] Plan execution API response:', response)
