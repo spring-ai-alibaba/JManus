@@ -22,7 +22,7 @@ export interface MemoryEmits {
 export interface InputMessage {
     input: string
     memoryId?: string
-    uploadedFiles?: any[]
+    uploadedFiles?: string[]
     uploadKey?: string
 }
 

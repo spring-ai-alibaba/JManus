@@ -490,7 +490,8 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 	public String getCurrentToolStateString() {
 		String planId = this.currentPlanId;
 		try {
-			Path workingDir = textFileService.getAbsolutePath(planId, "");
+			// Get the root plan directory instead of using empty filePath
+			Path workingDir = textFileService.getRootPlanDirectory(planId);
 			return String.format(
 					"""
 							Current Text File Operation State:

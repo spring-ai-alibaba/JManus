@@ -84,10 +84,8 @@ import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessorTool;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UploadedFileLoaderTool;
 import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
-import com.alibaba.cloud.ai.manus.tool.excelProcessor.ExcelProcessorTool;
 import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.MarkdownConverterTool;
 import com.alibaba.cloud.ai.manus.subplan.service.ISubplanToolService;
@@ -234,6 +232,8 @@ public class PlanningFactory implements IPlanningFactory {
 
 	public Map<String, ToolCallBackContext> toolCallbackMap(String planId, String rootPlanId,
 			String expectedReturnInfo) {
+
+		Boolean infiniteContextEnabled = manusProperties.getInfiniteContextEnabled();
 		Map<String, ToolCallBackContext> toolCallbackMap = new HashMap<>();
 		List<ToolCallBiFunctionDef<?>> toolDefinitions = new ArrayList<>();
 		if (chromeDriverService == null) {
@@ -261,13 +261,17 @@ public class PlanningFactory implements IPlanningFactory {
 			// toolDefinitions.add(new GoogleSearch());
 			// toolDefinitions.add(new PythonExecute());
 			toolDefinitions.add(new FormInputTool(objectMapper));
-			toolDefinitions.add(new DataSplitTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager,
-					objectMapper, tableProcessingService));
-			toolDefinitions.add(new MapOutputTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager,
-					objectMapper));
-			toolDefinitions
-				.add(new ReduceOperationTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
-			toolDefinitions.add(new FinalizeTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
+			if (infiniteContextEnabled) {
+				toolDefinitions.add(new DataSplitTool(planId, manusProperties, sharedStateManager,
+						unifiedDirectoryManager, objectMapper, tableProcessingService));
+				toolDefinitions.add(new MapOutputTool(planId, manusProperties, sharedStateManager,
+						unifiedDirectoryManager, objectMapper));
+				toolDefinitions
+					.add(new ReduceOperationTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
+				toolDefinitions
+					.add(new FinalizeTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
+
+			}
 			toolDefinitions.add(new CronTool(cronService, objectMapper));
 			toolDefinitions.add(new MarkdownConverterTool(unifiedDirectoryManager, applicationContext));
 			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
@@ -288,6 +292,7 @@ public class PlanningFactory implements IPlanningFactory {
 		}
 		// Create FunctionToolCallback for each tool
 		for (ToolCallBiFunctionDef<?> toolDefinition : toolDefinitions) {
+
 			try {
 				FunctionToolCallback<?, ToolExecuteResult> functionToolcallback = FunctionToolCallback
 					.builder(toolDefinition.getName(), toolDefinition)

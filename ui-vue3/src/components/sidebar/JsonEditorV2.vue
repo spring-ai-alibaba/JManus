@@ -37,7 +37,7 @@
         <div class="form-row">
           <label class="form-label">{{ $t('sidebar.title') }}</label>
           <input 
-            v-model="parsedData.title" 
+            v-model="displayData.title" 
             type="text" 
             class="form-input"
             :class="{ 'error': titleError }"
@@ -81,7 +81,7 @@
         
         <div class="steps-container">
           <div 
-            v-for="(step, index) in parsedData.steps" 
+            v-for="(step, index) in displayData.steps" 
             :key="index"
             class="step-item"
           >
@@ -98,7 +98,7 @@
                 </button>
                 <button 
                   @click="moveStepDown(index)"
-                  :disabled="index === parsedData.steps.length - 1"
+                  :disabled="index === displayData.steps.length - 1"
                   class="btn btn-xs"
                   :title="$t('sidebar.moveDown')"
                 >
@@ -212,7 +212,7 @@
           </div>
           
           <!-- Empty State -->
-          <div v-if="parsedData.steps.length === 0" class="empty-steps">
+          <div v-if="displayData.steps.length === 0" class="empty-steps">
             <Icon icon="carbon:add-alt" width="32" class="empty-icon" />
             <p>{{ $t('sidebar.noSteps') }}</p>
             <button @click="addStep" class="btn btn-primary">
@@ -280,7 +280,7 @@
     <ToolSelectionModal
       v-model="showToolModal"
       :tools="sidebarStore.availableTools"
-      :selected-tool-ids="currentStepIndex >= 0 ? parsedData.steps[currentStepIndex]?.selectedToolKeys || [] : []"
+      :selected-tool-ids="currentStepIndex >= 0 ? displayData.steps[currentStepIndex]?.selectedToolKeys || [] : []"
       @confirm="handleToolSelectionConfirm"
     />
   </div>
@@ -311,7 +311,7 @@ const emit = defineEmits<{
 
 const {
   showJsonPreview,
-  parsedData,
+  displayData,
   formattedJsonOutput,
   addStep,
   removeStep,
@@ -371,18 +371,18 @@ const showToolSelectionModal = (stepIndex: number) => {
 }
 
 const handleToolSelectionConfirm = (selectedToolIds: string[]) => {
-  if (currentStepIndex.value >= 0 && currentStepIndex.value < parsedData.steps.length) {
+  if (currentStepIndex.value >= 0 && currentStepIndex.value < displayData.steps.length) {
     // Update the specific step's selected tool keys
-    parsedData.steps[currentStepIndex.value].selectedToolKeys = [...selectedToolIds]
+    displayData.steps[currentStepIndex.value].selectedToolKeys = [...selectedToolIds]
   }
   showToolModal.value = false
   currentStepIndex.value = -1
 }
 
 const handleToolsFiltered = (stepIndex: number, filteredTools: string[]) => {
-  if (stepIndex >= 0 && stepIndex < parsedData.steps.length) {
+  if (stepIndex >= 0 && stepIndex < displayData.steps.length) {
     // Update the step's selected tool keys with filtered tools
-    parsedData.steps[stepIndex].selectedToolKeys = [...filteredTools]
+    displayData.steps[stepIndex].selectedToolKeys = [...filteredTools]
   }
 }
 
@@ -395,13 +395,13 @@ const initializeParsedData = () => {
     planTypeError.value = null
     
     // Initialize with default structure if not exists
-    if (!parsedData.title) {
-      parsedData.title = ''
+    if (!displayData.title) {
+      displayData.title = ''
     }
-    if (!parsedData.steps) {
-      parsedData.steps = []
+    if (!displayData.steps) {
+      displayData.steps = []
     }
-    parsedData.directResponse = false // Always false for dynamic agent planning
+    displayData.directResponse = false // Always false for dynamic agent planning
 
   } catch (error) {
     const errorMessage = `Failed to initialize JsonEditorV2: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -411,7 +411,7 @@ const initializeParsedData = () => {
 }
 
 // Watch for parsedData changes to validate structure
-watch(() => parsedData, (newData) => {
+watch(() => displayData, (newData) => {
   try {
     // Soft validation for title - show warning but don't block the form
     if (!newData.title || !newData.title.trim()) {

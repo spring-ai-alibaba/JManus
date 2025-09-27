@@ -17,9 +17,7 @@ package com.alibaba.cloud.ai.manus.adapter.service;
 
 import com.alibaba.cloud.ai.manus.adapter.model.OpenAIRequest;
 import com.alibaba.cloud.ai.manus.adapter.model.OpenAIResponse;
-import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
-import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
@@ -67,14 +65,6 @@ public class OpenAIAdapterService {
 	private static final int DATABASE_PERSISTENCE_DELAY_MS = 1000;
 
 	private static final int TOKEN_ESTIMATION_RATIO = 4; // 4 chars = 1 token
-
-	private static final int MEMORY_ID_LENGTH = 8;
-
-	@Autowired
-	private PlanningFactory planningFactory;
-
-	@Autowired
-	private PlanExecutionRecorder planExecutionRecorder;
 
 	@Autowired
 	private PlanIdDispatcher planIdDispatcher;

@@ -17,6 +17,7 @@ package com.alibaba.cloud.ai.manus.runtime.controller;
 
 import com.alibaba.cloud.ai.manus.event.JmanusListener;
 import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
+import com.alibaba.cloud.ai.manus.event.PlanExceptionClearedEvent;
 import com.alibaba.cloud.ai.manus.exception.PlanException;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
@@ -24,6 +25,7 @@ import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
 import com.alibaba.cloud.ai.manus.recorder.service.NewRepoPlanExecutionRecorder;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionWrapper;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
@@ -44,6 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -117,13 +120,13 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		// 1. Check if there are any Vue-specific field combinations
 		String toolName = (String) request.get("toolName");
 		@SuppressWarnings("unchecked")
-		List<Map<String, Object>> uploadedFiles = (List<Map<String, Object>>) request.get("uploadedFiles");
+		List<String> uploadedFiles = (List<String>) request.get("uploadedFiles");
 
 		// If the plan template is executed and there is an uploaded file, it is likely to
 		// be the Vue front-end
 		if (toolName != null && toolName.startsWith("planTemplate-") && uploadedFiles != null) {
 			logger.info("🔍 [AUTO-DETECT] Detected Vue request pattern: toolName={}, hasFiles={}", toolName,
-					uploadedFiles.size());
+					uploadedFiles != null ? uploadedFiles.size() : 0);
 			return true;
 		}
 
@@ -205,7 +208,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 			// Handle uploaded files if present
 			@SuppressWarnings("unchecked")
-			List<Map<String, Object>> uploadedFiles = (List<Map<String, Object>>) request.get("uploadedFiles");
+			List<String> uploadedFiles = (List<String>) request.get("uploadedFiles");
 
 			String uploadKey = (String) request.get("uploadKey");
 
@@ -215,6 +218,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			logger.info("🔍 [DEBUG] uploadedFiles is null: {}", uploadedFiles == null);
 			if (uploadedFiles != null) {
 				logger.info("🔍 [DEBUG] uploadedFiles size: {}", uploadedFiles.size());
+				logger.info("🔍 [DEBUG] uploadedFiles names: {}", uploadedFiles);
 			}
 
 			// Generate conversation ID if not provided
@@ -302,7 +306,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 		// Handle uploaded files if present
 		@SuppressWarnings("unchecked")
-		List<Map<String, Object>> uploadedFiles = (List<Map<String, Object>>) request.get("uploadedFiles");
+		List<String> uploadedFiles = (List<String>) request.get("uploadedFiles");
 
 		String uploadKey = (String) request.get("uploadKey");
 
@@ -430,15 +434,14 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	/**
 	 * Execute plan synchronously and build response with parameter replacement support
 	 * @param planTemplateId The plan template ID to execute
-	 * @param uploadedFiles List of uploaded files (can be null)
+	 * @param uploadedFiles List of uploaded file names (can be null)
 	 * @param replacementParams Parameters for <<>> replacement (can be null)
 	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
 	 * @param uploadKey Optional uploadKey provided by frontend (can be null)
 	 * @return ResponseEntity with execution result
 	 */
 	private ResponseEntity<Map<String, Object>> executePlanSyncAndBuildResponse(String planTemplateId,
-			List<Map<String, Object>> uploadedFiles, Map<String, Object> replacementParams, boolean isVueRequest,
-			String uploadKey) {
+			List<String> uploadedFiles, Map<String, Object> replacementParams, boolean isVueRequest, String uploadKey) {
 		try {
 			// Execute the plan template using the new unified method
 			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, null, replacementParams,
@@ -465,14 +468,14 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	/**
 	 * Execute a plan template by its ID with parameter replacement support
 	 * @param planTemplateId The ID of the plan template to execute
-	 * @param uploadedFiles List of uploaded files (can be null)
+	 * @param uploadedFiles List of uploaded file names (can be null)
 	 * @param conversationId Conversation ID for the execution (can be null)
 	 * @param replacementParams Parameters for <<>> replacement (can be null)
 	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
 	 * @param uploadKey Optional uploadKey provided by frontend (can be null)
 	 * @return PlanExecutionWrapper containing both PlanExecutionResult and rootPlanId
 	 */
-	private PlanExecutionWrapper executePlanTemplate(String planTemplateId, List<Map<String, Object>> uploadedFiles,
+	private PlanExecutionWrapper executePlanTemplate(String planTemplateId, List<String> uploadedFiles,
 			String conversationId, Map<String, Object> replacementParams, boolean isVueRequest, String uploadKey) {
 		if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
 			logger.error("Plan template ID is null or empty");
@@ -534,6 +537,23 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			if (uploadedFiles != null && !uploadedFiles.isEmpty()) {
 				logger.info("Uploaded files will be handled by the execution context for plan template: {}",
 						uploadedFiles.size());
+
+				// Attach uploaded files to each step's stepRequirement
+				if (plan.getAllSteps() != null) {
+					for (ExecutionStep step : plan.getAllSteps()) {
+						if (step.getStepRequirement() != null) {
+							String fileInfo = String.join(", ", uploadedFiles);
+							String originalRequirement = step.getStepRequirement();
+							step.setStepRequirement(originalRequirement + "\n \n  [Uploaded files: " + fileInfo + "]");
+							logger.info("Attached uploaded files to step requirement: {}", step.getStepRequirement());
+						}
+					}
+				}
+			}
+
+			// Log uploadKey if provided
+			if (uploadKey != null) {
+				logger.info("Executing plan with upload key: {}", uploadKey);
 			}
 
 			// Log uploadKey if provided
@@ -603,6 +623,12 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	@Override
 	public void onEvent(PlanExceptionEvent event) {
 		this.exceptionCache.put(event.getPlanId(), event.getThrowable());
+	}
+
+	@EventListener
+	public void onPlanExceptionCleared(PlanExceptionClearedEvent event) {
+		logger.info("Clearing exception cache for planId: {}", event.getPlanId());
+		this.exceptionCache.invalidate(event.getPlanId());
 	}
 
 }

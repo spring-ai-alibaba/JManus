@@ -414,7 +414,8 @@ public class TableProcessorTool extends AbstractBaseTool<TableProcessorTool.Tabl
 	public String getCurrentToolStateString() {
 		String planId = this.currentPlanId;
 		try {
-			Path workingDir = tableProcessingService.getAbsolutePath(planId, "");
+			// Get the root plan directory instead of using empty filePath
+			Path workingDir = tableProcessingService.getRootPlanDirectory(planId);
 			return String.format("""
 					Current Table Processing State:
 					- working Directory:

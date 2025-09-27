@@ -15,6 +15,7 @@
  */
 package com.alibaba.cloud.ai.manus.subplan.service;
 
+import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
@@ -63,6 +64,9 @@ public class SubplanToolService implements ISubplanToolService {
 	private PlanningCoordinator planningCoordinator;
 
 	@Autowired
+	private ManusProperties manusProperties;
+
+	@Autowired
 	private PlanIdDispatcher planIdDispatcher;
 
 	@Autowired
@@ -103,9 +107,18 @@ public class SubplanToolService implements ISubplanToolService {
 				return toolCallbackMap;
 			}
 
+			Boolean infiniteContextEnabled = manusProperties.getInfiniteContextEnabled();
 			logger.info("Found {} subplan tools to register", subplanTools.size());
 
 			for (SubplanToolDef subplanTool : subplanTools) {
+
+				// special case : for extract_relevant_content , we don't want to let llm
+				// use
+				// it when infinite context is disabled
+				if (!infiniteContextEnabled && "extract_relevant_content".equals(subplanTool.getToolName())) {
+					logger.info("Infinite context is disabled, skipping extract_relevant_content");
+					continue;
+				}
 				try {
 					// Create a SubplanToolWrapper that extends AbstractBaseTool
 					SubplanToolWrapper toolWrapper = new SubplanToolWrapper(subplanTool, planId, rootPlanId,
