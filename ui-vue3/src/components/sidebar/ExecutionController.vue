@@ -179,6 +179,7 @@ import { PlanParameterApiService, type ParameterRequirements } from '@/api/plan-
 import type { CoordinatorToolVO } from '@/api/coordinator-tool-api-service'
 import { FileInfo } from '@/api/file-upload-api-service'
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
+import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 
 const { t } = useI18n()
 
@@ -211,7 +212,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Emits
 const emit = defineEmits<{
-  executePlan: [replacementParams?: Record<string, string>, uploadedFiles?: FileInfo[], uploadKey?: string | null]
+  executePlan: [payload: PlanExecutionRequestPayload]
   publishMcpService: []
   clearParams: []
   updateExecutionParams: [params: string]
@@ -229,10 +230,11 @@ const isLoadingParameters = ref(false)
 const activeTab = ref('get-sync')
 const parameterErrors = ref<Record<string, string>>({})
 const isValidationError = ref(false)
+const isExecutingPlan = ref(false) // Flag to prevent parameter reload during execution
 
 // File upload state
 const fileUploadRef = ref<InstanceType<typeof FileUploadComponent>>()
-const uploadedFiles = ref<FileInfo[]>([])
+const uploadedFiles = ref<string[]>([])
 const uploadKey = ref<string | null>(null)
 
 // API tabs configuration
@@ -338,13 +340,13 @@ const canExecute = computed(() => {
 
 // File upload event handlers
 const handleFilesUploaded = (files: FileInfo[], key: string | null) => {
-  uploadedFiles.value = files
+  uploadedFiles.value = files.map(file => file.originalName)
   uploadKey.value = key
   console.log('[ExecutionController] Files uploaded:', files.length, 'uploadKey:', key)
 }
 
 const handleFilesRemoved = (files: FileInfo[]) => {
-  uploadedFiles.value = files
+  uploadedFiles.value = files.map(file => file.originalName)
   console.log('[ExecutionController] Files removed, remaining:', files.length)
 }
 
@@ -367,9 +369,16 @@ const handleUploadError = (error: any) => {
 
 // Methods
 const handleExecutePlan = () => {
+  console.log('[ExecutionController] 🚀 Execute button clicked')
+  
+  // Set execution flag to prevent parameter reload
+  isExecutingPlan.value = true
+  console.log('[ExecutionController] 🔒 Set isExecutingPlan to true')
+  
   // Validate parameters before execution
   if (!validateParameters()) {
-    console.log('[ExecutionController] Parameter validation failed:', parameterErrors.value)
+    console.log('[ExecutionController] ❌ Parameter validation failed:', parameterErrors.value)
+    isExecutingPlan.value = false // Reset flag on validation failure
     return
   }
   
@@ -378,15 +387,23 @@ const handleExecutePlan = () => {
     ? parameterValues.value 
     : undefined
   
-  // Include file upload information in the execution
-  const executionData = {
+  console.log('[ExecutionController] 🔄 Replacement params:', replacementParams)
+  
+  const payload: PlanExecutionRequestPayload = {
+    title: '', // Will be set by the parent component
+    planData: {
+      title: '',
+      steps: [],
+      directResponse: false
+    }, // Will be set by the parent component
+    params: undefined, // Will be set by the parent component
     replacementParams,
     uploadedFiles: uploadedFiles.value,
     uploadKey: uploadKey.value
   }
   
-  console.log('[ExecutionController] Executing with data:', executionData)
-  emit('executePlan', replacementParams, uploadedFiles.value, uploadKey.value)
+  console.log('[ExecutionController] 📤 Emitting executePlan with payload:', JSON.stringify(payload, null, 2))
+  emit('executePlan', payload)
 }
 
 const handlePublishMcpService = () => {
@@ -394,13 +411,26 @@ const handlePublishMcpService = () => {
 }
 
 const clearExecutionParams = () => {
+  console.log('[ExecutionController] 🧹 clearExecutionParams called')
   executionParams.value = ''
+  // Clear parameter values as well
+  parameterValues.value = {}
+  
+  // Reset execution flag after clearing
+  isExecutingPlan.value = false
+  console.log('[ExecutionController] 🔓 Reset isExecutingPlan to false')
+  
+  console.log('[ExecutionController] ✅ After clear - parameterValues cleared')
   emit('clearParams')
 }
 
 // Load parameter requirements when plan template changes
 const loadParameterRequirements = async () => {
+  console.log('[ExecutionController] 🔄 loadParameterRequirements called for templateId:', props.currentPlanTemplateId)
+  console.log('[ExecutionController] 📊 Current parameterRequirements before load:', JSON.stringify(parameterRequirements.value, null, 2))
+  
   if (!props.currentPlanTemplateId) {
+    console.log('[ExecutionController] ❌ No template ID, resetting parameters')
     parameterRequirements.value = {
       parameters: [],
       hasParameters: false,
@@ -412,7 +442,10 @@ const loadParameterRequirements = async () => {
 
   isLoadingParameters.value = true
   try {
+    console.log('[ExecutionController] 🌐 Fetching parameter requirements from API...')
     const requirements = await PlanParameterApiService.getParameterRequirements(props.currentPlanTemplateId)
+    console.log('[ExecutionController] 📥 Received requirements from API:', JSON.stringify(requirements, null, 2))
+    
     parameterRequirements.value = requirements
     
     // Initialize parameter values
@@ -422,21 +455,26 @@ const loadParameterRequirements = async () => {
     })
     parameterValues.value = newValues
     
+    console.log('[ExecutionController] ✅ Updated parameterRequirements:', JSON.stringify(parameterRequirements.value, null, 2))
+    console.log('[ExecutionController] ✅ Updated parameterValues:', JSON.stringify(parameterValues.value, null, 2))
+    
     // Update execution params with current parameter values
     updateExecutionParamsFromParameters()
   } catch (error) {
-    console.error('Failed to load parameter requirements:', error)
+    console.error('[ExecutionController] ❌ Failed to load parameter requirements:', error)
     // Don't show error for 404 - template might not be ready yet
     if (error instanceof Error && !error.message.includes('404')) {
-      console.warn('Parameter requirements not available yet, will retry later')
+      console.warn('[ExecutionController] ⚠️ Parameter requirements not available yet, will retry later')
     }
     parameterRequirements.value = {
       parameters: [],
       hasParameters: false,
       requirements: ''
     }
+    console.log('[ExecutionController] 🔄 Reset parameterRequirements due to error:', JSON.stringify(parameterRequirements.value, null, 2))
   } finally {
     isLoadingParameters.value = false
+    console.log('[ExecutionController] ✅ loadParameterRequirements completed')
   }
 }
 
@@ -487,14 +525,25 @@ const updateExecutionParamsFromParameters = () => {
 
 // Watch for changes in plan template ID
 watch(() => props.currentPlanTemplateId, (newId, oldId) => {
+  
   if (newId && newId !== oldId) {
+    // Skip parameter reload if we're currently executing a plan
+    if (isExecutingPlan.value) {
+      console.log('[ExecutionController] ⏸️ Skipping parameter reload - plan is executing')
+      return
+    }
+    
+    console.log('[ExecutionController] 🔄 Template ID changed, will reload parameters')
     // If this is a new template ID (not from initial load), retry loading parameters
     if (oldId && newId.startsWith('planTemplate-')) {
+      console.log('[ExecutionController] ⏰ New template detected, retrying with delay...')
       // Retry loading parameters with a delay for new templates
       setTimeout(() => {
+        console.log('[ExecutionController] ⏰ Delay timeout, calling loadParameterRequirements')
         loadParameterRequirements()
       }, 1000)
     } else {
+      console.log('[ExecutionController] 🚀 Immediate reload of parameters')
       loadParameterRequirements()
     }
   }

@@ -93,7 +93,7 @@ const fileUploadRef = ref<InstanceType<typeof FileUploadComponent>>()
 const currentInput = ref('')
 const defaultPlaceholder = computed(() => props.placeholder || t('input.placeholder'))
 const currentPlaceholder = ref(defaultPlaceholder.value)
-const uploadedFiles = ref<FileInfo[]>([])
+const uploadedFiles = ref<string[]>([])
 const uploadKey = ref<string | null>(null)
 
 // Function to reset session when starting a new conversation session
@@ -108,7 +108,7 @@ onUnmounted(() => {
 })
 // File upload event handlers
 const handleFilesUploaded = (files: FileInfo[], key: string | null) => {
-  uploadedFiles.value = files
+  uploadedFiles.value = files.map(file => file.originalName)
   uploadKey.value = key
   console.log('[InputArea] Files uploaded:', files.length, 'uploadKey:', key)
   
@@ -119,7 +119,7 @@ const handleFilesUploaded = (files: FileInfo[], key: string | null) => {
 }
 
 const handleFilesRemoved = (files: FileInfo[]) => {
-  uploadedFiles.value = files
+  uploadedFiles.value = files.map(file => file.originalName)
   console.log('[InputArea] Files removed, remaining:', files.length)
   
   // Update placeholder
@@ -170,12 +170,6 @@ const handleSend = () => {
   if (!currentInput.value.trim() || isDisabled.value) return
 
   let finalInput = currentInput.value.trim()
-
-  // If files are uploaded, add file information to the query
-  if (uploadedFiles.value.length > 0) {
-    const fileInfo = uploadedFiles.value.map(f => `${f.originalName}`).join(', ')
-    finalInput += ` [Uploaded files: ${fileInfo}]`
-  }
 
   const query: InputMessage = {
     input: finalInput,
@@ -262,7 +256,7 @@ defineExpose({
   getQuery,
   resetSession,
   focus: () => inputRef.value?.focus(),
-  get uploadedFiles() { return fileUploadRef.value?.uploadedFiles || [] },
+  get uploadedFiles() { return fileUploadRef.value?.uploadedFiles?.map(f => f.originalName) || [] },
   get uploadKey() { return fileUploadRef.value?.uploadKey || null }
 })
 

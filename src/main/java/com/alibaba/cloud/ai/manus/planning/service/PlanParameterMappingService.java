@@ -171,15 +171,14 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 		if (input == null) {
 			return null;
 		}
-		
-		return input
-			.replace("\\", "\\\\")  // Backslash must be first
-			.replace("\"", "\\\"")  // Double quote
-			.replace("\b", "\\b")   // Backspace
-			.replace("\f", "\\f")   // Form feed
-			.replace("\n", "\\n")   // Newline
-			.replace("\r", "\\r")   // Carriage return
-			.replace("\t", "\\t");  // Tab
+
+		return input.replace("\\", "\\\\") // Backslash must be first
+			.replace("\"", "\\\"") // Double quote
+			.replace("\b", "\\b") // Backspace
+			.replace("\f", "\\f") // Form feed
+			.replace("\n", "\\n") // Newline
+			.replace("\r", "\\r") // Carriage return
+			.replace("\t", "\\t"); // Tab
 	}
 
 	@Override

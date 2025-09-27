@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import com.alibaba.cloud.ai.manus.agent.BaseAgent;
 import com.alibaba.cloud.ai.manus.agent.ConfigurableDynaAgent;
 import com.alibaba.cloud.ai.manus.agent.DynamicAgent;
+import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
 import com.alibaba.cloud.ai.manus.agent.ToolCallbackProvider;
 import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.agent.model.Tool;
@@ -77,6 +78,8 @@ public class AgentServiceImpl implements AgentService {
 
 	private final PlanIdDispatcher planIdDispatcher;
 
+	private final JmanusEventPublisher jmanusEventPublisher;
+
 	@Autowired
 	@Lazy
 	private ILlmService llmService;
@@ -92,7 +95,8 @@ public class AgentServiceImpl implements AgentService {
 	public AgentServiceImpl(DynamicAgentRepository repository, @Lazy IPlanningFactory planningFactory,
 			@Lazy IMcpService mcpService, NamespaceService namespaceService, PlanExecutionRecorder recorder,
 			ManusProperties properties, UserInputService userInputService, PromptService promptService,
-			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher) {
+			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
+			JmanusEventPublisher jmanusEventPublisher) {
 		this.repository = repository;
 		this.planningFactory = planningFactory;
 		this.mcpService = mcpService;
@@ -103,6 +107,7 @@ public class AgentServiceImpl implements AgentService {
 		this.promptService = promptService;
 		this.streamingResponseHandler = streamingResponseHandler;
 		this.planIdDispatcher = planIdDispatcher;
+		this.jmanusEventPublisher = jmanusEventPublisher;
 	}
 
 	@Override
@@ -206,7 +211,7 @@ public class AgentServiceImpl implements AgentService {
 
 			return new ConfigurableDynaAgent(llmService, recorder, properties, name, description, nextStepPrompt,
 					selectedToolKeys, toolCallingManager, initialAgentSetting, userInputService, promptService,
-					modelEntity, streamingResponseHandler, step, planIdDispatcher);
+					modelEntity, streamingResponseHandler, step, planIdDispatcher, jmanusEventPublisher);
 		}
 
 		DynamicAgentEntity entity = repository.findByNamespaceAndAgentName(namespace, agentName);
@@ -216,7 +221,8 @@ public class AgentServiceImpl implements AgentService {
 
 		return new DynamicAgent(llmService, recorder, properties, entity.getAgentName(), entity.getAgentDescription(),
 				entity.getNextStepPrompt(), entity.getAvailableToolKeys(), toolCallingManager, initialAgentSetting,
-				userInputService, promptService, entity.getModel(), streamingResponseHandler, step, planIdDispatcher);
+				userInputService, promptService, entity.getModel(), streamingResponseHandler, step, planIdDispatcher,
+				jmanusEventPublisher);
 	}
 
 	public List<DynamicAgentEntity> getAllAgents() {

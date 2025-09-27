@@ -215,6 +215,7 @@ import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
 import JsonEditor from './JsonEditor.vue'
 import JsonEditorV2 from './JsonEditorV2.vue'
 import ExecutionController from './ExecutionController.vue'
+import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 import PlanGenerator from './PlanGenerator.vue'
 import { useToast } from '@/plugins/useToast'
 
@@ -280,7 +281,7 @@ const loadCoordinatorToolConfig = async () => {
 
 // Emits - Keep some events for communication with external components
 const emit = defineEmits<{
-  planExecutionRequested: [payload: { title: string; planData: any; params?: string | undefined; replacementParams?: Record<string, string> | undefined }]
+  planExecutionRequested: [payload: PlanExecutionRequestPayload]
 }>()
 
 const handleSaveTemplate = async () => {
@@ -365,40 +366,67 @@ const handleRestore = () => {
   }
 }
 
-const handleExecutePlan = async (replacementParams?: Record<string, string>) => {
-  console.log('[Sidebar] handleExecutePlan called with replacementParams:', replacementParams)
+const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
+  console.log('[Sidebar] 🎯 handleExecutePlan called with payload:', JSON.stringify(payload, null, 2))
+  console.log('[Sidebar] 📊 Current sidebarStore state:', {
+    currentPlanTemplateId: sidebarStore.currentPlanTemplateId,
+    selectedTemplate: sidebarStore.selectedTemplate?.id,
+    jsonContent: sidebarStore.jsonContent?.substring(0, 100) + '...'
+  })
 
   try {
     const planData = sidebarStore.preparePlanExecution()
+    console.log('[Sidebar] 📋 Prepared plan data:', JSON.stringify(planData, null, 2))
 
     if (!planData) {
-      console.log('[Sidebar] No plan data available, returning')
+      console.log('[Sidebar] ❌ No plan data available, returning')
       return
     }
 
     // Add replacement parameters to plan data if provided
-    if (replacementParams && Object.keys(replacementParams).length > 0) {
-      (planData as any).replacementParams = replacementParams
-      console.log('[Sidebar] Added replacement parameters to plan data:', replacementParams)
+    if (payload.replacementParams && Object.keys(payload.replacementParams).length > 0) {
+      console.log('[Sidebar] 🔄 Processing replacement parameters:', payload.replacementParams)
+      // Create a new object with replacementParams instead of mutating the original
+      const planDataWithParams = {
+        ...planData,
+        replacementParams: payload.replacementParams,
+        uploadedFiles: payload.uploadedFiles,
+        uploadKey: payload.uploadKey
+      }
+      console.log('[Sidebar] ✅ Enhanced plan data with params:', JSON.stringify(planDataWithParams, null, 2))
+      // Use the enhanced plan data for the payload
+      const enhancedPayload: PlanExecutionRequestPayload = {
+        ...payload,
+        title: planDataWithParams.title,
+        planData: planDataWithParams.planData,
+        params: planDataWithParams.params,
+        uploadedFiles: planDataWithParams.uploadedFiles,
+        uploadKey: planDataWithParams.uploadKey
+      }
+      
+      console.log('[Sidebar] 📤 Emitting planExecutionRequested with enhanced payload:', JSON.stringify(enhancedPayload, null, 2))
+      emit('planExecutionRequested', enhancedPayload)
+      return
     }
 
-    console.log('[Sidebar] Triggering plan execution request:', planData)
+    console.log('[Sidebar] 📤 Emitting planExecutionRequested with original payload:', JSON.stringify(payload, null, 2))
+    emit('planExecutionRequested', payload)
 
-    // Send plan execution event to chat component
-    console.log('[Sidebar] Emitting planExecutionRequested event')
-    emit('planExecutionRequested', {
-      title: planData.title,
-      planData: planData.planData,
-      params: planData.params,
-      replacementParams: replacementParams
-    })
-
-    console.log('[Sidebar] Event emitted')
+    console.log('[Sidebar] ✅ Event emitted successfully')
   } catch (error: any) {
-    console.error('Error executing plan:', error)
+    console.error('[Sidebar] ❌ Error executing plan:', error)
     toast.error(t('sidebar.executeFailed') + ': ' + error.message)
   } finally {
+    console.log('[Sidebar] 🧹 Cleaning up after execution')
     sidebarStore.finishPlanExecution()
+    // Clear execution parameters after successful execution
+    sidebarStore.clearExecutionParams()
+    // Also clear ExecutionController parameters
+    if (executionControllerRef.value) {
+      console.log('[Sidebar] 🧹 Calling ExecutionController.clearExecutionParams')
+      executionControllerRef.value.clearExecutionParams()
+    }
+    console.log('[Sidebar] ✅ Cleanup completed')
   }
 }
 

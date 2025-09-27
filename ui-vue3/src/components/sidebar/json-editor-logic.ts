@@ -16,26 +16,7 @@
 
 import { reactive, computed, watch, ref } from 'vue'
 // import { useI18n } from 'vue-i18n' // Currently unused
-
-// Types - Based on backend ExecutionStep.java
-export interface StepData {
-  stepRequirement: string
-  agentName: string
-  modelName: string | null
-  selectedToolKeys: string[]
-  terminateColumns: string
-  agentType?: string
-  stepContent: string
-}
-
-// Types - Based on backend DynamicAgentExecutionPlan.java
-export interface ParsedPlanData {
-  title: string
-  steps: StepData[]
-  directResponse: boolean
-  planTemplateId?: string
-  planType?: string
-}
+import type { StepData, DisplayPlanData } from '@/types/plan-execution'
 
 export interface JsonEditorProps {
   jsonContent: string
@@ -64,8 +45,8 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
   // State
   const showJsonPreview = ref(false)
 
-  // Reactive parsed data - Based on DynamicAgentExecutionPlan structure
-  const parsedData = reactive<ParsedPlanData>({
+  // Reactive display data - Based on DynamicAgentExecutionPlan structure
+  const displayData = reactive<DisplayPlanData>({
     title: '',
     steps: [],
     directResponse: false, // Always false for dynamic agent planning
@@ -75,13 +56,13 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
 
   /**
    * Parse JSON content into visual data
-   * Maps backend DynamicAgentExecutionPlan structure to frontend ParsedPlanData
+   * Maps backend DynamicAgentExecutionPlan structure to frontend DisplayPlanData
    */
   const parseJsonToVisual = (jsonContent: string) => {
     try {
       if (!jsonContent) {
         // Reset to default - matches DynamicAgentExecutionPlan structure
-        Object.assign(parsedData, {
+        Object.assign(displayData, {
           title: '',
           steps: [],
           directResponse: false,
@@ -94,13 +75,13 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
       const parsed = JSON.parse(jsonContent)
       
       // Map basic fields from DynamicAgentExecutionPlan
-      parsedData.title = parsed.title || ''
-      parsedData.directResponse = false // Always false for dynamic agent planning
-      parsedData.planTemplateId = parsed.planTemplateId || props.currentPlanTemplateId || ''
-      parsedData.planType = parsed.planType || 'dynamic_agent'
+      displayData.title = parsed.title || ''
+      displayData.directResponse = false // Always false for dynamic agent planning
+      displayData.planTemplateId = parsed.planTemplateId || props.currentPlanTemplateId || ''
+      displayData.planType = parsed.planType || 'dynamic_agent'
       
       // Parse steps - maps ExecutionStep structure
-      parsedData.steps = (parsed.steps || []).map((step: any) => ({
+      displayData.steps = (parsed.steps || []).map((step: any) => ({
         stepRequirement: step.stepRequirement || '',
         agentName: step.agentName || '',
         modelName: step.modelName || null, // Default to null if not specified
@@ -115,22 +96,22 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
 
   /**
    * Convert visual data back to JSON
-   * Maps frontend ParsedPlanData to backend DynamicAgentExecutionPlan structure
+   * Maps frontend DisplayPlanData to backend DynamicAgentExecutionPlan structure
    */
   const convertVisualToJson = (): string => {
     try {
       const result: any = {
-        title: parsedData.title,
-        steps: parsedData.steps.map(step => ({
+        title: displayData.title,
+        steps: displayData.steps.map(step => ({
           stepRequirement: step.stepRequirement,
           agentName: step.agentName,
           modelName: step.modelName || '', // Convert null to empty string for JSON
           selectedToolKeys: step.selectedToolKeys,
           terminateColumns: step.terminateColumns
         })),
-        directResponse: parsedData.directResponse,
-        planTemplateId: parsedData.planTemplateId,
-        planType: parsedData.planType
+        directResponse: displayData.directResponse,
+        planTemplateId: displayData.planTemplateId,
+        planType: displayData.planType
       }
       
       return JSON.stringify(result, null, 2)
@@ -148,8 +129,8 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
     parseJsonToVisual(newContent)
   }, { immediate: true })
 
-  // Watch for parsed data changes and emit updates
-  watch(parsedData, () => {
+  // Watch for display data changes and emit updates
+  watch(displayData, () => {
     const jsonOutput = convertVisualToJson()
     emit('update:jsonContent', jsonOutput)
   }, { deep: true })
@@ -157,7 +138,7 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
   // Watch for currentPlanTemplateId changes
   watch(() => props.currentPlanTemplateId, (newId) => {
     if (newId) {
-      parsedData.planTemplateId = newId
+      displayData.planTemplateId = newId
     }
   })
 
@@ -172,26 +153,26 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
       agentType: '',
       stepContent: ''
     }
-    parsedData.steps.push(newStep)
+    displayData.steps.push(newStep)
   }
 
   const removeStep = (index: number) => {
-    if (index >= 0 && index < parsedData.steps.length) {
-      parsedData.steps.splice(index, 1)
+    if (index >= 0 && index < displayData.steps.length) {
+      displayData.steps.splice(index, 1)
     }
   }
 
   const moveStepUp = (index: number) => {
     if (index > 0) {
-      const step = parsedData.steps.splice(index, 1)[0]
-      parsedData.steps.splice(index - 1, 0, step)
+      const step = displayData.steps.splice(index, 1)[0]
+      displayData.steps.splice(index - 1, 0, step)
     }
   }
 
   const moveStepDown = (index: number) => {
-    if (index < parsedData.steps.length - 1) {
-      const step = parsedData.steps.splice(index, 1)[0]
-      parsedData.steps.splice(index + 1, 0, step)
+    if (index < displayData.steps.length - 1) {
+      const step = displayData.steps.splice(index, 1)[0]
+      displayData.steps.splice(index + 1, 0, step)
     }
   }
 
@@ -220,7 +201,7 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
   return {
     // State
     showJsonPreview,
-    parsedData,
+    displayData,
     formattedJsonOutput,
     
     // Step management

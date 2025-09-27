@@ -31,7 +31,6 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.tool.ToolCallback;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -204,13 +203,7 @@ public abstract class BaseAgent {
 		if (state != AgentState.IN_PROGRESS) {
 			throw new IllegalStateException("Cannot run agent from state: " + state);
 		}
-
-		LocalDateTime startTime = LocalDateTime.now();
 		List<String> results = new ArrayList<>();
-		boolean completed = false;
-		boolean stuck = false;
-		String errorMessage = null;
-		String finalResult = null;
 
 		try {
 			state = AgentState.IN_PROGRESS;
@@ -223,7 +216,6 @@ public abstract class BaseAgent {
 
 				if (isStuck()) {
 					handleStuckState();
-					stuck = true;
 				}
 				else {
 					// Update global state for consistency
@@ -238,22 +230,10 @@ public abstract class BaseAgent {
 				results.add("Terminated: Reached max rounds (" + maxSteps + ")");
 			}
 
-			completed = state.equals(AgentState.COMPLETED) && !stuck;
-
-			// Calculate execution time in seconds
-			LocalDateTime endTime = LocalDateTime.now();
-			long executionTimeSeconds = java.time.Duration.between(startTime, endTime).getSeconds();
-			String status = completed ? "Success" : (stuck ? "Execution stuck" : "Incomplete");
-			finalResult = String.format("Execution %s [Duration: %d seconds] [Steps consumed: %d] ", status,
-					executionTimeSeconds, currentStep);
-
 		}
 		catch (Exception e) {
 			log.error("Agent execution failed", e);
-			errorMessage = e.getMessage();
-			completed = false;
-			LocalDateTime endTime = LocalDateTime.now();
-			finalResult = String.format("Execution failed [Error: %s]", e.getMessage());
+
 			results.add("Execution failed: " + e.getMessage());
 
 			// Record execution at the end - even for failures

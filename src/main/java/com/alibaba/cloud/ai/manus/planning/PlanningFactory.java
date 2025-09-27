@@ -80,14 +80,11 @@ import com.alibaba.cloud.ai.manus.tool.mapreduce.FinalizeTool;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.MapOutputTool;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.MapReduceSharedStateManager;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.ReduceOperationTool;
-import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessorTool;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UploadedFileLoaderTool;
 import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
-import com.alibaba.cloud.ai.manus.tool.excelProcessor.ExcelProcessorTool;
 import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.MarkdownConverterTool;
 import com.alibaba.cloud.ai.manus.subplan.service.ISubplanToolService;
@@ -286,8 +283,15 @@ public class PlanningFactory implements IPlanningFactory {
 						innerStorageService, objectMapper));
 			}
 		}
+		Boolean infiniteContextEnabled = manusProperties.getInfiniteContextEnabled();
 		// Create FunctionToolCallback for each tool
 		for (ToolCallBiFunctionDef<?> toolDefinition : toolDefinitions) {
+			// speacial case : for extract_relevant_content , we don't want to let llm use
+			// it when infinite context is disabled
+			if (infiniteContextEnabled && "extract_relevant_content".equals(toolDefinition.getName())) {
+				log.info("Infinite context is disabled, skipping extract_relevant_content");
+				continue;
+			}
 			try {
 				FunctionToolCallback<?, ToolExecuteResult> functionToolcallback = FunctionToolCallback
 					.builder(toolDefinition.getName(), toolDefinition)
