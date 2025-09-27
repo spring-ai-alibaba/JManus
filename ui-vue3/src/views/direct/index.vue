@@ -121,7 +121,10 @@ import { planExecutionManager } from '@/utils/plan-execution-manager'
 import { useMessage } from '@/composables/useMessage'
 import { memoryStore } from "@/stores/memory";
 import type { InputMessage } from "@/stores/memory";
+<<<<<<< HEAD
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution';
+=======
+>>>>>>> upstream/main
 const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()

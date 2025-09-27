@@ -80,6 +80,7 @@ import com.alibaba.cloud.ai.manus.tool.mapreduce.FinalizeTool;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.MapOutputTool;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.MapReduceSharedStateManager;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.ReduceOperationTool;
+import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessorTool;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;

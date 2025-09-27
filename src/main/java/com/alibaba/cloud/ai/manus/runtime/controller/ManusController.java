@@ -310,6 +310,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 		String uploadKey = (String) request.get("uploadKey");
 
+
 		// Get replacement parameters for <<>> replacement
 		@SuppressWarnings("unchecked")
 		Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
@@ -549,6 +550,11 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 						}
 					}
 				}
+			}
+
+			// Log uploadKey if provided
+			if (uploadKey != null) {
+				logger.info("Executing plan with upload key: {}", uploadKey);
 			}
 
 			// Log uploadKey if provided
