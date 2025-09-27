@@ -22,7 +22,7 @@
       multiple
       style="display: none"
       @change="handleFileChange"
-      :accept="acceptedFileTypes"
+      :accept="acceptedFileTypes || ''"
     />
 
     <!-- Uploaded files display with integrated upload button -->
