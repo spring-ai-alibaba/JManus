@@ -60,116 +60,49 @@ JManus也提供了http的服务调用能力，适合被集成到既有的项目�
 ### 先决条件
 
 - 🌐 **DashScope API 密钥** (或替代的 AI 模型提供商)
-- 🐳 **Docker** (用于容器化部署) 或 ☕ **Java 17+** (用于源码运行)
+- ☕ **Java 17+** (用于运行 JAR 文件或源码运行)
 
-### 方式一：使用 Docker (推荐)
+### 方式一：使用 GitHub Release (推荐)
 
-#### 🐳 使用 Docker Hub 镜像
-
-```bash
-# 拉取最新的 develop 镜像
-docker pull springaialibaba/jmanus:develop
-
-# 基础启动（临时数据存储）
-docker run -d \
-  --name jmanus \
-  -p 18080:18080 \
-  -e DASHSCOPE_API_KEY=your_api_key_here \
-  springaialibaba/jmanus:develop
-
-# 或者启动并持久化数据（推荐）
-docker run -d \
-  --name jmanus \
-  -p 18080:18080 \
-  -e DASHSCOPE_API_KEY=your_api_key_here \
-  -v $(pwd)/h2-data:/app/extracted/h2-data \
-  -v $(pwd)/extensions:/app/extracted/extensions \
-  springaialibaba/jmanus:develop
-```
-
-#### 🇨🇳 使用阿里云镜像（中国加速）
+#### 📦 下载并运行 JAR 文件
 
 ```bash
-# 拉取阿里云加速镜像
-docker pull sca-registry.cn-hangzhou.cr.aliyuncs.com/spring-ai-alibaba/jmanus:develop
+# 下载最新版本的 JAR 文件
+wget https://github.com/spring-ai-alibaba/JManus/releases/latest/download/jmanus.jar
 
-# 基础启动（临时数据存储）
-docker run -d \
-  --name jmanus \
-  -p 18080:18080 \
-  -e DASHSCOPE_API_KEY=your_api_key_here \
-  sca-registry.cn-hangzhou.cr.aliyuncs.com/spring-ai-alibaba/jmanus:develop
+# 或者使用 curl
+curl -L -o jmanus.jar https://github.com/spring-ai-alibaba/JManus/releases/latest/download/jmanus.jar
 
-# 或者启动并持久化数据（推荐）
-docker run -d \
-  --name jmanus \
-  -p 18080:18080 \
-  -e DASHSCOPE_API_KEY=your_api_key_here \
-  -v $(pwd)/h2-data:/app/extracted/h2-data \
-  -v $(pwd)/extensions:/app/extracted/extensions \
-  sca-registry.cn-hangzhou.cr.aliyuncs.com/spring-ai-alibaba/jmanus:develop
+# 运行 JAR 文件
+java -jar jmanus.jar
 ```
 
-#### 🔧 高级 Docker 配置
-
-如果您需要自定义配置或持久化数据：
-
-```bash
-# 创建数据目录
-mkdir -p /path/to/jmanus/h2-data
-mkdir -p /path/to/jmanus/extensions
-
-# 使用自定义配置启动（推荐数据持久化）
-docker run -d \
-  --name jmanus \
-  -p 18080:18080 \
-  -e DASHSCOPE_API_KEY=your_api_key_here \
-  -v /path/to/jmanus/h2-data:/app/extracted/h2-data \
-  -v /path/to/jmanus/extensions:/app/extracted/extensions \
-  --restart unless-stopped \
-  springaialibaba/jmanus:develop
-```
-
-> 📁 **数据存储说明**:
-> - **H2 数据库**: `/app/extracted/h2-data` - 存储应用的数据库文件
-> - **运行时数据**: `/app/extracted/extensions` - 存储扩展和运行时配置
-> - 建议挂载这两个目录以实现数据持久化，避免容器重启后数据丢失
-
-> 💡 **镜像说明**:
-> - **Docker Hub 镜像**: `springaialibaba/jmanus:develop` - 每日自动构建推送
-> - **阿里云镜像**: `sca-registry.cn-hangzhou.cr.aliyuncs.com/spring-ai-alibaba/jmanus:develop` - 每日同步，中国用户访问更快
-> - 镜像支持 headless Playwright 浏览器功能
-> - 阿里云镜像可能会稍微落后于 Docker Hub 版本
+> 💡 **手动下载**: 您也可以直接访问 [JManus Releases 页面](https://github.com/spring-ai-alibaba/JManus/releases) 手动下载最新版本的 JAR 文件。
 
 #### 🌐 访问应用
 
-容器启动后，在浏览器中访问 `http://localhost:18080` 即可使用 JManus。
+应用启动后，在浏览器中访问 `http://localhost:18080`。
 
-🎉 **恭喜!** 您的多 Agent 系统现已通过 Docker 快速部署完成。
+> 💡 **引导式设置**: 应用启动后会自动显示引导页面。在第一个页面选择中英文语言，然后在第二个页面输入您刚才申请的 DashScope API 密钥即可完成配置。
+
+🎉 **恭喜!** 您的多 Agent 系统现已快速启动完成。
 
 ---
 
-### 方式二：从源码运行
+### 方式二：从源码运行 (次选方案)
 
 #### 1. 克隆并导航
 
 ```bash
-git clone https://github.com/alibaba/spring-ai-alibaba.git
-cd spring-ai-alibaba/spring-ai-alibaba-jmanus
+git clone https://github.com/spring-ai-alibaba/JManus.git
+cd JManus
 ```
 
-#### 2. 配置您的 API 密钥
-
-```bash
-# 设置您的 DashScope API 密钥
-export DASHSCOPE_API_KEY=your_api_key_here
-```
+#### 2. 数据库配置（可选）
 
 > 💡 **获取您的 DashScope API 密钥**: 访问 [阿里云百炼控制台](https://bailian.console.aliyun.com/?tab=model#/api-key) 获取免费 API 密钥。
 >
 > **使用其他提供商?** 在 `src/main/resources/application.yml` 中更新配置，以使用您偏好的 AI 模型平台。
-
-#### 3. 数据库配置（可选）
 
 JManus 支持 H2（默认）、MySQL以及PostgreSQL数据库。
 
@@ -200,7 +133,7 @@ JManus 支持 H2（默认）、MySQL以及PostgreSQL数据库。
 
 > 💡 **注意**：应用程序将在首次启动时自动创建所需的表，使用 JPA 的 `ddl-auto: update` 配置。
 
-#### 4. 启动应用程序
+#### 3. 启动应用程序
 
 **对于类 Unix 系统 (macOS, Linux):**
 ```bash
@@ -212,7 +145,7 @@ JManus 支持 H2（默认）、MySQL以及PostgreSQL数据库。
 ../mvnw.cmd spring-boot:run
 ```
 
-#### 5. 访问您的多 Agent 仪表盘
+#### 4. 访问您的多 Agent 仪表盘
 
 在您的浏览器中访问 `http://localhost:18080`。
 
