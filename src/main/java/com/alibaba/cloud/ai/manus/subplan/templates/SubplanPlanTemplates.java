@@ -34,7 +34,8 @@ public class SubplanPlanTemplates {
 		Map<String, String> templates = new HashMap<>();
 
 		// Content extraction templates
-		templates.put("extract_relevant_content_template", getExtractRelevantContentTemplate());
+		// templates.put("extract_relevant_content_template", getExtractRelevantContentTemplate());
+		templates.put("extract_relevant_content_template", getExtractRelevantContentTemplateWithDynamicAgent());
 
 		return templates;
 	}
@@ -70,6 +71,60 @@ public class SubplanPlanTemplates {
 					  "postProcessSteps": [
 						{
 						  "stepRequirement": "[MAPREDUCE_FIN_AGENT] After export completion, read the exported results and output all exported content completely. Output format specification: <<outputFormatSpecification>>. File format requirement: Markdown."
+						}
+					  ]
+					}
+				  ]
+				}""";
+	}
+
+	
+
+	/**
+	 * Get extract relevant content plan template using ConfigurableDynaAgent
+	 * @return Extract relevant content template JSON with dynamic agent execution
+	 */
+	public static String getExtractRelevantContentTemplateWithDynamicAgent() {
+		return """
+				{
+				  "planType": "dynamic_map_reduce_agent",
+				  "planId": "<<planId>>",
+				  "title": "Intelligent content summarization for files or directories using ConfigurableDynaAgent with MapReduce pattern, with final merged file name output in summary",
+				  "steps": [
+					  "dataPreparedSteps": [
+						{
+						  "stepRequirement": "Use ConfigurableDynaAgent to prepare and split content of file or directory <<fileName>> for MapReduce processing",
+						  "agentName": "ConfigurableDynaAgent",
+						  "modelName": "<<modelName>>",
+						  "selectedToolKeys": ["file_loader", "content_splitter", "data_preparer"],
+						  "terminateColumns": "<<outputFormatSpecification>>"
+						}
+					  ],
+					  "mapSteps": [
+						{
+						  "stepRequirement": "Use ConfigurableDynaAgent to analyze file chunk, find key information related to ```<<queryKey>>```, information should be comprehensive, including all data, facts and opinions, comprehensive information without omission. Output format specification: ``` <<outputFormatSpecification>>```. File format requirement: Markdown.",
+						  "agentName": "ConfigurableDynaAgent",
+						  "modelName": "<<modelName>>",
+						  "selectedToolKeys": ["text_analyzer", "content_extractor", "keyword_matcher"],
+						  "terminateColumns": "<<outputFormatSpecification>>"
+						}
+					  ],
+					  "reduceSteps": [
+						{
+						  "stepRequirement": "Use ConfigurableDynaAgent to merge the information from this chunk into file, while maintaining information integrity, merge all content and remove results with no content found. Output format specification: <<outputFormatSpecification>>. File format requirement: Markdown.",
+						  "agentName": "ConfigurableDynaAgent",
+						  "modelName": "<<modelName>>",
+						  "selectedToolKeys": ["content_merger", "text_processor", "format_converter"],
+						  "terminateColumns": "<<outputFormatSpecification>>"
+						}
+					  ],
+					  "postProcessSteps": [
+						{
+						  "stepRequirement": "Use ConfigurableDynaAgent to perform final review and export the consolidated results. Read the processed content and output all exported content completely. Output format specification: <<outputFormatSpecification>>. File format requirement: Markdown.",
+						  "agentName": "ConfigurableDynaAgent",
+						  "modelName": "<<modelName>>",
+						  "selectedToolKeys": ["content_reviewer", "export_tool", "final_formatter"],
+						  "terminateColumns": "<<outputFormatSpecification>>"
 						}
 					  ]
 					}
