@@ -60,27 +60,12 @@ public class InitController {
 			// Based on LlmService mode: check if configured models exist
 			boolean hasConfiguredModels = modelService.getAllModels().size() > 0;
 
-			// Check environment variables (for Docker deployment)
-			// Support DashScope API Key
-			String dashscopeApiKeyFromEnv = environment.getProperty("DASHSCOPE_API_KEY");
-			boolean hasDashscopeEnvConfig = dashscopeApiKeyFromEnv != null && !dashscopeApiKeyFromEnv.trim().isEmpty();
-
-			// Support OpenAI compatible API configuration
-			String openaiApiKeyFromEnv = environment.getProperty("OPENAI_API_KEY");
-			boolean hasOpenaiEnvConfig = openaiApiKeyFromEnv != null && !openaiApiKeyFromEnv.trim().isEmpty();
-
-			// If any environment variable is configured, consider it as configured
-			boolean hasEnvConfig = hasDashscopeEnvConfig || hasOpenaiEnvConfig;
-
 			// System initialization status based on configured models or environment
 			// variables
-			boolean initialized = hasConfiguredModels || hasEnvConfig;
+			boolean initialized = hasConfiguredModels;
 
 			response.put("initialized", initialized);
 			response.put("hasConfiguredModels", hasConfiguredModels);
-			response.put("hasEnvConfig", hasEnvConfig);
-			response.put("hasDashscopeEnvConfig", hasDashscopeEnvConfig);
-			response.put("hasOpenaiEnvConfig", hasOpenaiEnvConfig);
 			response.put("success", true);
 
 			return ResponseEntity.ok(response);

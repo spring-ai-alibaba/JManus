@@ -65,116 +65,49 @@ Get JManus up and running in under 5 minutes:
 ### Prerequisites
 
 - 🌐 **DashScope API Key** (or alternative AI model provider)
-- 🐳 **Docker** (for containerized deployment) or ☕ **Java 17+** (for source code execution)
+- ☕ **Java 17+** (for running JAR files or source code execution)
 
-### Method 1: Using Docker (Recommended)
+### Method 1: Using GitHub Release (Recommended)
 
-#### 🐳 Using Docker Hub Image
-
-```bash
-# Pull the latest develop image
-docker pull springaialibaba/jmanus:develop
-
-# Basic startup (temporary data storage)
-docker run -d \
-  --name jmanus \
-  -p 18080:18080 \
-  -e DASHSCOPE_API_KEY=your_api_key_here \
-  springaialibaba/jmanus:develop
-
-# Or start with data persistence (recommended)
-docker run -d \
-  --name jmanus \
-  -p 18080:18080 \
-  -e DASHSCOPE_API_KEY=your_api_key_here \
-  -v $(pwd)/h2-data:/app/extracted/h2-data \
-  -v $(pwd)/extensions:/app/extracted/extensions \
-  springaialibaba/jmanus:develop
-```
-
-#### 🇨🇳 Using Alibaba Cloud Image (China Acceleration)
+#### 📦 Download and Run JAR File
 
 ```bash
-# Pull Alibaba Cloud accelerated image
-docker pull sca-registry.cn-hangzhou.cr.aliyuncs.com/spring-ai-alibaba/jmanus:develop
+# Download the latest JAR file
+wget https://github.com/spring-ai-alibaba/JManus/releases/latest/download/jmanus.jar
 
-# Basic startup (temporary data storage)
-docker run -d \
-  --name jmanus \
-  -p 18080:18080 \
-  -e DASHSCOPE_API_KEY=your_api_key_here \
-  sca-registry.cn-hangzhou.cr.aliyuncs.com/spring-ai-alibaba/jmanus:develop
+# Or using curl
+curl -L -o jmanus.jar https://github.com/spring-ai-alibaba/JManus/releases/latest/download/jmanus.jar
 
-# Or start with data persistence (recommended)
-docker run -d \
-  --name jmanus \
-  -p 18080:18080 \
-  -e DASHSCOPE_API_KEY=your_api_key_here \
-  -v $(pwd)/h2-data:/app/extracted/h2-data \
-  -v $(pwd)/extensions:/app/extracted/extensions \
-  sca-registry.cn-hangzhou.cr.aliyuncs.com/spring-ai-alibaba/jmanus:develop
+# Run the JAR file
+java -jar jmanus.jar
 ```
 
-#### 🔧 Advanced Docker Configuration
-
-If you need custom configuration or data persistence:
-
-```bash
-# Create data directories
-mkdir -p /path/to/jmanus/h2-data
-mkdir -p /path/to/jmanus/extensions
-
-# Start with custom configuration (recommended for data persistence)
-docker run -d \
-  --name jmanus \
-  -p 18080:18080 \
-  -e DASHSCOPE_API_KEY=your_api_key_here \
-  -v /path/to/jmanus/h2-data:/app/extracted/h2-data \
-  -v /path/to/jmanus/extensions:/app/extracted/extensions \
-  --restart unless-stopped \
-  springaialibaba/jmanus:develop
-```
-
-> 📁 **Data Storage Information**:
-> - **H2 Database**: `/app/extracted/h2-data` - Stores application database files
-> - **Runtime Data**: `/app/extracted/extensions` - Stores extensions and runtime configurations
-> - It's recommended to mount these two directories for data persistence to avoid data loss after container restarts
-
-> 💡 **Image Information**:
-> - **Docker Hub Image**: `springaialibaba/jmanus:develop` - Daily automated build and push
-> - **Alibaba Cloud Image**: `sca-registry.cn-hangzhou.cr.aliyuncs.com/spring-ai-alibaba/jmanus:develop` - Daily sync, faster access for China users
-> - Images support headless Playwright browser functionality
-> - Alibaba Cloud image may lag slightly behind Docker Hub version
+> 💡 **Manual Download**: You can also visit the [JManus Releases page](https://github.com/spring-ai-alibaba/JManus/releases) to manually download the latest JAR file.
 
 #### 🌐 Access Application
 
-After the container starts, navigate to `http://localhost:18080` in your browser to use JManus.
+After the application starts, navigate to `http://localhost:18080` in your browser.
 
-🎉 **Congratulations!** Your multi-agent system has been quickly deployed via Docker.
+> 💡 **Guided Setup**: After the application starts, it will automatically display a guided setup page. On the first page, select your language (English/Chinese), then on the second page, enter your DashScope API key that you just obtained to complete the configuration.
+
+🎉 **Congratulations!** Your multi-agent system has been quickly started.
 
 ---
 
-### Method 2: Running from Source Code
+### Method 2: Running from Source Code (Alternative)
 
 #### 1. Clone and Navigate
 
 ```bash
-git clone https://github.com/alibaba/spring-ai-alibaba.git
-cd spring-ai-alibaba/spring-ai-alibaba-jmanus
+git clone https://github.com/spring-ai-alibaba/JManus.git
+cd JManus
 ```
 
-#### 2. Configure Your API Key
-
-```bash
-# Set your DashScope API key
-export DASHSCOPE_API_KEY=your_api_key_here
-```
+#### 2. Database Configuration (Optional)
 
 > 💡 **Get your DashScope API Key**: Visit [Alibaba Cloud Console](https://bailian.console.aliyun.com/?tab=model#/api-key) to obtain your free API key.
 > 
 > **Using other providers?** Update the configuration in `src/main/resources/application.yml` to use your preferred AI model platform.
-
-#### 3. Database Configuration (Optional)
 
 JManus supports both H2 (default)、MySQL and PostgreSQL databases. 
 
@@ -205,7 +138,7 @@ JManus supports both H2 (default)、MySQL and PostgreSQL databases.
 
 > 💡 **Note**: The application will automatically create required tables on first startup using JPA's `ddl-auto: update` configuration.
 
-#### 4. Launch the Application
+#### 3. Launch the Application
 
 **For Unix-like systems (macOS, Linux):**
 ```bash
@@ -217,7 +150,7 @@ JManus supports both H2 (default)、MySQL and PostgreSQL databases.
 ../mvnw.cmd spring-boot:run
 ```
 
-#### 5. Access Your Multi-Agent Dashboard
+#### 4. Access Your Multi-Agent Dashboard
 
 Navigate to `http://localhost:18080` in your browser.
 
