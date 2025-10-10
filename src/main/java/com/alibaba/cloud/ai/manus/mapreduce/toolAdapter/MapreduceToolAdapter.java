@@ -44,13 +44,11 @@ public class MapreduceToolAdapter  extends AbstractBaseTool<Map<String, Object>>
     @Override
     public void cleanup(String planId) {
         // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'cleanup'");
     }
 
     @Override
     public boolean isSelectable() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'isSelectable'");
+        return true;
     }
 
     @Override
