@@ -102,6 +102,9 @@ public class LlmService implements ILlmService, JmanusListener<ModelChangeEvent>
 	@Autowired
 	private LlmTraceRecorder llmTraceRecorder;
 
+	@Autowired(required = false)
+	private WebClient webClientWithDnsCache;
+
 	public LlmService() {
 	}
 
@@ -431,11 +434,18 @@ public class LlmService implements ILlmService, JmanusListener<ModelChangeEvent>
 			headers.forEach((key, value) -> multiValueMap.add(key, value));
 		}
 
-		// Clone WebClient.Builder and add timeout configuration
-		WebClient.Builder enhancedWebClientBuilder = webClientBuilder.clone()
-			// Add 5 minutes default timeout setting
-			.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
-			.filter((request, next) -> next.exchange(request).timeout(Duration.ofMinutes(10)));
+		// Use DNS-cached WebClient if available, otherwise use enhanced builder
+		WebClient.Builder enhancedWebClientBuilder;
+		if (webClientWithDnsCache != null) {
+			log.info("Using DNS-cached WebClient for model: {}", dynamicModelEntity.getModelName());
+			enhancedWebClientBuilder = webClientWithDnsCache.mutate();
+		} else {
+			log.warn("DNS-cached WebClient not available, using default WebClient builder");
+			enhancedWebClientBuilder = webClientBuilder.clone()
+				// Add 5 minutes default timeout setting
+				.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
+				.filter((request, next) -> next.exchange(request).timeout(Duration.ofMinutes(10)));
+		}
 
 		String completionsPath = dynamicModelEntity.getCompletionsPath();
 

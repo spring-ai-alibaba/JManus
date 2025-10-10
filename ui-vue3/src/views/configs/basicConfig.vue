@@ -455,7 +455,7 @@ const getConfigMin = (configKey: string): number => {
 // Utility function: Get the maximum value of the configuration item
 const getConfigMax = (configKey: string): number => {
   const maxValues: Record<string, number> = {
-    'maxSteps': 100,
+    'maxSteps': 500,
     'browserTimeout': 600,
     'maxThreads': 32,
     'timeoutSeconds': 300,

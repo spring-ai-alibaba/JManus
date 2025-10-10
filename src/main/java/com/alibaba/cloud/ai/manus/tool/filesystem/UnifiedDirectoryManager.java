@@ -31,7 +31,7 @@ import java.nio.file.Paths;
  * with security constraints.
  */
 @Service
-public class UnifiedDirectoryManager implements IUnifiedDirectoryManager {
+public class UnifiedDirectoryManager  {
 
 	private static final Logger log = LoggerFactory.getLogger(UnifiedDirectoryManager.class);
 

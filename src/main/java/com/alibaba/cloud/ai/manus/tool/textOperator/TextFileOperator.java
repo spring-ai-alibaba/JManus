@@ -164,7 +164,7 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 								"Error: replace operation requires source_text and target_text parameters");
 					}
 
-					yield replaceText(planId, filePath, sourceText, targetText);
+					yield replaceText(filePath, sourceText, targetText);
 				}
 				case "get_text" -> {
 					Integer startLine = (Integer) toolInputMap.get("start_line");
@@ -175,9 +175,9 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 								"Error: get_text operation requires start_line and end_line parameters");
 					}
 
-					yield getTextByLines(planId, filePath, startLine, endLine);
+					yield getTextByLines(filePath, startLine, endLine);
 				}
-				case "get_all_text" -> getAllText(planId, filePath);
+				case "get_all_text" -> getAllText(filePath);
 				case "append" -> {
 					String appendContent = (String) toolInputMap.get("content");
 
@@ -185,9 +185,9 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 						yield new ToolExecuteResult("Error: append operation requires content parameter");
 					}
 
-					yield appendToFile(planId, filePath, appendContent);
+					yield appendToFile(filePath, appendContent);
 				}
-				case "count_words" -> countWords(planId, filePath);
+				case "count_words" -> countWords(filePath);
 				default -> {
 					textFileService.updateFileState(planId, filePath, "Error: Unknown action");
 					yield new ToolExecuteResult("Unknown operation: " + action
@@ -232,7 +232,7 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 								"Error: replace operation requires source_text and target_text parameters");
 					}
 
-					yield replaceText(planId, filePath, sourceText, targetText);
+					yield replaceText(filePath, sourceText, targetText);
 				}
 				case "get_text" -> {
 					Integer startLine = input.getStartLine();
@@ -243,9 +243,9 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 								"Error: get_text operation requires start_line and end_line parameters");
 					}
 
-					yield getTextByLines(planId, filePath, startLine, endLine);
+					yield getTextByLines(filePath, startLine, endLine);
 				}
-				case "get_all_text" -> getAllText(planId, filePath);
+				case "get_all_text" -> getAllText(filePath);
 				case "append" -> {
 					String appendContent = input.getContent();
 
@@ -253,9 +253,9 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 						yield new ToolExecuteResult("Error: append operation requires content parameter");
 					}
 
-					yield appendToFile(planId, filePath, appendContent);
+					yield appendToFile(filePath, appendContent);
 				}
-				case "count_words" -> countWords(planId, filePath);
+				case "count_words" -> countWords(filePath);
 				default -> {
 					textFileService.updateFileState(planId, filePath, "Error: Unknown action");
 					yield new ToolExecuteResult("Unknown operation: " + action
@@ -274,50 +274,70 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 	/**
 	 * Ensure file is opened, create if it doesn't exist
 	 */
-	private ToolExecuteResult ensureFileOpen(String planId, String filePath) {
+	private ToolExecuteResult ensureFileOpen(String filePath) {
 		try {
 			// Check file type
 			if (!textFileService.isSupportedFileType(filePath)) {
-				textFileService.updateFileState(planId, filePath, "Error: Unsupported file type");
+				textFileService.updateFileState(this.currentPlanId, filePath, "Error: Unsupported file type");
 				return new ToolExecuteResult("Unsupported file type. Only text-based files are supported.");
 			}
 
+			// Validate rootPlanId is available for directory operations
+			if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
+				String errorMsg = "Error: rootPlanId is required for file operations but is null or empty";
+				log.error(errorMsg);
+				textFileService.updateFileState(this.currentPlanId, filePath, errorMsg);
+				return new ToolExecuteResult(errorMsg);
+			}
+
+			log.debug("Using rootPlanId: {} for directory operations (currentPlanId: {})", this.rootPlanId, this.currentPlanId);
+
 			// Use TextFileService to validate and get the absolute path
-			Path absolutePath = textFileService.validateFilePath(planId, filePath);
+			Path absolutePath = textFileService.validateFilePath(this.rootPlanId, filePath, this.currentPlanId);
 
 			// If file doesn't exist, create parent directory first
 			if (!Files.exists(absolutePath)) {
 				try {
 					Files.createDirectories(absolutePath.getParent());
 					Files.createFile(absolutePath);
-					textFileService.updateFileState(planId, filePath, "Success: New file created");
+					textFileService.updateFileState(this.currentPlanId, filePath, "Success: New file created");
 					return new ToolExecuteResult("New file created successfully: " + absolutePath);
 				}
 				catch (IOException e) {
-					textFileService.updateFileState(planId, filePath,
+					textFileService.updateFileState(this.currentPlanId, filePath,
 							"Error: Failed to create file: " + e.getMessage());
 					return new ToolExecuteResult("Failed to create file: " + e.getMessage());
 				}
 			}
 
-			textFileService.updateFileState(planId, filePath, "Success: File opened");
+			textFileService.updateFileState(this.currentPlanId, filePath, "Success: File opened");
 			return new ToolExecuteResult("File opened successfully: " + absolutePath);
 		}
 		catch (IOException e) {
-			textFileService.updateFileState(planId, filePath, "Error: " + e.getMessage());
+			textFileService.updateFileState(this.currentPlanId, filePath, "Error: " + e.getMessage());
 			return new ToolExecuteResult("Error opening file: " + e.getMessage());
 		}
 	}
 
-	private ToolExecuteResult replaceText(String planId, String filePath, String sourceText, String targetText) {
+	private ToolExecuteResult replaceText(String filePath, String sourceText, String targetText) {
 		try {
+			// Validate rootPlanId is available for directory operations
+			if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
+				String errorMsg = "Error: rootPlanId is required for file operations but is null or empty";
+				log.error(errorMsg);
+				textFileService.updateFileState(this.currentPlanId, filePath, errorMsg);
+				return new ToolExecuteResult(errorMsg);
+			}
+
+			log.debug("Using rootPlanId: {} for directory operations (currentPlanId: {})", this.rootPlanId, this.currentPlanId);
+
 			// Automatically open file
-			ToolExecuteResult openResult = ensureFileOpen(planId, filePath);
+			ToolExecuteResult openResult = ensureFileOpen(filePath);
 			if (!openResult.getOutput().toLowerCase().contains("success")) {
 				return openResult;
 			}
 
-			Path absolutePath = textFileService.validateFilePath(planId, filePath);
+			Path absolutePath = textFileService.validateFilePath(this.rootPlanId, filePath, this.currentPlanId);
 			String content = Files.readString(absolutePath);
 			String newContent = content.replace(sourceText, targetText);
 			Files.writeString(absolutePath, newContent);
@@ -327,16 +347,16 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 				channel.force(true);
 			}
 
-			textFileService.updateFileState(planId, filePath, "Success: Text replaced and saved");
+			textFileService.updateFileState(this.currentPlanId, filePath, "Success: Text replaced and saved");
 			return new ToolExecuteResult("Text replaced and saved successfully");
 		}
 		catch (IOException e) {
-			textFileService.updateFileState(planId, filePath, "Error: " + e.getMessage());
+			textFileService.updateFileState(this.currentPlanId, filePath, "Error: " + e.getMessage());
 			return new ToolExecuteResult("Error replacing text: " + e.getMessage());
 		}
 	}
 
-	private ToolExecuteResult getTextByLines(String planId, String filePath, Integer startLine, Integer endLine) {
+	private ToolExecuteResult getTextByLines(String filePath, Integer startLine, Integer endLine) {
 		try {
 			// Parameter validation
 			if (startLine < 1 || endLine < 1) {
@@ -354,17 +374,27 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 								+ requestedLines);
 			}
 
+			// Validate rootPlanId is available for directory operations
+			if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
+				String errorMsg = "Error: rootPlanId is required for file operations but is null or empty";
+				log.error(errorMsg);
+				textFileService.updateFileState(this.currentPlanId, filePath, errorMsg);
+				return new ToolExecuteResult(errorMsg);
+			}
+
+			log.debug("Using rootPlanId: {} for directory operations (currentPlanId: {})", this.rootPlanId, this.currentPlanId);
+
 			// Automatically open file
-			ToolExecuteResult openResult = ensureFileOpen(planId, filePath);
+			ToolExecuteResult openResult = ensureFileOpen(filePath);
 			if (!openResult.getOutput().toLowerCase().contains("success")) {
 				return openResult;
 			}
 
-			Path absolutePath = textFileService.validateFilePath(planId, filePath);
+			Path absolutePath = textFileService.validateFilePath(this.rootPlanId, filePath, this.currentPlanId);
 			java.util.List<String> lines = Files.readAllLines(absolutePath);
 
 			if (lines.isEmpty()) {
-				textFileService.updateFileState(planId, filePath, "Success: File is empty");
+				textFileService.updateFileState(this.currentPlanId, filePath, "Success: File is empty");
 				return new ToolExecuteResult("File is empty");
 			}
 
@@ -395,25 +425,35 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 					.append("), you can continue calling get_text to retrieve.");
 			}
 
-			textFileService.updateFileState(planId, filePath, "Success: Retrieved text lines");
+			textFileService.updateFileState(this.currentPlanId, filePath, "Success: Retrieved text lines");
 			return new ToolExecuteResult(result.toString());
 		}
 		catch (IOException e) {
-			textFileService.updateFileState(planId, filePath, "Error: " + e.getMessage());
+			textFileService.updateFileState(this.currentPlanId, filePath, "Error: " + e.getMessage());
 			return new ToolExecuteResult("Error retrieving text lines: " + e.getMessage());
 		}
 	}
 
-	private ToolExecuteResult getAllText(String planId, String filePath) {
+	private ToolExecuteResult getAllText(String filePath) {
 		try {
+			// Validate rootPlanId is available for directory operations
+			if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
+				String errorMsg = "Error: rootPlanId is required for file operations but is null or empty";
+				log.error(errorMsg);
+				textFileService.updateFileState(this.currentPlanId, filePath, errorMsg);
+				return new ToolExecuteResult(errorMsg);
+			}
+
+			log.debug("Using rootPlanId: {} for directory operations (currentPlanId: {})", this.rootPlanId, this.currentPlanId);
+
 			// Automatically open file
-			ToolExecuteResult openResult = ensureFileOpen(planId, filePath);
+			ToolExecuteResult openResult = ensureFileOpen(filePath);
 			if (!openResult.getOutput().toLowerCase().contains("success")) {
 				return openResult;
 			}
 
 			// Read file content
-			Path absolutePath = textFileService.validateFilePath(planId, filePath);
+			Path absolutePath = textFileService.validateFilePath(this.rootPlanId, filePath, this.currentPlanId);
 			String content = Files.readString(absolutePath);
 
 			// Force flush to disk to ensure data consistency
@@ -421,34 +461,44 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 				channel.force(true);
 			}
 
-			textFileService.updateFileState(planId, filePath, "Success: Retrieved all text");
+			textFileService.updateFileState(this.currentPlanId, filePath, "Success: Retrieved all text");
 
 			// Use InnerStorageService to intelligently process content
-			SmartContentSavingService.SmartProcessResult processedResult = innerStorageService.processContent(planId,
+			SmartContentSavingService.SmartProcessResult processedResult = innerStorageService.processContent(this.currentPlanId,
 					content, "get_all_text");
 
 			return new ToolExecuteResult(processedResult.getSummary());
 		}
 		catch (IOException e) {
-			textFileService.updateFileState(planId, filePath, "Error: " + e.getMessage());
+			textFileService.updateFileState(this.currentPlanId, filePath, "Error: " + e.getMessage());
 			return new ToolExecuteResult("Error retrieving all text: " + e.getMessage());
 		}
 	}
 
-	private ToolExecuteResult appendToFile(String planId, String filePath, String content) {
+	private ToolExecuteResult appendToFile(String filePath, String content) {
 		try {
 			if (content == null || content.isEmpty()) {
-				textFileService.updateFileState(planId, filePath, "Error: No content to append");
+				textFileService.updateFileState(this.currentPlanId, filePath, "Error: No content to append");
 				return new ToolExecuteResult("Error: No content to append");
 			}
 
+			// Validate rootPlanId is available for directory operations
+			if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
+				String errorMsg = "Error: rootPlanId is required for file operations but is null or empty";
+				log.error(errorMsg);
+				textFileService.updateFileState(this.currentPlanId, filePath, errorMsg);
+				return new ToolExecuteResult(errorMsg);
+			}
+
+			log.debug("Using rootPlanId: {} for directory operations (currentPlanId: {})", this.rootPlanId, this.currentPlanId);
+
 			// Automatically open file
-			ToolExecuteResult openResult = ensureFileOpen(planId, filePath);
+			ToolExecuteResult openResult = ensureFileOpen(filePath);
 			if (!openResult.getOutput().toLowerCase().contains("success")) {
 				return openResult;
 			}
 
-			Path absolutePath = textFileService.validateFilePath(planId, filePath);
+			Path absolutePath = textFileService.validateFilePath(this.rootPlanId, filePath, this.currentPlanId);
 			Files.writeString(absolutePath, "\n" + content, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
 
 			// Automatically save file
@@ -456,32 +506,42 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 				channel.force(true);
 			}
 
-			textFileService.updateFileState(planId, filePath, "Success: Content appended and saved");
+			textFileService.updateFileState(this.currentPlanId, filePath, "Success: Content appended and saved");
 			return new ToolExecuteResult("Content appended and saved successfully");
 		}
 		catch (IOException e) {
-			textFileService.updateFileState(planId, filePath, "Error: " + e.getMessage());
+			textFileService.updateFileState(this.currentPlanId, filePath, "Error: " + e.getMessage());
 			return new ToolExecuteResult("Error appending to file: " + e.getMessage());
 		}
 	}
 
-	private ToolExecuteResult countWords(String planId, String filePath) {
+	private ToolExecuteResult countWords(String filePath) {
 		try {
+			// Validate rootPlanId is available for directory operations
+			if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
+				String errorMsg = "Error: rootPlanId is required for file operations but is null or empty";
+				log.error(errorMsg);
+				textFileService.updateFileState(this.currentPlanId, filePath, errorMsg);
+				return new ToolExecuteResult(errorMsg);
+			}
+
+			log.debug("Using rootPlanId: {} for directory operations (currentPlanId: {})", this.rootPlanId, this.currentPlanId);
+
 			// Automatically open file
-			ToolExecuteResult openResult = ensureFileOpen(planId, filePath);
+			ToolExecuteResult openResult = ensureFileOpen(filePath);
 			if (!openResult.getOutput().toLowerCase().contains("success")) {
 				return openResult;
 			}
 
-			Path absolutePath = textFileService.validateFilePath(planId, filePath);
+			Path absolutePath = textFileService.validateFilePath(this.rootPlanId, filePath, this.currentPlanId);
 			String content = Files.readString(absolutePath);
 			int wordCount = content.isEmpty() ? 0 : content.split("\\s+").length;
 
-			textFileService.updateFileState(planId, filePath, "Success: Counted words");
+			textFileService.updateFileState(this.currentPlanId, filePath, "Success: Counted words");
 			return new ToolExecuteResult(String.format("Total word count (including Markdown symbols): %d", wordCount));
 		}
 		catch (IOException e) {
-			textFileService.updateFileState(planId, filePath, "Error: " + e.getMessage());
+			textFileService.updateFileState(this.currentPlanId, filePath, "Error: " + e.getMessage());
 			return new ToolExecuteResult("Error counting words: " + e.getMessage());
 		}
 	}

@@ -69,6 +69,7 @@ import com.alibaba.cloud.ai.manus.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.manus.tool.bash.Bash;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.browser.ChromeDriverService;
+import com.alibaba.cloud.ai.manus.tool.dirOperator.DirectoryOperator;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseUseTool;
@@ -251,6 +252,7 @@ public class PlanningFactory implements IPlanningFactory {
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
 			toolDefinitions.add(new TextFileOperator(textFileService, innerStorageService, objectMapper));
+			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager,
 			// applicationContext));
 			// toolDefinitions.add(new TableProcessorTool(tableProcessingService));

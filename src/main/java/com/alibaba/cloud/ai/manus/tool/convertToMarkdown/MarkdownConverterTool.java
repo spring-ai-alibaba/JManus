@@ -269,7 +269,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 
 	@Override
 	public String getServiceGroup() {
-		return "convertToMarkdown-service-group";
+		return "default-service-group";
 	}
 
 	@Override
