@@ -439,7 +439,8 @@ public class LlmService implements ILlmService, JmanusListener<ModelChangeEvent>
 		if (webClientWithDnsCache != null) {
 			log.info("Using DNS-cached WebClient for model: {}", dynamicModelEntity.getModelName());
 			enhancedWebClientBuilder = webClientWithDnsCache.mutate();
-		} else {
+		}
+		else {
 			log.warn("DNS-cached WebClient not available, using default WebClient builder");
 			enhancedWebClientBuilder = webClientBuilder.clone()
 				// Add 5 minutes default timeout setting

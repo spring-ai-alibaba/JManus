@@ -88,7 +88,7 @@ import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.MarkdownConverterTool;
-import com.alibaba.cloud.ai.manus.subplan.service.ISubplanToolService;
+import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -97,7 +97,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 
 @Service
-public class PlanningFactory implements IPlanningFactory {
+public class PlanningFactory {
 
 	private final ChromeDriverService chromeDriverService;
 
@@ -146,7 +146,7 @@ public class PlanningFactory implements IPlanningFactory {
 	private CronService cronService;
 
 	@Autowired
-	private ISubplanToolService subplanToolService;
+	private SubplanToolService subplanToolService;
 
 	@Autowired
 	private AgentService agentService;

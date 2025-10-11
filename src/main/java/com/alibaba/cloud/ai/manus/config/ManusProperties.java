@@ -255,12 +255,12 @@ public class ManusProperties implements IManusProperties {
 	// Normal Settings
 	// End----------------------------------------------------------------------------------------------
 
-	// Infinite Context SubGroup
-	@ConfigProperty(group = "manus", subGroup = "infiniteContext", key = "enabled",
+	/*@ConfigProperty(group = "manus", subGroup = "infiniteContext", key = "enabled",
 			path = "manus.infiniteContext.enabled", description = "manus.infiniteContext.enabled.description",
 			defaultValue = "false", inputType = ConfigInputType.CHECKBOX,
 			options = { @ConfigOption(value = "true", label = "manus.infiniteContext.enabled.option.true"),
 					@ConfigOption(value = "false", label = "manus.infiniteContext.enabled.option.false") })
+					*/
 	private volatile Boolean infiniteContextEnabled;
 
 	public Boolean getInfiniteContextEnabled() {
@@ -269,6 +269,10 @@ public class ManusProperties implements IManusProperties {
 		if (value != null) {
 			infiniteContextEnabled = Boolean.valueOf(value);
 		}
+		else
+		{
+			return false;
+		}
 		return infiniteContextEnabled;
 	}
 
@@ -276,10 +280,10 @@ public class ManusProperties implements IManusProperties {
 		this.infiniteContextEnabled = infiniteContextEnabled;
 	}
 
-	@ConfigProperty(group = "manus", subGroup = "infiniteContext", key = "parallelThreads",
+	/*@ConfigProperty(group = "manus", subGroup = "infiniteContext", key = "parallelThreads",
 			path = "manus.infiniteContext.parallelThreads",
 			description = "manus.infiniteContext.parallelThreads.description", defaultValue = "6",
-			inputType = ConfigInputType.NUMBER)
+			inputType = ConfigInputType.NUMBER)*/
 	private volatile Integer infiniteContextParallelThreads;
 
 	public Integer getInfiniteContextParallelThreads() {
@@ -299,10 +303,10 @@ public class ManusProperties implements IManusProperties {
 		this.infiniteContextParallelThreads = infiniteContextParallelThreads;
 	}
 
-	@ConfigProperty(group = "manus", subGroup = "infiniteContext", key = "taskContextSize",
+	/*@ConfigProperty(group = "manus", subGroup = "infiniteContext", key = "taskContextSize",
 			path = "manus.infiniteContext.taskContextSize",
 			description = "manus.infiniteContext.taskContextSize.description", defaultValue = "20000",
-			inputType = ConfigInputType.NUMBER)
+			inputType = ConfigInputType.NUMBER)*/
 	private volatile Integer infiniteContextTaskContextSize;
 
 	public Integer getInfiniteContextTaskContextSize() {
@@ -321,6 +325,7 @@ public class ManusProperties implements IManusProperties {
 	public void setInfiniteContextTaskContextSize(Integer infiniteContextTaskContextSize) {
 		this.infiniteContextTaskContextSize = infiniteContextTaskContextSize;
 	}
+	
 
 	// File System Security SubGroup
 	@ConfigProperty(group = "manus", subGroup = "filesystem", key = "allowExternalAccess",

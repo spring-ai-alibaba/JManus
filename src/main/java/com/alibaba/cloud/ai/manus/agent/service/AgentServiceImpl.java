@@ -43,7 +43,7 @@ import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
-import com.alibaba.cloud.ai.manus.planning.IPlanningFactory;
+import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.llm.ILlmService;
@@ -60,7 +60,7 @@ public class AgentServiceImpl implements AgentService {
 
 	private final DynamicAgentRepository repository;
 
-	private final IPlanningFactory planningFactory;
+	private final PlanningFactory planningFactory;
 
 	private final IMcpService mcpService;
 
@@ -92,7 +92,7 @@ public class AgentServiceImpl implements AgentService {
 	private String namespace;
 
 	@Autowired
-	public AgentServiceImpl(DynamicAgentRepository repository, @Lazy IPlanningFactory planningFactory,
+	public AgentServiceImpl(DynamicAgentRepository repository, @Lazy PlanningFactory planningFactory,
 			@Lazy IMcpService mcpService, NamespaceService namespaceService, PlanExecutionRecorder recorder,
 			ManusProperties properties, UserInputService userInputService, PromptService promptService,
 			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,

@@ -32,83 +32,83 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
- * DNS缓存和网络配置
- * 解决VPN环境下的DNS解析超时问题
+ * DNS缓存和网络配置 解决VPN环境下的DNS解析超时问题
  */
 @Configuration
 public class DnsCacheConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(DnsCacheConfig.class);
+	private static final Logger log = LoggerFactory.getLogger(DnsCacheConfig.class);
 
-    /**
-     * 配置带有DNS缓存的WebClient
-     */
-    @Bean
-    public WebClient webClientWithDnsCache() {
-        log.info("Configuring WebClient with DNS cache and extended timeouts");
-        
-        // 创建连接提供者，增加连接池大小和超时时间
-        ConnectionProvider connectionProvider = ConnectionProvider.builder("dns-cache-pool")
-            .maxConnections(100)
-            .maxIdleTime(Duration.ofMinutes(5))
-            .maxLifeTime(Duration.ofMinutes(10))
-            .pendingAcquireTimeout(Duration.ofSeconds(30))
-            .evictInBackground(Duration.ofSeconds(120))
-            .build();
+	/**
+	 * 配置带有DNS缓存的WebClient
+	 */
+	@Bean
+	public WebClient webClientWithDnsCache() {
+		log.info("Configuring WebClient with DNS cache and extended timeouts");
 
-        // 配置HttpClient with DNS缓存和超时设置
-        HttpClient httpClient = HttpClient.create(connectionProvider)
-            // 使用默认地址解析器组（包含DNS缓存）
-            .resolver(DefaultAddressResolverGroup.INSTANCE)
-            // 设置连接超时
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000) // 30秒
-            // 设置读取超时
-            .doOnConnected(conn -> 
-                conn.addHandlerLast(new ReadTimeoutHandler(60, TimeUnit.SECONDS))
-                    .addHandlerLast(new WriteTimeoutHandler(60, TimeUnit.SECONDS)))
-            // 启用TCP保活
-            .option(ChannelOption.SO_KEEPALIVE, true)
-            // 设置TCP_NODELAY
-            .option(ChannelOption.TCP_NODELAY, true);
+		// 创建连接提供者，增加连接池大小和超时时间
+		ConnectionProvider connectionProvider = ConnectionProvider.builder("dns-cache-pool")
+			.maxConnections(100)
+			.maxIdleTime(Duration.ofMinutes(5))
+			.maxLifeTime(Duration.ofMinutes(10))
+			.pendingAcquireTimeout(Duration.ofSeconds(30))
+			.evictInBackground(Duration.ofSeconds(120))
+			.build();
 
-        return WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(httpClient))
-            .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
-            .build();
-    }
+		// 配置HttpClient with DNS缓存和超时设置
+		HttpClient httpClient = HttpClient.create(connectionProvider)
+			// 使用默认地址解析器组（包含DNS缓存）
+			.resolver(DefaultAddressResolverGroup.INSTANCE)
+			// 设置连接超时
+			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000) // 30秒
+			// 设置读取超时
+			.doOnConnected(conn -> conn.addHandlerLast(new ReadTimeoutHandler(60, TimeUnit.SECONDS))
+				.addHandlerLast(new WriteTimeoutHandler(60, TimeUnit.SECONDS)))
+			// 启用TCP保活
+			.option(ChannelOption.SO_KEEPALIVE, true)
+			// 设置TCP_NODELAY
+			.option(ChannelOption.TCP_NODELAY, true);
 
-    /**
-     * 配置系统属性以启用DNS缓存
-     */
-    @Bean
-    public DnsCacheInitializer dnsCacheInitializer() {
-        return new DnsCacheInitializer();
-    }
+		return WebClient.builder()
+			.clientConnector(new ReactorClientHttpConnector(httpClient))
+			.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
+			.build();
+	}
 
-    /**
-     * DNS缓存初始化器
-     */
-    public static class DnsCacheInitializer {
-        
-        static {
-            log.info("Initializing DNS cache settings");
-            
-            // 启用DNS缓存
-            System.setProperty("java.net.useSystemProxies", "true");
-            System.setProperty("networkaddress.cache.ttl", "300"); // 5分钟缓存
-            System.setProperty("networkaddress.cache.negative.ttl", "60"); // 1分钟负缓存
-            
-            // Netty DNS设置
-            System.setProperty("io.netty.resolver.dns.cache.ttl", "300"); // 5分钟
-            System.setProperty("io.netty.resolver.dns.cache.negative.ttl", "60"); // 1分钟
-            System.setProperty("io.netty.resolver.dns.queryTimeoutMillis", "10000"); // 10秒超时
-            
-            // 启用Netty DNS缓存
-            System.setProperty("io.netty.resolver.dns.cache.enabled", "true");
-            System.setProperty("io.netty.resolver.dns.cache.maxTtl", "300");
-            System.setProperty("io.netty.resolver.dns.cache.minTtl", "60");
-            
-            log.info("DNS cache settings initialized successfully");
-        }
-    }
+	/**
+	 * 配置系统属性以启用DNS缓存
+	 */
+	@Bean
+	public DnsCacheInitializer dnsCacheInitializer() {
+		return new DnsCacheInitializer();
+	}
+
+	/**
+	 * DNS缓存初始化器
+	 */
+	public static class DnsCacheInitializer {
+
+		static {
+			log.info("Initializing DNS cache settings");
+
+			// 启用DNS缓存
+			System.setProperty("java.net.useSystemProxies", "true");
+			System.setProperty("networkaddress.cache.ttl", "300"); // 5分钟缓存
+			System.setProperty("networkaddress.cache.negative.ttl", "60"); // 1分钟负缓存
+
+			// Netty DNS设置
+			System.setProperty("io.netty.resolver.dns.cache.ttl", "300"); // 5分钟
+			System.setProperty("io.netty.resolver.dns.cache.negative.ttl", "60"); // 1分钟
+			System.setProperty("io.netty.resolver.dns.queryTimeoutMillis", "10000"); // 10秒超时
+
+			// 启用Netty DNS缓存
+			System.setProperty("io.netty.resolver.dns.cache.enabled", "true");
+			System.setProperty("io.netty.resolver.dns.cache.maxTtl", "300");
+			System.setProperty("io.netty.resolver.dns.cache.minTtl", "60");
+
+			log.info("DNS cache settings initialized successfully");
+		}
+
+	}
+
 }
