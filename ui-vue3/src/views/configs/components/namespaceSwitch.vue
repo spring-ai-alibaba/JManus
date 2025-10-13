@@ -135,7 +135,7 @@ onMounted(async () => {
 
 <style scoped>
 .setting-icon {
-  color: #667eea;
+  color: var(--accent-primary, var(--accent-primary));
   margin-left: 4px;
   cursor: pointer;
 }

@@ -652,7 +652,7 @@ defineExpose({
 .sidebar-wrapper {
   position: relative;
   height: 100vh;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   transition: width 0.1s ease;
   overflow: hidden;
@@ -690,7 +690,7 @@ defineExpose({
       font-size: 20px;
       font-weight: 600;
 
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -704,7 +704,7 @@ defineExpose({
     display: flex;
     margin-bottom: 16px;
     padding-right: 12px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
     border-radius: 8px;
     padding: 4px;
 
@@ -714,7 +714,7 @@ defineExpose({
       background: transparent;
       border: none;
       border-radius: 6px;
-      color: rgba(255, 255, 255, 0.7);
+      color: var(--text-primary);
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;
@@ -730,9 +730,9 @@ defineExpose({
       }
 
       &.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
         color: white;
-        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 2px 4px var(--selection-bg, rgba(102, 126, 234, 0.3));
       }
 
       &:disabled {
@@ -763,7 +763,7 @@ defineExpose({
         justify-content: space-between;
         margin-bottom: 16px;
         padding: 12px;
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
         border-radius: 8px;
 
         .template-info {
@@ -810,7 +810,7 @@ defineExpose({
         .json-editor {
           width: 100%;
           background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
           border-radius: 6px;
           color: white;
           font-size: 12px;
@@ -821,7 +821,7 @@ defineExpose({
 
           &:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--accent-primary, #667eea);
             box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
           }
 
@@ -854,7 +854,7 @@ defineExpose({
     .new-task-btn {
       width: 100%;
       padding: 12px 16px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
       border: none;
       border-radius: 8px;
       color: white;
@@ -869,7 +869,7 @@ defineExpose({
 
       &:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 12px var(--selection-bg, rgba(102, 126, 234, 0.3));
       }
 
       .shortcut {
@@ -907,7 +907,7 @@ defineExpose({
       .retry-btn {
         padding: 8px 16px;
         background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
         border-radius: 4px;
         color: white;
         cursor: pointer;
@@ -915,7 +915,7 @@ defineExpose({
         transition: background-color 0.2s ease;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.2);
+          background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
         }
       }
     }
@@ -925,7 +925,7 @@ defineExpose({
       align-items: flex-start;
       padding: 12px;
       margin-bottom: 8px;
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 8px;
       cursor: pointer;
@@ -934,18 +934,18 @@ defineExpose({
 
       &:hover {
         background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.2);
+        border-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
         transform: translateY(-1px);
       }
 
       &.sidebar-content-list-item-active {
-        border: 2px solid #667eea;
+        border: 2px solid var(--accent-primary, #667eea);
         background: rgba(102, 126, 234, 0.1);
       }
 
       .task-icon {
         margin-right: 12px;
-        color: #667eea;
+        color: var(--accent-primary, #667eea);
         flex-shrink: 0;
         margin-top: 2px;
       }
@@ -957,7 +957,7 @@ defineExpose({
         .task-title {
           font-size: 14px;
           font-weight: 600;
-          color: white;
+          color: var(--text-primary);
           margin-bottom: 4px;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -966,7 +966,7 @@ defineExpose({
 
         .task-preview {
           font-size: 12px;
-          color: rgba(255, 255, 255, 0.7);
+          color: var(--text-secondary);
           line-height: 1.4;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -1028,7 +1028,7 @@ defineExpose({
 .sidebar-resizer {
   width: 6px;
   height: 100vh;
-  background: #1a1a1a;
+  background: var(--bg-secondary, #1a1a1a);
   cursor: col-resize;
   position: relative;
   display: flex;
@@ -1038,7 +1038,7 @@ defineExpose({
   flex-shrink: 0;
 
   &:hover {
-    background: #2a2a2a;
+    background: var(--bg-tertiary, #2a2a2a);
 
     .resizer-line {
       background: #4a90e2;

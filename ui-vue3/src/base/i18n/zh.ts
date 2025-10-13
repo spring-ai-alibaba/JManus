@@ -973,6 +973,7 @@ const words: I18nType = {
     light: '浅色主题',
     dark: '深色主题',
     auto: '跟随系统',
+    blue_light: '浅蓝色主题',
   },
 
   // 错误页面

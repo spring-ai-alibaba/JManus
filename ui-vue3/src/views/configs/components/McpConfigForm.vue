@@ -187,17 +187,17 @@ const handleConnectionTypeUpdate = (value: string | null) => {
 }
 
 .required {
-  color: #ef4444;
+  color: var(--error, var(--error));
 }
 
 .config-input,
 .config-textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  color: var(--text-primary);
   font-size: 14px;
   transition: all 0.3s;
 }
@@ -216,14 +216,14 @@ const handleConnectionTypeUpdate = (value: string | null) => {
 
 .config-input::placeholder,
 .config-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-tertiary);
 }
 
 /* Usage instructions styles */
 .usage-instructions {
   margin-top: 24px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-secondary);
   border: 1px solid rgba(102, 126, 234, 0.5);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -247,23 +247,23 @@ const handleConnectionTypeUpdate = (value: string | null) => {
   gap: 8px;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .instructions-icon {
   font-size: 16px;
-  color: #667eea;
+  color: var(--accent-primary, var(--accent-primary));
 }
 
 .instructions-header h4 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
 }
 
 .instructions-content {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   line-height: 1.5;
   font-size: 14px;
 }
@@ -280,7 +280,7 @@ const handleConnectionTypeUpdate = (value: string | null) => {
 }
 
 .instructions-list > li::marker {
-  color: #667eea;
+  color: var(--accent-primary, var(--accent-primary));
   font-weight: 600;
   font-size: 14px;
 }
@@ -311,20 +311,20 @@ const handleConnectionTypeUpdate = (value: string | null) => {
 }
 
 .instructions-list ul li strong {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-weight: 500;
   display: inline;
   margin-bottom: 0;
 }
 
 .instructions-list code {
-  background: rgba(102, 126, 234, 0.15);
+  background: var(--accent-primary);
   color: #a8b3ff;
   padding: 1px 4px;
   border-radius: 3px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 12px;
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  border: 1px solid var(--accent-primary);
 }
 
 /* Responsive design */

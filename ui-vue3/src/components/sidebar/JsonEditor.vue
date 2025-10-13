@@ -9,7 +9,7 @@
  *
  * Unless required by appl.form-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--accent-primary, #667eea);
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
@@ -275,7 +275,7 @@ const autoResizeTextarea = (event: Event) => {
 <style scoped>
 .config-section {
   margin-bottom: 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border-radius: 8px;
   padding: 12px;
 }
@@ -284,7 +284,7 @@ const autoResizeTextarea = (event: Event) => {
   display: flex;
   align-items: center;
   margin-bottom: 12px;
-  color: #667eea;
+  color: var(--accent-primary, #667eea);
   font-size: 13px;
   font-weight: 600;
   gap: 8px;
@@ -327,7 +327,7 @@ const autoResizeTextarea = (event: Event) => {
 .form-select,
 .form-textarea {
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.3);
   color: white;
@@ -340,7 +340,7 @@ const autoResizeTextarea = (event: Event) => {
 .form-select:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--accent-primary, #667eea);
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
@@ -368,7 +368,7 @@ const autoResizeTextarea = (event: Event) => {
 .form-checkbox {
   width: 16px;
   height: 16px;
-  accent-color: #667eea;
+  accent-color: var(--accent-primary, #667eea);
 }
 
 .checkbox-label {
@@ -411,7 +411,7 @@ const autoResizeTextarea = (event: Event) => {
 
 .error-badge {
   font-size: 10px;
-  color: #ef4444;
+  color: var(--error, #ef4444);
   background: rgba(239, 68, 68, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
@@ -426,7 +426,7 @@ const autoResizeTextarea = (event: Event) => {
   align-items: center;
   gap: 4px;
   font-size: 10px;
-  color: #ef4444;
+  color: var(--error, #ef4444);
   margin-top: 4px;
   padding: 4px 8px;
   background: rgba(239, 68, 68, 0.1);
@@ -458,7 +458,7 @@ const autoResizeTextarea = (event: Event) => {
 
 .step-number {
   font-weight: 600;
-  color: #667eea;
+  color: var(--accent-primary, #667eea);
   font-size: 11px;
   min-width: 20px;
 }
@@ -495,7 +495,7 @@ const autoResizeTextarea = (event: Event) => {
 }
 
 .empty-icon {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.3));
   margin-bottom: 12px;
 }
 
@@ -512,7 +512,7 @@ const autoResizeTextarea = (event: Event) => {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -554,7 +554,7 @@ const autoResizeTextarea = (event: Event) => {
 }
 
 .btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   color: white;
   transform: translateY(-1px);
 }
@@ -578,18 +578,18 @@ const autoResizeTextarea = (event: Event) => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
+  color: var(--text-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px var(--selection-bg, rgba(102, 126, 234, 0.3));
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--scrollbar-track, rgba(var(--bg-primary-rgb), 0.05));
+  color: var(--text-secondary);
 }
 
 .btn-add {
@@ -603,7 +603,7 @@ const autoResizeTextarea = (event: Event) => {
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--error, #ef4444) 0%, #dc2626 100%);
   color: white;
 }
 
@@ -616,7 +616,7 @@ const autoResizeTextarea = (event: Event) => {
 .json-editor {
   width: 100%;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 6px;
   color: white;
   font-size: 11px;
@@ -634,7 +634,7 @@ const autoResizeTextarea = (event: Event) => {
 
 .json-editor:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--accent-primary, #667eea);
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 

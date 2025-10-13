@@ -30,7 +30,7 @@
           <Icon
             icon="carbon:refresh"
             :class="{ 'rotating': loading }"
-            :style="{ color: '#ffffff', fontSize: '18px', width: '18px', height: '18px' }"
+            :style="{ color: 'var(--text-primary, #ffffff)', fontSize: '18px', width: '18px', height: '18px' }"
           />
         </button>
       </div>
@@ -303,12 +303,12 @@ onUnmounted(() => {
   align-items: center;
   padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
 }
 
 .file-browser-header h3 {
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-size: 16px;
   font-weight: 600;
 }
@@ -325,9 +325,9 @@ onUnmounted(() => {
   width: 36px;
   height: 36px;
   background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.3));
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 18px;
@@ -335,15 +335,15 @@ onUnmounted(() => {
 }
 
 .refresh-btn .iconify {
-  color: #ffffff !important;
+  color: var(--text-primary, #ffffff) !important;
   font-size: 18px !important;
   width: 18px !important;
   height: 18px !important;
 }
 
 .refresh-btn svg {
-  fill: #ffffff !important;
-  color: #ffffff !important;
+  fill: var(--text-primary, #ffffff) !important;
+  color: var(--text-primary, #ffffff) !important;
   width: 18px !important;
   height: 18px !important;
 }
@@ -357,8 +357,8 @@ onUnmounted(() => {
 
 .refresh-btn:hover:not(:disabled) .iconify,
 .refresh-btn:hover:not(:disabled) svg {
-  color: #ffffff !important;
-  fill: #ffffff !important;
+  color: var(--text-primary, #ffffff) !important;
+  fill: var(--text-primary, #ffffff) !important;
 }
 
 .refresh-btn:active:not(:disabled) {
@@ -451,7 +451,7 @@ onUnmounted(() => {
 
 .waiting-for-files h3 {
   margin: 0 0 8px 0;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-size: 18px;
   font-weight: 600;
 }
@@ -494,14 +494,14 @@ onUnmounted(() => {
   align-items: center;
   padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
 }
 
 .file-info {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
 }
 
 .file-info .iconify {
@@ -530,9 +530,9 @@ onUnmounted(() => {
   width: 32px;
   height: 32px;
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 6px;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -577,7 +577,7 @@ onUnmounted(() => {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 13px;
   line-height: 1.6;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -632,17 +632,17 @@ onUnmounted(() => {
 
 .file-tree-panel::-webkit-scrollbar-track,
 .text-content::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
 }
 
 .file-tree-panel::-webkit-scrollbar-thumb,
 .text-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 3px;
 }
 
 .file-tree-panel::-webkit-scrollbar-thumb:hover,
 .text-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.3));
 }
 </style>

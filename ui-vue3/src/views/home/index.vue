@@ -27,7 +27,10 @@
       <!-- Header -->
       <header class="header">
         <div class="header-top">
-          <LanguageSwitcher />
+          <div class="header-controls">
+            <LanguageSwitcher />
+            <ThemeSwitcher />
+          </div>
         </div>
         <div class="logo-container">
           <div class="logo">
@@ -89,6 +92,7 @@ import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 import BlurCard from '@/components/blurCard/BlurCard.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
+import ThemeSwitcher from '@/components/theme-switcher/ThemeSwitcher.vue'
 import { useTaskStore } from '@/stores/task'
 
 const router = useRouter()
@@ -302,7 +306,7 @@ const selectPlan = async (plan: any) => {
 .welcome-container {
   flex: 1;
   height: 100vh;
-  background: #0a0a0a;
+  background: var(--bg-primary, #0a0a0a);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -330,7 +334,7 @@ const selectPlan = async (plan: any) => {
   &.orb-1 {
     width: 400px;
     height: 400px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
     top: -200px;
     right: -200px;
     animation-delay: 0s;
@@ -383,6 +387,11 @@ const selectPlan = async (plan: any) => {
   z-index: 1001;
 }
 
+.header-controls {
+  display: flex;
+  gap: 12px;
+}
+
 .logo-container {
   text-align: center;
 
@@ -401,7 +410,7 @@ const selectPlan = async (plan: any) => {
     font-size: 48px;
     font-weight: 700;
     margin: 0 0 8px 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -437,7 +446,7 @@ const selectPlan = async (plan: any) => {
 .welcome-title {
   font-size: 32px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   margin: 0 0 16px 0;
 }
 
@@ -454,7 +463,7 @@ const selectPlan = async (plan: any) => {
 
 .input-container {
   position: relative;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 20px;
@@ -463,7 +472,7 @@ const selectPlan = async (plan: any) => {
   transition: all 0.3s ease;
 
   &:focus-within {
-    border-color: #667eea;
+    border-color: var(--accent-primary, #667eea);
     box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
   }
 }
@@ -473,7 +482,7 @@ const selectPlan = async (plan: any) => {
   background: transparent;
   border: none;
   outline: none;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-size: 16px;
   line-height: 1.5;
   resize: none;
@@ -494,8 +503,8 @@ const selectPlan = async (plan: any) => {
   height: 40px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
+  color: var(--text-primary, #ffffff);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -548,7 +557,7 @@ const selectPlan = async (plan: any) => {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
   color: white;
   padding: 4px 8px;
   border-radius: 4px;
@@ -559,7 +568,7 @@ const selectPlan = async (plan: any) => {
 
 // .example-card {
 //   background: rgba(255, 255, 255, 0.03);
-//   border: 1px solid rgba(255, 255, 255, 0.08);
+//   border: 1px solid var(--border-secondary);
 //   border-radius: 12px;
 //   padding: 20px;
 //   cursor: pointer;
@@ -570,8 +579,8 @@ const selectPlan = async (plan: any) => {
 //   gap: 16px;
 
 //   &:hover {
-//     background: rgba(255, 255, 255, 0.05);
-//     border-color: rgba(102, 126, 234, 0.3);
+//     background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
+//     border-color: var(--selection-bg, rgba(102, 126, 234, 0.3));
 //     transform: translateY(-2px);
 //     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 //   }
@@ -579,7 +588,7 @@ const selectPlan = async (plan: any) => {
 
 // .example-icon {
 //   font-size: 24px;
-//   color: #667eea;
+//   color: var(--accent-primary, #667eea);
 //   margin-top: 4px;
 //   flex-shrink: 0;
 // }
@@ -588,7 +597,7 @@ const selectPlan = async (plan: any) => {
 //   h3 {
 //     font-size: 16px;
 //     font-weight: 600;
-//     color: #ffffff;
+//     color: var(--text-primary, #ffffff);
 //     margin: 0 0 8px 0;
 //   }
 
@@ -604,7 +613,7 @@ const selectPlan = async (plan: any) => {
 .config-view {
   flex: 1;
   height: 100vh;
-  background: #0a0a0a;
+  background: var(--bg-primary, #0a0a0a);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -614,7 +623,7 @@ const selectPlan = async (plan: any) => {
   display: flex;
   align-items: center;
   padding: 16px 24px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   gap: 16px;
 
@@ -624,16 +633,16 @@ const selectPlan = async (plan: any) => {
     gap: 8px;
     padding: 8px 16px;
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
     border-radius: 8px;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s ease;
 
     &:hover {
       background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.3);
+      border-color: var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.3));
       transform: translateY(-1px);
     }
   }
@@ -641,8 +650,8 @@ const selectPlan = async (plan: any) => {
   .config-title {
     font-size: 20px;
     font-weight: 600;
-    color: #ffffff;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: var(--text-primary, #ffffff);
+    background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -654,8 +663,8 @@ const selectPlan = async (plan: any) => {
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
+  color: var(--text-primary, #ffffff);
   font-size: 16px;
   cursor: pointer;
   transition: all 0.2s ease;

@@ -101,11 +101,11 @@ const handleChange = (event: Event) => {
 
     &:checked + .slider:before {
       transform: translateX(20px);
-      background: #667eea;
+      background: var(--accent-primary, #667eea);
     }
 
     &:checked + .slider + .switch-label {
-      color: #667eea;
+      color: var(--accent-primary, #667eea);
     }
 
     &:not(:checked) + .slider + .switch-label {

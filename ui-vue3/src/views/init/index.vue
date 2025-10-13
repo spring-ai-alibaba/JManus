@@ -516,13 +516,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0a0a0a;
+  background: var(--bg-primary, #0a0a0a);
   position: relative;
   padding: 40px 20px;
 }
 
 .init-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
@@ -544,7 +544,7 @@ onMounted(() => {
 .logo h1 {
   font-size: 48px;
   margin: 0 0 16px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -556,14 +556,14 @@ onMounted(() => {
 
 .logo-icon {
   font-size: 48px !important;
-  color: #667eea !important;
+  color: var(--accent-primary, #667eea) !important;
   background: none !important;
-  -webkit-text-fill-color: #667eea !important;
+  -webkit-text-fill-color: var(--accent-primary, #667eea) !important;
 }
 
 .init-header h2 {
   font-size: 28px;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   margin: 0 0 12px 0;
   font-weight: 600;
 }
@@ -610,25 +610,25 @@ onMounted(() => {
   height: 40px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.3));
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   transition: all 0.3s ease;
 }
 
 .step.active .step-number {
-  background: #667eea;
-  border-color: #667eea;
-  color: #ffffff;
+  background: var(--accent-primary, #667eea);
+  border-color: var(--accent-primary, #667eea);
+  color: var(--text-primary, #ffffff);
 }
 
 .step.completed .step-number {
   background: #4ade80;
   border-color: #4ade80;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
 }
 
 .step-label {
@@ -639,7 +639,7 @@ onMounted(() => {
 }
 
 .step.active .step-label {
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-weight: 500;
 }
 
@@ -650,7 +650,7 @@ onMounted(() => {
 .step-divider {
   width: 60px;
   height: 2px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   margin: 0 20px;
 }
 
@@ -669,7 +669,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   padding: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -678,12 +678,12 @@ onMounted(() => {
 
 .language-option:hover {
   border-color: rgba(102, 126, 234, 0.4);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   transform: translateY(-2px);
 }
 
 .language-option.active {
-  border-color: #667eea;
+  border-color: var(--accent-primary, #667eea);
   background: rgba(102, 126, 234, 0.1);
   transform: translateY(-2px);
 }
@@ -692,7 +692,7 @@ onMounted(() => {
   margin: 0 16px 0 0;
   width: 20px;
   height: 20px;
-  accent-color: #667eea;
+  accent-color: var(--accent-primary, #667eea);
 }
 
 .language-content {
@@ -722,7 +722,7 @@ onMounted(() => {
 }
 
 .language-text strong {
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-size: 18px;
   font-weight: 600;
 }
@@ -739,7 +739,7 @@ onMounted(() => {
 .form-label {
   display: block;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   margin-bottom: 8px;
   font-size: 14px;
 }
@@ -752,18 +752,18 @@ onMounted(() => {
 .form-input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, #ffffff);
   box-sizing: border-box;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--accent-primary, #667eea);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
   background: rgba(255, 255, 255, 0.08);
 }
@@ -818,7 +818,7 @@ onMounted(() => {
   font-size: 16px !important;
   width: 16px !important;
   height: 16px !important;
-  color: #ffffff !important;
+  color: var(--text-primary, #ffffff) !important;
 }
 
 .config-mode-selection {
@@ -831,7 +831,7 @@ onMounted(() => {
   display: flex;
   align-items: flex-start;
   padding: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -840,11 +840,11 @@ onMounted(() => {
 
 .radio-option:hover {
   border-color: rgba(102, 126, 234, 0.4);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
 }
 
 .radio-option.active {
-  border-color: #667eea;
+  border-color: var(--accent-primary, #667eea);
   background: rgba(102, 126, 234, 0.1);
 }
 
@@ -852,7 +852,7 @@ onMounted(() => {
   margin: 4px 12px 0 0;
   width: 16px;
   height: 16px;
-  accent-color: #667eea;
+  accent-color: var(--accent-primary, #667eea);
 }
 
 .radio-text {
@@ -862,7 +862,7 @@ onMounted(() => {
 }
 
 .radio-text strong {
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-size: 16px;
   font-weight: 600;
 }
@@ -889,7 +889,7 @@ onMounted(() => {
 }
 
 .help-link {
-  color: #667eea;
+  color: var(--accent-primary, #667eea);
   text-decoration: none;
   font-weight: 500;
 }
@@ -912,10 +912,10 @@ onMounted(() => {
 
 .back-btn {
   padding: 12px 32px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.3));
   border-radius: 8px;
   background: transparent;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
@@ -924,7 +924,7 @@ onMounted(() => {
 }
 
 .back-btn:hover:not(:disabled) {
-  border-color: #667eea;
+  border-color: var(--accent-primary, #667eea);
   background: rgba(102, 126, 234, 0.1);
   transform: translateY(-2px);
 }
@@ -935,7 +935,7 @@ onMounted(() => {
 }
 
 .submit-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
   color: white;
   border: none;
   padding: 14px 32px;
@@ -954,7 +954,7 @@ onMounted(() => {
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 25px var(--selection-bg, rgba(102, 126, 234, 0.3));
 }
 
 .submit-btn:disabled {
@@ -966,7 +966,7 @@ onMounted(() => {
 .loading-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.3));
   border-top: 2px solid white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -1109,7 +1109,7 @@ onMounted(() => {
 .gradient-orb {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
   opacity: 0.1;
   animation: orbit 20s infinite linear;
 }

@@ -125,7 +125,7 @@ const getToolDescription = (toolId: string): string => {
 
 .section-header span {
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
 }
 
 .action-btn {
@@ -133,10 +133,10 @@ const getToolDescription = (toolId: string): string => {
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
@@ -144,7 +144,7 @@ const getToolDescription = (toolId: string): string => {
 
 .action-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
 }
 
 .action-btn:disabled {
@@ -176,7 +176,7 @@ const getToolDescription = (toolId: string): string => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   transition: all 0.3s ease;
@@ -189,11 +189,11 @@ const getToolDescription = (toolId: string): string => {
 
 .tool-item:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
 }
 
 .tool-item.assigned {
-  border-color: rgba(102, 126, 234, 0.3);
+  border-color: var(--selection-bg, rgba(102, 126, 234, 0.3));
   background: rgba(102, 126, 234, 0.1);
 }
 
@@ -208,13 +208,13 @@ const getToolDescription = (toolId: string): string => {
   display: block;
   font-weight: 500;
   margin-bottom: 4px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-size: 14px;
 }
 
 .tool-desc {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   line-height: 1.3;
 }
 

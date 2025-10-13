@@ -980,19 +980,19 @@ const getConnectionTypeIcon = (type: string) => {
 .stat-item {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, var(--bg-secondary));
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 12px;
 }
 
 .stat-label {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   margin-right: 4px;
 }
 
 .stat-value {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -1002,11 +1002,11 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .search-input {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   padding: 6px 12px 6px 32px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   width: 100%;
   font-size: 14px;
   transition: all 0.3s;
@@ -1020,7 +1020,7 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-tertiary);
 }
 
 .search-icon {
@@ -1038,14 +1038,14 @@ const getConnectionTypeIcon = (type: string) => {
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-tertiary);
 }
 
 .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid #667eea;
+  border: 2px solid var(--scrollbar-thumb-hover, var(--text-tertiary));
+  border-top: 2px solid var(--accent-primary, var(--accent-primary));
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -1083,9 +1083,9 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .server-count {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .search-box {
@@ -1094,11 +1094,11 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .search-input {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   padding: 6px 12px 6px 32px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   width: 100%;
   font-size: 14px;
   transition: all 0.3s;
@@ -1112,7 +1112,7 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-tertiary);
 }
 
 .search-icon {
@@ -1135,22 +1135,22 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .servers-container::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, var(--bg-secondary));
   border-radius: 3px;
 }
 
 .servers-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb, var(--scrollbar-thumb));
   border-radius: 3px;
 }
 
 .servers-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--scrollbar-thumb-hover, var(--text-tertiary));
 }
 
 .server-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
@@ -1162,13 +1162,13 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .server-card:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border-color: var(--scrollbar-thumb, var(--scrollbar-thumb));
 }
 
 .server-card.active {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
+  border-color: var(--accent-primary, var(--accent-primary));
+  background: var(--accent-primary);
 }
 
 .server-card-header {
@@ -1177,7 +1177,7 @@ const getConnectionTypeIcon = (type: string) => {
   align-items: center;
   font-size: 15px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1193,7 +1193,7 @@ const getConnectionTypeIcon = (type: string) => {
 
 .server-connection-type {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-tertiary);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1236,7 +1236,7 @@ const getConnectionTypeIcon = (type: string) => {
 .server-config-summary {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-primary);
 }
 
 .config-item {
@@ -1248,21 +1248,21 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .config-label {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   font-weight: 500;
   min-width: 50px;
   margin-right: 8px;
 }
 
 .config-value {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   word-break: break-all;
   flex: 1;
 }
 
 .server-config-preview {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
   border-radius: 6px;
   padding: 8px 12px;
   max-height: 120px; /* Reduce max height */
@@ -1275,7 +1275,7 @@ const getConnectionTypeIcon = (type: string) => {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 10px; /* Reduce font size */
   line-height: 1.3;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   white-space: pre-wrap;
   word-break: break-all;
 }
@@ -1307,7 +1307,7 @@ const getConnectionTypeIcon = (type: string) => {
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-tertiary);
 }
 
 .loading-icon {
@@ -1321,7 +1321,7 @@ const getConnectionTypeIcon = (type: string) => {
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
   text-align: center;
 }
 
@@ -1342,18 +1342,18 @@ const getConnectionTypeIcon = (type: string) => {
   gap: 8px;
   width: 100%;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px dashed var(--scrollbar-thumb, var(--scrollbar-thumb));
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: #fff;
+    background: var(--scrollbar-track, var(--bg-secondary));
+    border-color: var(--scrollbar-thumb-hover, var(--text-tertiary));
+    color: var(--text-primary);
   }
 
   &:disabled {
@@ -1362,22 +1362,22 @@ const getConnectionTypeIcon = (type: string) => {
   }
 
   &.primary {
-    background: rgba(102, 126, 234, 0.2);
-    border-color: rgba(102, 126, 234, 0.3);
+    background: var(--accent-primary);
+    border-color: var(--selection-bg, var(--selection-bg));
     color: #a8b3ff;
 
     &:hover:not(:disabled) {
-      background: rgba(102, 126, 234, 0.3);
+      background: var(--selection-bg, var(--selection-bg));
     }
   }
 
   &.danger {
-    background: rgba(234, 102, 102, 0.1);
-    border-color: rgba(234, 102, 102, 0.2);
+    background: var(--error);
+    border-color: var(--error);
     color: #ff8a8a;
 
     &:hover:not(:disabled) {
-      background: rgba(234, 102, 102, 0.2);
+      background: var(--error);
     }
   }
 
@@ -1406,7 +1406,7 @@ const getConnectionTypeIcon = (type: string) => {
 
 .server-detail {
   flex: 1;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 24px;
   overflow-y: auto;
@@ -1418,7 +1418,7 @@ const getConnectionTypeIcon = (type: string) => {
   align-items: center;
   margin-bottom: 32px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .detail-header h3 {
@@ -1445,17 +1445,17 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .detail-content::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, var(--bg-secondary));
   border-radius: 3px;
 }
 
 .detail-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb, var(--scrollbar-thumb));
   border-radius: 3px;
 }
 
 .detail-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--scrollbar-thumb-hover, var(--text-tertiary));
 }
 
 .action-btn {
@@ -1463,17 +1463,17 @@ const getConnectionTypeIcon = (type: string) => {
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
   border-radius: 6px;
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--border-primary);
+    border-color: var(--scrollbar-thumb, var(--scrollbar-thumb));
   }
 
   &:disabled {
@@ -1482,22 +1482,22 @@ const getConnectionTypeIcon = (type: string) => {
   }
 
   &.primary {
-    background: rgba(102, 126, 234, 0.2);
-    border-color: rgba(102, 126, 234, 0.3);
+    background: var(--accent-primary);
+    border-color: var(--selection-bg, var(--selection-bg));
     color: #a8b3ff;
 
     &:hover:not(:disabled) {
-      background: rgba(102, 126, 234, 0.3);
+      background: var(--selection-bg, var(--selection-bg));
     }
   }
 
   &.danger {
-    background: rgba(234, 102, 102, 0.1);
-    border-color: rgba(234, 102, 102, 0.2);
+    background: var(--error);
+    border-color: var(--error);
     color: #ff8a8a;
 
     &:hover:not(:disabled) {
-      background: rgba(234, 102, 102, 0.2);
+      background: var(--error);
     }
   }
 
@@ -1517,7 +1517,7 @@ const getConnectionTypeIcon = (type: string) => {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-size: 14px;
 }
 
@@ -1563,8 +1563,8 @@ const getConnectionTypeIcon = (type: string) => {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid rgba(102, 126, 234, 0.3);
+  background: var(--accent-primary);
+  border: 1px solid var(--selection-bg, var(--selection-bg));
   border-radius: 4px;
   color: #a8b3ff;
   padding: 4px 8px;
@@ -1574,7 +1574,7 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .format-btn:hover:not(:disabled) {
-  background: rgba(102, 126, 234, 0.2);
+  background: var(--accent-primary);
   border-color: rgba(102, 126, 234, 0.5);
 }
 
@@ -1589,10 +1589,10 @@ const getConnectionTypeIcon = (type: string) => {
 
 .json-editor-wrapper {
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, var(--bg-secondary));
   min-height: 300px;
 }
 
@@ -1603,11 +1603,11 @@ const getConnectionTypeIcon = (type: string) => {
 
 .config-textarea {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   padding: 12px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 13px;
   line-height: 1.4;
@@ -1622,16 +1622,16 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .config-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-tertiary);
 }
 
 .config-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   padding: 12px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-size: 14px;
   transition: all 0.3s;
 }
@@ -1643,7 +1643,7 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .config-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-tertiary);
 }
 
 .no-selection {
@@ -1653,7 +1653,7 @@ const getConnectionTypeIcon = (type: string) => {
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
   text-align: center;
 }
 
@@ -1684,11 +1684,11 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .message-toast.error {
-  background: #ef4444;
+  background: var(--error, var(--error));
 }
 
 .message-toast.info {
-  background: #667eea;
+  background: var(--accent-primary, var(--accent-primary));
 }
 
 .message-fade-enter-active,
@@ -1952,7 +1952,7 @@ const getConnectionTypeIcon = (type: string) => {
 .example-json {
   margin: 0;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-secondary);
   overflow-x: auto;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 13px;
@@ -1960,7 +1960,7 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 .example-json code {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   background: none;
   padding: 0;
   border: none;
@@ -1971,8 +1971,8 @@ const getConnectionTypeIcon = (type: string) => {
 
 /* JSON syntax highlighting */
 .example-json .string { color: #a78bfa; }
-.example-json .number { color: #fbbf24; }
+.example-json .number { color: var(--warning, var(--warning)); }
 .example-json .boolean { color: #f87171; }
-.example-json .null { color: rgba(255, 255, 255, 0.6); }
+.example-json .null { color: var(--text-secondary); }
 .example-json .key { color: #34d399; }
 </style>

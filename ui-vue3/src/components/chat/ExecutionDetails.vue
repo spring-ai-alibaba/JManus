@@ -275,7 +275,7 @@ const formatToolParameters = (parameters?: string): string => {
         margin: 0;
         font-size: 16px;
         font-weight: 600;
-        color: #ffffff;
+        color: var(--text-primary, #ffffff);
       }
       
       .plan-status-badge {
@@ -286,17 +286,17 @@ const formatToolParameters = (parameters?: string): string => {
         
         &.completed {
           background: rgba(34, 197, 94, 0.2);
-          color: #22c55e;
+          color: var(--success, #22c55e);
         }
         
         &.running {
           background: rgba(102, 126, 234, 0.2);
-          color: #667eea;
+          color: var(--accent-primary, #667eea);
         }
         
         &.in-progress {
           background: rgba(251, 191, 36, 0.2);
-          color: #fbbf24;
+          color: var(--warning, #fbbf24);
         }
         
         &.pending {
@@ -320,16 +320,16 @@ const formatToolParameters = (parameters?: string): string => {
         
         .tool-icon {
           font-size: 16px;
-          color: #667eea;
+          color: var(--accent-primary, #667eea);
         }
         
         .tool-label {
-          color: #aaaaaa;
+          color: var(--text-tertiary, #aaaaaa);
           font-size: 13px;
         }
         
         .tool-name {
-          color: #ffffff;
+          color: var(--text-primary, #ffffff);
           font-weight: 600;
           font-size: 14px;
         }
@@ -337,7 +337,7 @@ const formatToolParameters = (parameters?: string): string => {
       
       .tool-parameters {
         .param-label {
-          color: #aaaaaa;
+          color: var(--text-tertiary, #aaaaaa);
           font-size: 12px;
           margin-bottom: 4px;
           display: block;
@@ -350,7 +350,7 @@ const formatToolParameters = (parameters?: string): string => {
           border-radius: 4px;
           font-family: monospace;
           font-size: 11px;
-          color: #cccccc;
+          color: var(--text-secondary, #cccccc);
           white-space: pre-wrap;
           max-height: 120px;
           overflow-y: auto;
@@ -365,7 +365,7 @@ const formatToolParameters = (parameters?: string): string => {
       margin: 0 0 16px 0;
       font-size: 14px;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--text-primary, #ffffff);
       padding-bottom: 8px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
@@ -404,7 +404,7 @@ const formatToolParameters = (parameters?: string): string => {
         transition: background 0.2s ease;
         
         &:hover {
-          background: rgba(255, 255, 255, 0.05);
+          background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
         }
         
         .agent-info {
@@ -417,11 +417,11 @@ const formatToolParameters = (parameters?: string): string => {
             font-size: 18px;
             
             &.running {
-              color: #667eea;
+              color: var(--accent-primary, #667eea);
             }
             
             &.completed {
-              color: #22c55e;
+              color: var(--success, #22c55e);
             }
             
             &.pending {
@@ -432,7 +432,7 @@ const formatToolParameters = (parameters?: string): string => {
           .agent-details {
             .agent-name {
               font-weight: 600;
-              color: #ffffff;
+              color: var(--text-primary, #ffffff);
               font-size: 14px;
               margin-bottom: 2px;
             }
@@ -446,7 +446,7 @@ const formatToolParameters = (parameters?: string): string => {
               border-radius: 4px;
               font-family: monospace;
               font-size: 14px;
-              color: #cccccc;
+              color: var(--text-secondary, #cccccc);
               white-space: pre-wrap;
               word-wrap: break-word;
               word-break: break-word;
@@ -471,12 +471,12 @@ const formatToolParameters = (parameters?: string): string => {
             
             &.running {
               background: rgba(102, 126, 234, 0.2);
-              color: #667eea;
+              color: var(--accent-primary, #667eea);
             }
             
             &.completed {
               background: rgba(34, 197, 94, 0.2);
-              color: #22c55e;
+              color: var(--success, #22c55e);
             }
             
             &.pending {
@@ -487,7 +487,7 @@ const formatToolParameters = (parameters?: string): string => {
           
           .step-select-icon {
             font-size: 16px;
-            color: #667eea;
+            color: var(--accent-primary, #667eea);
             transition: transform 0.2s ease;
           }
         }
@@ -496,7 +496,7 @@ const formatToolParameters = (parameters?: string): string => {
       .agent-execution-info {
         padding: 16px;
         background: rgba(0, 0, 0, 0.1);
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid var(--scrollbar-track, rgba(255, 255, 255, 0.05));
         margin-bottom: 16px;
         
         .agent-result, .agent-error {
@@ -517,15 +517,15 @@ const formatToolParameters = (parameters?: string): string => {
             }
             
             .result-icon {
-              color: #22c55e;
+              color: var(--success, #22c55e);
             }
             
             .error-icon {
-              color: #ef4444;
+              color: var(--error, #ef4444);
             }
             
             .result-label, .error-label {
-              color: #ffffff;
+              color: var(--text-primary, #ffffff);
               font-size: 13px;
               font-weight: 500;
             }
@@ -541,7 +541,7 @@ const formatToolParameters = (parameters?: string): string => {
             white-space: pre-wrap;
             max-height: 150px;
             overflow-y: auto;
-            color: #cccccc;
+            color: var(--text-secondary, #cccccc);
           }
           
           .error-content {
@@ -554,7 +554,7 @@ const formatToolParameters = (parameters?: string): string => {
       .sub-plans-container {
         padding: 16px;
         background: rgba(0, 0, 0, 0.1);
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid var(--scrollbar-track, rgba(255, 255, 255, 0.05));
         
         .sub-plans-header {
           display: flex;
@@ -564,11 +564,11 @@ const formatToolParameters = (parameters?: string): string => {
           
           .sub-plans-icon {
             font-size: 16px;
-            color: #667eea;
+            color: var(--accent-primary, #667eea);
           }
           
           .sub-plans-title {
-            color: #ffffff;
+            color: var(--text-primary, #ffffff);
             font-weight: 600;
             font-size: 14px;
           }
@@ -593,7 +593,7 @@ const formatToolParameters = (parameters?: string): string => {
             }
             
             &.running {
-              border-color: rgba(102, 126, 234, 0.3);
+              border-color: var(--selection-bg, rgba(102, 126, 234, 0.3));
               background: rgba(102, 126, 234, 0.08);
               box-shadow: 0 0 8px rgba(102, 126, 234, 0.15);
             }
@@ -623,15 +623,15 @@ const formatToolParameters = (parameters?: string): string => {
                   font-size: 16px;
                   
                   &.completed {
-                    color: #22c55e;
+                    color: var(--success, #22c55e);
                   }
                   
                   &.running {
-                    color: #667eea;
+                    color: var(--accent-primary, #667eea);
                   }
                   
                   &.in-progress {
-                    color: #fbbf24;
+                    color: var(--warning, #fbbf24);
                   }
                   
                   &.pending {
@@ -642,13 +642,13 @@ const formatToolParameters = (parameters?: string): string => {
                 .sub-plan-details {
                   .sub-plan-title {
                     font-weight: 600;
-                    color: #ffffff;
+                    color: var(--text-primary, #ffffff);
                     font-size: 13px;
                     margin-bottom: 2px;
                   }
                   
                   .sub-plan-id {
-                    color: #aaaaaa;
+                    color: var(--text-tertiary, #aaaaaa);
                     font-size: 11px;
                     font-family: monospace;
                   }
@@ -671,11 +671,11 @@ const formatToolParameters = (parameters?: string): string => {
                   
                   .trigger-icon {
                     font-size: 10px;
-                    color: #667eea;
+                    color: var(--accent-primary, #667eea);
                   }
                   
                   .trigger-text {
-                    color: #cccccc;
+                    color: var(--text-secondary, #cccccc);
                     font-weight: 500;
                   }
                 }
@@ -689,17 +689,17 @@ const formatToolParameters = (parameters?: string): string => {
                 
                 &.completed {
                   background: rgba(34, 197, 94, 0.2);
-                  color: #22c55e;
+                  color: var(--success, #22c55e);
                 }
                 
                 &.running {
                   background: rgba(102, 126, 234, 0.2);
-                  color: #667eea;
+                  color: var(--accent-primary, #667eea);
                 }
                 
                 &.in-progress {
                   background: rgba(251, 191, 36, 0.2);
-                  color: #fbbf24;
+                  color: var(--warning, #fbbf24);
                 }
                 
                 &.pending {
@@ -714,7 +714,7 @@ const formatToolParameters = (parameters?: string): string => {
               
               .progress-info {
                 .progress-text {
-                  color: #aaaaaa;
+                  color: var(--text-tertiary, #aaaaaa);
                   font-size: 10px;
                   margin-bottom: 4px;
                 }
@@ -727,7 +727,7 @@ const formatToolParameters = (parameters?: string): string => {
                   
                   .progress-fill {
                     height: 100%;
-                    background: linear-gradient(90deg, #667eea, #764ba2);
+                    background: linear-gradient(90deg, var(--accent-primary, #667eea), #764ba2);
                     transition: width 0.3s ease;
                     border-radius: 4px;
                   }
@@ -737,7 +737,7 @@ const formatToolParameters = (parameters?: string): string => {
             
             .sub-plan-agents-steps {
               .agents-steps-header {
-                color: #aaaaaa;
+                color: var(--text-tertiary, #aaaaaa);
                 font-size: 11px;
                 margin-bottom: 6px;
                 font-weight: 500;
@@ -758,7 +758,7 @@ const formatToolParameters = (parameters?: string): string => {
                   
                   &:hover {
                     background: rgba(0, 0, 0, 0.1);
-                    border-color: rgba(255, 255, 255, 0.2);
+                    border-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
                   }
                   
                   &.completed {
@@ -767,7 +767,7 @@ const formatToolParameters = (parameters?: string): string => {
                   }
                   
                   &.running {
-                    border-color: rgba(102, 126, 234, 0.3);
+                    border-color: var(--selection-bg, rgba(102, 126, 234, 0.3));
                     background: rgba(102, 126, 234, 0.08);
                   }
                   
@@ -785,11 +785,11 @@ const formatToolParameters = (parameters?: string): string => {
                       font-size: 14px;
                       
                       &.completed {
-                        color: #22c55e;
+                        color: var(--success, #22c55e);
                       }
                       
                       &.running {
-                        color: #667eea;
+                        color: var(--accent-primary, #667eea);
                       }
                       
                       &.pending {
@@ -798,7 +798,7 @@ const formatToolParameters = (parameters?: string): string => {
                     }
                     
                     .agent-name {
-                      color: #ffffff;
+                      color: var(--text-primary, #ffffff);
                       font-size: 13px;
                       font-weight: 500;
                       flex: 1;
@@ -812,12 +812,12 @@ const formatToolParameters = (parameters?: string): string => {
                       
                       &.completed {
                         background: rgba(34, 197, 94, 0.2);
-                        color: #22c55e;
+                        color: var(--success, #22c55e);
                       }
                       
                       &.running {
                         background: rgba(102, 126, 234, 0.2);
-                        color: #667eea;
+                        color: var(--accent-primary, #667eea);
                       }
                       
                       &.pending {
@@ -848,15 +848,15 @@ const formatToolParameters = (parameters?: string): string => {
                         }
                         
                         .result-icon {
-                          color: #22c55e;
+                          color: var(--success, #22c55e);
                         }
                         
                         .error-icon {
-                          color: #ef4444;
+                          color: var(--error, #ef4444);
                         }
                         
                         .result-label, .error-label {
-                          color: #ffffff;
+                          color: var(--text-primary, #ffffff);
                           font-size: 11px;
                           font-weight: 500;
                         }
@@ -872,7 +872,7 @@ const formatToolParameters = (parameters?: string): string => {
                         white-space: pre-wrap;
                         max-height: 80px;
                         overflow-y: auto;
-                        color: #cccccc;
+                        color: var(--text-secondary, #cccccc);
                         line-height: 1.3;
                       }
                     }
@@ -888,11 +888,11 @@ const formatToolParameters = (parameters?: string): string => {
                         
                         .think-act-icon {
                           font-size: 12px;
-                          color: #667eea;
+                          color: var(--accent-primary, #667eea);
                         }
                         
                         .think-act-label {
-                          color: #aaaaaa;
+                          color: var(--text-tertiary, #aaaaaa);
                           font-size: 11px;
                           font-weight: 500;
                         }
@@ -919,13 +919,13 @@ const formatToolParameters = (parameters?: string): string => {
                           }
                           
                           .step-number {
-                            color: #667eea;
+                            color: var(--accent-primary, #667eea);
                             font-weight: 500;
                             min-width: 20px;
                           }
                           
                           .step-description {
-                            color: #cccccc;
+                            color: var(--text-secondary, #cccccc);
                             flex: 1;
                             white-space: nowrap;
                             overflow: hidden;

@@ -166,20 +166,20 @@ const handleUserInputSubmitted = (inputData: any) => {
       
       .bot-icon {
         font-size: 16px;
-        color: #ffffff;
+        color: var(--text-primary, #ffffff);
       }
     }
     
     .response-name {
       font-weight: 600;
-      color: #ffffff;
+      color: var(--text-primary, #ffffff);
       font-size: 14px;
       flex: 1;
     }
     
     .response-timestamp {
       font-size: 11px;
-      color: #aaaaaa;
+      color: var(--text-tertiary, #aaaaaa);
     }
   }
   
@@ -188,22 +188,22 @@ const handleUserInputSubmitted = (inputData: any) => {
       position: relative;
       
       .response-text {
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 16px;
-        color: #ffffff;
+        color: var(--text-primary, #ffffff);
         line-height: 1.6;
         font-size: 14px;
         
         :deep(strong) {
           font-weight: 600;
-          color: #ffffff;
+          color: var(--text-primary, #ffffff);
         }
         
         :deep(em) {
           font-style: italic;
-          color: #cccccc;
+          color: var(--text-secondary, #cccccc);
         }
         
         :deep(code) {
@@ -244,16 +244,16 @@ const handleUserInputSubmitted = (inputData: any) => {
           justify-content: center;
           width: 28px;
           height: 28px;
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(var(--bg-primary-rgb), 0.1);
           border: none;
           border-radius: 6px;
-          color: #aaaaaa;
+          color: var(--text-tertiary, #aaaaaa);
           cursor: pointer;
           transition: all 0.2s ease;
           
           &:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
+            background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
+            color: var(--text-primary, #ffffff);
           }
           
           svg {
@@ -273,7 +273,7 @@ const handleUserInputSubmitted = (inputData: any) => {
         align-items: center;
         gap: 12px;
         padding: 16px;
-        color: #aaaaaa;
+        color: var(--text-tertiary, #aaaaaa);
         font-size: 14px;
         
         .typing-dots {
@@ -320,7 +320,7 @@ const handleUserInputSubmitted = (inputData: any) => {
       
       .error-icon {
         font-size: 16px;
-        color: #ef4444;
+        color: var(--error, #ef4444);
         flex-shrink: 0;
       }
       
@@ -333,7 +333,7 @@ const handleUserInputSubmitted = (inputData: any) => {
         border: none;
         padding: 4px 8px;
         border-radius: 4px;
-        color: #ffffff;
+        color: var(--text-primary, #ffffff);
         font-size: 12px;
         cursor: pointer;
         transition: background 0.2s ease;

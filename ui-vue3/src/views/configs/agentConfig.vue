@@ -104,8 +104,8 @@
               <Icon icon="carbon:save" />
               {{ t('common.save') }}
             </button>
-            <button 
-              class="action-btn danger" 
+            <button
+              class="action-btn danger"
               @click="showDeleteConfirm"
               :disabled="!!selectedAgent?.builtIn"
               :title="selectedAgent?.builtIn ? t('config.agentConfig.cannotDeleteBuiltIn') : ''"
@@ -763,7 +763,7 @@ watch(
 }
 
 .agent-count {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -779,7 +779,7 @@ watch(
   gap: 8px;
   justify-content: center;
   padding: 40px 0;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .loading-icon {
@@ -798,7 +798,7 @@ watch(
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .empty-icon {
@@ -813,8 +813,8 @@ watch(
 }
 
 .agent-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
@@ -822,13 +822,17 @@ watch(
   transition: all 0.3s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--scrollbar-track, var(--bg-secondary));
+    border-color: var(--scrollbar-thumb, var(--scrollbar-thumb));
   }
 
   &.active {
-    border-color: #667eea;
-    background: rgba(102, 126, 234, 0.1);
+    border-color: var(--accent-primary, var(--accent-primary));
+    background: var(--accent-primary);
+
+    .agent-desc {
+      color: var(--bg-primary);
+    }
   }
 }
 
@@ -852,7 +856,7 @@ watch(
 }
 
 .agent-desc {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.4;
   margin-bottom: 12px;
@@ -883,20 +887,20 @@ watch(
 .tool-tag {
   display: inline-block;
   padding: 4px 8px;
-  background: rgba(102, 126, 234, 0.2);
+  background: var(--accent-primary);
   border-radius: 4px;
   font-size: 12px;
   color: #a8b3ff;
 }
 
 .tool-more {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
   font-size: 12px;
   padding: 4px 8px;
 }
 
 .no-tools-indicator {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-tertiary);
   font-size: 12px;
   font-style: italic;
 }
@@ -908,24 +912,24 @@ watch(
   gap: 8px;
   width: 100%;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px dashed var(--scrollbar-thumb, var(--scrollbar-thumb));
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: #fff;
+    background: var(--scrollbar-track, var(--bg-secondary));
+    border-color: var(--scrollbar-thumb-hover, var(--text-tertiary));
+    color: var(--text-primary);
   }
 }
 
 .agent-detail {
   flex: 1;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 24px;
   overflow-y: auto;
@@ -938,7 +942,7 @@ watch(
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .placeholder-icon {
@@ -953,7 +957,7 @@ watch(
   align-items: center;
   margin-bottom: 32px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .detail-header h3 {
@@ -976,7 +980,7 @@ watch(
   label {
     display: block;
     margin-bottom: 8px;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary);
     font-weight: 500;
   }
 
@@ -984,21 +988,21 @@ watch(
   textarea {
     width: 100%;
     padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--scrollbar-track, var(--bg-secondary));
+    border: 1px solid var(--border-primary);
     border-radius: 8px;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 14px;
     transition: all 0.3s ease;
 
     &:focus {
-      border-color: #667eea;
+      border-color: var(--accent-primary, var(--accent-primary));
       outline: none;
       background: rgba(255, 255, 255, 0.08);
     }
 
     &::placeholder {
-      color: rgba(255, 255, 255, 0.4);
+      color: var(--text-tertiary);
     }
   }
 
@@ -1017,7 +1021,7 @@ watch(
   h4 {
     margin: 0 0 20px 0;
     font-size: 18px;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary);
   }
 }
 
@@ -1025,7 +1029,7 @@ watch(
   h4 {
     margin: 0 0 20px 0;
     font-size: 18px;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary);
   }
 }
 
@@ -1035,17 +1039,17 @@ watch(
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
   border-radius: 6px;
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--border-primary);
+    border-color: var(--scrollbar-thumb, var(--scrollbar-thumb));
   }
 
   &:disabled {
@@ -1054,22 +1058,22 @@ watch(
   }
 
   &.primary {
-    background: rgba(102, 126, 234, 0.2);
-    border-color: rgba(102, 126, 234, 0.3);
+    background: var(--accent-primary);
+    border-color: var(--selection-bg, var(--selection-bg));
     color: #a8b3ff;
 
     &:hover:not(:disabled) {
-      background: rgba(102, 126, 234, 0.3);
+      background: var(--selection-bg, var(--selection-bg));
     }
   }
 
   &.danger {
-    background: rgba(234, 102, 102, 0.1);
-    border-color: rgba(234, 102, 102, 0.2);
+    background: var(--error);
+    border-color: var(--error);
     color: #ff8a8a;
 
     &:hover:not(:disabled) {
-      background: rgba(234, 102, 102, 0.2);
+      background: var(--error);
     }
   }
 
@@ -1091,12 +1095,12 @@ watch(
   padding: 20px 0;
 
   p {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-secondary);
     margin: 8px 0;
   }
 
   .warning-text {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-secondary);
     font-size: 14px;
   }
 }
@@ -1115,23 +1119,23 @@ watch(
   transition: all 0.3s ease;
 
   &.danger {
-    background: rgba(234, 102, 102, 0.2);
-    border: 1px solid rgba(234, 102, 102, 0.3);
+    background: var(--error);
+    border: 1px solid var(--error);
     color: #ff8a8a;
 
     &:hover {
-      background: rgba(234, 102, 102, 0.3);
+      background: var(--error);
     }
   }
 }
 
 .cancel-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--border-primary);
   }
 }
 
@@ -1146,7 +1150,7 @@ watch(
   gap: 8px;
   padding: 12px 16px;
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
   z-index: 1000;
   animation: slideIn 0.3s ease;
@@ -1184,7 +1188,7 @@ watch(
   gap: 6px;
   padding: 8px 12px;
   background: transparent;
-  border: 1.5px solid #667eea;
+  border: 1.5px solid var(--accent-primary, var(--accent-primary));
   border-radius: 8px;
   color: #8da2fb;
   cursor: pointer;
@@ -1195,10 +1199,10 @@ watch(
 }
 
 .model-btn:hover {
-  background: rgba(102, 126, 234, 0.15);
-  border-color: #7c9eff;
-  color: #a3bffa;
-  box-shadow: 0 0 15px rgba(102, 126, 234, 0.2);
+  background: var(--accent-primary);
+  border-color: var(--accent-secondary, var(--accent-secondary));
+  color: var(--accent-tertiary, var(--accent-tertiary));
+  box-shadow: 0 0 15px var(--accent-primary);
 }
 
 .model-btn:focus {
@@ -1227,11 +1231,11 @@ watch(
   margin-top: 4px;
   background: linear-gradient(135deg, rgba(40, 40, 50, 0.95), rgba(30, 30, 40, 0.95));
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(102, 126, 234, 0.3);
+  border: 1px solid var(--selection-bg, var(--selection-bg));
   border-radius: 8px;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(102, 126, 234, 0.2);
+    0 0 0 1px var(--accent-primary);
   min-width: 300px;
   animation: slideDown 0.2s ease;
 }
@@ -1241,17 +1245,17 @@ watch(
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+  border-bottom: 1px solid var(--accent-primary);
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(102, 126, 234, 0.05));
+  color: var(--text-primary, var(--text-primary));
+  background: linear-gradient(135deg, var(--accent-primary), rgba(102, 126, 234, 0.05));
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -1259,8 +1263,8 @@ watch(
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--border-primary);
+  color: var(--text-secondary);
 }
 
 .model-options {
@@ -1275,21 +1279,21 @@ watch(
   padding: 10px 16px;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-tertiary);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
 }
 
 .model-option:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  color: var(--text-primary);
 }
 
 .model-option.active {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(102, 126, 234, 0.1));
-  color: #7c9eff;
-  border-left: 3px solid #667eea;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary));
+  color: var(--accent-secondary, var(--accent-secondary));
+  border-left: 3px solid var(--accent-primary, var(--accent-primary));
   padding-left: 13px;
 }
 
@@ -1308,7 +1312,7 @@ watch(
 }
 
 .check-icon {
-  color: #667eea;
+  color: var(--accent-primary, var(--accent-primary));
   opacity: 0.8;
 }
 
@@ -1350,9 +1354,9 @@ watch(
   display: flex;
   gap: 20px;
   padding: 15px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, var(--bg-secondary));
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-primary);
 }
 
 .stat-item {
@@ -1363,7 +1367,7 @@ watch(
 
 .stat-label {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1371,7 +1375,7 @@ watch(
 .stat-value {
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary, var(--text-primary));
 }
 
 .language-selection {
@@ -1383,15 +1387,15 @@ watch(
 .selection-label {
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
 }
 
 .language-select {
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--border-primary);
+  border: 1px solid var(--scrollbar-thumb, var(--scrollbar-thumb));
   border-radius: 6px;
-  color: #ffffff;
+  color: var(--text-primary, var(--text-primary));
   font-size: 14px;
   outline: none;
   transition: all 0.2s ease;
@@ -1403,8 +1407,8 @@ watch(
 }
 
 .language-select option {
-  background: #2d2d2d;
-  color: #ffffff;
+  background: var(--bg-input, var(--bg-input));
+  color: var(--text-primary, var(--text-primary));
 }
 
 .warning-section {
@@ -1434,7 +1438,7 @@ watch(
 
 .warning-text p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-size: 14px;
   line-height: 1.5;
 }

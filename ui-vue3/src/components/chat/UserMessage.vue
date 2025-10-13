@@ -63,83 +63,102 @@ const { formatTimestamp, formatFileSize } = useMessageFormatting()
 
 <style lang="less" scoped>
 .user-message {
+  background: rgba(102, 126, 234, 0.15);
+  border: 1px solid var(--border-secondary, var(--selection-bg, rgba(102, 126, 234, 0.3)));
+  border-radius: 16px 16px 4px 16px;
+  padding: 16px 20px;
+  max-width: 80%;
+  align-self: flex-end;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  animation: fadeInUp 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.user-message::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-primary, var(--accent-primary, #667eea)), #764ba2);
+}
+
+.user-message-content {
+  color: var(--text-primary, var(--text-primary, #ffffff));
+  line-height: 1.6;
+  font-size: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.user-message-info {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  margin-bottom: 16px;
-  
-  .user-content {
-    max-width: 70%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #ffffff;
-    padding: 12px 16px;
-    border-radius: 18px 18px 4px 18px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: relative;
-    
-    .message-text {
-      word-wrap: break-word;
-      white-space: pre-wrap;
-      line-height: 1.5;
-      font-size: 14px;
-    }
-    
-    .attachments {
-      margin-top: 8px;
-      
-      .attachment-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 8px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        margin-bottom: 4px;
-        font-size: 12px;
-        
-        &:last-child {
-          margin-bottom: 0;
-        }
-        
-        .attachment-icon {
-          font-size: 14px;
-          color: rgba(255, 255, 255, 0.8);
-        }
-        
-        .attachment-name {
-          flex: 1;
-          color: #ffffff;
-        }
-        
-        .attachment-size {
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 11px;
-        }
-      }
-    }
-    
-    .message-timestamp {
-      margin-top: 6px;
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.7);
-      text-align: right;
-    }
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.7));
+  font-size: 12px;
+}
+
+.user-message-timestamp {
+  font-size: 12px;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.6));
+}
+
+.user-message-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.7));
+}
+
+.user-message-status.sent {
+  color: var(--success, var(--success, #22c55e));
+}
+
+.user-message-status.sending {
+  color: var(--warning, var(--warning, #fbbf24));
+}
+
+.user-message-status.failed {
+  color: var(--error, #ff6b6b);
+}
+
+.user-message-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.user-message-action-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-primary, var(--scrollbar-thumb, rgba(255, 255, 255, 0.2)));
+  border-radius: 6px;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.7));
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-message-action-btn:hover {
+  background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
+  color: var(--text-primary, rgba(255, 255, 255, 0.9));
+  border-color: var(--border-primary, var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.3)));
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  
-  .message-status {
-    margin-top: 4px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    
-    &.error {
-      color: #ff6b6b;
-      
-      .status-icon {
-        font-size: 14px;
-      }
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

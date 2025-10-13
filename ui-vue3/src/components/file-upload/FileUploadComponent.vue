@@ -254,7 +254,7 @@ defineExpose({
 
   &:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   }
 
   &.has-files {
@@ -297,14 +297,14 @@ defineExpose({
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.2s ease;
 
   &:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   }
 }
 
@@ -317,7 +317,7 @@ defineExpose({
 .file-name {
   flex: 1;
   font-size: 13px;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;

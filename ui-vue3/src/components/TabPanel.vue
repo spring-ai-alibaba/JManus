@@ -77,7 +77,7 @@ watch(() => props.modelValue, (newValue) => {
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -86,12 +86,12 @@ watch(() => props.modelValue, (newValue) => {
 
 .tab-button:hover {
   color: rgba(255, 255, 255, 0.8);
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
 }
 
 .tab-button.active {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
+  color: var(--info, #3b82f6);
+  border-bottom-color: var(--info, #3b82f6);
   background-color: rgba(255, 255, 255, 0.03);
 }
 

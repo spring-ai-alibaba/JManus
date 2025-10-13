@@ -326,7 +326,7 @@ defineExpose({
   flex-direction: column;
   height: 100%;
   position: relative;
-  background: #1a1a1a;
+  background: var(--bg-secondary, #1a1a1a);
   
   .messages {
     flex: 1;
@@ -345,7 +345,7 @@ defineExpose({
     }
     
     &::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.3);
+      background: var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.3));
       border-radius: 3px;
       
       &:hover {
@@ -363,7 +363,7 @@ defineExpose({
       display: flex;
       align-items: center;
       gap: 12px;
-      color: #aaaaaa;
+      color: var(--text-tertiary, #aaaaaa);
       font-size: 14px;
       
       .loading-icon {
@@ -382,7 +382,7 @@ defineExpose({
     background: rgba(79, 70, 229, 0.9);
     border: none;
     border-radius: 50%;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
     cursor: pointer;
     display: flex;
     align-items: center;

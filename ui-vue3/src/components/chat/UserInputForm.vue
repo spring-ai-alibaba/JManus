@@ -347,12 +347,12 @@ onUnmounted(() => {
     
     .user-icon {
       font-size: 16px;
-      color: #667eea;
+      color: var(--accent-primary, #667eea);
     }
     
     .user-input-title {
       margin: 0;
-      color: #ffffff;
+      color: var(--text-primary, #ffffff);
       font-size: 14px;
       font-weight: 600;
     }
@@ -361,13 +361,13 @@ onUnmounted(() => {
   .user-input-message {
     margin-bottom: 12px;
     font-weight: 500;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
     font-size: 14px;
   }
   
   .form-description {
     margin-bottom: 16px;
-    color: #aaaaaa;
+    color: var(--text-tertiary, #aaaaaa);
     font-size: 13px;
     line-height: 1.4;
   }
@@ -392,21 +392,21 @@ onUnmounted(() => {
       label {
         font-size: 13px;
         font-weight: 500;
-        color: #ffffff;
+        color: var(--text-primary, #ffffff);
       }
       
       .form-input {
         padding: 8px 12px;
         background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
         border-radius: 6px;
-        color: #ffffff;
+        color: var(--text-primary, #ffffff);
         font-size: 14px;
         transition: border-color 0.2s ease;
         
         &:focus {
           outline: none;
-          border-color: #667eea;
+          border-color: var(--accent-primary, #667eea);
           box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
         }
         
@@ -426,7 +426,7 @@ onUnmounted(() => {
         
         option {
           background: #2d3748;
-          color: #ffffff;
+          color: var(--text-primary, #ffffff);
         }
       }
       
@@ -450,12 +450,12 @@ onUnmounted(() => {
             height: 16px;
             margin: 0;
             cursor: pointer;
-            accent-color: #667eea;
+            accent-color: var(--accent-primary, #667eea);
           }
           
           .checkbox-label,
           .radio-label {
-            color: #ffffff;
+            color: var(--text-primary, #ffffff);
             font-size: 14px;
             user-select: none;
           }
@@ -464,8 +464,8 @@ onUnmounted(() => {
     }
     
     .submit-user-input-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #ffffff;
+      background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
+      color: var(--text-primary, #ffffff);
       border: none;
       padding: 10px 20px;
       border-radius: 6px;
@@ -476,7 +476,7 @@ onUnmounted(() => {
       
       &:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 12px var(--selection-bg, rgba(102, 126, 234, 0.3));
       }
       
       &:active {

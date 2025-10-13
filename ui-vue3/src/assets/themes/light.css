@@ -1,0 +1,41 @@
+/* Light White Theme Variables */
+:root[data-theme="light"] {
+  /* Background colors */
+  --bg-primary: #ffffff;           /* 主背景：纯白 */
+  --bg-secondary: #fafafa;         /* 次背景：极浅灰 */
+  --bg-tertiary: #f5f5f5;          /* 三级背景：稍深一点的浅灰 */
+  --bg-card: #ffffff;              /* 卡片背景：纯白 */
+  --bg-input: #ffffff;             /* 输入框背景：纯白 */
+  --bg-primary-rgb: 255, 255, 255; /* 用于 rgba 引用 */
+
+  /* Text colors */
+  --text-primary: #1a1a1a;         /* 主文本：深灰近黑 */
+  --text-secondary: #4d4d4d;       /* 次文本：中灰 */
+  --text-tertiary: #737373;        /* 三级文本：浅灰 */
+  --text-heading: #0f0f0f;         /* 标题：比主文本略深 */
+  --text-link: #267ae9;            /* 链接色：保留一点蓝色（可选），若需完全去色可改为 #4d4d4d */
+
+  /* Border colors */
+  --border-primary: #e0e0e0;       /* 主边框：浅灰 */
+  --border-secondary: #cccccc;     /* 次边框：稍明显灰 */
+
+  /* Accent colors — 使用柔和中性色或保留轻微品牌色 */
+  /* 如果希望完全去色，可用灰；若保留一点活力，可微带蓝/紫 */
+  --accent-primary: #5a6b8c;       /* 柔和灰蓝（中性）*/
+  --accent-secondary: #7a8ba8;     /* 更浅的灰蓝 */
+  --accent-tertiary: #9aa9c0;      /* 极浅灰蓝 */
+
+  /* Status colors — 保持语义清晰，但降低饱和度 */
+  --success: #2e8b57;              /* 深森林绿（柔和成功色）*/
+  --warning: #d4a017;              /* 深金色（柔和警告）*/
+  --error: #c23934;                /* 深红（柔和错误）*/
+  --info: #3a86a8;                 /* 柔和蓝（信息色，可选）*/
+
+  /* Scrollbar — 使用灰色系 */
+  --scrollbar-track: rgba(240, 240, 240, 1);
+  --scrollbar-thumb: rgba(200, 200, 200, 0.6);
+  --scrollbar-thumb-hover: rgba(150, 150, 150, 0.8);
+
+  /* Selection — 柔和高亮 */
+  --selection-bg: rgba(150, 150, 150, 0.25);
+}

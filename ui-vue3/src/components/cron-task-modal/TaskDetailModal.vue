@@ -445,7 +445,7 @@ watch(
 .form-input,
 .form-textarea,
 .form-select {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 12px;
@@ -510,15 +510,15 @@ watch(
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.7);
 }
 
 .template-btn.active {
   background: rgba(102, 126, 234, 0.2);
-  border-color: rgba(102, 126, 234, 0.3);
-  color: #667eea;
+  border-color: var(--selection-bg, rgba(102, 126, 234, 0.3));
+  color: var(--accent-primary, #667eea);
 }
 
 .template-btn:hover {
@@ -526,7 +526,7 @@ watch(
 }
 
 .template-btn.active:hover {
-  background: rgba(102, 126, 234, 0.3);
+  background: var(--selection-bg, rgba(102, 126, 234, 0.3));
 }
 
 .template-selector {
@@ -563,7 +563,7 @@ watch(
 }
 
 .cancel-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.8);
 }
@@ -574,12 +574,12 @@ watch(
 
 .save-btn {
   background: rgba(102, 126, 234, 0.2);
-  border: 1px solid rgba(102, 126, 234, 0.3);
-  color: #667eea;
+  border: 1px solid var(--selection-bg, rgba(102, 126, 234, 0.3));
+  color: var(--accent-primary, #667eea);
 }
 
 .save-btn:hover:not(:disabled) {
-  background: rgba(102, 126, 234, 0.3);
+  background: var(--selection-bg, rgba(102, 126, 234, 0.3));
 }
 
 .save-btn:disabled {
@@ -628,7 +628,7 @@ watch(
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   transition: .4s;
   border-radius: 24px;
 }

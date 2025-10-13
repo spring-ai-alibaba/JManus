@@ -47,7 +47,7 @@ const backHome = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #0a0a0a;
+  background: var(--bg-primary, #0a0a0a);
 }
 
 .error-container {
@@ -57,7 +57,7 @@ const backHome = () => {
   gap: 24px;
   padding: 48px;
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
 }
@@ -72,7 +72,7 @@ const backHome = () => {
   justify-content: center;
 
   .java-logo {
-    color: #667eea;
+    color: var(--accent-primary, #667eea);
     filter: drop-shadow(0 0 12px rgba(102, 126, 234, 0.5));
   }
 }
@@ -81,11 +81,11 @@ const backHome = () => {
   font-size: 64px;
   font-weight: 700;
   margin: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+  text-shadow: 0 0 30px var(--selection-bg, rgba(102, 126, 234, 0.3));
 }
 
 .error-message {
@@ -99,8 +99,8 @@ const backHome = () => {
   padding: 12px 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
+  color: var(--text-primary, #ffffff);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -111,7 +111,7 @@ const backHome = () => {
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px var(--selection-bg, rgba(102, 126, 234, 0.3));
   }
 }
 </style>

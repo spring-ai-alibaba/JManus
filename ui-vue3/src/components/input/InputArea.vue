@@ -273,7 +273,7 @@ onUnmounted(() => {
 .input-area {
   min-height: 112px;
   padding: 10px 12px;
-  border-top: 1px solid #1a1a1a;
+  border-top: 1px solid var(--bg-secondary, #1a1a1a);
   background: rgba(255, 255, 255, 0.02);
   /* Ensure the input area is always at the bottom */
   flex-shrink: 0; /* Won't be compressed */
@@ -292,13 +292,13 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 12px 16px;
 
   &:focus-within {
-    border-color: #667eea;
+    border-color: var(--accent-primary, #667eea);
   }
 }
 
@@ -308,7 +308,7 @@ onUnmounted(() => {
   background: transparent;
   border: none;
   outline: none;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-size: 14px;
   line-height: 1.5;
   resize: none;
@@ -335,17 +335,17 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, #ffffff);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: #667eea;
+    border-color: var(--accent-primary, #667eea);
     transform: translateY(-1px);
   }
 }
@@ -358,8 +358,8 @@ onUnmounted(() => {
   padding: 6px 12px;
   border: none;
   border-radius: 6px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
+  color: var(--text-primary, #ffffff);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;

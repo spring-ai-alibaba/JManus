@@ -1,0 +1,40 @@
+/* Dark Theme Variables (Default) */
+:root, :root[data-theme="dark"] {
+  /* Background colors */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2a2a2a;
+  --bg-card: #1e1e1e;
+  --bg-input: #2d2d2d;
+  --bg-primary-rgb: 10, 10, 10;
+  
+  /* Text colors */
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-tertiary: #aaaaaa;
+  --text-heading: #ffffff;
+  --text-link: #667eea;
+  
+  /* Border colors */
+  --border-primary: rgba(255, 255, 255, 0.2);
+  --border-secondary: rgba(102, 126, 234, 0.3);
+  
+  /* Accent colors */
+  --accent-primary: #667eea;
+  --accent-secondary: #7c9eff;
+  --accent-tertiary: #a3bffa;
+  
+  /* Status colors */
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --error: #ef4444;
+  --info: #3b82f6;
+  
+  /* Scrollbar */
+  --scrollbar-track: rgba(255, 255, 255, 0.05);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
+  
+  /* Selection */
+  --selection-bg: rgba(102, 126, 234, 0.3);
+}

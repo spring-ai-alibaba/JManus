@@ -570,7 +570,7 @@ watch(() => props.modelValue, (newValue) => {
   background: rgba(34, 197, 94, 0.1);
   border: 1px solid rgba(34, 197, 94, 0.2);
   border-radius: 8px;
-  color: #22c55e;
+  color: var(--success, #22c55e);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -637,7 +637,7 @@ watch(() => props.modelValue, (newValue) => {
 }
 
 .task-item {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 24px;
@@ -702,7 +702,7 @@ watch(() => props.modelValue, (newValue) => {
 .task-status-badge.active {
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.2);
-  color: #3b82f6;
+  color: var(--info, #3b82f6);
 }
 
 .task-status-badge.inactive {
@@ -733,7 +733,7 @@ watch(() => props.modelValue, (newValue) => {
   padding: 6px 10px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   transition: all 0.2s ease;
 }
 
@@ -776,7 +776,7 @@ watch(() => props.modelValue, (newValue) => {
 .execute-btn {
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.2);
-  color: #3b82f6;
+  color: var(--info, #3b82f6);
 }
 
 .execute-btn:hover:not(:disabled) {
@@ -792,7 +792,7 @@ watch(() => props.modelValue, (newValue) => {
 .delete-btn {
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--error, #ef4444);
 }
 
 .delete-btn:hover:not(:disabled) {
@@ -864,7 +864,7 @@ watch(() => props.modelValue, (newValue) => {
 
 .dropdown-item.edit-btn:hover:not(:disabled) {
   background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  color: var(--info, #3b82f6);
 }
 
 .dropdown-item.toggle-btn:hover:not(:disabled) {
@@ -874,7 +874,7 @@ watch(() => props.modelValue, (newValue) => {
 
 .dropdown-item.delete-btn:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--error, #ef4444);
 }
 
 .dropdown-item:disabled {
@@ -971,7 +971,7 @@ watch(() => props.modelValue, (newValue) => {
 .confirm-btn.delete-btn {
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--error, #ef4444);
 }
 
 .confirm-btn.delete-btn:hover:not(:disabled) {
@@ -991,7 +991,7 @@ watch(() => props.modelValue, (newValue) => {
 
 .create-icon {
   font-size: 24px;
-  color: #3b82f6;
+  color: var(--info, #3b82f6);
 }
 
 .create-options {
@@ -1007,7 +1007,7 @@ watch(() => props.modelValue, (newValue) => {
   gap: 16px;
   padding: 16px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
   transition: all 0.3s;
@@ -1024,7 +1024,7 @@ watch(() => props.modelValue, (newValue) => {
 }
 
 .jmanus-btn {
-  color: #3b82f6;
+  color: var(--info, #3b82f6);
 }
 
 .jmanus-btn:hover {
@@ -1033,7 +1033,7 @@ watch(() => props.modelValue, (newValue) => {
 }
 
 .jmanus-btn .iconify {
-  color: #3b82f6;
+  color: var(--info, #3b82f6);
 }
 
 .manual-btn {

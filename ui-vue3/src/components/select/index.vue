@@ -151,7 +151,7 @@ const selectOption = (option: { id: string }) => {
   gap: 6px;
   padding: 8px 12px;
   background: transparent;
-  border: 1.5px solid #667eea;
+  border: 1.5px solid var(--accent-primary, #667eea);
   border-radius: 8px;
   color: #8da2fb;
   cursor: pointer;
@@ -163,8 +163,8 @@ const selectOption = (option: { id: string }) => {
 
 .select-btn:hover {
   background: rgba(102, 126, 234, 0.15);
-  border-color: #7c9eff;
-  color: #a3bffa;
+  border-color: var(--accent-secondary, #7c9eff);
+  color: var(--accent-tertiary, #a3bffa);
   box-shadow: 0 0 15px rgba(102, 126, 234, 0.2);
 }
 
@@ -202,7 +202,7 @@ const selectOption = (option: { id: string }) => {
   margin-top: 4px;
   background: linear-gradient(135deg, rgba(40, 40, 50, 0.95), rgba(30, 30, 40, 0.95));
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(102, 126, 234, 0.3);
+  border: 1px solid var(--selection-bg, rgba(102, 126, 234, 0.3));
   border-radius: 8px;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.4),
@@ -225,7 +225,7 @@ const selectOption = (option: { id: string }) => {
   border-bottom: 1px solid rgba(102, 126, 234, 0.2);
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(102, 126, 234, 0.05));
 }
 
@@ -263,14 +263,14 @@ const selectOption = (option: { id: string }) => {
 }
 
 .select-option:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   color: rgba(255, 255, 255, 0.9);
 }
 
 .select-option.active {
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(102, 126, 234, 0.1));
-  color: #7c9eff;
-  border-left: 3px solid #667eea;
+  color: var(--accent-secondary, #7c9eff);
+  border-left: 3px solid var(--accent-primary, #667eea);
   padding-left: 13px;
 }
 
@@ -294,7 +294,7 @@ const selectOption = (option: { id: string }) => {
 }
 
 .check-icon {
-  color: #667eea;
+  color: var(--accent-primary, #667eea);
   opacity: 0.8;
 }
 

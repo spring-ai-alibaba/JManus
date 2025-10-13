@@ -657,7 +657,7 @@ defineExpose({
 
 .preview-header {
   padding: 20px 24px;
-  border-bottom: 1px solid #1a1a1a;
+  border-bottom: 1px solid var(--bg-secondary, #1a1a1a);
   background: rgba(255, 255, 255, 0.02);
 
   .tab-button {
@@ -665,8 +665,8 @@ defineExpose({
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-    border-color: #667eea;
-    color: #667eea;
+    border-color: var(--accent-primary, #667eea);
+    color: var(--accent-primary, #667eea);
     cursor: default;
     display: flex;
     align-items: center;
@@ -705,12 +705,12 @@ defineExpose({
   min-height: 100px; /* Ensure minimum height */
 
   h3 {
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
     margin: 0 0 16px 0;
     font-size: 18px;
     font-weight: 600;
     padding-bottom: 8px;
-    border-bottom: 2px solid #667eea;
+    border-bottom: 2px solid var(--accent-primary, #667eea);
   }
 }
 
@@ -735,7 +735,7 @@ defineExpose({
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.3));
     border-radius: 3px;
 
     &:hover {
@@ -763,7 +763,7 @@ defineExpose({
 
     .value {
       flex: 1;
-      color: #cccccc;
+      color: var(--text-secondary, #cccccc);
       word-break: break-word;
 
       &.success {
@@ -800,7 +800,7 @@ defineExpose({
     }
 
     .status-text {
-      color: #cccccc;
+      color: var(--text-secondary, #cccccc);
       font-weight: 500;
     }
   }
@@ -959,7 +959,7 @@ defineExpose({
 
 .step-info {
   h3 {
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
     margin: 0 0 20px 0;
     font-size: 18px;
     font-weight: 600;
@@ -970,12 +970,12 @@ defineExpose({
   margin-top: 20px; /* Increase top spacing since there's no fixed header step info now */
 
   h4 {
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
     margin: 0 0 16px 0;
     font-size: 16px;
     font-weight: 600;
     padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   }
 }
 
@@ -986,7 +986,7 @@ defineExpose({
 }
 
 .think-act-step {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 16px;
@@ -999,7 +999,7 @@ defineExpose({
 
     .step-number {
       font-weight: 600;
-      color: #667eea;
+      color: var(--accent-primary, #667eea);
       font-size: 14px;
     }
 
@@ -1042,7 +1042,7 @@ defineExpose({
       margin: 0 0 12px 0;
       font-size: 14px;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--text-primary, #ffffff);
     }
   }
 
@@ -1066,7 +1066,7 @@ defineExpose({
       }
 
       .value {
-        color: #cccccc;
+        color: var(--text-secondary, #cccccc);
         font-size: 14px;
       }
 
@@ -1075,7 +1075,7 @@ defineExpose({
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 4px;
         padding: 12px;
-        color: #cccccc;
+        color: var(--text-secondary, #cccccc);
         font-size: 12px;
         overflow-x: auto;
         white-space: pre-wrap;
@@ -1091,7 +1091,7 @@ defineExpose({
   .sub-plan-content {
     .sub-plan-header {
       background: rgba(102, 126, 234, 0.1);
-      border: 1px solid rgba(102, 126, 234, 0.3);
+      border: 1px solid var(--selection-bg, rgba(102, 126, 234, 0.3));
       border-radius: 6px;
       padding: 12px;
       margin-bottom: 12px;
@@ -1114,7 +1114,7 @@ defineExpose({
 
         .value {
           flex: 1;
-          color: #cccccc;
+          color: var(--text-secondary, #cccccc);
           word-break: break-word;
         }
       }
@@ -1139,7 +1139,7 @@ defineExpose({
         }
 
         .status-text {
-          color: #cccccc;
+          color: var(--text-secondary, #cccccc);
           font-size: 12px;
           font-weight: 500;
         }
@@ -1241,7 +1241,7 @@ defineExpose({
 
 .no-plan-message > .iconify {
   font-size: 64px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.3));
 }
 
 .message-content {
@@ -1287,7 +1287,7 @@ defineExpose({
 .preview-tabs {
   display: flex;
   gap: 0;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border-radius: 8px;
   padding: 4px;
 }
@@ -1300,7 +1300,7 @@ defineExpose({
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-primary);
   font-size: 13px;
   font-weight: 500;
   min-width: 0;
@@ -1311,13 +1311,13 @@ defineExpose({
 
 .tab-item:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-secondary);
 }
 
 .tab-item.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
+  color: var(--text-primary, #ffffff);
+  box-shadow: 0 2px 8px var(--selection-bg, rgba(102, 126, 234, 0.3));
 }
 
 .tab-item .iconify {

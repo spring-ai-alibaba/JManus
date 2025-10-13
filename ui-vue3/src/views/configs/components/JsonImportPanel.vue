@@ -372,7 +372,7 @@ defineExpose({
 .example-json {
   margin: 0;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-secondary);
   overflow-x: auto;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 13px;
@@ -380,7 +380,7 @@ defineExpose({
 }
 
 .example-json code {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   background: none;
   padding: 0;
   border: none;
@@ -391,9 +391,9 @@ defineExpose({
 
 /* JSON syntax highlighting */
 .example-json .string { color: #a78bfa; }
-.example-json .number { color: #fbbf24; }
+.example-json .number { color: var(--warning, var(--warning)); }
 .example-json .boolean { color: #f87171; }
-.example-json .null { color: rgba(255, 255, 255, 0.6); }
+.example-json .null { color: var(--text-secondary); }
 .example-json .key { color: #34d399; }
 
 /* JSON configuration container */
@@ -407,7 +407,7 @@ defineExpose({
 .usage-instructions {
   margin-top: 16px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-secondary);
   border: 1px solid rgba(102, 126, 234, 0.5);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -431,23 +431,23 @@ defineExpose({
   gap: 8px;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .instructions-icon {
   font-size: 16px;
-  color: #667eea;
+  color: var(--accent-primary, var(--accent-primary));
 }
 
 .instructions-header h4 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
 }
 
 .instructions-content {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   line-height: 1.5;
   font-size: 14px;
 }
@@ -464,7 +464,7 @@ defineExpose({
 }
 
 .instructions-list > li::marker {
-  color: #667eea;
+  color: var(--accent-primary, var(--accent-primary));
   font-weight: 600;
   font-size: 14px;
 }
@@ -495,19 +495,19 @@ defineExpose({
 }
 
 .instructions-list ul li strong {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-weight: 500;
   display: inline;
   margin-bottom: 0;
 }
 
 .instructions-list code {
-  background: rgba(102, 126, 234, 0.15);
+  background: var(--accent-primary);
   color: #a8b3ff;
   padding: 1px 4px;
   border-radius: 3px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 12px;
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  border: 1px solid var(--accent-primary);
 }
 </style>

@@ -103,10 +103,10 @@ const selectOption = (option: { id: string }) => {
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, var(--bg-secondary));
   border:1px solid rgba(80 78 78);
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
@@ -115,10 +115,10 @@ const selectOption = (option: { id: string }) => {
 }
 
 .select-btn:hover {
-  background: rgba(102, 126, 234, 0.15);
-  border-color: #7c9eff;
-  color: #a3bffa;
-  box-shadow: 0 0 15px rgba(102, 126, 234, 0.2);
+  background: var(--accent-primary);
+  border-color: var(--accent-secondary, var(--accent-secondary));
+  color: var(--accent-tertiary, var(--accent-tertiary));
+  box-shadow: 0 0 15px var(--accent-primary);
 }
 
 .select-btn:focus {
@@ -147,9 +147,9 @@ const selectOption = (option: { id: string }) => {
   margin-top: 4px;
   background: linear-gradient(135deg, rgba(40, 40, 50, 0.95), rgba(30, 30, 40, 0.95));
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(102, 126, 234, 0.3);
+  border: 1px solid var(--selection-bg, var(--selection-bg));
   border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--accent-primary);
   min-width: 300px;
 }
 
@@ -158,17 +158,17 @@ const selectOption = (option: { id: string }) => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+  border-bottom: 1px solid var(--accent-primary);
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(102, 126, 234, 0.05));
+  color: var(--text-primary, var(--text-primary));
+  background: linear-gradient(135deg, var(--accent-primary), rgba(102, 126, 234, 0.05));
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -176,8 +176,8 @@ const selectOption = (option: { id: string }) => {
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--border-primary);
+  color: var(--text-secondary);
 }
 
 .select-options {
@@ -192,21 +192,21 @@ const selectOption = (option: { id: string }) => {
   padding: 10px 16px;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-tertiary);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
 }
 
 .select-option:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  color: var(--text-primary);
 }
 
 .select-option.active {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(102, 126, 234, 0.1));
-  color: #7c9eff;
-  border-left: 3px solid #667eea;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary));
+  color: var(--accent-secondary, var(--accent-secondary));
+  border-left: 3px solid var(--accent-primary, var(--accent-primary));
   padding-left: 13px;
 }
 
@@ -225,7 +225,7 @@ const selectOption = (option: { id: string }) => {
 }
 
 .check-icon {
-  color: #667eea;
+  color: var(--accent-primary, var(--accent-primary));
   opacity: 0.8;
 }
 

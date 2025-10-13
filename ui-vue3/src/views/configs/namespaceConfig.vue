@@ -460,7 +460,7 @@ onMounted(() => {
 }
 
 .namespace-count {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -477,7 +477,7 @@ onMounted(() => {
   gap: 8px;
   justify-content: center;
   padding: 40px 0;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .loading-icon {
@@ -496,7 +496,7 @@ onMounted(() => {
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .empty-icon {
@@ -511,8 +511,8 @@ onMounted(() => {
 }
 
 .namespace-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
@@ -520,13 +520,16 @@ onMounted(() => {
   transition: all 0.3s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--scrollbar-track, var(--bg-secondary));
+    border-color: var(--scrollbar-thumb, var(--scrollbar-thumb));
   }
 
   &.active {
-    border-color: #667eea;
-    background: rgba(102, 126, 234, 0.1);
+    border-color: var(--accent-primary, var(--accent-primary));
+    background: var(--accent-primary);
+    .namespace-desc {
+      color: var(--bg-primary);
+    }
   }
 }
 
@@ -542,7 +545,7 @@ onMounted(() => {
 }
 
 .namespace-desc {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-tertiary);
   font-size: 14px;
   line-height: 1.4;
   margin-bottom: 0px;
@@ -558,20 +561,20 @@ onMounted(() => {
 .tool-tag {
   display: inline-block;
   padding: 4px 8px;
-  background: rgba(102, 126, 234, 0.2);
+  background: var(--accent-primary);
   border-radius: 4px;
   font-size: 12px;
   color: #a8b3ff;
 }
 
 .tool-more {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
   font-size: 12px;
   padding: 4px 8px;
 }
 
 .no-tools-indicator {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-tertiary);
   font-size: 12px;
   font-style: italic;
 }
@@ -583,24 +586,24 @@ onMounted(() => {
   gap: 8px;
   width: 100%;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px dashed var(--scrollbar-thumb, var(--scrollbar-thumb));
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: #fff;
+    background: var(--scrollbar-track, var(--bg-secondary));
+    border-color: var(--scrollbar-thumb-hover, var(--text-tertiary));
+    color: var(--text-primary);
   }
 }
 
 .namespace-detail {
   flex: 1;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 12px 24px;
   overflow-y: auto;
@@ -613,7 +616,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .placeholder-icon {
@@ -628,7 +631,7 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .detail-header h3 {
@@ -651,7 +654,7 @@ onMounted(() => {
   label {
     display: block;
     margin-bottom: 8px;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary);
     font-weight: 500;
   }
 
@@ -659,28 +662,28 @@ onMounted(() => {
   textarea {
     width: 100%;
     padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--scrollbar-track, var(--bg-secondary));
+    border: 1px solid var(--border-primary);
     border-radius: 8px;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 14px;
     transition: all 0.3s ease;
 
     &:focus {
-      border-color: #667eea;
+      border-color: var(--accent-primary, var(--accent-primary));
       outline: none;
       background: rgba(255, 255, 255, 0.08);
     }
 
     &::placeholder {
-      color: rgba(255, 255, 255, 0.4);
+      color: var(--text-tertiary);
     }
 
     &:disabled {
       cursor: not-allowed;
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--bg-secondary);
       color: rgba(255, 255, 255);
-      border-color: rgba(255, 255, 255, 0.05);
+      border-color: var(--scrollbar-track, var(--bg-secondary));
       opacity: 0.6;
     }
   }
@@ -704,7 +707,7 @@ onMounted(() => {
 
   span {
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-secondary);
   }
 }
 
@@ -713,17 +716,17 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
   border-radius: 6px;
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--border-primary);
+    border-color: var(--scrollbar-thumb, var(--scrollbar-thumb));
   }
 
   &:disabled {
@@ -732,22 +735,22 @@ onMounted(() => {
   }
 
   &.primary {
-    background: rgba(102, 126, 234, 0.2);
-    border-color: rgba(102, 126, 234, 0.3);
+    background: var(--accent-primary);
+    border-color: var(--selection-bg, var(--selection-bg));
     color: #a8b3ff;
 
     &:hover:not(:disabled) {
-      background: rgba(102, 126, 234, 0.3);
+      background: var(--selection-bg, var(--selection-bg));
     }
   }
 
   &.danger {
-    background: rgba(234, 102, 102, 0.1);
-    border-color: rgba(234, 102, 102, 0.2);
+    background: var(--error);
+    border-color: var(--error);
     color: #ff8a8a;
 
     &:hover:not(:disabled) {
-      background: rgba(234, 102, 102, 0.2);
+      background: var(--error);
     }
   }
 
@@ -769,12 +772,12 @@ onMounted(() => {
   padding: 20px 0;
 
   p {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-secondary);
     margin: 8px 0;
   }
 
   .warning-text {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-secondary);
     font-size: 14px;
   }
 }
@@ -793,12 +796,12 @@ onMounted(() => {
   transition: all 0.3s ease;
 
   &.danger {
-    background: rgba(234, 102, 102, 0.2);
-    border: 1px solid rgba(234, 102, 102, 0.3);
+    background: var(--error);
+    border: 1px solid var(--error);
     color: #ff8a8a;
 
     &:hover {
-      background: rgba(234, 102, 102, 0.3);
+      background: var(--error);
     }
   }
 }
@@ -810,19 +813,19 @@ onMounted(() => {
 .tags .tag {
   display: inline-block;
   padding: 4px 8px;
-  background: rgba(102, 126, 234, 0.2);
+  background: var(--accent-primary);
   border-radius: 4px;
   font-size: 12px;
   color: #a8b3ff;
 }
 
 .cancel-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--border-primary);
   }
 }
 

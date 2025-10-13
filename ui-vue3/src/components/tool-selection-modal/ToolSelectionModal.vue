@@ -368,7 +368,7 @@ watch(visible, (newVisible) => {
   gap: 12px;
   margin-bottom: 16px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -380,9 +380,9 @@ watch(visible, (newVisible) => {
 .search-input {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
   transition: all 0.3s;
@@ -405,9 +405,9 @@ watch(visible, (newVisible) => {
 .sort-select {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
   cursor: pointer;
@@ -437,7 +437,7 @@ watch(visible, (newVisible) => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   cursor: pointer;
   transition: all 0.3s;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -511,7 +511,7 @@ watch(visible, (newVisible) => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   transition: background-color 0.3s;
 }
 
@@ -563,7 +563,7 @@ watch(visible, (newVisible) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 24px;
   transition: all 0.3s;
 }

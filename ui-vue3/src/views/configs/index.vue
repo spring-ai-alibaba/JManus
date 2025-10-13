@@ -141,7 +141,7 @@ const handleNavClick = (categoryKey: string) => {
 .config-container {
   height: 100vh;
   background: rgba(255, 255, 255, 0.02);
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .config-header {
@@ -149,7 +149,7 @@ const handleNavClick = (categoryKey: string) => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .header-actions {
@@ -165,7 +165,7 @@ const handleNavClick = (categoryKey: string) => {
 }
 
 .config-header h1 {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--accent-primary, var(--accent-primary)) 0%, #764ba2 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -181,7 +181,7 @@ const handleNavClick = (categoryKey: string) => {
 .config-nav {
   width: 242px;
   padding: 20px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid var(--border-primary);
 }
 
 .nav-item {
@@ -196,12 +196,12 @@ const handleNavClick = (categoryKey: string) => {
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, var(--bg-secondary));
 }
 
 .nav-item.active {
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  background: var(--accent-primary);
+  border: 1px solid var(--accent-primary);
 }
 
 .config-details {
@@ -215,15 +215,15 @@ const handleNavClick = (categoryKey: string) => {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
   border-radius: 6px;
-  color: #fff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-primary);
 }
 </style>

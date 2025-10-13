@@ -175,7 +175,7 @@ defineExpose<ToastInstance>({ show })
 .toast-btn--primary {
   background: rgba(102, 126, 234, 0.8);
   color: #fff;
-  border: 1px solid rgba(102, 126, 234, 0.3);
+  border: 1px solid var(--selection-bg, rgba(102, 126, 234, 0.3));
 }
 
 .toast-btn--primary:hover {
@@ -195,11 +195,11 @@ defineExpose<ToastInstance>({ show })
 
 /* Error style */
 .toast--error .toast-icon {
-  color: #ef4444;
+  color: var(--error, #ef4444);
 }
 
 .toast--error .toast-title {
-  color: #ef4444;
+  color: var(--error, #ef4444);
 }
 
 /* Modal transition animations */

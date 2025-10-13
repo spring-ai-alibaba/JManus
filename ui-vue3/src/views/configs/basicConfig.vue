@@ -871,14 +871,14 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-tertiary);
 }
 
 .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid #667eea;
+  border: 2px solid var(--scrollbar-thumb-hover, var(--text-tertiary));
+  border-top: 2px solid var(--accent-primary, var(--accent-primary));
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -896,15 +896,15 @@ onMounted(() => {
 }
 
 .config-group {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-primary);
   transition: all 0.3s ease;
 }
 
 .config-group:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, var(--bg-secondary));
   border-color: rgba(255, 255, 255, 0.15);
 }
 
@@ -913,7 +913,7 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .group-icon {
@@ -925,7 +925,7 @@ onMounted(() => {
 .group-divider {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  background: linear-gradient(90deg, var(--border-primary) 0%, transparent 100%);
   margin-left: 16px;
 }
 
@@ -938,7 +938,7 @@ onMounted(() => {
 
 .config-item {
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
   margin-bottom: 16px;
   transition: all 0.3s ease;
@@ -990,7 +990,7 @@ onMounted(() => {
 
 .config-label {
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -1008,10 +1008,10 @@ onMounted(() => {
 .config-key {
   display: block;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
   margin-bottom: 6px;
   font-family: monospace;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, var(--bg-secondary));
   padding: 2px 6px;
   border-radius: 4px;
   max-width: 100%;
@@ -1029,7 +1029,7 @@ onMounted(() => {
 
 .config-description {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-tertiary);
   margin: 6px 0;
   line-height: 1.4;
 }
@@ -1038,7 +1038,7 @@ onMounted(() => {
   font-size: 12px;
   padding: 2px 6px;
   border-radius: 3px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-weight: normal;
 }
 
@@ -1073,8 +1073,8 @@ onMounted(() => {
 
 .range-info {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  background: var(--scrollbar-track, var(--bg-secondary));
   padding: 3px 8px;
   border-radius: 4px;
   display: inline-block;
@@ -1095,11 +1095,11 @@ onMounted(() => {
 /* Enhance the input box style */
 .config-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   padding: 8px 12px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   transition: all 0.3s;
 }
 
@@ -1110,7 +1110,7 @@ onMounted(() => {
 }
 
 .config-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-tertiary);
 }
 
 .config-input.number-input {
@@ -1124,7 +1124,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
 }
 
 .message-toast {
@@ -1146,7 +1146,7 @@ onMounted(() => {
 }
 
 .message-toast.error {
-  background: #ef4444;
+  background: var(--error, var(--error));
 }
 
 .message-fade-enter-active,
@@ -1176,7 +1176,7 @@ onMounted(() => {
 /* Subgroup style */
 .sub-group {
   margin-bottom: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.02);
@@ -1187,7 +1187,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, var(--bg-secondary));
   cursor: pointer;
   user-select: none;
   transition: all 0.3s ease;
@@ -1211,20 +1211,20 @@ onMounted(() => {
   margin: 0;
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
 }
 
 .item-count {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  background: var(--border-primary);
   padding: 2px 6px;
   border-radius: 10px;
 }
 
 .collapse-icon {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   transition: transform 0.3s ease;
 }
 
@@ -1234,7 +1234,7 @@ onMounted(() => {
 
 .config-stats {
   margin-top: 24px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 /* Enhance the header style */
@@ -1253,19 +1253,19 @@ onMounted(() => {
 .stat-item {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, var(--bg-secondary));
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 12px;
 }
 
 .stat-label {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   margin-right: 4px;
 }
 
 .stat-value {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -1279,11 +1279,11 @@ onMounted(() => {
 }
 
 .search-input {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-track, var(--bg-secondary));
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   padding: 6px 12px 6px 32px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   width: 220px;
   font-size: 14px;
   transition: all 0.3s;
@@ -1297,7 +1297,7 @@ onMounted(() => {
 }
 
 .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-tertiary);
 }
 
 .search-icon {
@@ -1310,10 +1310,10 @@ onMounted(() => {
 }
 
 .toggle-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--border-primary);
+  border: 1px solid var(--scrollbar-thumb, var(--scrollbar-thumb));
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-tertiary);
   padding: 6px 12px;
   margin-right: 12px;
   font-size: 14px;
@@ -1323,13 +1323,13 @@ onMounted(() => {
 
 .toggle-btn:hover {
   background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
 }
 
 .toggle-btn.active {
-  background: rgba(102, 126, 234, 0.2);
+  background: var(--accent-primary);
   border-color: rgba(102, 126, 234, 0.5);
-  color: #667eea;
+  color: var(--accent-primary, var(--accent-primary));
 }
 
 /* Group operation style */
@@ -1349,7 +1349,7 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   padding: 6px 10px;
   font-size: 12px;
   cursor: pointer;

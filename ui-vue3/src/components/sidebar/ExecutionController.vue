@@ -573,7 +573,7 @@ defineExpose({
 <style scoped>
 .config-section {
   margin-bottom: 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border-radius: 8px;
   padding: 12px;
 }
@@ -582,7 +582,7 @@ defineExpose({
   display: flex;
   align-items: center;
   margin-bottom: 12px;
-  color: #667eea;
+  color: var(--accent-primary, #667eea);
   font-size: 13px;
   font-weight: 600;
   gap: 8px;
@@ -643,7 +643,7 @@ defineExpose({
     .parameter-input {
       width: 100%;
       background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
       border-radius: 6px;
       color: white;
       font-size: 12px;
@@ -653,7 +653,7 @@ defineExpose({
 
       &:focus {
         outline: none;
-        border-color: #667eea;
+        border-color: var(--accent-primary, #667eea);
         box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
       }
 
@@ -702,7 +702,7 @@ defineExpose({
 }
 
 .call-example-title {
-  color: #667eea;
+  color: var(--accent-primary, #667eea);
   font-size: 14px;
   font-weight: 600;
   margin: 0 0 6px 0;
@@ -737,7 +737,7 @@ defineExpose({
   .call-method {
     display: inline-block;
     padding: 2px 6px;
-    background: #667eea;
+    background: var(--accent-primary, #667eea);
     color: white;
     border-radius: 3px;
     font-size: 10px;
@@ -825,7 +825,7 @@ defineExpose({
 
   &.active {
     background: rgba(102, 126, 234, 0.2);
-    color: #667eea;
+    color: var(--accent-primary, #667eea);
     font-weight: 600;
   }
 }
@@ -845,7 +845,7 @@ defineExpose({
   .api-method {
     display: inline-block;
     padding: 2px 6px;
-    background: #667eea;
+    background: var(--accent-primary, #667eea);
     color: white;
     border-radius: 3px;
     font-size: 10px;
@@ -911,18 +911,18 @@ defineExpose({
   transition: all 0.2s ease;
 
   &.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
     color: white;
 
     &:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 2px 8px var(--selection-bg, rgba(102, 126, 234, 0.3));
     }
   }
 
   &.publish-mcp-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
+    color: var(--text-primary, #ffffff);
     border: none;
 
     &:hover:not(:disabled) {

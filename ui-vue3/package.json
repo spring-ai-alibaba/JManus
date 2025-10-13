@@ -23,7 +23,8 @@
     "check:all": "pnpm run type-check && pnpm run lint:check && pnpm run test:unit",
     "dev:strict": "vite --mode development",
     "check:chinese": "python3 scripts/check-chinese-content.py --dir src",
-    "check:chinese:fail": "python3 scripts/check-chinese-content.py --dir src --fail-on-found"
+    "check:chinese:fail": "python3 scripts/check-chinese-content.py --dir src --fail-on-found",
+    "theme:replace-colors": "node scripts/replace-colors.cjs"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
@@ -69,6 +70,8 @@
     "less": "^4.3.0",
     "mockjs": "^1.1.0",
     "npm-run-all2": "^6.1.1",
+    "postcss": "^8.5.6",
+    "postcss-nesting": "^13.0.2",
     "prettier": "^3.1.0",
     "start-server-and-test": "^2.0.3",
     "typescript": "~5.3.3",

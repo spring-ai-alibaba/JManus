@@ -164,7 +164,7 @@ onUnmounted(() => {
 }
 
 .status-icon.pending {
-  color: #fbbf24;
+  color: var(--warning, #fbbf24);
   background: rgba(251, 191, 36, 0.1);
 }
 
@@ -208,7 +208,7 @@ onUnmounted(() => {
 }
 
 .cancel-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.8);
 }
@@ -220,7 +220,7 @@ onUnmounted(() => {
 .confirm-btn {
   background: rgba(102, 126, 234, 0.1);
   border: 1px solid rgba(102, 126, 234, 0.2);
-  color: #667eea;
+  color: var(--accent-primary, #667eea);
 }
 
 .confirm-btn:hover {

@@ -1,0 +1,40 @@
+/* Blue Light Theme Variables */
+:root[data-theme="light"] {
+  /* Background colors */
+  --bg-primary: #f0f8ff;
+  --bg-secondary: #e6f2ff;
+  --bg-tertiary: #d1e7ff;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --bg-primary-rgb: 248, 249, 250;
+  
+  /* Text colors */
+  --text-primary: #003366;
+  --text-secondary: #336699;
+  --text-tertiary: #6699cc;
+  --text-heading: #002244;
+  --text-link: #0066cc;
+  
+  /* Border colors */
+  --border-primary: #a3cfff;
+  --border-secondary: #77aaff;
+  
+  /* Accent colors */
+  --accent-primary: #007bff;
+  --accent-secondary: #3399ff;
+  --accent-tertiary: #66b2ff;
+  
+  /* Status colors */
+  --success: #28a745;
+  --warning: #ffc107;
+  --error: #dc3545;
+  --info: #17a2b8;
+  
+  /* Scrollbar */
+  --scrollbar-track: rgba(0, 123, 255, 0.1);
+  --scrollbar-thumb: rgba(0, 123, 255, 0.3);
+  --scrollbar-thumb-hover: rgba(0, 123, 255, 0.5);
+  
+  /* Selection */
+  --selection-bg: rgba(0, 123, 255, 0.3);
+}

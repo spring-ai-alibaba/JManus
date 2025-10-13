@@ -802,7 +802,7 @@ const newChat = () => {
 .direct-chat {
   height: 100vh;
   width: 100%;
-  background: #0a0a0a;
+  background: var(--bg-primary, #0a0a0a);
   display: flex;
 }
 
@@ -819,7 +819,7 @@ const newChat = () => {
 .panel-resizer {
   width: 6px;
   height: 100vh;
-  background: #1a1a1a;
+  background: var(--bg-secondary, #1a1a1a);
   cursor: col-resize;
   position: relative;
   display: flex;
@@ -829,7 +829,7 @@ const newChat = () => {
   flex-shrink: 0;
 
   &:hover {
-    background: #2a2a2a;
+    background: var(--bg-tertiary, #2a2a2a);
 
     .resizer-line {
       background: #4a90e2;
@@ -857,7 +857,7 @@ const newChat = () => {
 
 .chat-header {
   padding: 20px 24px;
-  border-bottom: 1px solid #1a1a1a;
+  border-bottom: 1px solid var(--bg-secondary, #1a1a1a);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -872,7 +872,7 @@ const newChat = () => {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
   }
 }
 
@@ -894,8 +894,8 @@ const newChat = () => {
   padding: 8px 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, #ffffff);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -905,7 +905,7 @@ const newChat = () => {
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   }
 }
 
@@ -917,14 +917,14 @@ const newChat = () => {
   height: 32px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, #ffffff);
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   }
 }
 
@@ -936,14 +936,14 @@ const newChat = () => {
   height: 32px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background: var(--scrollbar-track, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, #ffffff);
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   }
 }
 

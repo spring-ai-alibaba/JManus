@@ -132,18 +132,18 @@ const handleStepSelected = (stepId: string) => {
       justify-content: center;
       width: 32px;
       height: 32px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--accent-primary, #667eea) 0%, #764ba2 100%);
       border-radius: 50%;
       
       .thinking-icon {
         font-size: 16px;
-        color: #ffffff;
+        color: var(--text-primary, #ffffff);
       }
     }
     
     .thinking-label {
       font-weight: 600;
-      color: #ffffff;
+      color: var(--text-primary, #ffffff);
       font-size: 14px;
     }
   }
@@ -160,11 +160,11 @@ const handleStepSelected = (stepId: string) => {
       background: rgba(102, 126, 234, 0.1);
       border-radius: 8px;
       font-size: 13px;
-      color: #ffffff;
+      color: var(--text-primary, #ffffff);
       
       .thinking-icon {
         font-size: 14px;
-        color: #667eea;
+        color: var(--accent-primary, #667eea);
         flex-shrink: 0;
       }
       
@@ -179,7 +179,7 @@ const handleStepSelected = (stepId: string) => {
         align-items: center;
         gap: 12px;
         padding: 16px;
-        color: #aaaaaa;
+        color: var(--text-tertiary, #aaaaaa);
         font-size: 14px;
         
         .thinking-dots {
@@ -189,7 +189,7 @@ const handleStepSelected = (stepId: string) => {
           span {
             width: 6px;
             height: 6px;
-            background: #667eea;
+            background: var(--accent-primary, #667eea);
             border-radius: 50%;
             animation: thinking-pulse 1.5s ease-in-out infinite;
             

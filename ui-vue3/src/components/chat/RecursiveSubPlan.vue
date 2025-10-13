@@ -350,7 +350,7 @@ const handleNestedStepSelected = (stepId: string) => {
   }
 
   &.running {
-    border-color: rgba(102, 126, 234, 0.3);
+    border-color: var(--selection-bg, rgba(102, 126, 234, 0.3));
     background: rgba(102, 126, 234, 0.08);
     box-shadow: 0 0 8px rgba(102, 126, 234, 0.15);
   }
@@ -367,7 +367,7 @@ const handleNestedStepSelected = (stepId: string) => {
   // Nesting level styles
   &.nesting-level-1 {
     margin-left: 16px;
-    border-left: 3px solid rgba(102, 126, 234, 0.3);
+    border-left: 3px solid var(--selection-bg, rgba(102, 126, 234, 0.3));
   }
 
   &.nesting-level-2 {
@@ -397,15 +397,15 @@ const handleNestedStepSelected = (stepId: string) => {
         font-size: 16px;
 
         &.completed {
-          color: #22c55e;
+          color: var(--success, #22c55e);
         }
 
         &.running {
-          color: #667eea;
+          color: var(--accent-primary, #667eea);
         }
 
         &.in-progress {
-          color: #fbbf24;
+          color: var(--warning, #fbbf24);
         }
 
         &.pending {
@@ -416,7 +416,7 @@ const handleNestedStepSelected = (stepId: string) => {
       .sub-plan-details {
         .sub-plan-title {
           font-weight: 600;
-          color: #ffffff;
+          color: var(--text-primary, #ffffff);
           font-size: 13px;
           margin-bottom: 2px;
           display: flex;
@@ -434,7 +434,7 @@ const handleNestedStepSelected = (stepId: string) => {
         }
 
         .sub-plan-id {
-          color: #aaaaaa;
+          color: var(--text-tertiary, #aaaaaa);
           font-size: 11px;
           font-family: monospace;
         }
@@ -457,11 +457,11 @@ const handleNestedStepSelected = (stepId: string) => {
 
         .trigger-icon {
           font-size: 10px;
-          color: #667eea;
+          color: var(--accent-primary, #667eea);
         }
 
         .trigger-text {
-          color: #cccccc;
+          color: var(--text-secondary, #cccccc);
           font-weight: 500;
         }
       }
@@ -475,17 +475,17 @@ const handleNestedStepSelected = (stepId: string) => {
 
       &.completed {
         background: rgba(34, 197, 94, 0.2);
-        color: #22c55e;
+        color: var(--success, #22c55e);
       }
 
       &.running {
         background: rgba(102, 126, 234, 0.2);
-        color: #667eea;
+        color: var(--accent-primary, #667eea);
       }
 
       &.in-progress {
         background: rgba(251, 191, 36, 0.2);
-        color: #fbbf24;
+        color: var(--warning, #fbbf24);
       }
 
       &.pending {
@@ -500,7 +500,7 @@ const handleNestedStepSelected = (stepId: string) => {
 
     .progress-info {
       .progress-text {
-        color: #aaaaaa;
+        color: var(--text-tertiary, #aaaaaa);
         font-size: 10px;
         margin-bottom: 4px;
       }
@@ -513,7 +513,7 @@ const handleNestedStepSelected = (stepId: string) => {
 
         .progress-fill {
           height: 100%;
-          background: linear-gradient(90deg, #667eea, #764ba2);
+          background: linear-gradient(90deg, var(--accent-primary, #667eea), #764ba2);
           transition: width 0.3s ease;
           border-radius: 4px;
         }
@@ -523,7 +523,7 @@ const handleNestedStepSelected = (stepId: string) => {
 
   .sub-plan-agents-steps {
     .agents-steps-header {
-      color: #aaaaaa;
+      color: var(--text-tertiary, #aaaaaa);
       font-size: 11px;
       margin-bottom: 6px;
       font-weight: 500;
@@ -544,7 +544,7 @@ const handleNestedStepSelected = (stepId: string) => {
 
         &:hover {
           background: rgba(0, 0, 0, 0.1);
-          border-color: rgba(255, 255, 255, 0.2);
+          border-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
         }
 
         &.completed {
@@ -553,7 +553,7 @@ const handleNestedStepSelected = (stepId: string) => {
         }
 
         &.running {
-          border-color: rgba(102, 126, 234, 0.3);
+          border-color: var(--selection-bg, rgba(102, 126, 234, 0.3));
           background: rgba(102, 126, 234, 0.08);
         }
 
@@ -571,11 +571,11 @@ const handleNestedStepSelected = (stepId: string) => {
             font-size: 14px;
 
             &.completed {
-              color: #22c55e;
+              color: var(--success, #22c55e);
             }
 
             &.running {
-              color: #667eea;
+              color: var(--accent-primary, #667eea);
             }
 
             &.pending {
@@ -584,7 +584,7 @@ const handleNestedStepSelected = (stepId: string) => {
           }
 
           .agent-name {
-            color: #ffffff;
+            color: var(--text-primary, #ffffff);
             font-size: 13px;
             font-weight: 500;
             flex: 1;
@@ -598,12 +598,12 @@ const handleNestedStepSelected = (stepId: string) => {
 
             &.completed {
               background: rgba(34, 197, 94, 0.2);
-              color: #22c55e;
+              color: var(--success, #22c55e);
             }
 
             &.running {
               background: rgba(102, 126, 234, 0.2);
-              color: #667eea;
+              color: var(--accent-primary, #667eea);
             }
 
             &.pending {
@@ -634,15 +634,15 @@ const handleNestedStepSelected = (stepId: string) => {
               }
 
               .result-icon {
-                color: #22c55e;
+                color: var(--success, #22c55e);
               }
 
               .error-icon {
-                color: #ef4444;
+                color: var(--error, #ef4444);
               }
 
               .result-label, .error-label {
-                color: #ffffff;
+                color: var(--text-primary, #ffffff);
                 font-size: 11px;
                 font-weight: 500;
               }
@@ -658,7 +658,7 @@ const handleNestedStepSelected = (stepId: string) => {
               white-space: pre-wrap;
               max-height: 80px;
               overflow-y: auto;
-              color: #cccccc;
+              color: var(--text-secondary, #cccccc);
               line-height: 1.3;
             }
           }
@@ -674,11 +674,11 @@ const handleNestedStepSelected = (stepId: string) => {
 
               .think-act-icon {
                 font-size: 12px;
-                color: #667eea;
+                color: var(--accent-primary, #667eea);
               }
 
               .think-act-label {
-                color: #aaaaaa;
+                color: var(--text-tertiary, #aaaaaa);
                 font-size: 11px;
                 font-weight: 500;
               }
@@ -705,13 +705,13 @@ const handleNestedStepSelected = (stepId: string) => {
                 }
 
                 .step-number {
-                  color: #667eea;
+                  color: var(--accent-primary, #667eea);
                   font-weight: 500;
                   min-width: 20px;
                 }
 
                 .step-description {
-                  color: #cccccc;
+                  color: var(--text-secondary, #cccccc);
                   flex: 1;
                   white-space: nowrap;
                   overflow: hidden;
@@ -744,11 +744,11 @@ const handleNestedStepSelected = (stepId: string) => {
 
               .nested-icon, .direct-icon {
                 font-size: 12px;
-                color: #fbbf24;
+                color: var(--warning, #fbbf24);
               }
 
               .nested-label, .direct-label {
-                color: #aaaaaa;
+                color: var(--text-tertiary, #aaaaaa);
                 font-size: 11px;
                 font-weight: 500;
               }

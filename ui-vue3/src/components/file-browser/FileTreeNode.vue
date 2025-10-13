@@ -256,7 +256,7 @@ onUnmounted(() => {
 }
 
 .expand-icon:hover {
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
 }
 
 .chevron-icon {
@@ -279,7 +279,7 @@ onUnmounted(() => {
 
 .node-name {
   flex: 1;
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-size: 13px;
   white-space: nowrap;
   overflow: hidden;
@@ -318,8 +318,8 @@ onUnmounted(() => {
 }
 
 .action-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
+  color: var(--text-primary, #ffffff);
 }
 
 .action-btn .iconify {
@@ -332,7 +332,7 @@ onUnmounted(() => {
 
 .context-menu {
   background: rgba(20, 20, 20, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--scrollbar-thumb, rgba(255, 255, 255, 0.2));
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(20px);
@@ -369,7 +369,7 @@ onUnmounted(() => {
 
 /* Directory specific styles */
 .node-content.is-directory .node-name {
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-weight: 500;
 }
 
