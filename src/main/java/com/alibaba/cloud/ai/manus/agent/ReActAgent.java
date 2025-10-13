@@ -18,7 +18,7 @@ package com.alibaba.cloud.ai.manus.agent;
 import java.util.Map;
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
-import com.alibaba.cloud.ai.manus.llm.ILlmService;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
@@ -38,7 +38,7 @@ public abstract class ReActAgent extends BaseAgent {
 	 * @param manusProperties Manus configuration properties
 	 */
 
-	public ReActAgent(ILlmService llmService, PlanExecutionRecorder planExecutionRecorder,
+	public ReActAgent(LlmService llmService, PlanExecutionRecorder planExecutionRecorder,
 			ManusProperties manusProperties, Map<String, Object> initialAgentSetting, PromptService promptService,
 			ExecutionStep step, PlanIdDispatcher planIdDispatcher) {
 		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, promptService, step,

@@ -19,7 +19,6 @@ import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,7 +38,7 @@ public class TextToMarkdownProcessor {
 
 	private final UnifiedDirectoryManager directoryManager;
 
-	public TextToMarkdownProcessor(UnifiedDirectoryManager directoryManager, ApplicationContext applicationContext) {
+	public TextToMarkdownProcessor(UnifiedDirectoryManager directoryManager) {
 		this.directoryManager = directoryManager;
 	}
 

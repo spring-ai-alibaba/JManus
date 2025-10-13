@@ -168,12 +168,14 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 
 		Path baseDir;
 
-		// If subPlanId is provided, create subplan-specific directory path
-		if (subPlanId != null && !subPlanId.trim().isEmpty()) {
+		// If subPlanId is provided and different from rootPlanId, create subplan-specific
+		// directory path
+		if (subPlanId != null && !subPlanId.trim().isEmpty() && !subPlanId.equals(rootPlanId)) {
 			baseDir = unifiedDirectoryManager.getSubTaskDirectory(rootPlanId, subPlanId);
 		}
 		else {
-			// Use root plan directory for root plan files
+			// Use root plan directory for root plan files (when subPlanId is null, empty,
+			// or same as rootPlanId)
 			baseDir = unifiedDirectoryManager.getRootPlanDirectory(rootPlanId);
 		}
 

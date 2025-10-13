@@ -46,7 +46,7 @@ import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
-import com.alibaba.cloud.ai.manus.llm.ILlmService;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.mcp.service.IMcpService;
 import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
 import com.alibaba.cloud.ai.manus.model.model.vo.ModelConfig;
@@ -82,7 +82,7 @@ public class AgentServiceImpl implements AgentService {
 
 	@Autowired
 	@Lazy
-	private ILlmService llmService;
+	private LlmService llmService;
 
 	@Autowired
 	@Lazy

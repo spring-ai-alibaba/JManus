@@ -16,7 +16,6 @@
 package com.alibaba.cloud.ai.manus.tool.filesystem;
 
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
-import com.alibaba.cloud.ai.manus.tool.DocLoaderTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.excelProcessor.ExcelProcessorTool;
 import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
@@ -223,22 +222,7 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 	 * Process PDF files
 	 */
 	private ToolExecuteResult processPdf(FileLocation fileLocation) {
-		try {
-			DocLoaderTool docTool = new DocLoaderTool();
-			DocLoaderTool.DocLoaderInput docInput = new DocLoaderTool.DocLoaderInput();
-			docInput.setFileType("pdf");
-			docInput.setFilePath(fileLocation.filePath.toAbsolutePath().toString());
-
-			docTool.setCurrentPlanId(fileLocation.planId);
-			docTool.setRootPlanId(fileLocation.planId);
-
-			log.info("✅ Processing with DocLoaderTool: {}", fileLocation.filePath.getFileName());
-			return docTool.run(docInput);
-		}
-		catch (Exception e) {
-			log.warn("DocLoaderTool failed: {}", e.getMessage());
-			return new ToolExecuteResult("❌ PDF processing error: " + e.getMessage());
-		}
+		throw new UnsupportedOperationException("PDF processing is not supported");
 	}
 
 	/**

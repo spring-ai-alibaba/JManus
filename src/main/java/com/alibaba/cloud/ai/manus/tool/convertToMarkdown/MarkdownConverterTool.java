@@ -21,7 +21,6 @@ import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,11 +40,11 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 
 	private final UnifiedDirectoryManager directoryManager;
 
-	private final ApplicationContext applicationContext;
+	private final PdfOcrProcessor ocrProcessor;
 
-	public MarkdownConverterTool(UnifiedDirectoryManager directoryManager, ApplicationContext applicationContext) {
+	public MarkdownConverterTool(UnifiedDirectoryManager directoryManager, PdfOcrProcessor ocrProcessor) {
 		this.directoryManager = directoryManager;
-		this.applicationContext = applicationContext;
+		this.ocrProcessor = ocrProcessor;
 	}
 
 	/**
@@ -129,7 +128,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	 */
 	private ToolExecuteResult processWordToMarkdown(Path sourceFile, String additionalRequirement) {
 		try {
-			WordToMarkdownProcessor processor = new WordToMarkdownProcessor(directoryManager, applicationContext);
+			WordToMarkdownProcessor processor = new WordToMarkdownProcessor(directoryManager);
 			return processor.convertToMarkdown(sourceFile, additionalRequirement, currentPlanId);
 		}
 		catch (Exception e) {
@@ -143,7 +142,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	 */
 	private ToolExecuteResult processExcelToMarkdown(Path sourceFile, String additionalRequirement) {
 		try {
-			ExcelToMarkdownProcessor processor = new ExcelToMarkdownProcessor(directoryManager, applicationContext);
+			ExcelToMarkdownProcessor processor = new ExcelToMarkdownProcessor(directoryManager);
 			return processor.convertToMarkdown(sourceFile, additionalRequirement, currentPlanId);
 		}
 		catch (Exception e) {
@@ -157,7 +156,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	 */
 	private ToolExecuteResult processPdfToMarkdown(Path sourceFile, String additionalRequirement) {
 		try {
-			PdfToMarkdownProcessor processor = new PdfToMarkdownProcessor(directoryManager, applicationContext);
+			PdfToMarkdownProcessor processor = new PdfToMarkdownProcessor(directoryManager, ocrProcessor);
 			return processor.convertToMarkdown(sourceFile, additionalRequirement, currentPlanId);
 		}
 		catch (Exception e) {
@@ -171,7 +170,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	 */
 	private ToolExecuteResult processTextToMarkdown(Path sourceFile, String additionalRequirement) {
 		try {
-			TextToMarkdownProcessor processor = new TextToMarkdownProcessor(directoryManager, applicationContext);
+			TextToMarkdownProcessor processor = new TextToMarkdownProcessor(directoryManager);
 			return processor.convertToMarkdown(sourceFile, additionalRequirement, currentPlanId);
 		}
 		catch (Exception e) {

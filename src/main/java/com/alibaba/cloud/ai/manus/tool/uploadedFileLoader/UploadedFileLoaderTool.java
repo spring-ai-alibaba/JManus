@@ -394,7 +394,6 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 		return IMAGE_FILE_EXTENSIONS.contains(extension.toLowerCase());
 	}
 
-
 	/**
 	 * Check if any image files exist in the files by type map
 	 */
