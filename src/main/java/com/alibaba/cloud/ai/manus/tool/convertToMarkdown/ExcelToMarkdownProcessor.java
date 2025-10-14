@@ -21,7 +21,7 @@ import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,11 +40,11 @@ public class ExcelToMarkdownProcessor {
 
 	private final UnifiedDirectoryManager directoryManager;
 
-	private final ApplicationContext applicationContext;
+	@Autowired
+	private IExcelProcessingService excelProcessingService;
 
-	public ExcelToMarkdownProcessor(UnifiedDirectoryManager directoryManager, ApplicationContext applicationContext) {
+	public ExcelToMarkdownProcessor(UnifiedDirectoryManager directoryManager) {
 		this.directoryManager = directoryManager;
-		this.applicationContext = applicationContext;
 	}
 
 	/**
@@ -126,7 +126,7 @@ public class ExcelToMarkdownProcessor {
 	 */
 	private String getExcelStructure(Path sourceFile, String currentPlanId) {
 		try {
-			IExcelProcessingService excelService = applicationContext.getBean(IExcelProcessingService.class);
+			IExcelProcessingService excelService = excelProcessingService;
 			ExcelProcessorTool excelTool = new ExcelProcessorTool(excelService);
 			ExcelProcessorTool.ExcelInput input = new ExcelProcessorTool.ExcelInput();
 			input.setAction("get_structure");
@@ -149,7 +149,7 @@ public class ExcelToMarkdownProcessor {
 	 */
 	private String getExcelData(Path sourceFile, String currentPlanId) {
 		try {
-			IExcelProcessingService excelService = applicationContext.getBean(IExcelProcessingService.class);
+			IExcelProcessingService excelService = excelProcessingService;
 			ExcelProcessorTool excelTool = new ExcelProcessorTool(excelService);
 			ExcelProcessorTool.ExcelInput input = new ExcelProcessorTool.ExcelInput();
 			input.setAction("read_data");

@@ -334,6 +334,9 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	public synchronized ResponseEntity<?> getExecutionDetails(@PathVariable("planId") String planId) {
 		Throwable throwable = this.exceptionCache.getIfPresent(planId);
 		if (throwable != null) {
+			logger.error("Exception found in exception cache for planId: {}", planId, throwable);
+			logger.error("Invalidating exception cache for planId: {}", planId);
+			this.exceptionCache.invalidate(planId);
 			throw new PlanException(throwable);
 		}
 		PlanExecutionRecord planRecord = planHierarchyReaderService.readPlanTreeByRootId(planId);

@@ -23,7 +23,6 @@ import org.apache.poi.xwpf.usermodel.XWPFPicture;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -46,7 +45,7 @@ public class WordToMarkdownProcessor {
 
 	private final UnifiedDirectoryManager directoryManager;
 
-	public WordToMarkdownProcessor(UnifiedDirectoryManager directoryManager, ApplicationContext applicationContext) {
+	public WordToMarkdownProcessor(UnifiedDirectoryManager directoryManager) {
 		this.directoryManager = directoryManager;
 	}
 

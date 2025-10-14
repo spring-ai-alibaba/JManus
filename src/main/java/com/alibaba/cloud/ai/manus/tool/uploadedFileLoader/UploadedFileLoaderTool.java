@@ -395,26 +395,6 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 	}
 
 	/**
-	 * Check if file is a binary document file
-	 */
-	private boolean isBinaryDocumentFile(String extension) {
-		Set<String> BINARY_DOCUMENT_EXTENSIONS = Set.of(".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt",
-				".odt", ".ods", ".odp", ".epub", ".mobi", ".azw3");
-
-		return BINARY_DOCUMENT_EXTENSIONS.contains(extension.toLowerCase());
-	}
-
-	/**
-	 * Check if file is a compressed file
-	 */
-	private boolean isCompressedFile(String extension) {
-		Set<String> COMPRESSED_FILE_EXTENSIONS = Set.of(".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".lzma",
-				".lz4", ".zst", ".br");
-
-		return COMPRESSED_FILE_EXTENSIONS.contains(extension.toLowerCase());
-	}
-
-	/**
 	 * Check if any image files exist in the files by type map
 	 */
 	private boolean hasImageFiles(Map<String, List<Path>> filesByType) {
