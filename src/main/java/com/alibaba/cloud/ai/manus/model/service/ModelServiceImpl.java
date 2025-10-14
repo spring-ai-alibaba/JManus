@@ -20,6 +20,7 @@ import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.agent.repository.DynamicAgentRepository;
 import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
 import com.alibaba.cloud.ai.manus.event.ModelChangeEvent;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
 import com.alibaba.cloud.ai.manus.model.exception.AuthenticationException;
 import com.alibaba.cloud.ai.manus.model.exception.NetworkException;
@@ -62,6 +63,9 @@ public class ModelServiceImpl implements ModelService {
 
 	@Autowired
 	private JmanusEventPublisher publisher;
+
+	@Autowired
+	private LlmService llmService;
 
 	// Cache for third-party API calls with 2-second expiration
 	private final Map<String, CacheEntry<List<AvailableModel>>> apiCache = new ConcurrentHashMap<>();
@@ -129,6 +133,12 @@ public class ModelServiceImpl implements ModelService {
 
 			entity = repository.save(entity);
 			publisher.publish(new ModelChangeEvent(entity));
+
+			// Refresh cache if this is a default model
+			if (config.getIsDefault() != null && config.getIsDefault()) {
+				llmService.refreshDefaultModelCache();
+			}
+
 			log.info("Successfully created new Model: {}", config.getModelName());
 			return entity.mapToModelConfig();
 		}
@@ -165,6 +175,12 @@ public class ModelServiceImpl implements ModelService {
 	public ModelConfig updateModel(DynamicModelEntity entity) {
 		entity = repository.save(entity);
 		publisher.publish(new ModelChangeEvent(entity));
+
+		// Refresh cache if this is a default model
+		if (entity.getIsDefault() != null && entity.getIsDefault()) {
+			llmService.refreshDefaultModelCache();
+		}
+
 		return entity.mapToModelConfig();
 	}
 
@@ -180,6 +196,9 @@ public class ModelServiceImpl implements ModelService {
 			agentRepository.saveAll(allByModel);
 		}
 		repository.deleteById(Long.parseLong(id));
+
+		// Always refresh cache after deletion to ensure consistency
+		llmService.refreshDefaultModelCache();
 	}
 
 	@Override
@@ -369,6 +388,9 @@ public class ModelServiceImpl implements ModelService {
 			repository.save(model);
 			log.info("Set {} as default", modelId);
 			publisher.publish(new ModelChangeEvent(model));
+
+			// Refresh cache when setting a new default model
+			llmService.refreshDefaultModelCache();
 		}
 		else {
 			log.error("Cannot find {} model", modelId);

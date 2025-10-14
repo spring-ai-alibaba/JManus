@@ -90,11 +90,10 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 		if ("ConfigurableDynaAgent".equals(stepType)) {
 			String modelName = step.getModelName();
 			List<String> selectedToolKeys = step.getSelectedToolKeys();
-			DynamicModelEntity modelEntity = dynamicModelRepository.findByModelName(modelName);
 
 			BaseAgent executor = agentService.createDynamicBaseAgent("ConfigurableDynaAgent",
 					context.getPlan().getCurrentPlanId(), context.getPlan().getRootPlanId(), initSettings,
-					expectedReturnInfo, step, modelEntity, selectedToolKeys);
+					expectedReturnInfo, step, modelName, selectedToolKeys);
 			return executor;
 		}
 		else {

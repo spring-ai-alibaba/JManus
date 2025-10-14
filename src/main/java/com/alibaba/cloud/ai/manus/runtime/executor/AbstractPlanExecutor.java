@@ -187,7 +187,7 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 
 				BaseAgent executor = agentService.createDynamicBaseAgent(agent.getAgentName(),
 						context.getPlan().getCurrentPlanId(), context.getPlan().getRootPlanId(), initSettings,
-						expectedReturnInfo, step, modelEntity, agent.getAvailableToolKeys());
+						expectedReturnInfo, step, modelEntity.getModelName(), agent.getAvailableToolKeys());
 				return executor;
 			}
 		}

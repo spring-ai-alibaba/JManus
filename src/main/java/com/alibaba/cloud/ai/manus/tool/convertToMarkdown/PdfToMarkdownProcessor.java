@@ -61,11 +61,6 @@ public class PdfToMarkdownProcessor {
 		try {
 			log.info("Converting PDF file to Markdown using OCR: {}", sourceFile.getFileName());
 
-			// Check if OCR is available
-			if (!ocrProcessor.isOcrAvailable()) {
-				return new ToolExecuteResult("Error: OCR processing is not available. LlmService not initialized.");
-			}
-
 			// Generate output filename first
 			String originalFilename = sourceFile.getFileName().toString();
 			String markdownFilename = generateMarkdownFilename(originalFilename);
@@ -471,20 +466,6 @@ public class PdfToMarkdownProcessor {
 			.append("*This document was automatically converted from PDF to Markdown format using OCR processing.*\n");
 
 		return markdown.toString();
-	}
-
-	/**
-	 * Get OCR processor status
-	 */
-	public String getOcrStatus() {
-		return ocrProcessor.getProcessorStatus();
-	}
-
-	/**
-	 * Check if OCR processing is available
-	 */
-	public boolean isOcrAvailable() {
-		return ocrProcessor.isOcrAvailable();
 	}
 
 }
