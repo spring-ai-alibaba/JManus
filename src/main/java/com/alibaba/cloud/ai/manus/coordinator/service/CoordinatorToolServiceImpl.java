@@ -21,7 +21,7 @@ import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException
 import com.alibaba.cloud.ai.manus.coordinator.repository.CoordinatorToolRepository;
 import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
 import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanParamDef;
-import com.alibaba.cloud.ai.manus.subplan.service.ISubplanToolService;
+import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
@@ -48,7 +48,7 @@ public class CoordinatorToolServiceImpl {
 	private CoordinatorToolRepository coordinatorToolRepository;
 
 	@Autowired
-	private ISubplanToolService subplanToolService;
+	private SubplanToolService subplanToolService;
 
 	@Autowired
 	private ObjectMapper objectMapper;

@@ -124,7 +124,7 @@ public class ManusProperties implements IManusProperties {
 	// Begin---------------------------------------------------------------------------------------------
 
 	@ConfigProperty(group = "manus", subGroup = "agent", key = "maxSteps", path = "manus.maxSteps",
-			description = "manus.agent.maxSteps.description", defaultValue = "40", inputType = ConfigInputType.NUMBER)
+			description = "manus.agent.maxSteps.description", defaultValue = "200", inputType = ConfigInputType.NUMBER)
 	private volatile Integer maxSteps;
 
 	public Integer getMaxSteps() {
@@ -255,12 +255,16 @@ public class ManusProperties implements IManusProperties {
 	// Normal Settings
 	// End----------------------------------------------------------------------------------------------
 
-	// Infinite Context SubGroup
-	@ConfigProperty(group = "manus", subGroup = "infiniteContext", key = "enabled",
-			path = "manus.infiniteContext.enabled", description = "manus.infiniteContext.enabled.description",
-			defaultValue = "false", inputType = ConfigInputType.CHECKBOX,
-			options = { @ConfigOption(value = "true", label = "manus.infiniteContext.enabled.option.true"),
-					@ConfigOption(value = "false", label = "manus.infiniteContext.enabled.option.false") })
+	/*
+	 * @ConfigProperty(group = "manus", subGroup = "infiniteContext", key = "enabled",
+	 * path = "manus.infiniteContext.enabled", description =
+	 * "manus.infiniteContext.enabled.description", defaultValue = "false", inputType =
+	 * ConfigInputType.CHECKBOX, options = { @ConfigOption(value = "true", label =
+	 * "manus.infiniteContext.enabled.option.true"),
+	 *
+	 * @ConfigOption(value = "false", label =
+	 * "manus.infiniteContext.enabled.option.false") })
+	 */
 	private volatile Boolean infiniteContextEnabled;
 
 	public Boolean getInfiniteContextEnabled() {
@@ -269,6 +273,9 @@ public class ManusProperties implements IManusProperties {
 		if (value != null) {
 			infiniteContextEnabled = Boolean.valueOf(value);
 		}
+		else {
+			return false;
+		}
 		return infiniteContextEnabled;
 	}
 
@@ -276,10 +283,12 @@ public class ManusProperties implements IManusProperties {
 		this.infiniteContextEnabled = infiniteContextEnabled;
 	}
 
-	@ConfigProperty(group = "manus", subGroup = "infiniteContext", key = "parallelThreads",
-			path = "manus.infiniteContext.parallelThreads",
-			description = "manus.infiniteContext.parallelThreads.description", defaultValue = "6",
-			inputType = ConfigInputType.NUMBER)
+	/*
+	 * @ConfigProperty(group = "manus", subGroup = "infiniteContext", key =
+	 * "parallelThreads", path = "manus.infiniteContext.parallelThreads", description =
+	 * "manus.infiniteContext.parallelThreads.description", defaultValue = "6", inputType
+	 * = ConfigInputType.NUMBER)
+	 */
 	private volatile Integer infiniteContextParallelThreads;
 
 	public Integer getInfiniteContextParallelThreads() {
@@ -299,10 +308,12 @@ public class ManusProperties implements IManusProperties {
 		this.infiniteContextParallelThreads = infiniteContextParallelThreads;
 	}
 
-	@ConfigProperty(group = "manus", subGroup = "infiniteContext", key = "taskContextSize",
-			path = "manus.infiniteContext.taskContextSize",
-			description = "manus.infiniteContext.taskContextSize.description", defaultValue = "20000",
-			inputType = ConfigInputType.NUMBER)
+	/*
+	 * @ConfigProperty(group = "manus", subGroup = "infiniteContext", key =
+	 * "taskContextSize", path = "manus.infiniteContext.taskContextSize", description =
+	 * "manus.infiniteContext.taskContextSize.description", defaultValue = "20000",
+	 * inputType = ConfigInputType.NUMBER)
+	 */
 	private volatile Integer infiniteContextTaskContextSize;
 
 	public Integer getInfiniteContextTaskContextSize() {
@@ -420,6 +431,123 @@ public class ManusProperties implements IManusProperties {
 	}
 
 	// MCP Service Loader Settings
+	// End----------------------------------------------------------------------------------------------
+
+	// Image Recognition Settings
+	// Begin--------------------------------------------------------------------------------------------
+
+	@ConfigProperty(group = "manus", subGroup = "imageRecognition", key = "poolSize",
+			path = "manus.imageRecognition.poolSize", description = "manus.imageRecognition.poolSize.description",
+			defaultValue = "4", inputType = ConfigInputType.NUMBER)
+	private volatile Integer imageRecognitionPoolSize;
+
+	public Integer getImageRecognitionPoolSize() {
+		String configPath = "manus.imageRecognition.poolSize";
+		String value = configService.getConfigValue(configPath);
+		if (value != null) {
+			imageRecognitionPoolSize = Integer.valueOf(value);
+		}
+		// Ensure a default value if not configured and not set
+		if (imageRecognitionPoolSize == null) {
+			imageRecognitionPoolSize = 4;
+		}
+		return imageRecognitionPoolSize;
+	}
+
+	public void setImageRecognitionPoolSize(Integer imageRecognitionPoolSize) {
+		this.imageRecognitionPoolSize = imageRecognitionPoolSize;
+	}
+
+	@ConfigProperty(group = "manus", subGroup = "imageRecognition", key = "modelName",
+			path = "manus.imageRecognition.modelName", description = "manus.imageRecognition.modelName.description",
+			defaultValue = "qwen-vl-ocr-latest", inputType = ConfigInputType.TEXT)
+	private volatile String imageRecognitionModelName;
+
+	public String getImageRecognitionModelName() {
+		String configPath = "manus.imageRecognition.modelName";
+		String value = configService.getConfigValue(configPath);
+		if (value != null) {
+			imageRecognitionModelName = value;
+		}
+		// Ensure a default value if not configured and not set
+		if (imageRecognitionModelName == null) {
+			imageRecognitionModelName = "qwen-vl-ocr-latest";
+		}
+		return imageRecognitionModelName;
+	}
+
+	public void setImageRecognitionModelName(String imageRecognitionModelName) {
+		this.imageRecognitionModelName = imageRecognitionModelName;
+	}
+
+	@ConfigProperty(group = "manus", subGroup = "imageRecognition", key = "dpi", path = "manus.imageRecognition.dpi",
+			description = "manus.imageRecognition.dpi.description", defaultValue = "120.0",
+			inputType = ConfigInputType.NUMBER)
+	private volatile Float imageRecognitionDpi;
+
+	public Float getImageRecognitionDpi() {
+		String configPath = "manus.imageRecognition.dpi";
+		String value = configService.getConfigValue(configPath);
+		if (value != null) {
+			imageRecognitionDpi = Float.valueOf(value);
+		}
+		// Ensure a default value if not configured and not set
+		if (imageRecognitionDpi == null) {
+			imageRecognitionDpi = 120.0f;
+		}
+		return imageRecognitionDpi;
+	}
+
+	public void setImageRecognitionDpi(Float imageRecognitionDpi) {
+		this.imageRecognitionDpi = imageRecognitionDpi;
+	}
+
+	@ConfigProperty(group = "manus", subGroup = "imageRecognition", key = "imageType",
+			path = "manus.imageRecognition.imageType", description = "manus.imageRecognition.imageType.description",
+			defaultValue = "RGB", inputType = ConfigInputType.TEXT)
+	private volatile String imageRecognitionImageType;
+
+	public String getImageRecognitionImageType() {
+		String configPath = "manus.imageRecognition.imageType";
+		String value = configService.getConfigValue(configPath);
+		if (value != null) {
+			imageRecognitionImageType = value;
+		}
+		// Ensure a default value if not configured and not set
+		if (imageRecognitionImageType == null) {
+			imageRecognitionImageType = "RGB";
+		}
+		return imageRecognitionImageType;
+	}
+
+	public void setImageRecognitionImageType(String imageRecognitionImageType) {
+		this.imageRecognitionImageType = imageRecognitionImageType;
+	}
+
+	@ConfigProperty(group = "manus", subGroup = "imageRecognition", key = "maxRetryAttempts",
+			path = "manus.imageRecognition.maxRetryAttempts",
+			description = "manus.imageRecognition.maxRetryAttempts.description", defaultValue = "3",
+			inputType = ConfigInputType.NUMBER)
+	private volatile Integer imageRecognitionMaxRetryAttempts;
+
+	public Integer getImageRecognitionMaxRetryAttempts() {
+		String configPath = "manus.imageRecognition.maxRetryAttempts";
+		String value = configService.getConfigValue(configPath);
+		if (value != null) {
+			imageRecognitionMaxRetryAttempts = Integer.valueOf(value);
+		}
+		// Ensure a default value if not configured and not set
+		if (imageRecognitionMaxRetryAttempts == null) {
+			imageRecognitionMaxRetryAttempts = 3;
+		}
+		return imageRecognitionMaxRetryAttempts;
+	}
+
+	public void setImageRecognitionMaxRetryAttempts(Integer imageRecognitionMaxRetryAttempts) {
+		this.imageRecognitionMaxRetryAttempts = imageRecognitionMaxRetryAttempts;
+	}
+
+	// Image Recognition Settings
 	// End----------------------------------------------------------------------------------------------
 
 }

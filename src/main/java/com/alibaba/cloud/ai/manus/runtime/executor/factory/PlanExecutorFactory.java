@@ -18,7 +18,7 @@ package com.alibaba.cloud.ai.manus.runtime.executor.factory;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.agent.service.AgentService;
-import com.alibaba.cloud.ai.manus.llm.ILlmService;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
@@ -47,7 +47,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private static final Logger log = LoggerFactory.getLogger(PlanExecutorFactory.class);
 
-	private final ILlmService llmService;
+	private final LlmService llmService;
 
 	private final AgentService agentService;
 
@@ -63,7 +63,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final FileUploadService fileUploadService;
 
-	public PlanExecutorFactory(ILlmService llmService, AgentService agentService, PlanExecutionRecorder recorder,
+	public PlanExecutorFactory(LlmService llmService, AgentService agentService, PlanExecutionRecorder recorder,
 			ManusProperties manusProperties, ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
 			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService) {
 		this.llmService = llmService;

@@ -16,7 +16,7 @@
 package com.alibaba.cloud.ai.manus.planning.service;
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
-import com.alibaba.cloud.ai.manus.llm.ILlmService;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.prompt.model.enums.PromptEnum;
 import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
@@ -47,7 +47,7 @@ public class PlanFinalizer {
 
 	private static final Logger log = LoggerFactory.getLogger(PlanFinalizer.class);
 
-	private final ILlmService llmService;
+	private final LlmService llmService;
 
 	private final PlanExecutionRecorder recorder;
 
@@ -57,7 +57,7 @@ public class PlanFinalizer {
 
 	private final StreamingResponseHandler streamingResponseHandler;
 
-	public PlanFinalizer(ILlmService llmService, PlanExecutionRecorder recorder, PromptService promptService,
+	public PlanFinalizer(LlmService llmService, PlanExecutionRecorder recorder, PromptService promptService,
 			ManusProperties manusProperties, StreamingResponseHandler streamingResponseHandler) {
 		this.llmService = llmService;
 		this.recorder = recorder;
@@ -102,7 +102,7 @@ public class PlanFinalizer {
 		Message message = promptService.createUserMessage(promptName, variables);
 		Prompt prompt = new Prompt(List.of(message));
 
-		ChatClient.ChatClientRequestSpec requestSpec = llmService.getPlanningChatClient().prompt(prompt);
+		ChatClient.ChatClientRequestSpec requestSpec = llmService.getDiaChatClient().prompt(prompt);
 		configureMemoryAdvisors(requestSpec, context);
 
 		Flux<ChatResponse> responseFlux = requestSpec.stream().chatResponse();

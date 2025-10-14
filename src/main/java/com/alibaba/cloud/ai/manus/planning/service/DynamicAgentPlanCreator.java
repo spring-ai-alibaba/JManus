@@ -18,7 +18,7 @@ package com.alibaba.cloud.ai.manus.planning.service;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.agent.model.Tool;
 import com.alibaba.cloud.ai.manus.agent.service.AgentService;
-import com.alibaba.cloud.ai.manus.llm.ILlmService;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.prompt.model.enums.PromptEnum;
 import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
@@ -50,7 +50,7 @@ public class DynamicAgentPlanCreator implements IPlanCreator {
 
 	private static final Logger log = LoggerFactory.getLogger(DynamicAgentPlanCreator.class);
 
-	private final ILlmService llmService;
+	private final LlmService llmService;
 
 	private final PlanningToolInterface planningTool;
 
@@ -64,7 +64,7 @@ public class DynamicAgentPlanCreator implements IPlanCreator {
 
 	private final StreamingResponseHandler streamingResponseHandler;
 
-	public DynamicAgentPlanCreator(ILlmService llmService, PlanningToolInterface planningTool,
+	public DynamicAgentPlanCreator(LlmService llmService, PlanningToolInterface planningTool,
 			PlanExecutionRecorder recorder, PromptService promptService, ManusProperties manusProperties,
 			StreamingResponseHandler streamingResponseHandler, AgentService agentService) {
 		this.llmService = llmService;
@@ -131,7 +131,7 @@ public class DynamicAgentPlanCreator implements IPlanCreator {
 					PromptTemplate promptTemplate = new PromptTemplate(planPrompt);
 					Prompt prompt = promptTemplate.create();
 
-					ChatClientRequestSpec requestSpec = llmService.getPlanningChatClient()
+					ChatClientRequestSpec requestSpec = llmService.getDiaChatClient()
 						.prompt(prompt)
 						.toolCallbacks(List.of(planningTool.getFunctionToolCallback(planningTool)));
 

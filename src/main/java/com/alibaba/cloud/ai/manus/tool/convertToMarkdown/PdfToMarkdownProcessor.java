@@ -15,13 +15,15 @@
  */
 package com.alibaba.cloud.ai.manus.tool.convertToMarkdown;
 
-import com.alibaba.cloud.ai.manus.tool.DocLoaderTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,8 +32,9 @@ import java.nio.file.StandardOpenOption;
 /**
  * PDF to Markdown Processor
  *
- * Converts PDF files to Markdown format Uses DocLoaderTool to extract text content and
- * formats it as Markdown
+ * Converts PDF files to Markdown format. Extracts text content directly from PDF files
+ * and formats it as Markdown. Uses OCR processing when traditional text extraction fails
+ * or when OCR is specifically requested.
  */
 public class PdfToMarkdownProcessor {
 
@@ -39,12 +42,56 @@ public class PdfToMarkdownProcessor {
 
 	private final UnifiedDirectoryManager directoryManager;
 
-	public PdfToMarkdownProcessor(UnifiedDirectoryManager directoryManager, ApplicationContext applicationContext) {
+	private final PdfOcrProcessor ocrProcessor;
+
+	public PdfToMarkdownProcessor(UnifiedDirectoryManager directoryManager, PdfOcrProcessor ocrProcessor) {
 		this.directoryManager = directoryManager;
+		this.ocrProcessor = ocrProcessor;
 	}
 
 	/**
-	 * Convert PDF file to Markdown
+	 * Convert PDF file to Markdown using OCR processing
+	 * @param sourceFile The source PDF file
+	 * @param additionalRequirement Optional additional requirements for conversion
+	 * @param currentPlanId Current plan ID for file operations
+	 * @return ToolExecuteResult with OCR conversion status
+	 */
+	private ToolExecuteResult convertToMarkdownWithOcr(Path sourceFile, String additionalRequirement,
+			String currentPlanId) {
+		try {
+			log.info("Converting PDF file to Markdown using OCR: {}", sourceFile.getFileName());
+
+			// Check if OCR is available
+			if (!ocrProcessor.isOcrAvailable()) {
+				return new ToolExecuteResult("Error: OCR processing is not available. LlmService not initialized.");
+			}
+
+			// Generate output filename first
+			String originalFilename = sourceFile.getFileName().toString();
+			String markdownFilename = generateMarkdownFilename(originalFilename);
+
+			// Use OCR processor to extract text directly to markdown file
+			ToolExecuteResult ocrResult = ocrProcessor.convertPdfToTextWithOcr(sourceFile, additionalRequirement,
+					currentPlanId, markdownFilename);
+
+			if (!ocrResult.getOutput().toLowerCase().contains("successfully")) {
+				return ocrResult; // Return OCR error
+			}
+
+			// OCR processor has already saved the markdown file, so we can return the
+			// result directly
+			log.info("PDF to Markdown OCR conversion completed: {} -> {}", originalFilename, markdownFilename);
+			return ocrResult;
+
+		}
+		catch (Exception e) {
+			log.error("Error converting PDF file to Markdown with OCR: {}", sourceFile.getFileName(), e);
+			return new ToolExecuteResult("Error: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Convert PDF file to Markdown using traditional text extraction or OCR
 	 * @param sourceFile The source PDF file
 	 * @param additionalRequirement Optional additional requirements for conversion
 	 * @param currentPlanId Current plan ID for file operations
@@ -63,17 +110,17 @@ public class PdfToMarkdownProcessor {
 						"Skipped conversion - content.md file already exists: " + markdownFilename);
 			}
 
-			// Step 1: Read the PDF using DocLoaderTool
-			String content = extractPdfContent(sourceFile, currentPlanId);
-			if (content == null || content.trim().isEmpty()) {
-				return new ToolExecuteResult("Error: Could not extract content from PDF file");
+			// Step 1: Try traditional text extraction first
+			String content = extractPdfContent(sourceFile);
+
+			// Step 2: Check if OCR processing is needed
+			if (needsOcrProcessing(sourceFile, content)) {
+				log.info("OCR processing needed for PDF: {}", sourceFile.getFileName());
+				return convertToMarkdownWithOcr(sourceFile, additionalRequirement, currentPlanId);
 			}
 
-			// Step 2: Convert content to Markdown format
+			// Step 3: Convert content to Markdown format
 			String markdownContent = convertToMarkdownFormat(content, additionalRequirement);
-
-			// Step 3: Generate output filename (already declared above)
-			markdownFilename = generateMarkdownFilename(originalFilename);
 
 			// Step 4: Save Markdown file
 			Path outputFile = saveMarkdownFile(markdownContent, markdownFilename, currentPlanId);
@@ -82,8 +129,8 @@ public class PdfToMarkdownProcessor {
 			}
 
 			// Step 5: Return success result
-			String result = String.format("Successfully converted PDF file to Markdown\n\n" + "**Output File**: %s\n\n",
-					markdownFilename);
+			String result = String.format("Successfully converted PDF file to Markdown\n\n" + "**Output File**: %s\n\n"
+					+ "**Processing Method**: Traditional Text Extraction\n\n", markdownFilename);
 
 			// Add content if less than 1000 characters
 			if (markdownContent.length() < 1000) {
@@ -116,29 +163,64 @@ public class PdfToMarkdownProcessor {
 	}
 
 	/**
-	 * Extract content from PDF using DocLoaderTool
+	 * Extract content from PDF file using traditional text extraction
+	 * @param sourceFile The source PDF file
+	 * @return Extracted text content or null if extraction fails
 	 */
-	private String extractPdfContent(Path sourceFile, String currentPlanId) {
+	private String extractPdfContent(Path sourceFile) {
 		try {
-			DocLoaderTool docTool = new DocLoaderTool();
-			DocLoaderTool.DocLoaderInput docInput = new DocLoaderTool.DocLoaderInput();
-			docInput.setFileType("pdf");
-			docInput.setFilePath(sourceFile.toAbsolutePath().toString());
+			log.info("Extracting text content from PDF: {}", sourceFile.getFileName());
 
-			docTool.setCurrentPlanId(currentPlanId);
-			docTool.setRootPlanId(currentPlanId);
+			try (PDDocument document = PDDocument.load(new File(sourceFile.toAbsolutePath().toString()))) {
+				PDFTextStripper pdfStripper = new PDFTextStripper();
+				String documentContentStr = pdfStripper.getText(document);
 
-			ToolExecuteResult result = docTool.run(docInput);
-			if (result != null && result.getOutput() != null) {
-				return result.getOutput();
+				if (StringUtils.isEmpty(documentContentStr)) {
+					log.warn("No text content found in PDF: {}", sourceFile.getFileName());
+					return null;
+				}
+
+				log.info("Successfully extracted {} characters from PDF: {}", documentContentStr.length(),
+						sourceFile.getFileName());
+				return documentContentStr;
 			}
-
-			return null;
 		}
 		catch (Exception e) {
 			log.error("Error extracting content from PDF: {}", sourceFile.getFileName(), e);
 			return null;
 		}
+	}
+
+	/**
+	 * Determine if OCR processing is needed for the PDF
+	 * @param sourceFile The source PDF file
+	 * @param extractedContent The content extracted using traditional method
+	 * @return true if OCR processing is recommended
+	 */
+	private boolean needsOcrProcessing(Path sourceFile, String extractedContent) {
+		// If no content was extracted, definitely need OCR
+		if (StringUtils.isEmpty(extractedContent)) {
+			log.info("No content extracted, OCR processing needed for: {}", sourceFile.getFileName());
+			return true;
+		}
+
+		// If content is very short (less than 100 characters), might need OCR
+		if (extractedContent.trim().length() < 100) {
+			log.info("Very short content extracted ({} chars), OCR processing recommended for: {}",
+					extractedContent.trim().length(), sourceFile.getFileName());
+			return true;
+		}
+
+		// If content contains mostly whitespace or special characters, might need OCR
+		String cleanContent = extractedContent.replaceAll("\\s+", "");
+		if (cleanContent.length() < extractedContent.length() * 0.3) {
+			log.info("Content contains mostly whitespace, OCR processing recommended for: {}",
+					sourceFile.getFileName());
+			return true;
+		}
+
+		log.info("Content extraction successful, OCR processing not needed for: {}", sourceFile.getFileName());
+		return false;
 	}
 
 	/**
@@ -274,6 +356,135 @@ public class PdfToMarkdownProcessor {
 			log.error("Error saving Markdown file: {}", filename, e);
 			return null;
 		}
+	}
+
+	/**
+	 * Extract text content from OCR result output
+	 */
+	private String extractTextFromOcrResult(String ocrResult) {
+		// Extract the actual text content from the OCR result
+		// The OCR result contains formatted output, we need to extract the text content
+		StringBuilder extractedText = new StringBuilder();
+
+		String[] lines = ocrResult.split("\n");
+		boolean inContentSection = false;
+
+		for (String line : lines) {
+			// Skip headers and metadata
+			if (line.startsWith("#") || line.startsWith("**") || line.startsWith("---")
+					|| line.startsWith("*This document") || line.startsWith("*Total pages")) {
+				continue;
+			}
+
+			// Start collecting content after the first separator
+			if (line.trim().equals("---")) {
+				inContentSection = true;
+				continue;
+			}
+
+			if (inContentSection && !line.trim().isEmpty()) {
+				extractedText.append(line).append("\n");
+			}
+		}
+
+		return extractedText.toString().trim();
+	}
+
+	/**
+	 * Convert OCR extracted text to Markdown format
+	 */
+	private String convertOcrTextToMarkdown(String ocrText, String additionalRequirement) {
+		StringBuilder markdown = new StringBuilder();
+
+		// Add header
+		markdown.append("# PDF Document Conversion (OCR Processed)\n\n");
+
+		if (additionalRequirement != null && !additionalRequirement.trim().isEmpty()) {
+			markdown.append("**Additional Requirements**: ").append(additionalRequirement).append("\n\n");
+		}
+
+		markdown.append("---\n\n");
+
+		// Process OCR text line by line
+		String[] lines = ocrText.split("\n");
+		boolean inList = false;
+		boolean inCodeBlock = false;
+
+		for (String line : lines) {
+			String trimmedLine = line.trim();
+
+			if (trimmedLine.isEmpty()) {
+				markdown.append("\n");
+				inList = false;
+				continue;
+			}
+
+			// Detect code blocks
+			if (trimmedLine.startsWith("```") || trimmedLine.startsWith("`")) {
+				inCodeBlock = !inCodeBlock;
+				markdown.append(line).append("\n");
+				continue;
+			}
+
+			if (inCodeBlock) {
+				markdown.append(line).append("\n");
+				continue;
+			}
+
+			// Detect headers (lines that look like titles)
+			if (isHeader(trimmedLine)) {
+				markdown.append("## ").append(trimmedLine).append("\n\n");
+				inList = false;
+				continue;
+			}
+
+			// Detect lists
+			if (isListItem(trimmedLine)) {
+				if (!inList) {
+					markdown.append("\n");
+				}
+				markdown.append("- ").append(trimmedLine.replaceFirst("^[\\-\\*\\+]\\s*", "")).append("\n");
+				inList = true;
+				continue;
+			}
+
+			// Detect numbered lists
+			if (isNumberedListItem(trimmedLine)) {
+				if (!inList) {
+					markdown.append("\n");
+				}
+				markdown.append(trimmedLine).append("\n");
+				inList = true;
+				continue;
+			}
+
+			// Regular paragraph
+			if (inList) {
+				markdown.append("\n");
+				inList = false;
+			}
+			markdown.append(trimmedLine).append("\n\n");
+		}
+
+		markdown.append("\n---\n\n");
+		markdown
+			.append("*This document was automatically converted from PDF to Markdown format using OCR processing.*\n");
+
+		return markdown.toString();
+	}
+
+	/**
+	 * Get OCR processor status
+	 */
+	public String getOcrStatus() {
+		return ocrProcessor.getProcessorStatus();
+	}
+
+	/**
+	 * Check if OCR processing is available
+	 */
+	public boolean isOcrAvailable() {
+		return ocrProcessor.isOcrAvailable();
 	}
 
 }

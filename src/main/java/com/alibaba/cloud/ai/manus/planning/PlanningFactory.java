@@ -48,7 +48,7 @@ import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.cron.service.CronService;
 import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.agent.service.AgentService;
-import com.alibaba.cloud.ai.manus.llm.ILlmService;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.mcp.model.vo.McpServiceEntity;
 import com.alibaba.cloud.ai.manus.mcp.model.vo.McpTool;
@@ -69,6 +69,7 @@ import com.alibaba.cloud.ai.manus.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.manus.tool.bash.Bash;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.browser.ChromeDriverService;
+import com.alibaba.cloud.ai.manus.tool.dirOperator.DirectoryOperator;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseUseTool;
@@ -87,7 +88,9 @@ import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.MarkdownConverterTool;
-import com.alibaba.cloud.ai.manus.subplan.service.ISubplanToolService;
+import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.PdfOcrProcessor;
+import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
+import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -96,7 +99,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 
 @Service
-public class PlanningFactory implements IPlanningFactory {
+public class PlanningFactory {
 
 	private final ChromeDriverService chromeDriverService;
 
@@ -125,7 +128,7 @@ public class PlanningFactory implements IPlanningFactory {
 
 	@Autowired
 	@Lazy
-	private ILlmService llmService;
+	private LlmService llmService;
 
 	@Autowired
 	@Lazy
@@ -145,7 +148,7 @@ public class PlanningFactory implements IPlanningFactory {
 	private CronService cronService;
 
 	@Autowired
-	private ISubplanToolService subplanToolService;
+	private SubplanToolService subplanToolService;
 
 	@Autowired
 	private AgentService agentService;
@@ -251,6 +254,7 @@ public class PlanningFactory implements IPlanningFactory {
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
 			toolDefinitions.add(new TextFileOperator(textFileService, innerStorageService, objectMapper));
+			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager,
 			// applicationContext));
 			// toolDefinitions.add(new TableProcessorTool(tableProcessingService));
@@ -272,7 +276,9 @@ public class PlanningFactory implements IPlanningFactory {
 
 			}
 			toolDefinitions.add(new CronTool(cronService, objectMapper));
-			toolDefinitions.add(new MarkdownConverterTool(unifiedDirectoryManager, applicationContext));
+			toolDefinitions
+				.add(new MarkdownConverterTool(unifiedDirectoryManager, new PdfOcrProcessor(unifiedDirectoryManager,
+						llmService, manusProperties, new ImageRecognitionExecutorPool(manusProperties))));
 			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
 		}
 		else {
