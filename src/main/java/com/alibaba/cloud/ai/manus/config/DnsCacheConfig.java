@@ -32,7 +32,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
- * DNS缓存和网络配置 解决VPN环境下的DNS解析超时问题
+ * DNS cache and network configuration to resolve DNS resolution timeout issues in VPN environments
  */
 @Configuration
 public class DnsCacheConfig {
@@ -40,13 +40,13 @@ public class DnsCacheConfig {
 	private static final Logger log = LoggerFactory.getLogger(DnsCacheConfig.class);
 
 	/**
-	 * 配置带有DNS缓存的WebClient
+	 * Configure WebClient with DNS cache
 	 */
 	@Bean
 	public WebClient webClientWithDnsCache() {
 		log.info("Configuring WebClient with DNS cache and extended timeouts");
 
-		// 创建连接提供者，增加连接池大小和超时时间
+		// Create connection provider with increased connection pool size and timeout
 		ConnectionProvider connectionProvider = ConnectionProvider.builder("dns-cache-pool")
 			.maxConnections(100)
 			.maxIdleTime(Duration.ofMinutes(5))
@@ -55,18 +55,18 @@ public class DnsCacheConfig {
 			.evictInBackground(Duration.ofSeconds(120))
 			.build();
 
-		// 配置HttpClient with DNS缓存和超时设置
+		// Configure HttpClient with DNS cache and timeout settings
 		HttpClient httpClient = HttpClient.create(connectionProvider)
-			// 使用默认地址解析器组（包含DNS缓存）
+			// Use default address resolver group (includes DNS cache)
 			.resolver(DefaultAddressResolverGroup.INSTANCE)
-			// 设置连接超时
-			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000) // 30秒
-			// 设置读取超时
+			// Set connection timeout
+			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000) // 30 seconds
+			// Set read timeout
 			.doOnConnected(conn -> conn.addHandlerLast(new ReadTimeoutHandler(60, TimeUnit.SECONDS))
 				.addHandlerLast(new WriteTimeoutHandler(60, TimeUnit.SECONDS)))
-			// 启用TCP保活
+			// Enable TCP keep-alive
 			.option(ChannelOption.SO_KEEPALIVE, true)
-			// 设置TCP_NODELAY
+			// Set TCP_NODELAY
 			.option(ChannelOption.TCP_NODELAY, true);
 
 		return WebClient.builder()
@@ -76,7 +76,7 @@ public class DnsCacheConfig {
 	}
 
 	/**
-	 * 配置系统属性以启用DNS缓存
+	 * Configure system properties to enable DNS cache
 	 */
 	@Bean
 	public DnsCacheInitializer dnsCacheInitializer() {
@@ -84,24 +84,24 @@ public class DnsCacheConfig {
 	}
 
 	/**
-	 * DNS缓存初始化器
+	 * DNS cache initializer
 	 */
 	public static class DnsCacheInitializer {
 
 		static {
 			log.info("Initializing DNS cache settings");
 
-			// 启用DNS缓存
+			// Enable DNS cache
 			System.setProperty("java.net.useSystemProxies", "true");
-			System.setProperty("networkaddress.cache.ttl", "300"); // 5分钟缓存
-			System.setProperty("networkaddress.cache.negative.ttl", "60"); // 1分钟负缓存
+			System.setProperty("networkaddress.cache.ttl", "300"); // 5 minutes cache
+			System.setProperty("networkaddress.cache.negative.ttl", "60"); // 1 minute negative cache
 
-			// Netty DNS设置
-			System.setProperty("io.netty.resolver.dns.cache.ttl", "300"); // 5分钟
-			System.setProperty("io.netty.resolver.dns.cache.negative.ttl", "60"); // 1分钟
-			System.setProperty("io.netty.resolver.dns.queryTimeoutMillis", "10000"); // 10秒超时
+			// Netty DNS settings
+			System.setProperty("io.netty.resolver.dns.cache.ttl", "300"); // 5 minutes
+			System.setProperty("io.netty.resolver.dns.cache.negative.ttl", "60"); // 1 minute
+			System.setProperty("io.netty.resolver.dns.queryTimeoutMillis", "10000"); // 10 seconds timeout
 
-			// 启用Netty DNS缓存
+			// Enable Netty DNS cache
 			System.setProperty("io.netty.resolver.dns.cache.enabled", "true");
 			System.setProperty("io.netty.resolver.dns.cache.maxTtl", "300");
 			System.setProperty("io.netty.resolver.dns.cache.minTtl", "60");
