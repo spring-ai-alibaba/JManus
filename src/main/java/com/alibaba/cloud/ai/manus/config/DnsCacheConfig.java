@@ -32,7 +32,8 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
- * DNS cache and network configuration to resolve DNS resolution timeout issues in VPN environments
+ * DNS cache and network configuration to resolve DNS resolution timeout issues in VPN
+ * environments
  */
 @Configuration
 public class DnsCacheConfig {
@@ -94,12 +95,17 @@ public class DnsCacheConfig {
 			// Enable DNS cache
 			System.setProperty("java.net.useSystemProxies", "true");
 			System.setProperty("networkaddress.cache.ttl", "300"); // 5 minutes cache
-			System.setProperty("networkaddress.cache.negative.ttl", "60"); // 1 minute negative cache
+			System.setProperty("networkaddress.cache.negative.ttl", "60"); // 1 minute
+																			// negative
+																			// cache
 
 			// Netty DNS settings
 			System.setProperty("io.netty.resolver.dns.cache.ttl", "300"); // 5 minutes
-			System.setProperty("io.netty.resolver.dns.cache.negative.ttl", "60"); // 1 minute
-			System.setProperty("io.netty.resolver.dns.queryTimeoutMillis", "10000"); // 10 seconds timeout
+			System.setProperty("io.netty.resolver.dns.cache.negative.ttl", "60"); // 1
+																					// minute
+			System.setProperty("io.netty.resolver.dns.queryTimeoutMillis", "10000"); // 10
+																						// seconds
+																						// timeout
 
 			// Enable Netty DNS cache
 			System.setProperty("io.netty.resolver.dns.cache.enabled", "true");
