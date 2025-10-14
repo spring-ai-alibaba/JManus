@@ -65,6 +65,7 @@ public class McpTool extends AbstractBaseTool<Map<String, Object>> {
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Class<Map<String, Object>> getInputType() {
 		return (Class<Map<String, Object>>) (Class<?>) Map.class;
 	}

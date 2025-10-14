@@ -430,7 +430,7 @@ public class PdfOcrProcessor {
 					imageFormatName);
 
 			// Get the ChatClient from LlmService
-			ChatClient chatClient = llmService.getDefaultAgentChatClient();
+			ChatClient chatClient = llmService.getDefaultDynamicAgentChatClient();
 			// Use configured model name from ManusProperties
 			String modelName = getConfiguredModelName();
 			ChatOptions chatOptions = ChatOptions.builder().model(modelName).build();
@@ -511,39 +511,6 @@ public class PdfOcrProcessor {
 		catch (IOException e) {
 			log.error("Error saving OCR result file: {}", filename, e);
 			return null;
-		}
-	}
-
-	/**
-	 * Get the current OCR processor status
-	 */
-	public String getProcessorStatus() {
-		if (llmService == null) {
-			return "OCR Processor Status: LlmService not initialized - OCR functionality unavailable";
-		}
-		try {
-			llmService.getDefaultImageModel();
-			return "OCR Processor Status: Ready - ImageModel initialized for OCR processing";
-		}
-		catch (Exception e) {
-			return "OCR Processor Status: ImageModel not available - " + e.getMessage();
-		}
-	}
-
-	/**
-	 * Check if OCR processing is available
-	 */
-	public boolean isOcrAvailable() {
-		if (llmService == null) {
-			return false;
-		}
-		try {
-			llmService.getDefaultImageModel();
-			return true;
-		}
-		catch (Exception e) {
-			log.warn("ImageModel not available for OCR: {}", e.getMessage());
-			return false;
 		}
 	}
 

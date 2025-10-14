@@ -20,7 +20,6 @@ import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
 import com.alibaba.cloud.ai.manus.event.PlanExceptionClearedEvent;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
-import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.manus.prompt.model.enums.PromptEnum;
 import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
@@ -86,7 +85,7 @@ public class DynamicAgent extends ReActAgent {
 
 	private final UserInputService userInputService;
 
-	private final DynamicModelEntity model;
+	private final String modelName;
 
 	private final StreamingResponseHandler streamingResponseHandler;
 
@@ -112,7 +111,7 @@ public class DynamicAgent extends ReActAgent {
 			ManusProperties manusProperties, String name, String description, String nextStepPrompt,
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
 			Map<String, Object> initialAgentSetting, UserInputService userInputService, PromptService promptService,
-			DynamicModelEntity model, StreamingResponseHandler streamingResponseHandler, ExecutionStep step,
+			String modelName, StreamingResponseHandler streamingResponseHandler, ExecutionStep step,
 			PlanIdDispatcher planIdDispatcher, JmanusEventPublisher jmanusEventPublisher) {
 		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, promptService, step,
 				planIdDispatcher);
@@ -127,7 +126,7 @@ public class DynamicAgent extends ReActAgent {
 		}
 		this.toolCallingManager = toolCallingManager;
 		this.userInputService = userInputService;
-		this.model = model;
+		this.modelName = modelName;
 		this.streamingResponseHandler = streamingResponseHandler;
 		this.jmanusEventPublisher = jmanusEventPublisher;
 	}
@@ -182,11 +181,11 @@ public class DynamicAgent extends ReActAgent {
 				userPrompt = new Prompt(messages, chatOptions);
 				List<ToolCallback> callbacks = getToolCallList();
 				ChatClient chatClient;
-				if (model == null) {
-					chatClient = llmService.getDefaultAgentChatClient();
+				if (modelName == null || modelName.isEmpty()) {
+					chatClient = llmService.getDefaultDynamicAgentChatClient();
 				}
 				else {
-					chatClient = llmService.getDynamicChatClient(model);
+					chatClient = llmService.getDynamicAgentChatClient(modelName);
 				}
 				// Use streaming response handler for better user experience and content
 				// merging
