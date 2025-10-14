@@ -448,11 +448,11 @@ const words: I18nType = {
       agents: {
         forceOverrideFromYaml: '强制使用YAML配置文件覆盖同名Agent',
       },
-      infiniteContext: {
-        enabled: '是否开启无限上下文',
-        parallelThreads: '并行处理线程数',
-        taskContextSize: '触发无限上下文的字符数阈值(字符数)',
-      },
+      // infiniteContext: { // 临时注释掉
+      //   enabled: '是否开启无限上下文',
+      //   parallelThreads: '并行处理线程数',
+      //   taskContextSize: '触发无限上下文的字符数阈值(字符数)',
+      // },
       fileSystem: {
         allowExternalAccess: '是否允许文件操作超出工作目录',
       },

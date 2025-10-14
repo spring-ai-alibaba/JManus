@@ -368,10 +368,10 @@ const CONFIG_DISPLAY_NAMES: Record<string, string> = {
   // Agents
   'forceOverrideFromYaml': ('config.basicConfig.agents.forceOverrideFromYaml'),
 
-  // Infinite Context
-  'enabled': ('config.basicConfig.infiniteContext.enabled'),
-  'parallelThreads': ('config.basicConfig.infiniteContext.parallelThreads'),
-  'taskContextSize': ('config.basicConfig.infiniteContext.taskContextSize'),
+  // Infinite Context - TEMPORARILY COMMENTED OUT
+  // 'enabled': ('config.basicConfig.infiniteContext.enabled'),
+  // 'parallelThreads': ('config.basicConfig.infiniteContext.parallelThreads'),
+  // 'taskContextSize': ('config.basicConfig.infiniteContext.taskContextSize'),
 
   // File System
   'allowExternalAccess': ('config.basicConfig.fileSystem.allowExternalAccess'),
@@ -413,7 +413,7 @@ const SUB_GROUP_DISPLAY_NAMES: Record<string, string> = {
   'browser': ('config.subGroupDisplayNames.browser'),
   'interaction': ('config.subGroupDisplayNames.interaction'),
   'agents': ('config.subGroupDisplayNames.agents'),
-  'infiniteContext': ('config.subGroupDisplayNames.infiniteContext'),
+  // 'infiniteContext': ('config.subGroupDisplayNames.infiniteContext'), // TEMPORARILY COMMENTED OUT
   'general': ('config.subGroupDisplayNames.general'),
   'filesystem': ('config.subGroupDisplayNames.filesystem'),
   'mcpServiceLoader': ('config.subGroupDisplayNames.mcpServiceLoader'),
@@ -455,7 +455,7 @@ const getConfigMin = (configKey: string): number => {
 // Utility function: Get the maximum value of the configuration item
 const getConfigMax = (configKey: string): number => {
   const maxValues: Record<string, number> = {
-    'maxSteps': 100,
+    'maxSteps': 500,
     'browserTimeout': 600,
     'maxThreads': 32,
     'timeoutSeconds': 300,

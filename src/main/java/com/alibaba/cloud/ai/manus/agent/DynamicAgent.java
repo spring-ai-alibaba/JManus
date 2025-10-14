@@ -18,7 +18,7 @@ package com.alibaba.cloud.ai.manus.agent;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
 import com.alibaba.cloud.ai.manus.event.PlanExceptionClearedEvent;
-import com.alibaba.cloud.ai.manus.llm.ILlmService;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
@@ -108,7 +108,7 @@ public class DynamicAgent extends ReActAgent {
 		}
 	}
 
-	public DynamicAgent(ILlmService llmService, PlanExecutionRecorder planExecutionRecorder,
+	public DynamicAgent(LlmService llmService, PlanExecutionRecorder planExecutionRecorder,
 			ManusProperties manusProperties, String name, String description, String nextStepPrompt,
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
 			Map<String, Object> initialAgentSetting, UserInputService userInputService, PromptService promptService,
@@ -183,7 +183,7 @@ public class DynamicAgent extends ReActAgent {
 				List<ToolCallback> callbacks = getToolCallList();
 				ChatClient chatClient;
 				if (model == null) {
-					chatClient = llmService.getAgentChatClient();
+					chatClient = llmService.getDefaultAgentChatClient();
 				}
 				else {
 					chatClient = llmService.getDynamicChatClient(model);

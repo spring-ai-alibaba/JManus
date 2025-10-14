@@ -449,12 +449,12 @@ const words: I18nType = {
         forceOverrideFromYaml:
           'Force override of agents with the same name using the YAML configuration file',
       },
-      infiniteContext: {
-        enabled: 'Whether to enable infinite context',
-        parallelThreads: 'Number of parallel processing threads',
-        taskContextSize:
-          'Character count threshold for triggering infinite context (number of characters)',
-      },
+      // infiniteContext: { // TEMPORARILY COMMENTED OUT
+      //   enabled: 'Whether to enable infinite context',
+      //   parallelThreads: 'Number of parallel processing threads',
+      //   taskContextSize:
+      //     'Character count threshold for triggering infinite context (number of characters)',
+      // },
       fileSystem: {
         allowExternalAccess: 'Whether to allow file operations beyond the working directory',
       },

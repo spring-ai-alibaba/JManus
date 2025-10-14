@@ -152,27 +152,38 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 
 	/**
 	 * Use UnifiedDirectoryManager to get absolute path
-	 * @param planId Plan ID
+	 * @param rootPlanId Root plan ID for directory operations
 	 * @param filePath Relative file path
+	 * @param subPlanId Optional subplan ID for subplan-specific paths
 	 * @return Absolute path
 	 * @throws IOException If path is invalid
 	 */
-	public Path getAbsolutePath(String planId, String filePath) throws IOException {
-		if (planId == null || planId.trim().isEmpty()) {
-			throw new IllegalArgumentException("planId cannot be null or empty");
+	public Path getAbsolutePath(String rootPlanId, String filePath, String subPlanId) throws IOException {
+		if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
+			throw new IllegalArgumentException("rootPlanId cannot be null or empty");
 		}
 		if (filePath == null || filePath.trim().isEmpty()) {
 			throw new IllegalArgumentException("filePath cannot be null or empty");
 		}
 
-		// Get root plan directory
-		Path rootPlanDir = unifiedDirectoryManager.getRootPlanDirectory(planId);
+		Path baseDir;
+
+		// If subPlanId is provided and different from rootPlanId, create subplan-specific
+		// directory path
+		if (subPlanId != null && !subPlanId.trim().isEmpty() && !subPlanId.equals(rootPlanId)) {
+			baseDir = unifiedDirectoryManager.getSubTaskDirectory(rootPlanId, subPlanId);
+		}
+		else {
+			// Use root plan directory for root plan files (when subPlanId is null, empty,
+			// or same as rootPlanId)
+			baseDir = unifiedDirectoryManager.getRootPlanDirectory(rootPlanId);
+		}
 
 		// Ensure directory exists
-		unifiedDirectoryManager.ensureDirectoryExists(rootPlanDir);
+		unifiedDirectoryManager.ensureDirectoryExists(baseDir);
 
 		// Parse file path
-		Path absolutePath = rootPlanDir.resolve(filePath).normalize();
+		Path absolutePath = baseDir.resolve(filePath).normalize();
 
 		// Verify path is within allowed range
 		if (!unifiedDirectoryManager.isPathAllowed(absolutePath)) {
@@ -183,14 +194,26 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 	}
 
 	/**
+	 * Use UnifiedDirectoryManager to get absolute path (backward compatibility)
+	 * @param rootPlanId Root plan ID for directory operations
+	 * @param filePath Relative file path
+	 * @return Absolute path
+	 * @throws IOException If path is invalid
+	 */
+	public Path getAbsolutePath(String rootPlanId, String filePath) throws IOException {
+		return getAbsolutePath(rootPlanId, filePath, null);
+	}
+
+	/**
 	 * Validate file path and return absolute path
-	 * @param planId Plan ID
+	 * @param rootPlanId Root plan ID for directory operations
 	 * @param filePath File path
+	 * @param subPlanId Optional subplan ID for subplan-specific paths
 	 * @return Validated absolute path
 	 * @throws IOException If validation fails
 	 */
-	public Path validateFilePath(String planId, String filePath) throws IOException {
-		Path absolutePath = getAbsolutePath(planId, filePath);
+	public Path validateFilePath(String rootPlanId, String filePath, String subPlanId) throws IOException {
+		Path absolutePath = getAbsolutePath(rootPlanId, filePath, subPlanId);
 
 		// Check file size (if file exists)
 		if (Files.exists(absolutePath) && Files.size(absolutePath) > 10 * 1024 * 1024) { // 10MB
@@ -199,6 +222,17 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 		}
 
 		return absolutePath;
+	}
+
+	/**
+	 * Validate file path and return absolute path (backward compatibility)
+	 * @param rootPlanId Root plan ID for directory operations
+	 * @param filePath File path
+	 * @return Validated absolute path
+	 * @throws IOException If validation fails
+	 */
+	public Path validateFilePath(String rootPlanId, String filePath) throws IOException {
+		return validateFilePath(rootPlanId, filePath, null);
 	}
 
 	/**

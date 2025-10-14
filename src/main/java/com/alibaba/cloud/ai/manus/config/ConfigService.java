@@ -237,6 +237,9 @@ public class ConfigService implements IConfigService, ApplicationListener<Contex
 		else if (targetType == Double.class || targetType == double.class) {
 			return Double.valueOf(value);
 		}
+		else if (targetType == Float.class || targetType == float.class) {
+			return Float.valueOf(value);
+		}
 
 		throw new IllegalArgumentException("Unsupported type: " + targetType);
 	}

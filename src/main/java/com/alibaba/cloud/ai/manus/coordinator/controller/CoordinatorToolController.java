@@ -19,7 +19,7 @@ import com.alibaba.cloud.ai.manus.coordinator.entity.vo.CoordinatorToolVO;
 import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
 import com.alibaba.cloud.ai.manus.coordinator.service.CoordinatorToolServiceImpl;
 import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
-import com.alibaba.cloud.ai.manus.subplan.service.ISubplanToolService;
+import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +43,7 @@ public class CoordinatorToolController {
 	private CoordinatorToolServiceImpl coordinatorToolService;
 
 	@Autowired
-	private ISubplanToolService subplanToolService;
+	private SubplanToolService subplanToolService;
 
 	/**
 	 * Create coordinator tool
