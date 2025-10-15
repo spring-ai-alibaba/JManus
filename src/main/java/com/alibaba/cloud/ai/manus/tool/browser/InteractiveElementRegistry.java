@@ -406,7 +406,6 @@ public class InteractiveElementRegistry {
 			}
 			})""";
 
-
 	/**
 	 * A list of all interactive elements, sorted by global index
 	 */

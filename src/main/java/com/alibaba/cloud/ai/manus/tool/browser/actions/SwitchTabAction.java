@@ -40,10 +40,10 @@ public class SwitchTabAction extends BrowserAction {
 		if (targetPage == null) {
 			return new ToolExecuteResult("Tab ID " + tabId + " does not exist");
 		}
-		
+
 		// Update the current page in DriverWrapper
 		getDriverWrapper().setCurrentPage(targetPage);
-		
+
 		return new ToolExecuteResult("Successfully switched to tab " + tabId);
 	}
 

@@ -29,11 +29,9 @@ public class GetTextAction extends BrowserAction {
 
 	private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GetTextAction.class);
 
-
 	private static String READABILITY_JS;
 
 	private static String TURNDOWNSERVICE_JS;
-
 
 	// Removed the static initialization block, directly using string constants
 
@@ -77,6 +75,7 @@ public class GetTextAction extends BrowserAction {
 		catch (IOException e) {
 		}
 	}
+
 	public GetTextAction(BrowserUseTool browserUseTool) {
 		super(browserUseTool);
 	}

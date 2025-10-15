@@ -44,7 +44,6 @@ public class InteractiveElement {
 	// HTML structure information
 	private String outerHtml;
 
-
 	/**
 	 * Construct an InteractiveElement instance
 	 * @param index Global index
@@ -64,7 +63,7 @@ public class InteractiveElement {
 		this.tagName = (String) elementMap.get("tagName");
 		this.text = (String) elementMap.get("text");
 		this.outerHtml = (String) elementMap.get("outerHtml");
-		
+
 	}
 
 	/**
