@@ -52,3 +52,4 @@ h2-data copy/
 extensions/
 .vscode/*
 .cursor/rules/my-custom-rule.mdc
+build-self-contained/*

@@ -39,7 +39,7 @@
         <webdrivermanager.version>6.1.0</webdrivermanager.version>
 
         <!-- Playwright Configuration -->
-        <playwright.version>1.53.0</playwright.version>
+        <playwright.version>1.55.0</playwright.version>
 
 
     </properties>
