@@ -72,7 +72,7 @@
                     :content="item"
                     @clickCard="handleCardClick(item)"
                 />
-                <span class="card-type">{{ item.type }}</span>
+                <span class="card-type">{{ item.type === 'github' ? 'GitHub' : item.type }}</span>
               </div>
             </div>
           </div>
@@ -111,18 +111,27 @@ const goToDirectPage = () => {
 }
 
 const examples = computed(() => [
-  { title: t('home.examples.stockPrice.title'), type: 'message', description: t('home.examples.stockPrice.description'), icon: 'carbon:chart-line-data', prompt: t('home.examples.stockPrice.prompt') },
-  { title: t('home.examples.weather.title'), type: 'message', description: t('home.examples.weather.description'), icon: 'carbon:partly-cloudy', prompt: t('home.examples.weather.prompt') }
+  { title: t('home.examples.stockPrice.title'), type: 'github', description: t('home.examples.stockPrice.description'), icon: 'carbon:chart-line-data', url: t('home.examples.stockPrice.url') },
+  { title: t('home.examples.weather.title'), type: 'github', description: t('home.examples.weather.description'), icon: 'carbon:partly-cloudy', url: t('home.examples.weather.url') }
 ])
 const plans = computed(() => [
-  { title: t('home.examples.queryplan.title'), type: 'plan-act', description: t('home.examples.queryplan.description'), icon: 'carbon:plan', prompt: t('home.examples.queryplan.prompt'), planJson: { planType: 'simple', title: t('home.examples.queryplan.planTitle'), steps: [{ stepRequirement: t('home.examples.queryplan.step1'), terminateColumns: t('home.examples.queryplan.step1Output') }, { stepRequirement: t('home.examples.queryplan.step2'), terminateColumns: t('home.examples.queryplan.step2Output') }], planTemplateId: 'planTemplate-1749200517403' } },
-  { title: t('home.examples.ainovel.title'), type: 'plan-act', description: t('home.examples.ainovel.description'), icon: 'carbon:document-tasks', prompt: t('home.examples.ainovel.prompt'), planJson: { planType: 'simple', title: t('home.examples.ainovel.planTitle'), steps: [{ stepRequirement: t('home.examples.ainovel.step1'), terminateColumns: t('home.examples.ainovel.step1Output') }, { stepRequirement: t('home.examples.ainovel.step2'), terminateColumns: t('home.examples.ainovel.step2Output') }], planTemplateId: 'planTemplate-1753622676988' } },
-  { title: t('home.examples.formInputDemo.title'), type: 'plan-act', description: t('home.examples.formInputDemo.description'), icon: 'carbon:watson', prompt: t('home.examples.formInputDemo.prompt'), planJson: { planType: 'simple', title: t('home.examples.formInputDemo.planTitle'), steps: [{ stepRequirement: t('home.examples.formInputDemo.step1'), terminateColumns: t('home.examples.formInputDemo.step1Output') }, { stepRequirement: t('home.examples.formInputDemo.step2'), terminateColumns: t('home.examples.formInputDemo.step2Output') }, { stepRequirement: t('home.examples.formInputDemo.step3'), terminateColumns: t('home.examples.formInputDemo.step3Output') }], planTemplateId: 'planTemplate-forminput-demo-2025' } }
+  { title: t('home.examples.queryplan.title'), type: 'github', description: t('home.examples.queryplan.description'), icon: 'carbon:plan', url: t('home.examples.queryplan.url') },
+  { title: t('home.examples.ainovel.title'), type: 'github', description: t('home.examples.ainovel.description'), icon: 'carbon:document-tasks', url: t('home.examples.ainovel.url') },
+  { title: t('home.examples.formInputDemo.title'), type: 'github', description: t('home.examples.formInputDemo.description'), icon: 'carbon:watson', url: t('home.examples.formInputDemo.url') }
 ])
 const allCards = computed(() => [...examples.value,  ...plans.value])
 
+const openGitHubPage = (item: any) => {
+  console.log('[Home] openGitHubPage called with item:', item)
+  if (item.url) {
+    window.open(item.url, '_blank')
+  }
+}
+
 const handleCardClick = (item: any) => {
-  if (item.type === 'message') {
+  if (item.type === 'github') {
+    openGitHubPage(item)
+  } else if (item.type === 'message') {
     selectExample(item)
   } else if (item.type === 'plan-act') {
     selectPlan(item)
