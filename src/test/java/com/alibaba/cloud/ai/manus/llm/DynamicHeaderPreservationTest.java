@@ -117,7 +117,7 @@ public class DynamicHeaderPreservationTest {
 		headers.put("Authorization", "Bearer test-token");
 		model.setHeaders(headers);
 
-		ChatClient chatClient = llmService.getDynamicChatClient(model);
+		ChatClient chatClient = llmService.getDynamicAgentChatClient(model.getModelName());
 
 		assertNotNull(chatClient, "ChatClient should be created successfully");
 	}
@@ -130,7 +130,7 @@ public class DynamicHeaderPreservationTest {
 		model.setApiKey("test-api-key");
 		model.setModelName("test-model");
 
-		ChatClient chatClient = llmService.getDynamicChatClient(model);
+		ChatClient chatClient = llmService.getDynamicAgentChatClient(model.getModelName());
 		assertNotNull(chatClient, "ChatClient should be created successfully even without headers");
 	}
 

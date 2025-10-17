@@ -20,7 +20,6 @@ import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
-import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
 import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
@@ -90,11 +89,10 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 		if ("ConfigurableDynaAgent".equals(stepType)) {
 			String modelName = step.getModelName();
 			List<String> selectedToolKeys = step.getSelectedToolKeys();
-			DynamicModelEntity modelEntity = dynamicModelRepository.findByModelName(modelName);
 
 			BaseAgent executor = agentService.createDynamicBaseAgent("ConfigurableDynaAgent",
 					context.getPlan().getCurrentPlanId(), context.getPlan().getRootPlanId(), initSettings,
-					expectedReturnInfo, step, modelEntity, selectedToolKeys);
+					expectedReturnInfo, step, modelName, selectedToolKeys);
 			return executor;
 		}
 		else {

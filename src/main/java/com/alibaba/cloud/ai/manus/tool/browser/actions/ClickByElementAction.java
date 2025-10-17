@@ -79,7 +79,8 @@ public class ClickByElementAction extends BrowserAction {
 				throw new RuntimeException("Error clicking element: " + element.getText(), e);
 			}
 		});
-		return new ToolExecuteResult("Successfully clicked element at index " + index + " " + clickResultMessage);
+		return new ToolExecuteResult("Successfully clicked element at index " + index + " element text: "
+				+ element.getText() + " " + clickResultMessage);
 	}
 
 }
