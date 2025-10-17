@@ -45,11 +45,6 @@ Allows you to precisely control every execution detail, providing extremely high
 
 ![Image](https://github.com/user-attachments/assets/2d3f833f-ba45-42b6-8e1b-f3e9cfd40212)
 
-### 📜 **Web Interface for Agent Configuration**:
-
- Easily configure agents through an intuitive web management interface without modifying code.
-
-![Image](https://github.com/user-attachments/assets/bb25f778-f8c3-46da-9da3-6f7ea2f0917d)
 
 
 

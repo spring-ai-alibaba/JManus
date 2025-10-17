@@ -41,10 +41,6 @@ JManus也提供了http的服务调用能力，适合被集成到既有的项目�
 原生支持模型上下文协议（Model Context Protocol），实现与外部服务和工具的无缝集成。
 ![Image](https://github.com/user-attachments/assets/31d915a9-04dc-45b2-9635-488cc06ba468)
 
-### 📜 **网页界面配置 Agent**：
-
-通过直观的网页管理界面轻松配置 agent，无需修改代码。
-![Image](https://github.com/user-attachments/assets/5afdfe2e-0e98-4100-bff1-b7aaf413850b)
 
 
 
