@@ -566,7 +566,6 @@ public class DynamicAgent extends ReActAgent {
 		ToolCallBackContext context = toolCallbackProvider.getToolCallBackContext().get(toolCallName);
 		if (context != null) {
 			String envData = context.getFunctionInstance().getCurrentToolStateString();
-			log.info("📊 Tool '{}' env data: {}", toolCallName, envData);
 			return envData;
 		}
 		// If corresponding tool callback context is not found, return empty string

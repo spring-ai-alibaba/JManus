@@ -23,8 +23,9 @@ import com.alibaba.cloud.ai.manus.tool.browser.actions.ClickByElementAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.CloseTabAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.ExecuteJsAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.GetElementPositionByNameAction;
-import com.alibaba.cloud.ai.manus.tool.browser.actions.GetHtmlAction;
+//import com.alibaba.cloud.ai.manus.tool.browser.actions.GetHtmlAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.GetTextAction;
+import com.alibaba.cloud.ai.manus.tool.browser.actions.GetMarkdownAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.InputTextAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.KeyEnterAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.MoveToAndClickAction;
@@ -121,18 +122,26 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 					result = new ScreenShotAction(this).execute(requestVO);
 					break;
 				}
-				case "get_html": {
-					result = new GetHtmlAction(this).execute(requestVO);
-					// HTML content is usually long, use intelligent processing
-					SmartContentSavingService.SmartProcessResult processedResult = innerStorageService
-						.processContent(currentPlanId, result.getOutput(), "get_html");
-					return new ToolExecuteResult(processedResult.getSummary());
-				}
+				// case "get_html": {
+				// result = new GetHtmlAction(this).execute(requestVO);
+				// // HTML content is usually long, use intelligent processing
+				// SmartContentSavingService.SmartProcessResult processedResult =
+				// innerStorageService
+				// .processContent(currentPlanId, result.getOutput(), "get_html");
+				// return new ToolExecuteResult(processedResult.getSummary());
+				// }
 				case "get_text": {
 					result = new GetTextAction(this).execute(requestVO);
 					// Text content may be long, use intelligent processing
 					SmartContentSavingService.SmartProcessResult processedResult = innerStorageService
 						.processContent(currentPlanId, result.getOutput(), "get_text");
+					return new ToolExecuteResult(processedResult.getSummary());
+				}
+				case "get_markdown": {
+					result = new GetMarkdownAction(this).execute(requestVO);
+					// Markdown content may be long, use intelligent processing
+					SmartContentSavingService.SmartProcessResult processedResult = innerStorageService
+						.processContent(currentPlanId, result.getOutput(), "get_markdown");
 					return new ToolExecuteResult(processedResult.getSummary());
 				}
 				case "execute_js": {
@@ -257,8 +266,9 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				- 'input_text': Input text in element
 				- 'key_enter': Press Enter key
 				- 'screenshot': Capture screenshot
-				- 'get_html': Get HTML content of current page
+				// - 'get_html': Get HTML content of current page
 				- 'get_text': Get text content of current page
+				- 'get_markdown': Get markdown content of current page
 				- 'execute_js': Execute JavaScript code
 				- 'scroll': Scroll page up/down
 				- 'refresh': Refresh current page
@@ -357,7 +367,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				            "properties": {
 				                "action": {
 				                    "type": "string",
-				                    "const": "get_html"
+				                    "const": "get_text"
 				                }
 				            },
 				            "required": ["action"],
@@ -368,7 +378,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				            "properties": {
 				                "action": {
 				                    "type": "string",
-				                    "const": "get_text"
+				                    "const": "get_markdown"
 				                }
 				            },
 				            "required": ["action"],

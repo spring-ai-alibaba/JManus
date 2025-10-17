@@ -75,7 +75,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  acceptedFileTypes: '.pdf,.txt,.md,.doc,.docx,.csv,.xlsx,.xls,.json,.xml,.html,.htm,.log,.java,.py,.js,.ts,.sql,.sh,.bat,.yaml,.yml,.properties,.conf,.ini',
+  acceptedFileTypes: '.pdf,.txt,.md,.doc,.docx,.csv,.xlsx,.xls,.json,.xml,.html,.htm,.log,.java,.py,.js,.ts,.sql,.sh,.bat,.yaml,.yml,.properties,.conf,.ini,.jpg,.jpeg,.png,.gif',
   disabled: false
 })
 

@@ -89,6 +89,7 @@ import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.MarkdownConverterTool;
 import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.PdfOcrProcessor;
+import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.ImageOcrProcessor;
 import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
 import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -276,9 +277,11 @@ public class PlanningFactory {
 
 			}
 			toolDefinitions.add(new CronTool(cronService, objectMapper));
-			toolDefinitions
-				.add(new MarkdownConverterTool(unifiedDirectoryManager, new PdfOcrProcessor(unifiedDirectoryManager,
-						llmService, manusProperties, new ImageRecognitionExecutorPool(manusProperties))));
+			toolDefinitions.add(new MarkdownConverterTool(unifiedDirectoryManager,
+					new PdfOcrProcessor(unifiedDirectoryManager, llmService, manusProperties,
+							new ImageRecognitionExecutorPool(manusProperties)),
+					new ImageOcrProcessor(unifiedDirectoryManager, llmService, manusProperties,
+							new ImageRecognitionExecutorPool(manusProperties))));
 			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
 		}
 		else {

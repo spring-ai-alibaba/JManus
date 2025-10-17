@@ -44,17 +44,13 @@ public class InteractiveElement {
 	// HTML structure information
 	private String outerHtml;
 
-	// Frame text
-	private String frameText;
-
 	/**
 	 * Construct an InteractiveElement instance
 	 * @param index Global index
 	 * @param frame Frame where the element is located
 	 * @param elementMap Other parameters of the element
-	 * @param frameText
 	 */
-	public InteractiveElement(int index, Frame frame, Map<String, Object> elementMap, String frameText) {
+	public InteractiveElement(int index, Frame frame, Map<String, Object> elementMap) {
 		this.index = index;
 		if (elementMap.containsKey("jManusId")) {
 			String jManusId = (String) elementMap.get("jManusId");
@@ -67,7 +63,7 @@ public class InteractiveElement {
 		this.tagName = (String) elementMap.get("tagName");
 		this.text = (String) elementMap.get("text");
 		this.outerHtml = (String) elementMap.get("outerHtml");
-		this.frameText = frameText;
+
 	}
 
 	/**
@@ -108,10 +104,6 @@ public class InteractiveElement {
 	 */
 	public String getOuterHtml() {
 		return outerHtml;
-	}
-
-	public String getFrameText() {
-		return frameText;
 	}
 
 	/**

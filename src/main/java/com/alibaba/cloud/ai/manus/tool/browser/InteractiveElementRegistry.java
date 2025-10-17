@@ -20,10 +20,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.LoadState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ClassPathResource;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,9 +61,6 @@ public class InteractiveElementRegistry {
 				"legend",     // Fieldset legends
 			]);
 
-			const turndownService = new TurndownService({
-			    headingStyle: 'atx',
-			});
 
 			extract(document.body)
 			return parseElement()
@@ -93,7 +87,7 @@ public class InteractiveElementRegistry {
 					jManusId = CURRENT_TIMESTAMP + "-" + index;
 					element.setAttribute("jmanus-id", jManusId)
 				}
-				const text = turndownService.turndown(element.outerHTML)
+				const text = (element.textContent || '').trim()
 				const outerHtml = element.outerHTML
 				const xpath = getXPathTree(element)
 				RES.push({tagName, text, outerHtml, index, xpath, jManusId})
@@ -412,53 +406,6 @@ public class InteractiveElementRegistry {
 			}
 			})""";
 
-	// Removed the static initialization block, directly using string constants
-
-	private static final String CONVERSE_FRAME_TO_MARKDOWN_JS = """
-			    (() => {
-			        try {
-			            const documentClone = window.document.cloneNode(true);
-			            const reader = new Readability(documentClone);
-			            const article = reader.parse();
-
-			            if (article && article.content) {
-			                const html = article.content;
-			                const turndownService = new TurndownService({
-			                    headingStyle: 'atx',
-			                });
-			                return turndownService.turndown(html);
-			            }
-			            return "";
-			        } catch (error) {
-			            console.error('Error converting frame to markdown:', error);
-			            return "";
-			        }
-			    })
-			""";
-
-	private static String READABILITY_JS;
-
-	private static String TURNDOWNSERVICE_JS;
-
-	static {
-		ClassPathResource readabilityResource = new ClassPathResource("tool/Readability.js");
-		try (InputStream is = readabilityResource.getInputStream()) {
-			byte[] bytes = new byte[is.available()];
-			is.read(bytes);
-			READABILITY_JS = new String(bytes);
-		}
-		catch (IOException e) {
-		}
-		ClassPathResource turndownResource = new ClassPathResource("tool/turndown.js");
-		try (InputStream is = turndownResource.getInputStream()) {
-			byte[] bytes = new byte[is.available()];
-			is.read(bytes);
-			TURNDOWNSERVICE_JS = new String(bytes);
-		}
-		catch (IOException e) {
-		}
-	}
-
 	/**
 	 * A list of all interactive elements, sorted by global index
 	 */
@@ -511,14 +458,11 @@ public class InteractiveElementRegistry {
 		try {
 			int index = 0;
 			for (Frame frame : page.frames()) {
-				frame.evaluate(READABILITY_JS);
-				frame.evaluate(TURNDOWNSERVICE_JS);
-				String frameText = (String) frame.evaluate(CONVERSE_FRAME_TO_MARKDOWN_JS);
 				List<Map<String, Object>> elementMapList = (List<Map<String, Object>>) frame
 					.evaluate(EXTRACT_INTERACTIVE_ELEMENTS_JS, index);
 				for (Map<String, Object> elementMap : elementMapList) {
 					Integer globalIndex = (Integer) elementMap.get("index");
-					InteractiveElement element = new InteractiveElement(globalIndex, frame, elementMap, frameText);
+					InteractiveElement element = new InteractiveElement(globalIndex, frame, elementMap);
 					interactiveElements.add(element);
 					indexToElementMap.put(globalIndex, element);
 				}
