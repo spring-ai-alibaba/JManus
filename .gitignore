@@ -53,3 +53,5 @@ extensions/
 .vscode/*
 .cursor/rules/my-custom-rule.mdc
 build-self-contained/*
+src/.DS_Store
+**/.DS_Store
