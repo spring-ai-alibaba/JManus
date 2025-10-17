@@ -80,7 +80,7 @@ After the application starts, navigate to `http://localhost:18080` in your brows
 
 > 💡 **Guided Setup**: After the application starts, it will automatically display a guided setup page. On the first page, select your language (English/Chinese), then on the second page, enter your DashScope API key that you just obtained to complete the configuration.
 
-🎉 **Congratulations!** Your multi-agent system has been quickly started.
+🎉 **Congratulations!** Your multi-agent system has been quickly started. You can visit https://github.com/talk-flow/public-usecase to explore some effective practices we recommend.
 
 ---
 
@@ -144,7 +144,7 @@ JManus supports both H2 (default)、MySQL and PostgreSQL databases.
 
 Navigate to `http://localhost:18080` in your browser.
 
-🎉 **Congratulations!** Your multi-agent system is now live and ready for action.
+🎉 **Congratulations!** Your multi-agent system is now live and ready for action. You can visit https://github.com/talk-flow/public-usecase to explore some effective practices we recommend.
 
 
 
