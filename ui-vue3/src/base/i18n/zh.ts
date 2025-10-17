@@ -1042,9 +1042,9 @@ const words: I18nType = {
         url: 'https://github.com/talk-flow/public-usecase/blob/main/chn/stock-price-query.md',
       },
       weather: {
-        title: '查询天气',
-        description: '获取北京今天的天气情况（Agent可以使用MCP工具服务）',
-        url: 'https://github.com/talk-flow/public-usecase/blob/main/chn/weather-query.md',
+        title: 'IP查询',
+        description: '查询指定IP地址的地理位置和相关信息（Agent可以使用MCP工具服务）',
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/chn/ip-query.md',
       },
       queryplan: {
         title: '增强型调研搜索',

@@ -1076,9 +1076,9 @@ const words: I18nType = {
         url: 'https://github.com/talk-flow/public-usecase/blob/main/eng/stock-price-query.md',
       },
       weather: {
-        title: 'Query Weather',
-        description: "Get today's weather in New York (Agent can use MCP tool services)",
-        url: 'https://github.com/talk-flow/public-usecase/blob/main/eng/weather-query.md',
+        title: 'IP Query',
+        description: 'Query geographic location and related information for specified IP addresses (Agent can use MCP tool services)',
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/eng/ip-query.md',
       },
       queryplan: {
         title: 'Enhanced Research Search',
