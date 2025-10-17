@@ -22,7 +22,6 @@ import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
 import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
 
 import io.micrometer.observation.ObservationRegistry;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -37,11 +36,7 @@ import org.springframework.ai.model.tool.DefaultToolExecutionEligibilityPredicat
 import org.springframework.ai.model.tool.ToolExecutionEligibilityPredicate;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.OpenAiImageModel;
-import org.springframework.ai.openai.OpenAiImageOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
-import org.springframework.ai.openai.api.OpenAiImageApi;
-import org.springframework.ai.image.ImageModel;
 import org.springframework.ai.retry.RetryUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,13 +63,12 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 
 	private ChatClient diaChatClient;
 
+	// Cached concurrent map for ChatClient instances with modelName as key
+	private final Map<String, ChatClient> chatClientCache = new ConcurrentHashMap<>();
+
 	private ChatMemory conversationMemory;
 
 	private ChatMemory agentMemory;
-
-	private Map<Long, ChatClient> clients = new ConcurrentHashMap<>();
-
-	private ImageModel defaultImageModel;
 
 	/*
 	 * Required for creating custom chatModel
@@ -112,75 +106,15 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 	public LlmService() {
 	}
 
-	@PostConstruct
-	public void initializeChatClients() {
-		try {
-			log.info("Checking and init ChatClient instance...");
-
-			DynamicModelEntity defaultModel = dynamicModelRepository.findByIsDefaultTrue();
-			if (defaultModel == null) {
-				List<DynamicModelEntity> availableModels = dynamicModelRepository.findAll();
-				if (!availableModels.isEmpty()) {
-					defaultModel = availableModels.get(0);
-					log.info("Cannot find default model, use the first one: {}", defaultModel.getModelName());
-				}
-			}
-			else {
-				log.info("Find default model: {}", defaultModel.getModelName());
-			}
-
-			if (defaultModel != null) {
-				initializeChatClientsWithModel(defaultModel);
-				log.info("ChatClient init success");
-			}
-			else {
-				log.warn("Cannot find any model，ChatClient will be initialize after model being configured");
-			}
-		}
-		catch (Exception e) {
-			log.error("Init ChatClient failed", e);
-		}
-	}
-
-	/**
-	 * Create default ChatOptions from DynamicModelEntity
-	 * @param model Dynamic model entity
-	 * @return OpenAiChatOptions with model configuration
-	 */
-	private OpenAiChatOptions createDefaultChatOptions(DynamicModelEntity model) {
-		OpenAiChatOptions.Builder builder = OpenAiChatOptions.builder().model(model.getModelName());
-
-		if (model.getTemperature() != null) {
-			builder.temperature(model.getTemperature());
-		}
-
-		if (model.getTopP() != null) {
-			builder.topP(model.getTopP());
-		}
-
-		return builder.build();
-	}
-
-	private ImageModel buildUnifiedImageModel(DynamicModelEntity model) {
-		OpenAiImageApi imageApi = openAiImageApi(restClientBuilderProvider.getIfAvailable(RestClient::builder),
-				webClientBuilderProvider.getIfAvailable(WebClient::builder), model);
-
-		// Create OpenAiImageOptions with default settings
-		OpenAiImageOptions imageOptions = OpenAiImageOptions.builder().build();
-
-		// Create and return ImageModel
-		return new OpenAiImageModel(imageApi, imageOptions, RetryUtils.DEFAULT_RETRY_TEMPLATE);
-	}
-
 	/**
 	 * Unified ChatClient builder method that uses the existing openAiApi() method
 	 * @param model Dynamic model entity
 	 * @param options Chat options (with internalToolExecutionEnabled already set)
 	 * @return Configured ChatClient
 	 */
-	private ChatClient buildUnifiedChatClient(DynamicModelEntity model, OpenAiChatOptions options) {
+	private ChatClient buildUnifiedChatClient(String modelName, DynamicModelEntity model, OpenAiChatOptions options) {
 		// Use the existing openAiChatModel method which calls openAiApi()
-		OpenAiChatModel chatModel = openAiChatModel(model, options);
+		OpenAiChatModel chatModel = openAiChatModel(modelName, model, options);
 
 		return ChatClient.builder(chatModel)
 			.defaultAdvisors(new SimpleLoggerAdvisor())
@@ -192,30 +126,34 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 		// Set the default model
 		this.defaultModel = model;
 
-		OpenAiChatOptions defaultOptions = createDefaultChatOptions(model);
+		OpenAiChatOptions defaultOptions = OpenAiChatOptions.builder().build();
 
 		if (this.diaChatClient == null) {
-			this.diaChatClient = buildPlanningChatClient(model, defaultOptions);
+			this.diaChatClient = buildDialogChatClient(model, defaultOptions);
 			log.debug("Planning ChatClient init finish");
 		}
 
-		// Ensure dynamic ChatClient is also created
-		buildOrUpdateDynamicChatClient(model);
 	}
 
 	private void tryLazyInitialization() {
+		// Check if defaultModel is already cached
+		if (defaultModel != null) {
+			log.debug("Using cached default model: {}", defaultModel.getModelName());
+			return;
+		}
+
 		try {
-			DynamicModelEntity defaultModel = dynamicModelRepository.findByIsDefaultTrue();
-			if (defaultModel == null) {
+			DynamicModelEntity fetchedDefaultModel = dynamicModelRepository.findByIsDefaultTrue();
+			if (fetchedDefaultModel == null) {
 				List<DynamicModelEntity> availableModels = dynamicModelRepository.findAll();
 				if (!availableModels.isEmpty()) {
-					defaultModel = availableModels.get(0);
+					fetchedDefaultModel = availableModels.get(0);
 				}
 			}
 
-			if (defaultModel != null) {
-				log.info("Lazy init ChatClient, using model: {}", defaultModel.getModelName());
-				initializeChatClientsWithModel(defaultModel);
+			if (fetchedDefaultModel != null) {
+				log.info("Lazy init ChatClient, using model: {}", fetchedDefaultModel.getModelName());
+				initializeChatClientsWithModel(fetchedDefaultModel);
 			}
 		}
 		catch (Exception e) {
@@ -223,7 +161,12 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 		}
 	}
 
-	public ChatClient getDefaultAgentChatClient() {
+	public ChatClient getDefaultDynamicAgentChatClient() {
+
+		return getDynamicAgentChatClient(null);
+	}
+
+	public ChatClient getDynamicAgentChatClient(String modelName) {
 		if (defaultModel == null) {
 			log.warn("Default model not initialized...");
 			tryLazyInitialization();
@@ -232,57 +175,28 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 				throw new IllegalStateException("Default model not initialized, please specify model first");
 			}
 		}
-		return getDynamicChatClient(defaultModel);
-	}
 
-	public ImageModel getDefaultImageModel() {
-		if (defaultModel == null) {
-			log.warn("Default model not initialized...");
-			tryLazyInitialization();
+		// Use DEFAULT_MODELNAME as key when modelName is null or empty
+		String cacheKey = (modelName == null || modelName.isEmpty()) ? defaultModel.getModelName() : modelName;
 
-			if (defaultModel == null) {
-				throw new IllegalStateException("Default model not initialized, please specify model first");
-			}
+		// Check cache first
+		ChatClient cachedClient = chatClientCache.get(cacheKey);
+		if (cachedClient != null) {
+			log.debug("Using cached ChatClient for model: {}", cacheKey);
+			return cachedClient;
 		}
-		return getDynamicImageModel(defaultModel);
-	}
-
-	private ImageModel buildOrUpdateDynamicImageModel(DynamicModelEntity model) {
-		// Use unified ImageModel builder
-		ImageModel imageModel = buildUnifiedImageModel(model);
-
-		// Store in a separate map for ImageModels (you might want to create this)
-		// For now, we'll just return the model
-		log.info("Build or update dynamic image model for model: {}", model.getModelName());
-		return imageModel;
-	}
-
-	public ImageModel getDynamicImageModel(DynamicModelEntity model) {
-		// Note: You might want to create a separate map for ImageModels
-		// For now, we'll always create a new one
-		return buildOrUpdateDynamicImageModel(model);
-	}
-
-	public ChatClient getDynamicChatClient(DynamicModelEntity model) {
-		Long modelId = model.getId();
-		if (clients.containsKey(modelId)) {
-			return clients.get(modelId);
-		}
-		return buildOrUpdateDynamicChatClient(model);
-	}
-
-	private ChatClient buildOrUpdateDynamicChatClient(DynamicModelEntity model) {
-		Long modelId = model.getId();
 
 		// Use unified ChatOptions creation
-		OpenAiChatOptions defaultOptions = createDefaultChatOptions(model);
+		OpenAiChatOptions defaultOptions = OpenAiChatOptions.builder().build();
 		defaultOptions.setInternalToolExecutionEnabled(false);
 
 		// Use unified ChatClient builder
-		ChatClient client = buildUnifiedChatClient(model, defaultOptions);
+		ChatClient client = buildUnifiedChatClient(modelName, defaultModel, defaultOptions);
 
-		clients.put(modelId, client);
-		log.info("Build or update dynamic chat client for model: {}", model.getModelName());
+		// Cache the ChatClient instance
+		chatClientCache.put(cacheKey, client);
+
+		log.info("Build and cache dynamic chat client for model: {}", cacheKey);
 		return client;
 	}
 
@@ -344,23 +258,69 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 		initializeChatClientsWithModel(dynamicModelEntity);
 
 		if (dynamicModelEntity.getIsDefault()) {
-			log.info("Model updated");
+			log.info("Model updated, clearing ChatClient cache");
 			this.diaChatClient = null;
 			this.defaultModel = null;
-			this.defaultImageModel = null;
+			// Clear the ChatClient cache when default model changes
+			chatClientCache.clear();
 			initializeChatClientsWithModel(dynamicModelEntity);
 		}
 	}
 
-	private ChatClient buildPlanningChatClient(DynamicModelEntity dynamicModelEntity,
-			OpenAiChatOptions defaultOptions) {
-		// Enable internal tool execution for planning
-		defaultOptions.setInternalToolExecutionEnabled(true);
-		return buildUnifiedChatClient(dynamicModelEntity, defaultOptions);
+	/**
+	 * Refresh the cached default model from database Call this method when you need to
+	 * update the cache
+	 */
+	public void refreshDefaultModelCache() {
+		log.info("Refreshing default model cache");
+		this.defaultModel = null;
+		this.diaChatClient = null;
+		// Clear the ChatClient cache when refreshing default model
+		chatClientCache.clear();
+		tryLazyInitialization();
 	}
 
-	private OpenAiChatModel openAiChatModel(DynamicModelEntity dynamicModelEntity, OpenAiChatOptions defaultOptions) {
-		defaultOptions.setModel(dynamicModelEntity.getModelName());
+	/**
+	 * Clear specific ChatClient from cache by model name
+	 * @param modelName The model name to remove from cache
+	 */
+	public void clearChatClientCache(String modelName) {
+		if (modelName != null && !modelName.isEmpty()) {
+			chatClientCache.remove(modelName);
+			log.info("Cleared ChatClient cache for model: {}", modelName);
+		}
+	}
+
+	/**
+	 * Clear all ChatClient cache entries
+	 */
+	public void clearAllChatClientCache() {
+		chatClientCache.clear();
+		log.info("Cleared all ChatClient cache entries");
+	}
+
+	/**
+	 * Get cache size for monitoring purposes
+	 * @return Number of cached ChatClient instances
+	 */
+	public int getChatClientCacheSize() {
+		return chatClientCache.size();
+	}
+
+	private ChatClient buildDialogChatClient(DynamicModelEntity dynamicModelEntity, OpenAiChatOptions defaultOptions) {
+		// Enable internal tool execution for planning
+		defaultOptions.setInternalToolExecutionEnabled(true);
+		// use default model name as model name in dialog
+		return buildUnifiedChatClient(dynamicModelEntity.getModelName(), dynamicModelEntity, defaultOptions);
+	}
+
+	private OpenAiChatModel openAiChatModel(String modelName, DynamicModelEntity dynamicModelEntity,
+			OpenAiChatOptions defaultOptions) {
+		if (modelName == null || modelName.isEmpty()) {
+			log.warn("Model name is null or empty, using default model name: {}", dynamicModelEntity.getModelName());
+			modelName = dynamicModelEntity.getModelName();
+		}
+		defaultOptions.setModel(modelName);
 		if (defaultOptions.getTemperature() == null && dynamicModelEntity.getTemperature() != null) {
 			defaultOptions.setTemperature(dynamicModelEntity.getTemperature());
 		}
@@ -413,18 +373,6 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 				.filter((request, next) -> next.exchange(request).timeout(Duration.ofMinutes(10)));
 		}
 		return enhancedWebClientBuilder;
-	}
-
-	private OpenAiImageApi openAiImageApi(RestClient.Builder restClientBuilder, WebClient.Builder webClientBuilder,
-			DynamicModelEntity dynamicModelEntity) {
-		Map<String, String> headers = dynamicModelEntity.getHeaders();
-		MultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap<>();
-		if (headers != null) {
-			headers.forEach((key, value) -> multiValueMap.add(key, value));
-		}
-
-		return new OpenAiImageApi(dynamicModelEntity.getBaseUrl(), new SimpleApiKey(dynamicModelEntity.getApiKey()),
-				multiValueMap, null, restClientBuilder, RetryUtils.DEFAULT_RESPONSE_ERROR_HANDLER);
 	}
 
 	private OpenAiApi openAiApi(RestClient.Builder restClientBuilder, WebClient.Builder webClientBuilder,

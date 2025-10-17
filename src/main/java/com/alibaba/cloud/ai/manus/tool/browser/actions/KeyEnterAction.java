@@ -39,9 +39,6 @@ public class KeyEnterAction extends BrowserAction {
 
 		// Execute the enter operation with timeout handling
 		try {
-			// Wait for element to be visible and enabled before pressing Enter
-			enterElement.getLocator().waitFor(new Locator.WaitForOptions().setTimeout(getBrowserTimeoutMs()));
-
 			// Check if element is visible and enabled
 			if (!enterElement.getLocator().isVisible()) {
 				return new ToolExecuteResult("Element at index " + index + " is not visible");
