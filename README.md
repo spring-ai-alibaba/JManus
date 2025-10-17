@@ -23,7 +23,7 @@
 
 JManus is a Java implementation of Manus, currently used in many applications within Alibaba Group. It is primarily used for handling exploratory tasks that require a certain degree of determinism, such as quickly finding data from massive datasets and converting it into a single row in a database, or analyzing logs and issuing alerts.
 
-JManus also provides HTTP service invocation capabilities, making it suitable for integration into existing projects. For details, please refer to the developer quick start guide.
+JManus also provides HTTP service invocation capabilities, making it suitable for integration into existing projects. For details, please refer to the [developer quick start guide](./README-dev-en.md).
 
 ## 🎯 JManus Product Features
 
@@ -45,17 +45,7 @@ Allows you to precisely control every execution detail, providing extremely high
 
 ![Image](https://github.com/user-attachments/assets/2d3f833f-ba45-42b6-8e1b-f3e9cfd40212)
 
-### 📜 **Web Interface for Agent Configuration**:
 
- Easily configure agents through an intuitive web management interface without modifying code.
-
-![Image](https://github.com/user-attachments/assets/bb25f778-f8c3-46da-9da3-6f7ea2f0917d)
-
-### 🌊 **Infinite Context Handling**: 
-
-Supports precise extraction of target information from massive content without relying on specific long-context models.
-
-![Image](https://github.com/user-attachments/assets/f23e5f27-91e1-4262-83d9-5bfbe5d644d5)
 
 
 ## 🚀 Quick Start
@@ -156,15 +146,12 @@ Navigate to `http://localhost:18080` in your browser.
 
 🎉 **Congratulations!** Your multi-agent system is now live and ready for action.
 
-### 🔒 Security Notice
-
-> 💡 **AI Application Security**: As with any AI-powered application in production environments, we recommend implementing appropriate authentication and access controls. For JManus specifically, this includes securing access to model chat interfaces, MCP service configuration, built-in tool management, and system parameter adjustment features to prevent misuse and unauthorized access.
 
 
 ## Stable Release
 
 you can find stable release from here:
-[release](https://github.com/rainerWJY/Java-Open-Manus/releases)
+[release](https://github.com/spring-ai-alibaba/JManus/releases)
 
 
 ## 🤝 Contributing
@@ -173,19 +160,19 @@ We enthusiastically welcome contributions from the developer community! Here's h
 
 ### Contribution Opportunities
 
-You can find available tasks on our [project board](https://github.com/orgs/alibaba/projects/24).
+You can find available tasks on our [project board](https://github.com/orgs/spring-ai-alibaba/projects/1).
 
-- 🐛 **Bug Reports**: [Submit detailed issue reports](https://github.com/alibaba/spring-ai-alibaba/issues)
-- 💡 **Feature Requests**: [Propose innovative enhancements](https://github.com/alibaba/spring-ai-alibaba/issues)
+- 🐛 **Bug Reports**: [Submit detailed issue reports](https://github.com/spring-ai-alibaba/JManus/issues)
+- 💡 **Feature Requests**: [Propose innovative enhancements](https://github.com/spring-ai-alibaba/JManus/issues)
 - 📝 **Documentation**: Help us improve clarity and completeness
-- 🔧 **Code Contributions**: [Submit pull requests](https://github.com/alibaba/spring-ai-alibaba/pulls) with your improvements
+- 🔧 **Code Contributions**: [Submit pull requests](https://github.com/spring-ai-alibaba/JManus/pulls) with your improvements
 
 ### Development Environment Setup
 
 ```bash
 # Fork and clone the repository
-git clone https://github.com/your-username/spring-ai-alibaba.git
-cd spring-ai-alibaba/spring-ai-alibaba-jmanus
+git clone git@github.com:spring-ai-alibaba/JManus.git
+cd JManus
 
 # Install project dependencies
 mvn clean install
