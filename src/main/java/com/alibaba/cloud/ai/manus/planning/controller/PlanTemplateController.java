@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -145,7 +146,7 @@ public class PlanTemplateController {
 			}
 
 			// Save to version history
-			PlanTemplateService.VersionSaveResult saveResult = saveToVersionHistory(planJson);
+			PlanTemplateService.VersionSaveResult saveResult = saveToVersionHistory(planJson, planTemplateId);
 
 			// Return plan data
 			Map<String, Object> response = new HashMap<>();
@@ -168,23 +169,16 @@ public class PlanTemplateController {
 	/**
 	 * Save version history
 	 * @param planJson Plan JSON data
+	 * @param planId Plan template ID (already generated)
 	 * @return Save result
 	 */
-	private PlanTemplateService.VersionSaveResult saveToVersionHistory(String planJson) {
+	private PlanTemplateService.VersionSaveResult saveToVersionHistory(String planJson, String planId) {
 		try {
-			// Parse JSON to extract planTemplateId and title
+			// Parse JSON to extract title
 			PlanInterface planData = objectMapper.readValue(planJson, PlanInterface.class);
 
-			String planTemplateId = planData.getPlanTemplateId();
-			if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
-				String newPlanTemplateId = planIdDispatcher.generatePlanTemplateId();
-				planData.setPlanTemplateId(newPlanTemplateId);
-				planTemplateId = newPlanTemplateId;
-
-				// Re-serialize the updated plan object to JSON
-				planJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(planData);
-				planTemplateId = newPlanTemplateId;
-			}
+			// Use the provided planId instead of generating a new one
+			String planTemplateId = planId;
 
 			String title = planData.getTitle();
 
@@ -239,6 +233,7 @@ public class PlanTemplateController {
 	 * @return Save result
 	 */
 	@PostMapping("/save")
+	@Transactional
 	public ResponseEntity<Map<String, Object>> savePlan(@RequestBody Map<String, String> request) {
 		String planJson = request.get("planJson");
 
@@ -269,12 +264,12 @@ public class PlanTemplateController {
 				planId = newPlanId;
 			}
 
-			if (planId == null || planId.trim().isEmpty()) {
-				return ResponseEntity.badRequest().body(Map.of("error", "Plan ID cannot be found in JSON"));
-			}
+		if (planId == null || planId.trim().isEmpty()) {
+			return ResponseEntity.badRequest().body(Map.of("error", "Plan ID cannot be found in JSON"));
+		}
 
-			// Save to version history
-			PlanTemplateService.VersionSaveResult saveResult = saveToVersionHistory(planJson);
+		// Save to version history
+		PlanTemplateService.VersionSaveResult saveResult = saveToVersionHistory(planJson, planId);
 
 			// Calculate version count
 			List<String> versions = planTemplateService.getPlanVersions(planId);
@@ -495,7 +490,7 @@ public class PlanTemplateController {
 			}
 
 			// Save to version history
-			PlanTemplateService.VersionSaveResult saveResult = saveToVersionHistory(planJson);
+			PlanTemplateService.VersionSaveResult saveResult = saveToVersionHistory(planJson, planId);
 
 			// Return plan data
 			Map<String, Object> response = new HashMap<>();
