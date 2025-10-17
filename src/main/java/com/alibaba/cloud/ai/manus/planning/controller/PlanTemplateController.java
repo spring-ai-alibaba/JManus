@@ -264,12 +264,12 @@ public class PlanTemplateController {
 				planId = newPlanId;
 			}
 
-		if (planId == null || planId.trim().isEmpty()) {
-			return ResponseEntity.badRequest().body(Map.of("error", "Plan ID cannot be found in JSON"));
-		}
+			if (planId == null || planId.trim().isEmpty()) {
+				return ResponseEntity.badRequest().body(Map.of("error", "Plan ID cannot be found in JSON"));
+			}
 
-		// Save to version history
-		PlanTemplateService.VersionSaveResult saveResult = saveToVersionHistory(planJson, planId);
+			// Save to version history
+			PlanTemplateService.VersionSaveResult saveResult = saveToVersionHistory(planJson, planId);
 
 			// Calculate version count
 			List<String> versions = planTemplateService.getPlanVersions(planId);
