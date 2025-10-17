@@ -124,27 +124,12 @@ JManus 支持 H2（默认）、MySQL以及PostgreSQL数据库。
 
 > 💡 **注意**：应用程序将在首次启动时自动创建所需的表，使用 JPA 的 `ddl-auto: update` 配置。
 
-#### 3. 启动应用程序
-
-**对于类 Unix 系统 (macOS, Linux):**
-```bash
-../mvnw spring-boot:run
-```
-
-**对于 Windows 系统:**
-```bash
-../mvnw.cmd spring-boot:run
-```
-
-#### 4. 访问您的多 Agent 仪表盘
+#### 3. 访问您的多 Agent 仪表盘
 
 在您的浏览器中访问 `http://localhost:18080`。
 
 🎉 **恭喜!** 您的多 Agent 系统现已上线并准备就绪。
 
-### 🔒 安全提示
-
-> 💡 **AI 应用安全**: 与其他 AI 应用一样，在生产环境中建议实施适当的身份认证和访问控制。对于 JManus 而言，这包括对模型对话接口、MCP 服务配置、内置工具管理和系统参数调整功能的安全防护，以避免误用和未授权访问。
 
 
 ## 稳定版本的Release

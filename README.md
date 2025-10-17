@@ -146,9 +146,6 @@ Navigate to `http://localhost:18080` in your browser.
 
 🎉 **Congratulations!** Your multi-agent system is now live and ready for action.
 
-### 🔒 Security Notice
-
-> 💡 **AI Application Security**: As with any AI-powered application in production environments, we recommend implementing appropriate authentication and access controls. For JManus specifically, this includes securing access to model chat interfaces, MCP service configuration, built-in tool management, and system parameter adjustment features to prevent misuse and unauthorized access.
 
 
 ## Stable Release
