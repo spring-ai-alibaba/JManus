@@ -44,7 +44,7 @@
       <!-- List Tab Content -->
       <div v-if="sidebarStore.currentTab === 'list'" class="tab-content">
         <div class="new-task-section">
-          <button class="new-task-btn" @click="sidebarStore.createNewTemplate(sidebarStore.planType)">
+          <button class="new-task-btn" @click="() => sidebarStore.createNewTemplate(sidebarStore.planType)">
             <Icon icon="carbon:add" width="16" />
             {{ $t('sidebar.newPlan') }}
             <span class="shortcut">⌘ K</span>
@@ -433,7 +433,7 @@ const handlePublishMcpService = () => {
   showPublishMcpModal.value = true
 }
 
-const handleMcpServicePublished = (tool: CoordinatorToolVO | null) => {
+const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
   if (tool === null) {
     console.log('MCP service deleted successfully')
     toast.success(t('mcpService.deleteSuccess'))
@@ -458,6 +458,10 @@ const handleMcpServicePublished = (tool: CoordinatorToolVO | null) => {
       serviceGroup: tool.serviceGroup || ''
     }
   }
+  
+  // Reload available tools to include the newly published service
+  console.log('[Sidebar] 🔄 Reloading available tools after service publish/delete')
+  await sidebarStore.loadAvailableTools()
 }
 
 // Execution Controller event handlers
