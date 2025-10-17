@@ -122,17 +122,6 @@
             </button>
           </div>
 
-          <!-- Section 1: Plan Generator -->
-          <PlanGenerator
-            :generator-prompt="sidebarStore.generatorPrompt"
-            :json-content="sidebarStore.jsonContent"
-            :is-generating="sidebarStore.isGenerating"
-            :plan-type="sidebarStore.planType"
-            @generate-plan="handleGeneratePlan"
-            @update-plan="handleUpdatePlan"
-            @update-generator-prompt="handleUpdateGeneratorPrompt"
-            @update-plan-type="handleUpdatePlanType"
-          />
 
           <!-- Section 2: JSON Editor (Conditional based on plan type) -->
           <!-- Use JsonEditorV2 for dynamic_agent type -->
@@ -216,7 +205,6 @@ import JsonEditor from './JsonEditor.vue'
 import JsonEditorV2 from './JsonEditorV2.vue'
 import ExecutionController from './ExecutionController.vue'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
-import PlanGenerator from './PlanGenerator.vue'
 import { useToast } from '@/plugins/useToast'
 
 const { t } = useI18n()
@@ -319,25 +307,7 @@ const refreshParameterRequirements = async () => {
   }
 }
 
-const handleGeneratePlan = async () => {
-  try {
-    await sidebarStore.generatePlan()
-    toast.success(t('sidebar.generateSuccess', { templateId: sidebarStore.selectedTemplate?.id ?? t('sidebar.unknown') }))
-  } catch (error: any) {
-    console.error('Failed to generate plan:', error)
-    toast.error(t('sidebar.generateFailed') + ': ' + error.message)
-  }
-}
 
-const handleUpdatePlan = async () => {
-  try {
-    await sidebarStore.updatePlan()
-    toast.success(t('sidebar.updateSuccess'))
-  } catch (error: any) {
-    console.error('Failed to update plan:', error)
-    toast.error(t('sidebar.updateFailed') + ': ' + error.message)
-  }
-}
 
 // Version control handlers
 const handleRollback = () => {
@@ -482,14 +452,7 @@ const handleUpdateExecutionParams = (params: string) => {
   sidebarStore.executionParams = params
 }
 
-// Plan Generator event handlers
-const handleUpdateGeneratorPrompt = (prompt: string) => {
-  sidebarStore.generatorPrompt = prompt
-}
 
-const handleUpdatePlanType = (planType: string) => {
-  sidebarStore.planType = planType
-}
 
 // Load tool information when plan template changes
 const loadToolInfo = async (planTemplateId: string | null) => {

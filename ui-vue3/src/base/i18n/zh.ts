@@ -1040,11 +1040,13 @@ const words: I18nType = {
         title: '查询股价',
         description: '获取今天阿里巴巴的最新股价（Agent可以使用浏览器工具）',
         prompt: '用浏览器基于百度，查询今天阿里巴巴的股价，并返回最新股价',
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/chn/stock-price-query.md',
       },
       weather: {
         title: '查询天气',
         description: '获取北京今天的天气情况（Agent可以使用MCP工具服务）',
         prompt: '用浏览器，基于百度，查询北京今天的天气',
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/chn/weather-query.md',
       },
       queryplan: {
         title: '查询一个人的信息',
@@ -1055,6 +1057,7 @@ const words: I18nType = {
         step1Output: '存放的目录路径',
         step2: '[TEXT_FILE_AGENT] 从 html_data 目录中找到所有的有效关于沈询 阿里 的网页链接，输出到 link.md里面',
         step2Output: 'url地址，说明',
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/chn/query-plan.md',
       },
       ainovel: {
         title: 'AI小说创作',
@@ -1065,6 +1068,7 @@ const words: I18nType = {
         step1Output: '文件的名字',
         step2: '[TEXT_FILE_AGENT] 从novel.md文件获取子标题信息，然后依次完善每一个章节的具体内容，每个轮次只完善一个子章节的内容，用replace来更新内容，每个章节要求有3000字的内容，不要每更新一个章节就查询一下文档的全部内容',
         step2Output: '文件的名字',
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/chn/ai-novel.md',
       },
       formInputDemo: {
         title: 'AI智能动态表单演示',
@@ -1077,6 +1081,7 @@ const words: I18nType = {
         step2Output: '',
         step3: '[DEFAULT_AGENT] 如果是业务咨询，则输出：业务咨询，可以通过官网链接 www.yida.com 来提交',
         step3Output: '',
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/chn/form-input-demo.md',
       },
     },
   },

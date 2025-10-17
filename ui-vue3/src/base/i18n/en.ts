@@ -1075,11 +1075,13 @@ const words: I18nType = {
         description: "Get today's latest stock price for Alphabet (Agent can use browser tools)",
         prompt:
           "Use browser based on Google to query today's Alphabet stock price and return the latest stock price\n",
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/eng/stock-price-query.md',
       },
       weather: {
         title: 'Query Weather',
         description: "Get today's weather in New York (Agent can use MCP tool services)",
         prompt: "Use browser, based on Google, to query today's weather in New York",
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/eng/weather-query.md',
       },
       queryplan: {
         title: 'Query Person Info',
@@ -1090,6 +1092,7 @@ const words: I18nType = {
         step1Output: 'Storage directory path',
         step2: '[TEXT_FILE_AGENT] Find all valid web links about Shenxun Ali from html_data directory, output to link.md',
         step2Output: 'URL address, description',
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/eng/query-plan.md',
       },
       ainovel: {
         title: 'AI Novel Creation',
@@ -1100,6 +1103,7 @@ const words: I18nType = {
         step1Output: 'File name',
         step2: '[TEXT_FILE_AGENT] Get chapter title information from novel.md file, then improve each chapter content in sequence, only improve one chapter content per round, use replace to update content, each chapter requires 3000 words, do not query all document content after updating each chapter',
         step2Output: 'File name',
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/eng/ai-novel.md',
       },
       formInputDemo: {
         title: 'AI Intelligent Dynamic Form Demo',
@@ -1112,6 +1116,7 @@ const words: I18nType = {
         step2Output: '',
         step3: '[DEFAULT_AGENT] If business consultation, output: Business consultation, you can submit through official website www.yida.com',
         step3Output: '',
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/eng/form-input-demo.md',
       },
     },
   },

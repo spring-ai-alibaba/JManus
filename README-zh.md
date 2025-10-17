@@ -21,7 +21,7 @@
 
 JManus 是 Manus 的一个Java实现，目前已经在阿里巴巴集团内的很多应用都有使用，主要用于处理需要有一定确定性要求的探索性任务，比如，快速从海量数据中找到数据并转换成数据库内的一行数据，或者分析日志并给出告警等。
 
-JManus也提供了http的服务调用能力，适合被集成到既有的项目中。具体可以见开发者快速入门
+JManus也提供了http的服务调用能力，适合被集成到既有的项目中。具体可以见[开发者快速入门 (中文)](./README-dev.md)
 
 
 ## 🎯 JManus的产品特性
@@ -30,11 +30,6 @@ JManus也提供了http的服务调用能力，适合被集成到既有的项目�
 
 纯粹的Java多智能体协作实现，提供了完整的http调用接口，适合Java开发者做二次集成。
 ![Image](https://github.com/user-attachments/assets/893c7fc1-5e6e-4ec9-8389-182f14d86b18)
-
-### 🌊 **无限上下文处理**：
-
-支持从巨量内容中精准抓取目标信息，不依赖特定的长上下文模型。
-![Image](https://github.com/user-attachments/assets/a0245658-fbb7-41dc-989f-86574592f188)
 
 ### 🛠️ **Plan-Act 模式**：
 
@@ -159,7 +154,7 @@ JManus 支持 H2（默认）、MySQL以及PostgreSQL数据库。
 ## 稳定版本的Release
 
 如果你想要之前的稳定版本，可以在这里找到：
-[稳定release版](https://github.com/rainerWJY/Java-Open-Manus/releases)
+[稳定release版](https://github.com/spring-ai-alibaba/JManus/releases)
 
 
 ## 🤝 如何贡献
@@ -168,19 +163,19 @@ JManus 支持 H2（默认）、MySQL以及PostgreSQL数据库。
 
 ### 贡献机会
 
-您可以在我们的 [项目看板](https://github.com/orgs/alibaba/projects/24) 上找到可用的任务。
+您可以在我们的 [项目看板](https://github.com/orgs/spring-ai-alibaba/projects/1) 上找到可用的任务。
 
-- 🐛 **报告 Bug**: [提交详细的问题报告](https://github.com/alibaba/spring-ai-alibaba/issues)
-- 💡 **功能请求**: [提出创新的增强建议](https://github.com/alibaba/spring-ai-alibaba/issues)
+- 🐛 **报告 Bug**: [提交详细的问题报告](https://github.com/spring-ai-alibaba/JManus/issues)
+- 💡 **功能请求**: [提出创新的增强建议](https://github.com/spring-ai-alibaba/JManus/issues)
 - 📝 **文档**: 帮助我们提高文档的清晰度和完整性
-- 🔧 **代码贡献**: [提交包含您改进的拉取请求](https://github.com/alibaba/spring-ai-alibaba/pulls)
+- 🔧 **代码贡献**: [提交包含您改进的拉取请求](https://github.com/spring-ai-alibaba/JManus/pulls)
 
 ### 开发环境设置
 
 ```bash
 # Fork 并克隆仓库
-git clone https://github.com/your-username/spring-ai-alibaba.git
-cd spring-ai-alibaba/spring-ai-alibaba-jmanus
+git clone git@github.com:spring-ai-alibaba/JManus.git
+cd JManus
 
 # 安装项目依赖
 mvn clean install
