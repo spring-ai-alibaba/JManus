@@ -50,6 +50,10 @@ jobs:
       - run: make ui-build
       - run: make build
 
+      - name: Read VERSION file
+        id: version
+        run: echo "BUILD_VERSION=$(cat VERSION)" >> $GITHUB_OUTPUT
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -89,7 +93,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            BUILD_VERSION=latest
+            BUILD_VERSION=${{ steps.version.outputs.BUILD_VERSION }}
 
       - name: Image digest
         run: echo ${{ steps.meta.outputs.digest }}

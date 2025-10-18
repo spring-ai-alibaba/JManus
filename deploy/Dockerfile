@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Multi-stage build for better layer caching and smaller final image
-ARG BUILD_VERSION=3.0.1-SNAPSHOT
+ARG BUILD_VERSION=4.0.6
 
 # Runtime stage - use multi-arch base image
 FROM eclipse-temurin:17-jdk-noble
@@ -23,6 +23,7 @@ ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
+ARG BUILD_VERSION
 
 # Set working directory
 WORKDIR /app
@@ -86,7 +87,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy JAR file
-COPY target/jmanus.jar app.jar
+COPY target/jmanus-${BUILD_VERSION}.jar app.jar
 
 # Install Playwright browsers, extract JAR and setup directories
 RUN java -jar app.jar playwright-init && \

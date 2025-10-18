@@ -85,5 +85,6 @@ header:
     - '**/ui-vue3/**'
     - '.editorconfig'
     - '.gitattributes'
+    - 'VERSION'
 
   comment: never
