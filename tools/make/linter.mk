@@ -63,16 +63,6 @@ markdown-lint-fix: ## Fix the markdown files style.
 	markdownlint --version
 	markdownlint --config ./tools/linter/markdownlint/markdown_lint_config.yaml --fix .
 
-.PHONY: newline-check
-newline-check: ## Check the newline
-	@$(LOG_TARGET)
-	python tools/scripts/new-line-check.py check
-
-.PHONY: newline-fix
-newline-fix: ## Fix the newline
-	@$(LOG_TARGET)
-	python tools/scripts/new-line-check.py fix
-
 .PHONY: secrets-check
 secrets-check: ## Check the secrets
 	@$(LOG_TARGET)
