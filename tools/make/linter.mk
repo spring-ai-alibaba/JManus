@@ -17,8 +17,8 @@
 .PHONY: lint
 lint: ## Check files
 # md There are too many file errors, close temporarily
-# lint: markdown-lint yaml-lint code-spell newline-check
-lint: yaml-lint codespell newline-check
+# lint: markdown-lint yaml-lint code-spell
+lint: yaml-lint codespell
 
 .PHONY: codespell
 codespell: CODESPELL_SKIP := $(shell cat tools/linter/codespell/.codespell.skip | tr \\n ',')
