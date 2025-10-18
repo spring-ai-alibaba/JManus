@@ -76,7 +76,7 @@ java -jar jmanus.jar
 
 > 💡 **引导式设置**: 应用启动后会自动显示引导页面。在第一个页面选择中英文语言，然后在第二个页面输入您刚才申请的 DashScope API 密钥即可完成配置。
 
-🎉 **恭喜!** 您的多 Agent 系统现已快速启动完成。
+🎉 **恭喜!** 您的多 Agent 系统现已快速启动完成。 你可以访问https://github.com/talk-flow/public-usecase 去做一些我们认为比较有效的实践。
 
 ---
 
@@ -128,7 +128,7 @@ JManus 支持 H2（默认）、MySQL以及PostgreSQL数据库。
 
 在您的浏览器中访问 `http://localhost:18080`。
 
-🎉 **恭喜!** 您的多 Agent 系统现已上线并准备就绪。
+🎉 **恭喜!** 您的多 Agent 系统现已上线并准备就绪。 你可以访问https://github.com/talk-flow/public-usecase 去做一些我们认为比较有效的实践。
 
 
 

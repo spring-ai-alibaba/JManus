@@ -112,7 +112,7 @@ const goToDirectPage = () => {
 
 const examples = computed(() => [
   { title: t('home.examples.stockPrice.title'), type: 'github', description: t('home.examples.stockPrice.description'), icon: 'carbon:chart-line-data', url: t('home.examples.stockPrice.url') },
-  { title: t('home.examples.weather.title'), type: 'github', description: t('home.examples.weather.description'), icon: 'carbon:partly-cloudy', url: t('home.examples.weather.url') }
+  { title: t('home.examples.weather.title'), type: 'github', description: t('home.examples.weather.description'), icon: 'carbon:location', url: t('home.examples.weather.url') }
 ])
 const plans = computed(() => [
   { title: t('home.examples.queryplan.title'), type: 'github', description: t('home.examples.queryplan.description'), icon: 'carbon:plan', url: t('home.examples.queryplan.url') },
@@ -152,7 +152,7 @@ import { sidebarStore } from '@/stores/sidebar'
 
 const saveJsonPlanToTemplate = async (jsonPlan: any) => {
   try {
-    sidebarStore.createNewTemplate(jsonPlan.planType);
+    await sidebarStore.createNewTemplate(jsonPlan.planType);
     sidebarStore.jsonContent = JSON.stringify(jsonPlan);
     const saveResult = await sidebarStore.saveTemplate();
     if (saveResult?.duplicate) {
