@@ -32,7 +32,9 @@ runs:
     - uses: actions/setup-node@v4
       with:
         node-version: '22'
-      run: npm install -g pnpm
     - name: Pull python:3.10 docker image
       shell: bash
       run: docker pull python:3.10
+    - name: Install pnpm
+      shell: bash
+      run: npm install -g pnpm
