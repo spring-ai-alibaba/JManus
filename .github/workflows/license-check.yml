@@ -23,7 +23,7 @@ on:
   pull_request:
     branches:
       - main
-      
+
 jobs:
   license-check:
     if: (github.repository == 'spring-ai-alibaba/JManus')

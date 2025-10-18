@@ -83,5 +83,7 @@ header:
     - 'tools/linter/codespell/.codespell.ignorewords'
     - 'tools/linter/codespell/.codespell.skip'
     - '**/ui-vue3/**'
+    - '.editorconfig'
+    - '.gitattributes'
 
   comment: never

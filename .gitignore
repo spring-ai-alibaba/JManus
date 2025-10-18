@@ -55,3 +55,6 @@ extensions/
 build-self-contained/*
 src/.DS_Store
 **/.DS_Store
+
+# Python
+.venv/
