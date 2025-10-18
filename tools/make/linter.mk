@@ -62,8 +62,3 @@ markdown-lint-fix: ## Fix the markdown files style.
 	@$(LOG_TARGET)
 	markdownlint --version
 	markdownlint --config ./tools/linter/markdownlint/markdown_lint_config.yaml --fix .
-
-.PHONY: secrets-check
-secrets-check: ## Check the secrets
-	@$(LOG_TARGET)
-	gitleaks dir -v .
