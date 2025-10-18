@@ -69,13 +69,13 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ secrets.DOCKER_USERNAME }}/jmanus
+            ${{ secrets.DOCKER_USERNAME != '' && format('{0}/jmanus', secrets.DOCKER_USERNAME) || '' }}
             ghcr.io/${{ github.repository_owner }}/jmanus
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=branch
             type=ref,event=pr
-            type=sha,prefix={{branch}}-
+            type=sha
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
