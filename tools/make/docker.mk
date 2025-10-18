@@ -25,7 +25,7 @@ DOCKER_CONTAINER_NAME := jmanus-container
 .PHONY: docker-build
 docker-build: ## Build Docker image
 	@$(LOG_TARGET)
-  docker build -t $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_IMAGE_NAME):latest -f deploy/Dockerfile.multiarch .
+	@docker build -t $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_IMAGE_NAME):latest -f deploy/Dockerfile .
 
 # Build and run
 .PHONY: docker-build-run
@@ -36,10 +36,10 @@ docker-build-run: docker-build docker-run
 .PHONY: docker-run
 docker-run: ## Run Docker container
 	@$(LOG_TARGET)
-  docker run --name $(DOCKER_CONTAINER_NAME) -d $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_IMAGE_NAME):latest
+	@docker run --name $(DOCKER_CONTAINER_NAME) -d $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_IMAGE_NAME):latest
 
 # Remove image
 .PHONY: docker-rmi
 docker-rmi: ## Remove Docker image
 	@$(LOG_TARGET)
-  docker rmi -f $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_IMAGE_NAME):latest
+	@docker rmi -f $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_IMAGE_NAME):latest
