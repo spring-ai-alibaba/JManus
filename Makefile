@@ -5,7 +5,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     https://www.apache.org/licenses/LICENSE-2.0
+# https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,22 +14,16 @@
 # limitations under the License.
 #
 
-name: 🗒️ License Check
+_run:
+	@$(MAKE) --warn-undefined-variables \
+		-f tools/make/common.mk \
+		-f tools/make/java.mk \
+		-f tools/make/linter.mk \
+		-f tools/make/tools.mk \
+		-f tools/make/docker.mk \
+		-f tools/make/ui.mk \
+		$(MAKECMDGOALS)
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+.PHONY: _run
 
-jobs:
-  license-check:
-    if: (github.repository == 'spring-ai-alibaba/JManus')
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: ./tools/github-actions/setup-deps
-      - run: make tools
-      - run: make licenses-check
+$(if $(MAKECMDGOALS),$(MAKECMDGOALS): %: _run)

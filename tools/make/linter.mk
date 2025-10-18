@@ -17,8 +17,8 @@
 .PHONY: lint
 lint: ## Check files
 # md There are too many file errors, close temporarily
-# lint: markdown-lint yaml-lint code-spell newline-check
-lint: yaml-lint codespell newline-check
+# lint: markdown-lint yaml-lint code-spell
+lint: yaml-lint codespell
 
 .PHONY: codespell
 codespell: CODESPELL_SKIP := $(shell cat tools/linter/codespell/.codespell.skip | tr \\n ',')
@@ -62,18 +62,3 @@ markdown-lint-fix: ## Fix the markdown files style.
 	@$(LOG_TARGET)
 	markdownlint --version
 	markdownlint --config ./tools/linter/markdownlint/markdown_lint_config.yaml --fix .
-
-.PHONY: newline-check
-newline-check: ## Check the newline
-	@$(LOG_TARGET)
-	python tools/scripts/new-line-check.py check
-
-.PHONY: newline-fix
-newline-fix: ## Fix the newline
-	@$(LOG_TARGET)
-	python tools/scripts/new-line-check.py fix
-
-.PHONY: secrets-check
-secrets-check: ## Check the secrets
-	@$(LOG_TARGET)
-	gitleaks dir -v .

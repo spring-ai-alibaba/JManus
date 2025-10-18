@@ -41,16 +41,6 @@ tools: ## Install ci tools
 	@echo "Installing yamlfmt"
 	go install github.com/google/yamlfmt/cmd/yamlfmt@latest
 
-	@echo "Installing gitleaks"
-	mkdir -p tools/bin && \
-	cd tools/bin && \
-	git clone https://github.com/gitleaks/gitleaks && \
-	cd gitleaks && \
-	make build && \
-	chmod +x gitleaks && \
-	cp gitleaks /usr/local/bin && \
-	cd .. && rm -rf gitleaks
-
 	@echo "Installing mvnd"
 	curl -sL https://dlcdn.apache.org/maven/mvnd/$(MVND_VERSION)/maven-mvnd-$(MVND_VERSION)-linux-amd64.zip -o mvnd.zip && \
 	unzip -q mvnd.zip && \

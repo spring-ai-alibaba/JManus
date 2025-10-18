@@ -31,13 +31,13 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           stale-issue-message: |
             This issue has been marked as invalid question. Please provide more information by following the issue template. The issue will be closed in 1 day if no further activity occurs.
-            
+
             **To keep this issue open, please:**
             - Provide a clear description of the problem
             - Include steps to reproduce (if applicable)
             - Add relevant error messages or logs
             - Specify your environment details
-            
+
             Thank you for your understanding!
           stale-issue-label: "stale"
           days-before-stale: 0
