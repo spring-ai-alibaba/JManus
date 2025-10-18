@@ -60,7 +60,7 @@ import { FileInfo, FileUploadApiService, type DeleteFileResponse, type FileUploa
 
 const { t } = useI18n()
 
-interface Props {
+type FileUploadProps = {
   acceptedFileTypes?: string
   disabled?: boolean
 }
@@ -74,7 +74,7 @@ interface Emits {
   (e: 'upload-error', error: any): void
 }
 
-const props = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<FileUploadProps>(), {
   acceptedFileTypes: '.pdf,.txt,.md,.doc,.docx,.csv,.xlsx,.xls,.json,.xml,.html,.htm,.log,.java,.py,.js,.ts,.sql,.sh,.bat,.yaml,.yml,.properties,.conf,.ini,.jpg,.jpeg,.png,.gif',
   disabled: false
 })
