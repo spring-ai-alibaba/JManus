@@ -1,4 +1,3 @@
-#
 # Copyright 2024-2025 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,24 +11,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-name: 🗒️ License Check
+##@ UI
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+# Build ui
+.PHONY: ui-build
+ui-build: ## Build the UI
+	@$(LOG_TARGET)
+	cd ui-vue3 && pnpm install && pnpm run build
 
-jobs:
-  license-check:
-    if: (github.repository == 'spring-ai-alibaba/JManus')
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: ./tools/github-actions/setup-deps
-      - run: make tools
-      - run: make licenses-check
+# Run ui
+.PHONY: ui-run
+ui-run: ## Run the UI
+	@$(LOG_TARGET)
+	@cd ui-vue3 && pnpm install && pnpm run dev
+
+# Rebuild ui
+.PHONY: ui-rebuild
+ui-rebuild: ## Rebuild the UI
+	@$(LOG_TARGET)
+	cd ui-vue3 && pnpm install && pnpm run build
+
+# UI lint
+.PHONY: ui-lint
+ui-lint: ## Lint the UI code
+	@$(LOG_TARGET)
+	cd ui-vue3 && pnpm install && pnpm run lint

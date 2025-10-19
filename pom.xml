@@ -8,7 +8,6 @@
     <name>JManus - AI Agent Management System</name>
     <artifactId>jmanus</artifactId>
     <version>4.0.6</version>
-    <packaging>jar</packaging>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
