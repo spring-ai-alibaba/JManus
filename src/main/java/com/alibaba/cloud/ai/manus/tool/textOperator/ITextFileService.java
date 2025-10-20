@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.manus.tool.textOperator;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
@@ -98,5 +99,16 @@ public interface ITextFileService {
 	 * Clean up resources
 	 */
 	void cleanup();
+
+	/**
+	 * Get absolute path for creating new files with hierarchical access
+	 * For sub-plans, new files are always created in the sub-plan directory
+	 * @param rootPlanId Root plan ID for directory operations
+	 * @param filePath File path
+	 * @param subPlanId Optional subplan ID for subplan-specific paths
+	 * @return Absolute path for file creation
+	 * @throws IOException If path is invalid
+	 */
+	Path getCreateFilePath(String rootPlanId, String filePath, String subPlanId) throws IOException;
 
 }

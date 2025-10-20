@@ -169,7 +169,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 const handleSend = () => {
   if (!currentInput.value.trim() || isDisabled.value) return
 
-  let finalInput = currentInput.value.trim()
+  const finalInput = currentInput.value.trim()
 
   const query: InputMessage = {
     input: finalInput,

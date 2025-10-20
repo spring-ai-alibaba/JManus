@@ -407,7 +407,7 @@ watch(
   () => taskStore.taskToInput,
   (newTaskToInput) => {
     console.log('[Direct] Watch taskStore.taskToInput triggered, newTaskToInput:', newTaskToInput)
-    if (newTaskToInput?.trim()) {
+    if (newTaskToInput.trim()) {
       console.log('[Direct] Setting input value from taskToInput:', newTaskToInput)
       nextTick(() => {
         if (inputRef.value && typeof inputRef.value.setInputValue === 'function') {
@@ -682,7 +682,7 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
   }
   try {
     // Get the plan template ID
-    const planTemplateId = payload.planData?.planTemplateId
+    const planTemplateId = payload.planData.planTemplateId
 
     if (!planTemplateId) {
       throw new Error(t('direct.planTemplateIdNotFound'))
@@ -705,7 +705,7 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
     
     console.log('[Direct] 🔍 DEBUG - InputArea uploadedFiles:', uploadedFiles)
     console.log('[Direct] 🔍 DEBUG - InputArea uploadKey:', uploadKey)
-    console.log('[Direct] Executing with uploaded files:', uploadedFiles?.length ?? 0)
+    console.log('[Direct] Executing with uploaded files:', uploadedFiles.length ?? 0)
     console.log('[Direct] Executing with replacement params:', payload.replacementParams)
 
 
