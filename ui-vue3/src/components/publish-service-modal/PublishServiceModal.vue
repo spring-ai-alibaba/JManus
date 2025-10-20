@@ -263,7 +263,7 @@ const formData = reactive({
 
 // Calculate modal title
 const modalTitle = computed(() => {
-  const isUpdate = currentTool.value && currentTool.value.id
+  const isUpdate = currentTool.value?.id
   return isUpdate ? t('mcpService.updateService') : t('mcpService.createService')
 })
 
@@ -340,19 +340,19 @@ const showMessage = (msg: string, type: 'success' | 'error' | 'info') => {
 // Validate form
 const validateForm = (): boolean => {
   // Validate tool name
-  if (!formData.serviceName || !formData.serviceName.trim()) {
+  if (!formData.serviceName.trim()) {
     showMessage(t('mcpService.toolNameRequiredError'), 'error')
     return false
   }
   
   // Validate tool description
-  if (!formData.userRequest || !formData.userRequest.trim()) {
+  if (!formData.userRequest.trim()) {
     showMessage(t('mcpService.toolDescriptionRequiredError'), 'error')
     return false
   }
   
   // Validate service group
-  if (!formData.serviceGroup || !formData.serviceGroup.trim()) {
+  if (!formData.serviceGroup.trim()) {
     showMessage(t('mcpService.serviceGroupRequiredError'), 'error')
     return false
   }
@@ -481,7 +481,7 @@ const handleDelete = async () => {
     return
   }
   
-  if (!currentTool.value || !currentTool.value.id) {
+  if (!currentTool.value?.id) {
     showMessage(t('mcpService.deleteFailed') + ': ' + t('mcpService.selectPlanTemplateFirst'), 'error')
     return
   }

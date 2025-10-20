@@ -314,9 +314,9 @@ Response: {
 
 // Computed properties
 const isAnyServiceEnabled = computed(() => {
-  return props.toolInfo?.enableInternalToolcall || 
-         props.toolInfo?.enableHttpService || 
-         props.toolInfo?.enableMcpService
+  return props.toolInfo.enableInternalToolcall || 
+         props.toolInfo.enableHttpService || 
+         props.toolInfo.enableMcpService
 })
 
 const buttonText = computed(() => {
@@ -331,7 +331,7 @@ const canExecute = computed(() => {
   if (parameterRequirements.value.hasParameters) {
     // Check if all required parameters are filled
     return parameterRequirements.value.parameters.every(param => 
-      parameterValues.value[param]?.trim()
+      parameterValues.value[param].trim()
     )
   }
   
@@ -500,7 +500,7 @@ const validateParameters = (): boolean => {
   let hasErrors = false
   
   parameterRequirements.value.parameters.forEach(param => {
-    const value = parameterValues.value[param]?.trim()
+    const value = parameterValues.value[param].trim()
     if (!value) {
       parameterErrors.value[param] = `${param} is required`
       hasErrors = true

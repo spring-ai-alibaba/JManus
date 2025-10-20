@@ -192,7 +192,7 @@ const filteredTools = computed(() => {
       tool =>
         tool.name.toLowerCase().includes(query) ||
         tool.description.toLowerCase().includes(query) ||
-        (tool.serviceGroup?.toLowerCase().includes(query) ?? false)
+        (tool.serviceGroup.toLowerCase().includes(query) ?? false)
     )
   }
 
