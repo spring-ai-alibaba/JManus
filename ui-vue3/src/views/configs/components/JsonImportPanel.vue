@@ -160,7 +160,7 @@ const validateJson = () => {
       validationErrors.value = []
     } else {
       isJsonValid.value = false
-      validationErrors.value = validationResult.errors || []
+      validationErrors.value = validationResult.errors ?? []
     }
 
     emitValidationResult()

@@ -699,13 +699,13 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
     console.log('[Direct] About to call PlanActApiService.executePlan')
 
     // Get uploaded files from InputArea component
-    const uploadedFiles = payload.uploadedFiles || []
-    const uploadKey = payload.uploadKey || undefined
+    const uploadedFiles = payload.uploadedFiles ?? []
+    const uploadKey = payload.uploadKey ?? undefined
 
     
     console.log('[Direct] 🔍 DEBUG - InputArea uploadedFiles:', uploadedFiles)
     console.log('[Direct] 🔍 DEBUG - InputArea uploadKey:', uploadKey)
-    console.log('[Direct] Executing with uploaded files:', uploadedFiles.length ?? 0)
+    console.log('[Direct] Executing with uploaded files:', uploadedFiles.length)
     console.log('[Direct] Executing with replacement params:', payload.replacementParams)
 
 
