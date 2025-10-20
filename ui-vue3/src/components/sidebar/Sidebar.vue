@@ -44,7 +44,7 @@
       <!-- List Tab Content -->
       <div v-if="sidebarStore.currentTab === 'list'" class="tab-content">
         <div class="new-task-section">
-          <button class="new-task-btn" @click="sidebarStore.createNewTemplate(sidebarStore.planType)">
+          <button class="new-task-btn" @click="() => sidebarStore.createNewTemplate(sidebarStore.planType)">
             <Icon icon="carbon:add" width="16" />
             {{ $t('sidebar.newPlan') }}
             <span class="shortcut">⌘ K</span>
@@ -194,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed, onUnmounted, watch } from 'vue'
+import { onMounted, ref, computed, onUnmounted, watch, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { sidebarStore } from '@/stores/sidebar'
@@ -261,8 +261,6 @@ const loadCoordinatorToolConfig = async () => {
   }
 }
 
-
-
 // Use pinia store
 // Use TS object-implemented sidebarStore
 // Use sidebarStore instance directly, no pinia needed
@@ -293,17 +291,36 @@ const handleSaveTemplate = async () => {
 
 // Method to refresh parameter requirements
 const refreshParameterRequirements = async () => {
-  // Add a small delay to ensure the backend has processed the new template
-  await new Promise(resolve => setTimeout(resolve, 500))
+  // Add a delay to ensure the backend has processed the new template and committed the transaction
+  await new Promise(resolve => setTimeout(resolve, 1000))
+  
+  console.log('[Sidebar] 🔄 Refreshing parameter requirements for templateId:', sidebarStore.currentPlanTemplateId)
+  
+  // Use nextTick to ensure all reactive updates are complete
+  await nextTick()
   
   // Get ExecutionController component through ref and call its refresh method
   if (executionControllerRef.value) {
+    console.log('[Sidebar] 📞 Calling ExecutionController.loadParameterRequirements()')
     executionControllerRef.value.loadParameterRequirements()
+    
+    // Add a retry mechanism in case the first call fails due to timing
+    setTimeout(() => {
+      if (executionControllerRef.value) {
+        console.log('[Sidebar] 🔄 Retry: Calling ExecutionController.loadParameterRequirements() again')
+        executionControllerRef.value.loadParameterRequirements()
+      }
+    }, 2000) // Increased delay to 2 seconds for database transaction commit
+  } else {
+    console.warn('[Sidebar] ⚠️ ExecutionController ref not available')
   }
   
   // Refresh parameter requirements in PublishMcpServiceModal
   if (publishMcpModalRef.value) {
+    console.log('[Sidebar] 📞 Calling PublishMcpServiceModal.loadParameterRequirements()')
     publishMcpModalRef.value.loadParameterRequirements()
+  } else {
+    console.warn('[Sidebar] ⚠️ PublishMcpServiceModal ref not available')
   }
 }
 
@@ -416,7 +433,7 @@ const handlePublishMcpService = () => {
   showPublishMcpModal.value = true
 }
 
-const handleMcpServicePublished = (tool: CoordinatorToolVO | null) => {
+const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
   if (tool === null) {
     console.log('MCP service deleted successfully')
     toast.success(t('mcpService.deleteSuccess'))
@@ -441,6 +458,10 @@ const handleMcpServicePublished = (tool: CoordinatorToolVO | null) => {
       serviceGroup: tool.serviceGroup || ''
     }
   }
+  
+  // Reload available tools to include the newly published service
+  console.log('[Sidebar] 🔄 Reloading available tools after service publish/delete')
+  await sidebarStore.loadAvailableTools()
 }
 
 // Execution Controller event handlers

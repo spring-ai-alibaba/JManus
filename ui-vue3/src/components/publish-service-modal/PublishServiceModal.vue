@@ -145,108 +145,6 @@
             
           </div>
           
-          <!-- MCP Service Publishing Option -->
-          <div class="mcp-publish-option">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                v-model="publishAsMcpService"
-                class="checkbox-input"
-              />
-              <span class="checkbox-text">{{ t('mcpService.publishAsMcpService') }}</span>
-            </label>
-            <div class="checkbox-description">
-              {{ t('mcpService.publishAsMcpServiceDescription') }}
-            </div>
-            
-            <!-- Endpoint Configuration - Only shown when MCP service publishing option is selected -->
-            <div v-if="publishAsMcpService" class="form-section">
-              <div class="form-item">
-                <label>{{ t('mcpService.endpointRequired') }}</label>
-                <div class="endpoint-description">
-                  {{ t('mcpService.endpointDescription') }}
-                </div>
-                <div class="endpoint-container">
-                  <div class="endpoint-row">
-                    <div class="custom-select">
-                      <div class="select-input-container">
-                        <div class="input-content">
-                          <Icon icon="carbon:application" width="16" class="input-icon" />
-                          <input
-                            type="text"
-                            v-model="formData.endpoint"
-                            :placeholder="t('mcpService.endpointPlaceholder')"
-                            class="select-input"
-                            @focus="isDropdownOpen = true"
-                            @input="handleEndpointInput"
-                            @keydown.enter="handleEndpointEnter"
-                            @blur="handleEndpointBlur"
-                          />
-                        </div>
-                        <button class="select-arrow-btn" @click="toggleDropdown" title="Expand Options">
-                          <Icon
-                            :icon="isDropdownOpen ? 'carbon:chevron-up' : 'carbon:chevron-down'"
-                            width="14"
-                            class="chevron"
-                          />
-                        </button>
-                      </div>
-
-                      <!-- Dropdown Options - Using absolute positioning, not occupying document flow -->
-                      <div v-if="isDropdownOpen" class="select-dropdown" :class="{ 'dropdown-top': dropdownPosition === 'top' }">
-                        <div class="dropdown-header">
-                          <span>{{ t('mcpService.selectEndpoint') }}</span>
-                          <button class="close-btn" @click="isDropdownOpen = false">
-                            <Icon icon="carbon:close" width="12" />
-                          </button>
-                        </div>
-                        <div class="select-options">
-                          <button
-                            v-for="endpoint in availableEndpoints"
-                            :key="endpoint"
-                            class="select-option"
-                            :class="{ active: formData.endpoint === endpoint }"
-                            @click="selectEndpoint(endpoint)"
-                          >
-                            <span class="option-name">{{ endpoint }}</span>
-                            <Icon v-if="formData.endpoint === endpoint" icon="carbon:checkmark" width="14" class="check-icon" />
-                          </button>
-                        </div>
-                        <!-- Manual Input Area -->
-                        <div class="manual-input-section">
-                          <div class="manual-input-container">
-                            <input
-                              type="text"
-                              v-model="manualEndpointInput"
-                              :placeholder="t('mcpService.manualInput')"
-                              class="manual-input"
-                              @keydown.enter="addManualEndpoint"
-                              @blur="handleManualInputBlur"
-                            />
-                            <button class="add-manual-btn" @click="addManualEndpoint">
-                              <Icon icon="carbon:add" width="14" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <div v-if="isDropdownOpen" class="backdrop" @click="isDropdownOpen = false"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- MCP Streamable URL Configuration -->
-              <div v-if="endpointUrl" class="form-item url-item">
-                <label>{{ t('mcpService.mcpStreamableUrl') }}</label>
-                <div class="url-container">
-                  <div class="url-display" @dblclick="copyEndpointUrl" :title="t('mcpService.copyUrl') + ': ' + endpointUrl">
-                    <span class="url-text">{{ endpointUrl || t('mcpService.mcpStreamableUrlPlaceholder') }}</span>
-                    <Icon icon="carbon:copy" width="16" class="copy-icon" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -331,13 +229,6 @@ const error = ref('')
 const success = ref('')
 const publishing = ref(false)
 const deleting = ref(false)
-const availableEndpoints = ref<string[]>([])
-
-// New reactive data
-const endpointUrl = ref('')
-const isDropdownOpen = ref(false)
-const dropdownPosition = ref('bottom')
-const manualEndpointInput = ref('')
 
 // Current tool data, used to determine whether to create or update
 const currentTool = ref<CoordinatorToolVO | null>(null)
@@ -346,7 +237,6 @@ const currentTool = ref<CoordinatorToolVO | null>(null)
 const isSaved = ref(false)
 
 // Service publishing options
-const publishAsMcpService = ref(false)
 const publishAsHttpService = ref(false)
 const publishAsInternalToolcall = ref(true) // Default to true
 
@@ -388,19 +278,9 @@ const initializeFormData = () => {
     formData.parameters = []
   }
   currentTool.value = null
-  endpointUrl.value = ''
   isSaved.value = false
 }
 
-// Load available endpoints
-const loadEndpoints = async () => {
-  try {
-    availableEndpoints.value = await CoordinatorToolApiService.getAllEndpoints()
-  } catch (err: any) {
-    console.error('Failed to load endpoints:', err)
-    showMessage(t('mcpService.loadEndpointsFailed') + ': ' + err.message, 'error')
-  }
-}
 
 // Load parameter requirements from plan template
 const loadParameterRequirements = async () => {
@@ -441,98 +321,6 @@ const loadParameterRequirements = async () => {
   }
 }
 
-    // Dropdown related methods
-const toggleDropdown = () => {
-  if (!isDropdownOpen.value) {
-    // Calculate position before showing dropdown
-    calculateDropdownPosition()
-  }
-  isDropdownOpen.value = !isDropdownOpen.value
-}
-
-const calculateDropdownPosition = () => {
-  const selectElement = document.querySelector('.custom-select') as HTMLElement
-  if (!selectElement) return
-  
-  const rect = selectElement.getBoundingClientRect()
-  const windowHeight = window.innerHeight
-  const dropdownHeight = 200 // Estimated dropdown height
-  
-  // If there's not enough space below, show above
-  if (rect.bottom + dropdownHeight > windowHeight) {
-    dropdownPosition.value = 'top'
-  } else {
-    dropdownPosition.value = 'bottom'
-  }
-}
-
-const selectEndpoint = (endpoint: string) => {
-  formData.endpoint = endpoint
-  isDropdownOpen.value = false
-  manualEndpointInput.value = ''
-}
-
-const addManualEndpoint = () => {
-  if (manualEndpointInput.value.trim()) {
-    const newEndpoint = manualEndpointInput.value.trim().replace(/[^a-zA-Z0-9_/]/g, '')
-    if (newEndpoint) {
-      formData.endpoint = newEndpoint
-      if (!availableEndpoints.value.includes(newEndpoint)) {
-        availableEndpoints.value.push(newEndpoint)
-      }
-      isDropdownOpen.value = false
-      manualEndpointInput.value = ''
-    }
-  }
-}
-
-const handleManualInputBlur = () => {
-      // Delay processing to ensure click events can trigger normally
-  setTimeout(() => {
-    if (manualEndpointInput.value.trim()) {
-      addManualEndpoint()
-    }
-  }, 200)
-}
-
-// Handle dropdown input
-const handleEndpointInput = () => {
-  // When user inputs in the input box, if it's an existing endpoint, select it directly
-  if (availableEndpoints.value.includes(formData.endpoint)) {
-    selectEndpoint(formData.endpoint)
-  }
-}
-
-// Handle dropdown enter key
-const handleEndpointEnter = () => {
-  // When user presses enter in input box, if it's an existing endpoint, select it directly
-  if (availableEndpoints.value.includes(formData.endpoint)) {
-    selectEndpoint(formData.endpoint)
-  }
-}
-
-// Handle dropdown blur
-const handleEndpointBlur = () => {
-  // When input box loses focus, if it's an existing endpoint, select it directly
-  if (availableEndpoints.value.includes(formData.endpoint)) {
-    selectEndpoint(formData.endpoint)
-  }
-}
-
-
-
-// Copy endpointUrl
-const copyEndpointUrl = async () => {
-  if (!endpointUrl.value) return
-  
-  try {
-    await navigator.clipboard.writeText(endpointUrl.value)
-    showMessage(t('common.copy') + ' ' + t('common.success'), 'success')
-  } catch (err) {
-    console.error('Copy failed:', err)
-    showMessage(t('common.copy') + ' ' + t('common.error'), 'error')
-  }
-}
 
 // Show message
 const showMessage = (msg: string, type: 'success' | 'error' | 'info') => {
@@ -569,15 +357,10 @@ const validateForm = (): boolean => {
     return false
   }
   
-  // Validate MCP service endpoint
-  if (publishAsMcpService.value && (!formData.endpoint || !formData.endpoint.trim())) {
-    showMessage(t('mcpService.endpointRequiredError'), 'error')
-    return false
-  }
   
   
   // Ensure at least one service is selected
-  if (!publishAsInternalToolcall.value && !publishAsHttpService.value && !publishAsMcpService.value) {
+  if (!publishAsInternalToolcall.value && !publishAsHttpService.value) {
     showMessage('Please select at least one service type', 'error')
     return false
   }
@@ -604,7 +387,6 @@ const handlePublish = async () => {
   console.log('[PublishModal] Starting to handle publish request')
   console.log('[PublishModal] Form data:', formData)
   console.log('[PublishModal] Current tool:', currentTool.value)
-  console.log('[PublishModal] Publish as MCP service:', publishAsMcpService.value)
   console.log('[PublishModal] Publish as HTTP service:', publishAsHttpService.value)
   
   if (!validateForm()) {
@@ -630,14 +412,10 @@ const handlePublish = async () => {
     // Set service enabled status and corresponding endpoint
     currentTool.value.enableInternalToolcall = publishAsInternalToolcall.value
     currentTool.value.enableHttpService = publishAsHttpService.value
-    currentTool.value.enableMcpService = publishAsMcpService.value
+    currentTool.value.enableMcpService = false
     
-    // Set corresponding endpoint - now supports multiple services enabled simultaneously
-    if (publishAsMcpService.value) {
-      currentTool.value.mcpEndpoint = formData.endpoint.trim()
-    } else {
-      currentTool.value.mcpEndpoint = undefined
-    }
+    // Set corresponding endpoint
+    currentTool.value.mcpEndpoint = undefined
     
 
     // 3. Update inputSchema
@@ -666,24 +444,18 @@ const handlePublish = async () => {
     const enabledServices = []
     if (publishAsInternalToolcall.value) enabledServices.push('Internal Method Call')
     if (publishAsHttpService.value) enabledServices.push('HTTP Service')
-    if (publishAsMcpService.value) enabledServices.push('MCP Service')
     
     if (enabledServices.length > 0) {
       console.log('[PublishModal] Step 5: Publishing service, ID:', currentTool.value.id, 'Enabled services:', enabledServices.join(', '))
       
       // Build service URL information
       const serviceUrls = []
-      if (publishAsMcpService.value && currentTool.value.mcpEndpoint) {
-        const baseUrl = window.location.origin
-        serviceUrls.push(`MCP: ${baseUrl}/mcp${currentTool.value.mcpEndpoint}`)
-      }
       if (publishAsInternalToolcall.value) {
         serviceUrls.push(`Internal Call: ${formData.serviceName}`)
       }
       
-      endpointUrl.value = serviceUrls.join('\n')
       
-      console.log('[PublishModal] Service published successfully, service URLs:', endpointUrl.value)
+      console.log('[PublishModal] Service published successfully')
       showMessage(t('mcpService.publishSuccess'), 'success')
       emit('published', currentTool.value)
     } else {
@@ -746,7 +518,6 @@ const watchModal = async () => {
   if (showModal.value) {
     console.log('[PublishModal] Modal opened, starting to initialize data')
     initializeFormData()
-    await loadEndpoints()
     await loadCoordinatorToolData()
   }
 }
@@ -779,22 +550,17 @@ const loadCoordinatorToolData = async () => {
       serviceUrls.push(`Internal Call: ${tool.toolName}`)
     }
     
-    endpointUrl.value = serviceUrls.join('\n')
     
-    console.log('[PublishModal] Load tool data - endpointUrl:', endpointUrl.value)
+    console.log('[PublishModal] Load tool data completed')
     // Fill form data
     formData.serviceName = tool.toolName || ''
     formData.userRequest = tool.toolDescription || props.planDescription || ''
     formData.serviceGroup = tool.serviceGroup || ''
     
     // Set form data based on service type
-    publishAsMcpService.value = tool.enableMcpService || false
     publishAsHttpService.value = tool.enableHttpService || false
     publishAsInternalToolcall.value = tool.enableInternalToolcall || false
     
-    if (tool.enableMcpService) {
-      formData.endpoint = tool.mcpEndpoint || ''
-    }
     
     // Parse inputSchema as parameters
     try {
@@ -849,7 +615,6 @@ onMounted(async () => {
   if (showModal.value) {
     console.log('[PublishModal] Initialize when component mounted')
     initializeFormData()
-    await loadEndpoints()
     await loadCoordinatorToolData()
     await loadParameterRequirements()
   }

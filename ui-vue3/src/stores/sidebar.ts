@@ -188,7 +188,7 @@ export class SidebarStore {
     }
   }
 
-  createNewTemplate(planType: string) {
+  async createNewTemplate(planType: string) {
     const emptyTemplate: PlanTemplate = {
       id: `new-${Date.now()}`,
       title: i18n.global.t('sidebar.newTemplateName'),
@@ -206,6 +206,11 @@ export class SidebarStore {
     this.currentTab = 'config'
     // Reset to default planType for new templates
     this.planType = planType
+    
+    // Reload available tools to ensure fresh tool list
+    console.log('[SidebarStore] 🔄 Reloading available tools for new template')
+    await this.loadAvailableTools()
+    
     console.log('[SidebarStore] Created new empty plan template, switching to config tab')
   }
 
