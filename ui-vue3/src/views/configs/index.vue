@@ -64,7 +64,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import BasicConfig from './basicConfig.vue'
-import AgentConfig from './agentConfig.vue'
 import ModelConfig from './modelConfig.vue'
 import McpConfig from './mcpConfig.vue'
 import DynamicPromptConfig from './dynamicPromptConfig.vue'
@@ -75,7 +74,6 @@ import NamespaceSwitch from './components/namespaceSwitch.vue'
 interface CategoryMap {
   [key: string]: any
   basic: typeof BasicConfig
-  agent: typeof AgentConfig
   model: typeof ModelConfig
   mcp: typeof McpConfig
   prompt: typeof DynamicPromptConfig
@@ -91,7 +89,6 @@ const activeCategory = ref(route.params.category || 'basic')
 
 const categoryMap: CategoryMap = {
   basic: BasicConfig,
-  agent: AgentConfig,
   model: ModelConfig,
   mcp: McpConfig,
   prompt: DynamicPromptConfig,
@@ -105,7 +102,6 @@ const activeComponent = computed(() => {
 
 const categories = computed(() => [
   { key: 'basic', label: t('config.categories.basic'), icon: 'carbon:settings' },
-  { key: 'agent', label: t('config.categories.agent'), icon: 'carbon:bot' },
   { key: 'model', label: t('config.categories.model'), icon: 'carbon:build-image' },
   { key: 'mcp', label: t('config.categories.mcp'), icon: 'carbon:tool-box' },
   { key: 'prompt', label: t('config.categories.prompt'), icon: 'carbon:repo-artifact' },

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 name: 👀 Linter
 
 on:
@@ -22,49 +23,16 @@ on:
   pull_request:
     branches:
       - main
-
 permissions:
   contents: read
 
 jobs:
   linter:
-    runs-on: ubuntu-latest
+    if: (github.repository == 'spring-ai-alibaba/JManus')
+    runs-on: ubuntu-22.04
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: 'ui-vue3/package.json'
-
-      - name: Install frontend dependencies
-        run: |
-          cd ui-vue3
-          npm install -g pnpm
-          pnpm install
-
-      - name: Run Java linting
-        run: |
-          mvn spring-javaformat:validate
-
-      - name: Run frontend linting
-        run: |
-          cd ui-vue3
-          pnpm run lint
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: ./tools/github-actions/setup-deps
+      - run: make tools
+      - run: make lint
+      - run: make ui-lint
