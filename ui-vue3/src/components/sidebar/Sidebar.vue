@@ -358,7 +358,7 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
   console.log('[Sidebar] 📊 Current sidebarStore state:', {
     currentPlanTemplateId: sidebarStore.currentPlanTemplateId,
     selectedTemplate: sidebarStore.selectedTemplate?.id,
-    jsonContent: sidebarStore.jsonContent?.substring(0, 100) + '...'
+    jsonContent: sidebarStore.jsonContent.substring(0, 100) + '...'
   })
 
   try {

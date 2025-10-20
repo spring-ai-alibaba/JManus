@@ -142,7 +142,7 @@ const emit = defineEmits<Emits>()
 const { t } = useI18n()
 
 // Computed properties
-const agentExecutionSequence = computed(() => props.planExecution?.agentExecutionSequence ?? [])
+const agentExecutionSequence = computed(() => props.planExecution.agentExecutionSequence ?? [])
 
 // Agent click handler
 const handleAgentClick = (agentExecution: AgentExecutionRecord) => {

@@ -80,5 +80,10 @@
   "engines": {
     "node": ">=16.0.0",
     "npm": ">=8.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@csstools/css-color-parser": "3.1.0"
+    }
   }
 }

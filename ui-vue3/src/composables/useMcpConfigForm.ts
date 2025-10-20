@@ -89,16 +89,16 @@ export function useMcpConfigForm() {
   const validateForm = (): { isValid: boolean; errors: string[] } => {
     const errors: string[] = []
 
-    if (!configForm.mcpServerName?.trim()) {
+    if (!configForm.mcpServerName.trim()) {
       errors.push('Please enter MCP server name')
     }
 
     if (configForm.connectionType === 'STUDIO') {
-      if (!configForm.command?.trim()) {
+      if (!configForm.command.trim()) {
         errors.push('Please enter Command')
       }
     } else if (configForm.connectionType === 'SSE' || configForm.connectionType === 'STREAMING') {
-      if (!configForm.url?.trim()) {
+      if (!configForm.url.trim()) {
         errors.push('Please enter URL')
       }
     }

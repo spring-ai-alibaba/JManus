@@ -414,7 +414,7 @@ const initializeParsedData = () => {
 watch(() => displayData, (newData) => {
   try {
     // Soft validation for title - show warning but don't block the form
-    if (!newData.title || !newData.title.trim()) {
+    if (!newData.title.trim()) {
       titleError.value = 'Title is required field'
     } else {
       titleError.value = ''

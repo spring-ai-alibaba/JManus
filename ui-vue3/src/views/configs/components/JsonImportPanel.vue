@@ -196,7 +196,7 @@ const emitValidationResult = () => {
     errors: validationErrors.value
   }
   emit('validationChange', result)
-  props.onValidationChange?.(result)
+  props.onValidationChange(result)
 }
 
 // Validate MCP configuration structure
