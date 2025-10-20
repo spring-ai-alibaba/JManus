@@ -46,10 +46,9 @@ jobs:
           remote-organization-name: 'spring-ai-alibaba'
           remote-repository-name: 'cla'
           lock-pullrequest-aftermerge: false
-          
+
           # create-file-commit-message: 'Creating file for storing CLA Signatures'
           # signed-commit-message: '$contributorName has signed the CLA in #$pullRequestNo'
           # custom-notsigned-prcomment: 'Thanks for your contribution! Please sign our [Contributor License Agreement (CLA)](https://github.com/spring-ai-alibaba/JManus/blob/main/CLA.md) before we can merge your pull request. You can sign the CLA by posting a comment here with the following text: **I have read the CLA Document and I hereby sign the CLA**'
           # custom-pr-sign-comment: 'I have read the CLA Document and I hereby sign the CLA'
           # custom-allsigned-prcomment: 'All contributors have signed the CLA. Thank you!'
-          
