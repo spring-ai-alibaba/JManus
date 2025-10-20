@@ -37,3 +37,14 @@ ui-rebuild: ## Rebuild the UI
 ui-lint: ## Lint the UI code
 	@$(LOG_TARGET)
 	cd ui-vue3 && pnpm install && pnpm run lint
+
+# Deploy UI to static directory
+.PHONY: ui-deploy
+ui-deploy: ## Build UI and deploy to static directory
+	@$(LOG_TARGET)
+	cd ui-vue3 && pnpm install && pnpm run build
+	@echo "Removing existing static UI directory..."
+	rm -rf src/main/resources/static/ui
+	@echo "Copying built UI to static directory..."
+	cp -r ui-vue3/ui src/main/resources/static/
+	@echo "UI deployment completed successfully!"

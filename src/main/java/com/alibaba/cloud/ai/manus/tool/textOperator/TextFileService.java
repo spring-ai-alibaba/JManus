@@ -151,7 +151,7 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 	}
 
 	/**
-	 * Use UnifiedDirectoryManager to get absolute path
+	 * Use UnifiedDirectoryManager to get absolute path with hierarchical access
 	 * @param rootPlanId Root plan ID for directory operations
 	 * @param filePath Relative file path
 	 * @param subPlanId Optional subplan ID for subplan-specific paths
@@ -166,31 +166,63 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 			throw new IllegalArgumentException("filePath cannot be null or empty");
 		}
 
-		Path baseDir;
-
-		// If subPlanId is provided and different from rootPlanId, create subplan-specific
-		// directory path
+		// If subPlanId is provided and different from rootPlanId, use hierarchical access
 		if (subPlanId != null && !subPlanId.trim().isEmpty() && !subPlanId.equals(rootPlanId)) {
-			baseDir = unifiedDirectoryManager.getSubTaskDirectory(rootPlanId, subPlanId);
+			return getHierarchicalAbsolutePath(rootPlanId, filePath, subPlanId);
 		}
 		else {
 			// Use root plan directory for root plan files (when subPlanId is null, empty,
 			// or same as rootPlanId)
-			baseDir = unifiedDirectoryManager.getRootPlanDirectory(rootPlanId);
+			Path baseDir = unifiedDirectoryManager.getRootPlanDirectory(rootPlanId);
+			unifiedDirectoryManager.ensureDirectoryExists(baseDir);
+			Path absolutePath = baseDir.resolve(filePath).normalize();
+
+			// Verify path is within allowed range
+			if (!unifiedDirectoryManager.isPathAllowed(absolutePath)) {
+				throw new IOException("Access denied: File path is outside allowed scope");
+			}
+
+			return absolutePath;
+		}
+	}
+
+	/**
+	 * Get absolute path with hierarchical access for sub-plans
+	 * Sub-plans can read/write files from root folder, but create new files in their own directory
+	 * @param rootPlanId Root plan ID for directory operations
+	 * @param filePath Relative file path
+	 * @param subPlanId Subplan ID for subplan-specific paths
+	 * @return Absolute path
+	 * @throws IOException If path is invalid
+	 */
+	private Path getHierarchicalAbsolutePath(String rootPlanId, String filePath, String subPlanId) throws IOException {
+		Path rootDir = unifiedDirectoryManager.getRootPlanDirectory(rootPlanId);
+		Path subPlanDir = unifiedDirectoryManager.getSubTaskDirectory(rootPlanId, subPlanId);
+		
+		// Ensure both directories exist
+		unifiedDirectoryManager.ensureDirectoryExists(rootDir);
+		unifiedDirectoryManager.ensureDirectoryExists(subPlanDir);
+
+		Path rootFilePath = rootDir.resolve(filePath).normalize();
+		Path subPlanFilePath = subPlanDir.resolve(filePath).normalize();
+
+		// Verify both paths are within allowed range
+		if (!unifiedDirectoryManager.isPathAllowed(rootFilePath)) {
+			throw new IOException("Access denied: Root file path is outside allowed scope");
+		}
+		if (!unifiedDirectoryManager.isPathAllowed(subPlanFilePath)) {
+			throw new IOException("Access denied: Sub-plan file path is outside allowed scope");
 		}
 
-		// Ensure directory exists
-		unifiedDirectoryManager.ensureDirectoryExists(baseDir);
-
-		// Parse file path
-		Path absolutePath = baseDir.resolve(filePath).normalize();
-
-		// Verify path is within allowed range
-		if (!unifiedDirectoryManager.isPathAllowed(absolutePath)) {
-			throw new IOException("Access denied: File path is outside allowed scope");
+		// Check if file exists in root directory
+		if (Files.exists(rootFilePath)) {
+			log.debug("File {} found in root directory, using root path: {}", filePath, rootFilePath);
+			return rootFilePath;
 		}
-
-		return absolutePath;
+		else {
+			log.debug("File {} not found in root directory, using sub-plan path: {}", filePath, subPlanFilePath);
+			return subPlanFilePath;
+		}
 	}
 
 	/**
@@ -219,6 +251,50 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 		if (Files.exists(absolutePath) && Files.size(absolutePath) > 10 * 1024 * 1024) { // 10MB
 																							// Restrictions
 			throw new IOException("File is too large (>10MB). For safety reasons, please use a smaller file.");
+		}
+
+		return absolutePath;
+	}
+
+	/**
+	 * Get absolute path for creating new files with hierarchical access
+	 * For sub-plans, new files are always created in the sub-plan directory
+	 * @param rootPlanId Root plan ID for directory operations
+	 * @param filePath File path
+	 * @param subPlanId Optional subplan ID for subplan-specific paths
+	 * @return Absolute path for file creation
+	 * @throws IOException If path is invalid
+	 */
+	public Path getCreateFilePath(String rootPlanId, String filePath, String subPlanId) throws IOException {
+		if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
+			throw new IllegalArgumentException("rootPlanId cannot be null or empty");
+		}
+		if (filePath == null || filePath.trim().isEmpty()) {
+			throw new IllegalArgumentException("filePath cannot be null or empty");
+		}
+
+		Path baseDir;
+
+		// If subPlanId is provided and different from rootPlanId, use sub-plan directory for new files
+		if (subPlanId != null && !subPlanId.trim().isEmpty() && !subPlanId.equals(rootPlanId)) {
+			baseDir = unifiedDirectoryManager.getSubTaskDirectory(rootPlanId, subPlanId);
+			log.debug("Creating new file {} in sub-plan directory: {}", filePath, baseDir);
+		}
+		else {
+			// Use root plan directory for root plan files
+			baseDir = unifiedDirectoryManager.getRootPlanDirectory(rootPlanId);
+			log.debug("Creating new file {} in root directory: {}", filePath, baseDir);
+		}
+
+		// Ensure directory exists
+		unifiedDirectoryManager.ensureDirectoryExists(baseDir);
+
+		// Parse file path
+		Path absolutePath = baseDir.resolve(filePath).normalize();
+
+		// Verify path is within allowed range
+		if (!unifiedDirectoryManager.isPathAllowed(absolutePath)) {
+			throw new IOException("Access denied: File path is outside allowed scope");
 		}
 
 		return absolutePath;

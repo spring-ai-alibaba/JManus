@@ -58,3 +58,4 @@ src/.DS_Store
 
 # Python
 .venv/
+ui-vue3/.npmrc

@@ -1095,6 +1095,11 @@ const words: I18nType = {
         description: 'Experience AI intelligent analysis of user needs and dynamic generation of relevant form fields',
         url: 'https://github.com/talk-flow/public-usecase/blob/main/eng/form-input-demo.md',
       },
+      imagePdfRecognition: {
+        title: 'Image & PDF Recognition',
+        description: 'Upload images or PDFs and extract text content using OCR technology (demonstrates file processing capabilities)',
+        url: 'https://github.com/talk-flow/public-usecase/blob/main/chn/image-pdf-recognition.md',
+      },
     },
   },
 

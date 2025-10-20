@@ -555,7 +555,7 @@ const showAddModelModal = () => {
 
 // Validate configuration
 const handleValidateConfig = async () => {
-  if (!selectedModel.value?.baseUrl || !selectedModel.value?.apiKey) {
+  if (!selectedModel.value?.baseUrl || !selectedModel.value.apiKey) {
     showMessage(t('config.modelConfig.pleaseEnterBaseUrlAndApiKey'), 'error')
     return
   }
