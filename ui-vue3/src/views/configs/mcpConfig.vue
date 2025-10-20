@@ -331,12 +331,12 @@ const getServerConfigValue = (server: McpServer, field: 'command' | 'url' | 'arg
       default:
         return ''
     }
-  } catch (error) {
+  } catch {
     // If parsing fails, try to use field data
     const extendedServer = server as ExtendedMcpServer
     switch (field) {
       case 'command':
-        return extendedServer.command || ''
+        return extendedServer.command ?? ''
       case 'url':
         return extendedServer.url ?? ''
       case 'args':
@@ -924,7 +924,7 @@ const handleJsonImport = async () => {
     } else {
       showMessage(validationResult.errors?.join('\n') ?? t('config.mcpConfig.importInvalidJson'), 'error')
     }
-  } catch (error) {
+  } catch {
     showMessage(t('config.mcpConfig.importFailed'), 'error')
   } finally {
     loading.value = false

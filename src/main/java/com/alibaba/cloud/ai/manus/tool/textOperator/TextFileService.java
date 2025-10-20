@@ -187,8 +187,8 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 	}
 
 	/**
-	 * Get absolute path with hierarchical access for sub-plans
-	 * Sub-plans can read/write files from root folder, but create new files in their own directory
+	 * Get absolute path with hierarchical access for sub-plans Sub-plans can read/write
+	 * files from root folder, but create new files in their own directory
 	 * @param rootPlanId Root plan ID for directory operations
 	 * @param filePath Relative file path
 	 * @param subPlanId Subplan ID for subplan-specific paths
@@ -198,7 +198,7 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 	private Path getHierarchicalAbsolutePath(String rootPlanId, String filePath, String subPlanId) throws IOException {
 		Path rootDir = unifiedDirectoryManager.getRootPlanDirectory(rootPlanId);
 		Path subPlanDir = unifiedDirectoryManager.getSubTaskDirectory(rootPlanId, subPlanId);
-		
+
 		// Ensure both directories exist
 		unifiedDirectoryManager.ensureDirectoryExists(rootDir);
 		unifiedDirectoryManager.ensureDirectoryExists(subPlanDir);
@@ -257,8 +257,8 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 	}
 
 	/**
-	 * Get absolute path for creating new files with hierarchical access
-	 * For sub-plans, new files are always created in the sub-plan directory
+	 * Get absolute path for creating new files with hierarchical access For sub-plans,
+	 * new files are always created in the sub-plan directory
 	 * @param rootPlanId Root plan ID for directory operations
 	 * @param filePath File path
 	 * @param subPlanId Optional subplan ID for subplan-specific paths
@@ -275,7 +275,8 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 
 		Path baseDir;
 
-		// If subPlanId is provided and different from rootPlanId, use sub-plan directory for new files
+		// If subPlanId is provided and different from rootPlanId, use sub-plan directory
+		// for new files
 		if (subPlanId != null && !subPlanId.trim().isEmpty() && !subPlanId.equals(rootPlanId)) {
 			baseDir = unifiedDirectoryManager.getSubTaskDirectory(rootPlanId, subPlanId);
 			log.debug("Creating new file {} in sub-plan directory: {}", filePath, baseDir);
