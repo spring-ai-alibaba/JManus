@@ -22,7 +22,7 @@ on:
     paths:
       - 'src/**'
       - 'ui-vue3/**'
-      - '../../deploy/Dockerfile'
+      - 'deploy/Dockerfile'
       - 'deploy/start.sh'
       - 'pom.xml'
   pull_request:
@@ -31,7 +31,8 @@ on:
     paths:
       - 'src/**'
       - 'ui-vue3/**'
-      - 'deploy/**'
+      - 'deploy/Dockerfile'
+      - 'deploy/start.sh'
       - 'pom.xml'
   workflow_dispatch:
 
