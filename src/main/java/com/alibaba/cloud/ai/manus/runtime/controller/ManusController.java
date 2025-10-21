@@ -15,37 +15,13 @@
  */
 package com.alibaba.cloud.ai.manus.runtime.controller;
 
-import com.alibaba.cloud.ai.manus.event.JmanusListener;
-import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
-import com.alibaba.cloud.ai.manus.event.PlanExceptionClearedEvent;
-import com.alibaba.cloud.ai.manus.exception.PlanException;
-import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
-import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
-import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
-import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
-import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
-import com.alibaba.cloud.ai.manus.recorder.service.NewRepoPlanExecutionRecorder;
-import com.alibaba.cloud.ai.manus.recorder.repository.PlanExecutionRecordRepository;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionWrapper;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.UserInputWaitState;
-import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
-import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
-import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
-import com.alibaba.cloud.ai.manus.runtime.service.RootTaskManagerService;
-import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
-import com.alibaba.cloud.ai.manus.runtime.entity.po.RootTaskManagerEntity;
-import com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo.Memory;
-import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
-import com.alibaba.cloud.ai.manus.coordinator.repository.CoordinatorToolRepository;
-import com.alibaba.cloud.ai.manus.coordinator.entity.po.CoordinatorToolEntity;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,14 +30,46 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import com.alibaba.cloud.ai.manus.coordinator.entity.po.CoordinatorToolEntity;
+import com.alibaba.cloud.ai.manus.coordinator.repository.CoordinatorToolRepository;
+import com.alibaba.cloud.ai.manus.event.JmanusListener;
+import com.alibaba.cloud.ai.manus.event.PlanExceptionClearedEvent;
+import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
+import com.alibaba.cloud.ai.manus.exception.PlanException;
+import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
+import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
+import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
+import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
+import com.alibaba.cloud.ai.manus.recorder.repository.PlanExecutionRecordRepository;
+import com.alibaba.cloud.ai.manus.recorder.service.NewRepoPlanExecutionRecorder;
+import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
+import com.alibaba.cloud.ai.manus.runtime.entity.po.RootTaskManagerEntity;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionWrapper;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.UserInputWaitState;
+import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
+import com.alibaba.cloud.ai.manus.runtime.service.RootTaskManagerService;
+import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
+import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
+import com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo.Memory;
+import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 @RestController
 @RequestMapping("/api/executor")
@@ -766,4 +774,5 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				.body(Map.of("error", "Failed to get task status: " + e.getMessage(), "planId", planId));
 		}
 	}
+
 }
