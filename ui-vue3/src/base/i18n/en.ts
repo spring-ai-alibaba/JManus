@@ -767,6 +767,7 @@ const words: I18nType = {
   input: {
     placeholder: 'Send a message to JManus',
     send: 'Send',
+    stop: 'Stop',
     planMode: 'PLAN-ACT Template Mode',
     waiting: 'Waiting for user input...',
     maxLength: 'Max Length',

@@ -42,6 +42,7 @@
         {{ $t('input.planMode') }}
       </button>
       <button
+        v-if="!isTaskRunning"
         class="send-button"
         :disabled="!currentInput.trim() || isDisabled"
         @click="handleSend"
@@ -49,6 +50,15 @@
       >
         <Icon icon="carbon:send-alt" />
         {{ $t('input.send') }}
+      </button>
+      <button
+        v-else
+        class="send-button stop-button"
+        @click="handleStop"
+        :title="$t('input.stop')"
+      >
+        <Icon icon="carbon:stop-filled" />
+        {{ $t('input.stop') }}
       </button>
     </div>
   </div>
@@ -62,8 +72,13 @@ import { memoryStore } from "@/stores/memory"
 import type { InputMessage } from "@/stores/memory"
 import { FileInfo } from "@/api/file-upload-api-service"
 import FileUploadComponent from "@/components/file-upload/FileUploadComponent.vue"
+import { useTaskStore } from '@/stores/task'
 
 const { t } = useI18n()
+const taskStore = useTaskStore()
+
+// Track if task is running
+const isTaskRunning = computed(() => taskStore.hasRunningTask())
 
 interface Props {
   placeholder?: string
@@ -195,6 +210,16 @@ const handleSend = () => {
 const handlePlanModeClick = () => {
   // Trigger the plan mode toggle event
   emit('plan-mode-clicked')
+}
+
+const handleStop = async () => {
+  console.log('[InputArea] Stop button clicked')
+  const success = await taskStore.stopCurrentTask()
+  if (success) {
+    console.log('[InputArea] Task stopped successfully')
+  } else {
+    console.error('[InputArea] Failed to stop task')
+  }
 }
 
 
@@ -371,6 +396,14 @@ onUnmounted(() => {
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+  
+  &.stop-button {
+    background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+    
+    &:hover {
+      background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
+    }
   }
 }
 

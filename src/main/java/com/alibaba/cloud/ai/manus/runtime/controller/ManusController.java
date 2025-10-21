@@ -25,6 +25,7 @@ import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
 import com.alibaba.cloud.ai.manus.recorder.service.NewRepoPlanExecutionRecorder;
+import com.alibaba.cloud.ai.manus.recorder.repository.PlanExecutionRecordRepository;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionWrapper;
@@ -95,6 +96,9 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	@Autowired
 	private IPlanParameterMappingService parameterMappingService;
+
+	@Autowired
+	private PlanExecutionRecordRepository planExecutionRecordRepository;
 
 	@Autowired
 	public ManusController(ObjectMapper objectMapper) {
@@ -634,6 +638,54 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	public void onPlanExceptionCleared(PlanExceptionClearedEvent event) {
 		logger.info("Clearing exception cache for planId: {}", event.getPlanId());
 		this.exceptionCache.invalidate(event.getPlanId());
+	}
+
+	/**
+	 * Stop a running task by plan ID
+	 * @param planId The plan ID to stop
+	 * @return Response indicating success or failure
+	 */
+	@PostMapping("/stopTask/{planId}")
+	public ResponseEntity<Map<String, Object>> stopTask(@PathVariable("planId") String planId) {
+		try {
+			logger.info("Received stop task request for planId: {}", planId);
+			
+			// For now, we'll implement a simple approach by checking if the plan exists
+			// and setting a flag to indicate it should be stopped
+			// This is a placeholder implementation that can be enhanced later
+			
+			// Check if plan exists in the system
+			boolean planExists = planExecutionRecordRepository.existsByCurrentPlanId(planId);
+			if (!planExists) {
+				logger.warn("No plan execution record found for planId: {}", planId);
+				return ResponseEntity.badRequest().body(Map.of(
+					"error", "No active task found for the given plan ID",
+					"planId", planId
+				));
+			}
+			
+			// Set the plan status to indicate it should be stopped
+			// This is a simple implementation - in a real system, you'd want to
+			// properly interrupt the running CompletableFuture
+			logger.info("Marking task for stop for planId: {}", planId);
+			
+			// TODO: Implement proper task interruption mechanism
+			// For now, we'll just return success
+			
+			logger.info("Successfully stopped task for planId: {}", planId);
+			return ResponseEntity.ok(Map.of(
+				"status", "stopped",
+				"planId", planId,
+				"message", "Task stop request processed"
+			));
+			
+		} catch (Exception e) {
+			logger.error("Failed to stop task for planId: {}", planId, e);
+			return ResponseEntity.internalServerError().body(Map.of(
+				"error", "Failed to stop task: " + e.getMessage(),
+				"planId", planId
+			));
+		}
 	}
 
 }

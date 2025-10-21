@@ -79,4 +79,23 @@ export class DirectApiService {
       return await response.json()
     })
   }
+
+  // Stop a running task by plan ID
+  public static async stopTask(planId: string): Promise<any> {
+    return LlmCheckService.withLlmCheck(async () => {
+      console.log('[DirectApiService] Stopping task for planId:', planId)
+      
+      const response = await fetch(`${this.BASE_URL}/stopTask/${planId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Failed to stop task: ${response.status}`)
+      }
+      
+      return await response.json()
+    })
+  }
 }
