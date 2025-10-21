@@ -801,8 +801,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 							// Apply mapping logic here
 							List<String> mappedRow = new ArrayList<>();
 							for (int i = 0; i < row.size() && i < detectedHeaders.size(); i++) {
-								String originalHeader = detectedHeaders.get(i);
-								String mappedHeader = columnMapping.getOrDefault(originalHeader, originalHeader);
 								mappedRow.add(row.get(i));
 							}
 							allImportedData.add(mappedRow);

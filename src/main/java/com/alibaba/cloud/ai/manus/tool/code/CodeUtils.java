@@ -43,8 +43,6 @@ public class CodeUtils {
 
 	private static final String UNKNOWN = "unknown";
 
-	private static final int DEFAULT_TIMEOUT = 600;
-
 	public static List<Pair<String, String>> extractCode(String text, boolean detectSingleLineCode) {
 		List<Pair<String, String>> extracted = new ArrayList<>();
 		String content = contentStr(text);
@@ -72,6 +70,7 @@ public class CodeUtils {
 		return extracted;
 	}
 
+	@SuppressWarnings("unchecked")
 	public static String contentStr(Object content) {
 		if (content instanceof String) {
 			return (String) content;

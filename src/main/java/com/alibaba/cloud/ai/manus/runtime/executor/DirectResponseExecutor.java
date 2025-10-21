@@ -24,6 +24,7 @@ import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
+import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -50,8 +51,10 @@ public class DirectResponseExecutor extends AbstractPlanExecutor {
 	 */
 	public DirectResponseExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			AgentService agentService, LlmService llmService, ManusProperties manusProperties,
-			LevelBasedExecutorPool levelBasedExecutorPool, FileUploadService fileUploadService) {
-		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
+			LevelBasedExecutorPool levelBasedExecutorPool, FileUploadService fileUploadService,
+			AgentInterruptionHelper agentInterruptionHelper) {
+		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService,
+				agentInterruptionHelper = null);
 	}
 
 	/**

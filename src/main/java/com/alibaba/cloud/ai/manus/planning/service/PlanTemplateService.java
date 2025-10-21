@@ -48,15 +48,18 @@ public class PlanTemplateService implements IPlanTemplateService {
 	@Autowired
 	private PlanTemplateVersionRepository versionRepository;
 
+	@SuppressWarnings("unused")
 	@Autowired
 	private PlanExecutorFactory planExecutorFactory;
 
 	@Autowired
 	private ObjectMapper objectMapper;
 
+	@SuppressWarnings("unused")
 	@Autowired
 	private PlanIdDispatcher planIdDispatcher;
 
+	@SuppressWarnings("unused")
 	@Autowired(required = false)
 	private IPlanParameterMappingService parameterMappingService;
 

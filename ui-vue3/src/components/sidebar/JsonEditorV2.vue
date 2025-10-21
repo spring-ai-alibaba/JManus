@@ -36,9 +36,9 @@
       <div class="plan-basic-info">
         <div class="form-row">
           <label class="form-label">{{ $t('sidebar.title') }}</label>
-          <input
-            v-model="displayData.title"
-            type="text"
+          <input 
+            v-model="displayData.title" 
+            type="text" 
             class="form-input"
             :class="{ 'error': titleError }"
             :placeholder="$t('sidebar.titlePlaceholder')"
@@ -49,13 +49,13 @@
             {{ titleError }}
           </div>
         </div>
-
+        
         <!-- Plan Template ID (Read-only) -->
         <div class="form-row">
           <label class="form-label">{{ $t('sidebar.planTemplateId') }}</label>
-          <input
-            :value="currentPlanTemplateId"
-            type="text"
+          <input 
+            :value="currentPlanTemplateId" 
+            type="text" 
             class="form-input readonly-input"
             readonly
             :placeholder="$t('sidebar.planTemplateIdPlaceholder')"
@@ -69,8 +69,8 @@
         <div class="steps-header">
           <label class="form-label">{{ $t('sidebar.tasks') }}</label>
           <div class="steps-actions">
-            <button
-              @click="addStep"
+            <button 
+              @click="addStep" 
               class="btn btn-xs"
               :title="$t('sidebar.addStep')"
             >
@@ -78,17 +78,17 @@
             </button>
           </div>
         </div>
-
+        
         <div class="steps-container">
-          <div
-            v-for="(step, index) in displayData.steps"
+          <div 
+            v-for="(step, index) in displayData.steps" 
             :key="index"
             class="step-item"
           >
             <div class="step-header">
               <span class="step-number">{{ $t('sidebar.subtask') }} {{ index + 1 }}</span>
               <div class="step-actions">
-                <button
+                <button 
                   @click="moveStepUp(index)"
                   :disabled="index === 0"
                   class="btn btn-xs"
@@ -96,7 +96,7 @@
                 >
                   <Icon icon="carbon:chevron-up" width="12" />
                 </button>
-                <button
+                <button 
                   @click="moveStepDown(index)"
                   :disabled="index === displayData.steps.length - 1"
                   class="btn btn-xs"
@@ -104,7 +104,7 @@
                 >
                   <Icon icon="carbon:chevron-down" width="12" />
                 </button>
-                <button
+                <button 
                   @click="removeStep(index)"
                   class="btn btn-xs btn-danger"
                   :title="$t('sidebar.removeStep')"
@@ -113,13 +113,13 @@
                 </button>
               </div>
             </div>
-
+            
             <div class="step-content">
-
+              
               <!-- Step Requirement -->
               <div class="form-row">
                 <label class="form-label">{{ $t('sidebar.stepRequirement') }}</label>
-                <textarea
+                <textarea 
                   v-model="step.stepRequirement"
                   class="form-textarea auto-resize"
                   :placeholder="$t('sidebar.stepRequirementPlaceholder')"
@@ -127,17 +127,29 @@
                   @input="autoResizeTextarea($event)"
                 ></textarea>
               </div>
-
+              
                <!-- Terminate Columns -->
                <div class="form-row">
                  <label class="form-label">{{ $t('sidebar.terminateColumns') }}</label>
-                 <textarea
+                 
+                 <textarea 
                    v-model="step.terminateColumns"
                    class="form-textarea auto-resize"
                    :placeholder="$t('sidebar.terminateColumnsPlaceholder')"
                    rows="4"
                    @input="autoResizeTextarea($event)"
                  ></textarea>
+                 
+                 <!-- Preview Section -->
+                 <div v-if="step.terminateColumns && step.terminateColumns.trim()" class="preview-section">
+                   <div class="preview-label">{{ $t('sidebar.preview') }}:</div>
+                   <div class="preview-content">
+                     <div class="preview-text">
+                       {{ $t('sidebar.systemWillReturnListWithTableHeaderFormat') }}: 
+                       <span class="preview-table-header">{{ formatTableHeader(step.terminateColumns) }}</span>
+                     </div>
+                   </div>
+                 </div>
                </div>
 
 
@@ -145,26 +157,26 @@
               <div class="form-row">
                 <label class="form-label">{{ $t('sidebar.modelName') }}</label>
                 <div class="model-selector">
-                  <select
-                    v-model="step.modelName"
+                  <select 
+                    v-model="step.modelName" 
                     class="form-select model-select"
                     :disabled="isLoadingModels"
                   >
                     <!-- Loading state -->
                     <option v-if="isLoadingModels" disabled value="">{{ $t('sidebar.loading') }}</option>
-
+                    
                     <!-- Error state -->
                     <option v-else-if="modelsLoadError" disabled value="">{{ $t('sidebar.modelLoadError') }}</option>
-
+                    
                     <!-- Placeholder option -->
                     <option value="" disabled>{{ $t('sidebar.modelNameDescription') }}</option>
-
+                    
                     <!-- Default empty option -->
                     <option value="">{{ $t('sidebar.noModelSelected') }}</option>
-
+                    
                     <!-- Model options -->
-                    <option
-                      v-for="model in availableModels"
+                    <option 
+                      v-for="model in availableModels" 
                       :key="model.value"
                       :value="model.value"
                       :title="model.label"
@@ -172,11 +184,11 @@
                       {{ model.label }}
                     </option>
                   </select>
-
+                  
                   <!-- Error refresh button -->
-                  <button
+                  <button 
                     v-if="modelsLoadError"
-                    @click="loadAvailableModels"
+                    @click="loadAvailableModels" 
                     class="btn btn-sm btn-danger"
                     :title="$t('sidebar.retryLoadModels')"
                   >
@@ -184,14 +196,14 @@
                     {{ $t('sidebar.retry') }}
                   </button>
                 </div>
-
+                
                 <!-- Error message -->
                 <div v-if="modelsLoadError" class="error-message">
                   <Icon icon="carbon:warning" width="12" />
                   {{ modelsLoadError }}
                 </div>
               </div>
-
+              
               <!-- Tool Selection -->
               <div class="form-row">
                 <AssignedTools
@@ -205,12 +217,12 @@
                   @tools-filtered="(filteredTools: string[]) => handleToolsFiltered(index, filteredTools)"
                 />
               </div>
-
+              
             </div>
 
-
+            
           </div>
-
+          
           <!-- Empty State -->
           <div v-if="displayData.steps.length === 0" class="empty-steps">
             <Icon icon="carbon:add-alt" width="32" class="empty-icon" />
@@ -228,7 +240,7 @@
       <div class="json-preview" v-if="showJsonPreview">
         <div class="preview-header">
           <label class="form-label">{{ $t('sidebar.jsonPreview') }}</label>
-          <button
+          <button 
             @click="closeJsonPreview"
             class="btn btn-xs"
           >
@@ -237,10 +249,10 @@
         </div>
         <pre class="json-code">{{ formattedJsonOutput }}</pre>
       </div>
-
+      
       <!-- Toggle JSON Preview -->
       <div class="editor-footer">
-        <button
+        <button 
           @click="toggleJsonPreview"
           class="btn btn-sm btn-secondary"
         >
@@ -248,15 +260,6 @@
           {{ showJsonPreview ? $t('sidebar.hideJson') : $t('sidebar.showJson') }}
         </button>
         <div class="section-actions">
-          <button
-            class="btn btn-sm"
-            @click="handleCopyPlan"
-            :disabled="isGenerating || isExecuting"
-            :title="$t('sidebar.copyPlan')"
-          >
-            <Icon icon="carbon:copy" width="14" />
-            {{ $t('sidebar.copyPlan') }}
-          </button>
           <button
             class="btn btn-sm"
             @click="handleRollback"
@@ -304,9 +307,19 @@ import AssignedTools from '@/components/shared/AssignedTools.vue'
 import { ConfigApiService, type ModelOption } from '@/api/config-api-service'
 import { sidebarStore } from '@/stores/sidebar'
 
+// Define props interface specific to JsonEditorV2
+interface JsonEditorV2Props {
+  // eslint-disable-next-line vue/no-unused-properties
+  jsonContent: string
+  canRollback: boolean
+  canRestore: boolean
+  isGenerating: boolean
+  isExecuting: boolean
+  currentPlanTemplateId: string
+}
+
 // Props
-const props = withDefaults(defineProps<JsonEditorProps>(), {
-  hiddenFields: () => [],
+const props = withDefaults(defineProps<JsonEditorV2Props>(), {
   currentPlanTemplateId: ''
 })
 
@@ -315,9 +328,14 @@ const emit = defineEmits<{
   rollback: []
   restore: []
   save: []
-  'copy-plan': []
   'update:jsonContent': [value: string]
 }>()
+
+// Create compatible props object for useJsonEditor
+const compatibleProps: JsonEditorProps = {
+  ...props,
+  hiddenFields: []
+}
 
 const {
   showJsonPreview,
@@ -332,7 +350,7 @@ const {
   handleSave,
   toggleJsonPreview,
   closeJsonPreview
-} = useJsonEditor(props, emit)
+} = useJsonEditor(compatibleProps, emit)
 
 // Error state
 const planTypeError = ref<string | null>(null)
@@ -351,17 +369,13 @@ const currentStepIndex = ref<number>(-1)
 // Load available models
 const loadAvailableModels = async () => {
   if (isLoadingModels.value) return
-
+  
   isLoadingModels.value = true
   modelsLoadError.value = ''
-
+  
   try {
     const response = await ConfigApiService.getAvailableModels()
-    if (response && response.options) {
-      availableModels.value = response.options
-    } else {
-      availableModels.value = []
-    }
+    availableModels.value = response.options
   } catch (error) {
     console.error('Failed to load models:', error)
     modelsLoadError.value = error instanceof Error ? error.message : 'Failed to load models'
@@ -403,13 +417,10 @@ const initializeParsedData = () => {
   try {
     // Clear any previous errors
     planTypeError.value = null
-
+    
     // Initialize with default structure if not exists
     if (!displayData.title) {
       displayData.title = ''
-    }
-    if (!displayData.steps) {
-      displayData.steps = []
     }
     displayData.directResponse = false // Always false for dynamic agent planning
 
@@ -429,7 +440,7 @@ watch(() => displayData, (newData) => {
     } else {
       titleError.value = ''
     }
-
+    
     // Clear any structural errors
     planTypeError.value = null
   } catch (error) {
@@ -438,38 +449,101 @@ watch(() => displayData, (newData) => {
   }
 }, { immediate: true, deep: true })
 
-const handleCopyPlan = () => {
-  emit('copy-plan')
-}
+
+
+// Watch for props changes
+watch(() => props.jsonContent, (newContent, oldContent) => {
+  console.log('[JsonEditorV2] Props watch triggered - jsonContent changed from', oldContent, 'to', newContent)
+  if (newContent && newContent !== oldContent) {
+    console.log('[JsonEditorV2] Force parsing new jsonContent:', newContent)
+    try {
+      const parsed = JSON.parse(newContent)
+      console.log('[JsonEditorV2] Parsed new jsonContent:', parsed)
+      Object.assign(displayData, {
+        title: parsed.title || '',
+        steps: parsed.steps || [],
+        directResponse: false,
+        planTemplateId: parsed.planTemplateId || props.currentPlanTemplateId || '',
+        planType: parsed.planType || 'dynamic_agent'
+      })
+      console.log('[JsonEditorV2] Updated displayData with new content:', displayData)
+    } catch (error) {
+      console.warn('[JsonEditorV2] Failed to parse new jsonContent:', error)
+    }
+  }
+}, { immediate: true })
 
 // Initialize on mount
 onMounted(() => {
+  console.log('[JsonEditorV2] Component mounted with jsonContent:', props.jsonContent)
+  console.log('[JsonEditorV2] Component mounted with currentPlanTemplateId:', props.currentPlanTemplateId)
+  console.log('[JsonEditorV2] Component mounted with displayData:', displayData)
+  
+  // Force parse the current jsonContent to ensure it's processed
+  if (props.jsonContent) {
+    console.log('[JsonEditorV2] Force parsing jsonContent on mount:', props.jsonContent)
+    // Call parseJsonToVisual directly to ensure it's processed
+    try {
+      const parsed = JSON.parse(props.jsonContent)
+      console.log('[JsonEditorV2] Parsed jsonContent on mount:', parsed)
+      Object.assign(displayData, {
+        title: parsed.title || '',
+        steps: parsed.steps || [],
+        directResponse: false,
+        planTemplateId: parsed.planTemplateId || props.currentPlanTemplateId || '',
+        planType: parsed.planType || 'dynamic_agent'
+      })
+      console.log('[JsonEditorV2] Updated displayData on mount:', displayData)
+    } catch (error) {
+      console.warn('[JsonEditorV2] Failed to parse jsonContent on mount:', error)
+    }
+  }
+  
   initializeParsedData()
   loadAvailableModels()
 })
 
 const autoResizeTextarea = (event: Event) => {
   const textarea = event.target as HTMLTextAreaElement
-  if (!textarea) return
-
+  
   textarea.style.height = 'auto'
-
+  
   const lineHeight = 20
   const lines = Math.ceil(textarea.scrollHeight / lineHeight)
-
+  
   const minRows = 4
   const maxRows = 12
   const targetRows = Math.max(minRows, Math.min(maxRows, lines))
-
+  
   const newHeight = targetRows * lineHeight
   textarea.style.height = `${newHeight}px`
   textarea.rows = targetRows
-
+  
   if (lines > maxRows) {
     textarea.style.overflowY = 'auto'
   } else {
     textarea.style.overflowY = 'hidden'
   }
+}
+
+// Format table header preview
+const formatTableHeader = (terminateColumns: string): string => {
+  if (!terminateColumns.trim()) {
+    return ''
+  }
+  
+  // Split by comma and clean up each column name
+  const columns = terminateColumns
+    .split(',')
+    .map(col => col.trim())
+    .filter(col => col.length > 0)
+  
+  if (columns.length === 0) {
+    return ''
+  }
+  
+  // Format as |col1|col2|col3|
+  return `|${columns.join('|')}|`
 }
 </script>
 
@@ -917,6 +991,42 @@ const autoResizeTextarea = (event: Event) => {
 .btn-danger:hover:not(:disabled) {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Preview Section Styles */
+.preview-section {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 6px;
+  font-size: 10px;
+}
+
+.preview-label {
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 4px;
+  font-size: 9px;
+}
+
+.preview-content {
+  color: white;
+}
+
+.preview-text {
+  line-height: 1.4;
+  color: white;
+}
+
+.preview-table-header {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #ef4444;
+  font-weight: 600;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 </style>

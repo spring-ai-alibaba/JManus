@@ -127,6 +127,7 @@
           <!-- Use JsonEditorV2 for dynamic_agent type -->
           <JsonEditorV2
             v-if="sidebarStore.planType === 'dynamic_agent'"
+            :key="sidebarStore.currentPlanTemplateId || 'default'"
             :json-content="sidebarStore.jsonContent"
             :can-rollback="sidebarStore.canRollback"
             :can-restore="sidebarStore.canRestore"
@@ -136,13 +137,13 @@
             @rollback="handleRollback"
             @restore="handleRestore"
             @save="handleSaveTemplate"
-            @copy-plan="handleCopyPlan"
             @update:json-content="(value: string) => sidebarStore.jsonContent = value"
           />
-
+          
           <!-- Use JsonEditor for simple or other types -->
           <JsonEditor
             v-else
+            :key="'simple-' + (sidebarStore.currentPlanTemplateId || 'default')"
             :json-content="sidebarStore.jsonContent"
             :can-rollback="sidebarStore.canRollback"
             :can-restore="sidebarStore.canRestore"
@@ -171,7 +172,7 @@
         </div>
       </div>
     </div>
-
+    
     <!-- Sidebar Resizer -->
     <div
       class="sidebar-resizer"
@@ -188,46 +189,9 @@
     ref="publishMcpModalRef"
     v-model="showPublishMcpModal"
     :plan-template-id="sidebarStore.currentPlanTemplateId || ''"
-    :plan-title="sidebarStore.selectedTemplate?.title || ''"
     :plan-description="sidebarStore.selectedTemplate?.description || ''"
     @published="handleMcpServicePublished"
   />
-
-  <div v-if="showCopyPlanModal" class="modal-overlay" @click="closeCopyPlanModal">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-      <h3>{{ $t('sidebar.copyPlan') }}</h3>
-        <button class="close-btn" @click="closeCopyPlanModal">
-          <Icon icon="carbon:close" width="16" />
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="form-row">
-          <label class="form-label">{{ $t('sidebar.newPlanTitle') }}</label>
-          <input
-            v-model="newPlanTitle"
-            type="text"
-            class="form-input"
-            :placeholder="$t('sidebar.enterNewPlanTitle')"
-            @keyup.enter="confirmCopyPlan"
-          />
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" @click="closeCopyPlanModal">
-          {{ $t('common.cancel') }}
-        </button>
-        <button
-          class="btn btn-primary"
-          @click="confirmCopyPlan"
-          :disabled="!newPlanTitle.trim() || isCopyingPlan"
-        >
-          <Icon v-if="isCopyingPlan" icon="carbon:loading" width="16" class="spinning" />
-          {{ isCopyingPlan ? $t('sidebar.copying') : $t('sidebar.copyPlan') }}
-        </button>
-      </div>
-    </div>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -282,6 +246,15 @@ const showPublishButton = computed(() => {
   return coordinatorToolConfig.value.enabled
 })
 
+// Watch for changes in currentPlanTemplateId and jsonContent
+watch(() => sidebarStore.currentPlanTemplateId, (newId, oldId) => {
+  console.log('[Sidebar] currentPlanTemplateId changed from', oldId, 'to', newId)
+})
+
+watch(() => sidebarStore.jsonContent, (newContent, oldContent) => {
+  console.log('[Sidebar] jsonContent changed from', oldContent, 'to', newContent)
+})
+
 // Load CoordinatorTool configuration
 const loadCoordinatorToolConfig = async () => {
   try {
@@ -330,17 +303,17 @@ const handleSaveTemplate = async () => {
 const refreshParameterRequirements = async () => {
   // Add a delay to ensure the backend has processed the new template and committed the transaction
   await new Promise(resolve => setTimeout(resolve, 1000))
-
+  
   console.log('[Sidebar] 🔄 Refreshing parameter requirements for templateId:', sidebarStore.currentPlanTemplateId)
-
+  
   // Use nextTick to ensure all reactive updates are complete
   await nextTick()
-
+  
   // Get ExecutionController component through ref and call its refresh method
   if (executionControllerRef.value) {
     console.log('[Sidebar] 📞 Calling ExecutionController.loadParameterRequirements()')
     executionControllerRef.value.loadParameterRequirements()
-
+    
     // Add a retry mechanism in case the first call fails due to timing
     setTimeout(() => {
       if (executionControllerRef.value) {
@@ -351,7 +324,7 @@ const refreshParameterRequirements = async () => {
   } else {
     console.warn('[Sidebar] ⚠️ ExecutionController ref not available')
   }
-
+  
   // Refresh parameter requirements in PublishMcpServiceModal
   if (publishMcpModalRef.value) {
     console.log('[Sidebar] 📞 Calling PublishMcpServiceModal.loadParameterRequirements()')
@@ -366,10 +339,10 @@ const refreshParameterRequirements = async () => {
 // Version control handlers
 const handleRollback = () => {
   try {
-    if (sidebarStore && typeof sidebarStore.rollbackVersion === 'function') {
+    if (typeof sidebarStore.rollbackVersion === 'function') {
       sidebarStore.rollbackVersion()
     } else {
-      console.warn('sidebarStore or rollbackVersion method is not available')
+      console.warn('rollbackVersion method is not available')
     }
   } catch (error) {
     console.error('Error during rollback operation:', error)
@@ -379,10 +352,10 @@ const handleRollback = () => {
 
 const handleRestore = () => {
   try {
-    if (sidebarStore && typeof sidebarStore.restoreVersion === 'function') {
+    if (typeof sidebarStore.restoreVersion === 'function') {
       sidebarStore.restoreVersion()
     } else {
-      console.warn('sidebarStore or restoreVersion method is not available')
+      console.warn('restoreVersion method is not available')
     }
   } catch (error) {
     console.error('Error during restore operation:', error)
@@ -414,14 +387,14 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
       uploadedFiles: payload.uploadedFiles,
       uploadKey: payload.uploadKey
     }
-
+    
     if (payload.replacementParams && Object.keys(payload.replacementParams).length > 0) {
       console.log('[Sidebar] 🔄 Processing replacement parameters:', payload.replacementParams)
       finalPlanData.replacementParams = payload.replacementParams
     }
-
+    
     console.log('[Sidebar] ✅ Final plan data:', JSON.stringify(finalPlanData, null, 2))
-
+    
     // Use the prepared plan data for the payload
     const finalPayload: PlanExecutionRequestPayload = {
       ...payload,
@@ -431,7 +404,7 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
       uploadedFiles: finalPlanData.uploadedFiles,
       uploadKey: finalPlanData.uploadKey
     }
-
+    
     console.log('[Sidebar] 📤 Emitting planExecutionRequested with final payload:', JSON.stringify(finalPayload, null, 2))
     emit('planExecutionRequested', finalPayload)
 
@@ -456,21 +429,16 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
 // MCP service publishing related state
 const showPublishMcpModal = ref(false)
 
-// Copy plan related state
-const showCopyPlanModal = ref(false)
-const newPlanTitle = ref('')
-const isCopyingPlan = ref(false)
-
 const handlePublishMcpService = () => {
   console.log('[Sidebar] Publish MCP service button clicked')
   console.log('[Sidebar] currentPlanTemplateId:', sidebarStore.currentPlanTemplateId)
-
+  
   if (!sidebarStore.currentPlanTemplateId) {
     console.log('[Sidebar] No plan template selected, showing warning')
     toast.error(t('mcpService.selectPlanTemplateFirst'))
     return
   }
-
+  
   console.log('[Sidebar] Opening publish MCP service modal')
   showPublishMcpModal.value = true
 }
@@ -496,75 +464,14 @@ const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
     // Update tool information
     currentToolInfo.value = {
       ...tool,
-      toolName: tool.toolName || '',
-      serviceGroup: tool.serviceGroup || ''
+      toolName: tool.toolName,
+      serviceGroup: tool.serviceGroup ?? ''
     }
   }
-
+  
   // Reload available tools to include the newly published service
   console.log('[Sidebar] 🔄 Reloading available tools after service publish/delete')
   await sidebarStore.loadAvailableTools()
-}
-
-const handleCopyPlan = () => {
-  console.log('[Sidebar] Copy plan clicked')
-
-  if (!sidebarStore.selectedTemplate) {
-    console.log('[Sidebar] No template selected, cannot copy')
-    toast.error(t('sidebar.selectPlanFirst'))
-    return
-  }
-
-  newPlanTitle.value = (sidebarStore.selectedTemplate.title || t('sidebar.unnamedPlan')) + ' (copy)'
-  console.log('[sidebar] Opening copy plan modal')
-  showCopyPlanModal.value = true
-}
-
-const closeCopyPlanModal = () => {
-  showCopyPlanModal.value = false
-  newPlanTitle.value = ''
-  isCopyingPlan.value = false
-}
-
-const confirmCopyPlan = async () => {
-  if (!newPlanTitle.value.trim()) {
-    toast.error(t('sidebar.titleRequired'))
-    return
-  }
-
-  if (!sidebarStore.selectedTemplate || !sidebarStore.jsonContent) {
-    toast.error(t('sidebar.noPlanToCopy'))
-    return
-  }
-
-  isCopyingPlan.value = true
-
-  try {
-    const currentPlan = JSON.parse(sidebarStore.jsonContent)
-    const newPlan = {
-      ...currentPlan,
-      title: newPlanTitle.value.trim(),
-      planTemplateId: '', // New plan should not have the same template ID
-    }
-
-    const { PlanActApiService } = await import('@/api/plan-act-api-service')
-    const result = await PlanActApiService.savePlanTemplate('', JSON.stringify(newPlan))
-
-    if (result.saved) {
-      toast.success(t('sidebar.copyPlanSuccess', { title: newPlanTitle.value.trim() }))
-
-      await sidebarStore.loadPlanTemplateList()
-
-      closeCopyPlanModal()
-    } else {
-      toast.error(t('sidebar.copyPlanFailed', { message: result.message || 'Unknown error' }))
-    }
-  } catch (error: any) {
-    console.error('[Sidebar] Error copying plan:', error)
-    toast.error(t('sidebar.copyPlanFailed', { message: error.message || 'Unknown error' }))
-  } finally {
-    isCopyingPlan.value = false
-  }
 }
 
 // Execution Controller event handlers
@@ -599,8 +506,8 @@ const loadToolInfo = async (planTemplateId: string | null) => {
     if (toolData) {
       currentToolInfo.value = {
         ...toolData,
-        toolName: toolData.toolName || '',
-        serviceGroup: toolData.serviceGroup || ''
+        toolName: toolData.toolName,
+        serviceGroup: toolData.serviceGroup ?? ''
       }
     } else {
       // No tool found or not published, don't show any call examples
@@ -1143,149 +1050,5 @@ defineExpose({
   background: #3a3a3a;
   border-radius: 1px;
   transition: all 0.2s ease;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: #1a1a1a;
-  border-radius: 8px;
-  padding: 0;
-  min-width: 400px;
-  max-width: 500px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.modal-header h3 {
-  margin: 0;
-  color: white;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.close-btn {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-.modal-body {
-  padding: 20px
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.form-input {
-  padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.3);
-  color: white;
-  font-size: 13px;
-  transition: all 0.2s ease;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-}
-
-.btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5566dd 0%, #653b91 100%);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

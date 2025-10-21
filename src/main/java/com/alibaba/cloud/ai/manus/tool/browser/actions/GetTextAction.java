@@ -16,12 +16,6 @@
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
 import com.microsoft.playwright.Page;
-
-import java.io.IOException;
-import java.io.InputStream;
-
-import org.springframework.core.io.ClassPathResource;
-
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
@@ -29,52 +23,7 @@ public class GetTextAction extends BrowserAction {
 
 	private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GetTextAction.class);
 
-	private static String READABILITY_JS;
-
-	private static String TURNDOWNSERVICE_JS;
-
 	// Removed the static initialization block, directly using string constants
-
-	private static final String CONVERSE_FRAME_TO_MARKDOWN_JS = """
-			    (() => {
-			        try {
-			            const documentClone = window.document.cloneNode(true);
-			            const reader = new Readability(documentClone);
-			            const article = reader.parse();
-
-			            if (article && article.content) {
-			                const html = article.content;
-			                const turndownService = new TurndownService({
-			                    headingStyle: 'atx',
-			                });
-			                return turndownService.turndown(html);
-			            }
-			            return "";
-			        } catch (error) {
-			            console.error('Error converting frame to markdown:', error);
-			            return "";
-			        }
-			    })
-			""";
-
-	static {
-		ClassPathResource readabilityResource = new ClassPathResource("tool/Readability.js");
-		try (InputStream is = readabilityResource.getInputStream()) {
-			byte[] bytes = new byte[is.available()];
-			is.read(bytes);
-			READABILITY_JS = new String(bytes);
-		}
-		catch (IOException e) {
-		}
-		ClassPathResource turndownResource = new ClassPathResource("tool/turndown.js");
-		try (InputStream is = turndownResource.getInputStream()) {
-			byte[] bytes = new byte[is.available()];
-			is.read(bytes);
-			TURNDOWNSERVICE_JS = new String(bytes);
-		}
-		catch (IOException e) {
-		}
-	}
 
 	public GetTextAction(BrowserUseTool browserUseTool) {
 		super(browserUseTool);

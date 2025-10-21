@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.alibaba.cloud.ai.manus.cron.scheduler.DynamicCronTaskLoader;
 import com.alibaba.cloud.ai.manus.cron.service.CronService;
 import com.alibaba.cloud.ai.manus.cron.vo.CronConfig;
 
@@ -41,9 +40,6 @@ public class CronController {
 
 	@Autowired
 	private CronService cronService;
-
-	@Autowired
-	private DynamicCronTaskLoader taskManager;
 
 	@GetMapping
 	public ResponseEntity<List<CronConfig>> getAllCronTasks() {

@@ -283,6 +283,13 @@ export class PlanExecutionManager {
     // Use planId as rootPlanId for now (assume they are the same initially)
     const rootPlanId = planId
 
+    // Mark task as running in task store
+    import('@/stores/task').then(({ useTaskStore }) => {
+      const taskStore = useTaskStore()
+      taskStore.setTaskRunning(planId)
+      console.log('[PlanExecutionManager] Task marked as running with planId:', planId)
+    })
+
     // Try to emit dialog start
     this.emitDialogRoundStart(rootPlanId)
 
@@ -296,6 +303,15 @@ export class PlanExecutionManager {
     this.emitPlanCompleted(details.rootPlanId ?? "");
     this.state.lastSequenceSize = 0
     this.stopPolling()
+
+    // Mark task as no longer running
+    import('@/stores/task').then(({ useTaskStore }) => {
+      const taskStore = useTaskStore()
+      if (taskStore.currentTask && taskStore.currentTask.isRunning) {
+        taskStore.currentTask.isRunning = false
+        console.log('[PlanExecutionManager] Task marked as completed')
+      }
+    })
 
     // Delay deletion of plan execution record
     try {
@@ -323,6 +339,15 @@ export class PlanExecutionManager {
     this.emitPlanError(details.message ?? "");
     this.state.lastSequenceSize = 0
     this.stopPolling()
+
+    // Mark task as no longer running
+    import('@/stores/task').then(({ useTaskStore }) => {
+      const taskStore = useTaskStore()
+      if (taskStore.currentTask && taskStore.currentTask.isRunning) {
+        taskStore.currentTask.isRunning = false
+        console.log('[PlanExecutionManager] Task marked as stopped due to error')
+      }
+    })
 
     // Delay deletion of plan execution record
     try {

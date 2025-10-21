@@ -27,9 +27,11 @@ import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder.ActToolParam;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder.ThinkActRecordParams;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
-import com.alibaba.cloud.ai.manus.runtime.executor.PlanExecutor;
+import com.alibaba.cloud.ai.manus.runtime.executor.AbstractPlanExecutor;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
+import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
+import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionCheckerService;
 import com.alibaba.cloud.ai.manus.tool.FormInputTool;
 import com.alibaba.cloud.ai.manus.tool.TerminableTool;
 import com.alibaba.cloud.ai.manus.tool.ToolCallBiFunctionDef;
@@ -91,6 +93,8 @@ public class DynamicAgent extends ReActAgent {
 
 	private JmanusEventPublisher jmanusEventPublisher;
 
+	private AgentInterruptionHelper agentInterruptionHelper;
+
 	public void clearUp(String planId) {
 		Map<String, ToolCallBackContext> toolCallBackContext = toolCallbackProvider.getToolCallBackContext();
 		for (ToolCallBackContext toolCallBack : toolCallBackContext.values()) {
@@ -112,7 +116,8 @@ public class DynamicAgent extends ReActAgent {
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
 			Map<String, Object> initialAgentSetting, UserInputService userInputService, PromptService promptService,
 			String modelName, StreamingResponseHandler streamingResponseHandler, ExecutionStep step,
-			PlanIdDispatcher planIdDispatcher, JmanusEventPublisher jmanusEventPublisher) {
+			PlanIdDispatcher planIdDispatcher, JmanusEventPublisher jmanusEventPublisher,
+			AgentInterruptionHelper agentInterruptionHelper) {
 		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, promptService, step,
 				planIdDispatcher);
 		this.agentName = name;
@@ -129,21 +134,34 @@ public class DynamicAgent extends ReActAgent {
 		this.modelName = modelName;
 		this.streamingResponseHandler = streamingResponseHandler;
 		this.jmanusEventPublisher = jmanusEventPublisher;
+		this.agentInterruptionHelper = agentInterruptionHelper;
 	}
 
 	@Override
 	protected boolean think() {
+		// Check for interruption before starting thinking process
+		if (agentInterruptionHelper != null
+				&& !agentInterruptionHelper.checkInterruptionAndContinue(getCurrentPlanId())) {
+			log.info("Agent {} thinking process interrupted for planId: {}", getName(), getCurrentPlanId());
+			// Throw exception to signal interruption instead of returning false
+			throw new TaskInterruptionCheckerService.TaskInterruptedException(
+					"Agent thinking interrupted for planId: " + getCurrentPlanId());
+		}
+
 		collectAndSetEnvDataForTools();
 
 		try {
 			return executeWithRetry(3);
+		}
+		catch (TaskInterruptionCheckerService.TaskInterruptedException e) {
+			log.info("Agent {} thinking process interrupted: {}", getName(), e.getMessage());
+			throw e; // Re-throw the interruption exception
 		}
 		catch (Exception e) {
 			log.error(String.format("🚨 Oops! The %s's thinking process hit a snag: %s", getName(), e.getMessage()), e);
 			log.info("Exception occurred", e);
 			return false;
 		}
-
 	}
 
 	private boolean executeWithRetry(int maxRetries) throws Exception {
@@ -152,6 +170,16 @@ public class DynamicAgent extends ReActAgent {
 
 		while (attempt < maxRetries) {
 			attempt++;
+
+			// Check for interruption before each retry attempt
+			if (agentInterruptionHelper != null
+					&& !agentInterruptionHelper.checkInterruptionAndContinue(getCurrentPlanId())) {
+				log.info("Agent {} retry process interrupted at attempt {}/{} for planId: {}", getName(), attempt,
+						maxRetries, getCurrentPlanId());
+				throw new TaskInterruptionCheckerService.TaskInterruptedException(
+						"Agent thinking interrupted at attempt " + attempt);
+			}
+
 			try {
 				log.info("Attempt {}/{}: Executing agent thinking process", attempt, maxRetries);
 
@@ -291,6 +319,13 @@ public class DynamicAgent extends ReActAgent {
 
 	@Override
 	protected AgentExecResult act() {
+		// Check for interruption before starting action process
+		if (agentInterruptionHelper != null
+				&& !agentInterruptionHelper.checkInterruptionAndContinue(getCurrentPlanId())) {
+			log.info("Agent {} action process interrupted for planId: {}", getName(), getCurrentPlanId());
+			return new AgentExecResult("Action interrupted by user", AgentState.FAILED);
+		}
+
 		ToolExecutionResult toolExecutionResult = null;
 		try {
 			List<ToolCall> toolCalls = streamResult.getEffectiveToolCalls();
@@ -309,6 +344,17 @@ public class DynamicAgent extends ReActAgent {
 
 			if (!toolResponseMessage.getResponses().isEmpty()) {
 				for (ToolResponseMessage.ToolResponse toolCallResponse : toolResponseMessage.getResponses()) {
+					// Check for interruption before each tool execution
+					if (agentInterruptionHelper != null
+							&& !agentInterruptionHelper.checkInterruptionAndContinue(getCurrentPlanId())) {
+						log.info("Agent {} tool execution interrupted at tool {}/{} for planId: {}", getName(),
+								executedToolCount + 1, toolResponseMessage.getResponses().size(), getCurrentPlanId());
+						// Record partial results and return interrupted state
+						List<ActToolParam> executedTools = actToolInfoList.subList(0, executedToolCount);
+						recordActionResult(executedTools);
+						return new AgentExecResult("Tool execution interrupted by user", AgentState.FAILED);
+					}
+
 					ToolCall toolCall = toolCalls.get(executedToolCount);
 					String toolName = toolCall.name();
 					ActToolParam param = actToolInfoList.get(executedToolCount);
@@ -488,7 +534,7 @@ public class DynamicAgent extends ReActAgent {
 	private Map<String, Object> getMergedData() {
 		Map<String, Object> data = new HashMap<>();
 		data.putAll(getInitSettingData());
-		data.put(PlanExecutor.EXECUTION_ENV_STRING_KEY, convertEnvDataToString());
+		data.put(AbstractPlanExecutor.EXECUTION_ENV_STRING_KEY, convertEnvDataToString());
 		return data;
 	}
 
@@ -609,11 +655,27 @@ public class DynamicAgent extends ReActAgent {
 	private void waitForUserInputOrTimeout(FormInputTool formInputTool) {
 		log.info("Waiting for user input for planId: {}...", getCurrentPlanId());
 		long startTime = System.currentTimeMillis();
+		long lastInterruptionCheck = startTime;
 		// Get timeout from ManusProperties and convert to milliseconds
 		long userInputTimeoutMs = getManusProperties().getUserInputTimeout() * 1000L;
+		long interruptionCheckIntervalMs = 2000L; // Check for interruption every 2
+													// seconds
 
 		while (formInputTool.getInputState() == FormInputTool.InputState.AWAITING_USER_INPUT) {
-			if (System.currentTimeMillis() - startTime > userInputTimeoutMs) {
+			long currentTime = System.currentTimeMillis();
+
+			// Check for interruption periodically
+			if (currentTime - lastInterruptionCheck >= interruptionCheckIntervalMs) {
+				if (agentInterruptionHelper != null
+						&& !agentInterruptionHelper.checkInterruptionAndContinue(getCurrentPlanId())) {
+					log.info("User input wait interrupted for planId: {}", getCurrentPlanId());
+					formInputTool.handleInputTimeout(); // Treat interruption as timeout
+					break;
+				}
+				lastInterruptionCheck = currentTime;
+			}
+
+			if (currentTime - startTime > userInputTimeoutMs) {
 				log.warn("Timeout waiting for user input for planId: {}", getCurrentPlanId());
 				formInputTool.handleInputTimeout(); // This will change its state to
 				// INPUT_TIMEOUT

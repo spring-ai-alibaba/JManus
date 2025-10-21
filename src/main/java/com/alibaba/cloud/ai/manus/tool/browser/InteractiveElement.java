@@ -17,8 +17,6 @@ package com.alibaba.cloud.ai.manus.tool.browser;
 
 import com.microsoft.playwright.Frame;
 import com.microsoft.playwright.Locator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -26,8 +24,6 @@ import java.util.Map;
  * Class representing a single interactive element, holding the element's Locator.
  */
 public class InteractiveElement {
-
-	private static final Logger log = LoggerFactory.getLogger(InteractiveElement.class);
 
 	// Global index
 	private int index;

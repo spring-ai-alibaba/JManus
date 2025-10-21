@@ -259,16 +259,12 @@ onUnmounted(() => {
 const loadMessages = async () => {
   try {
     const mes = await MemoryApiService.getMemories()
-    if(messages.value){
-      messages.value = mes.map((mesMsg: Memory): MemoryWithExpanded => ({
-        ...mesMsg,
-        expanded: expandedMap.has(mesMsg.conversation_id)
-            ? expandedMap.get(mesMsg.conversation_id)
-            : false
-      }));
-    } else {
-      messages.value = mes.map((msg: Memory): MemoryWithExpanded => ({...msg, expanded: false}));
-    }
+    messages.value = mes.map((mesMsg: Memory): MemoryWithExpanded => ({
+      ...mesMsg,
+      expanded: expandedMap.has(mesMsg.conversation_id)
+          ? expandedMap.get(mesMsg.conversation_id)
+          : false
+    }));
     filteredMessages.value = [...messages.value];
     handleSearch()
   } catch (e) {
@@ -319,7 +315,7 @@ const handleSearch = () => {
     const matchesId = message.conversation_id.toLowerCase().includes(query);
     const matchesContent = message.messages?.some(bubble =>
         bubble.text.toLowerCase().includes(query)
-    ) || false;
+    ) ?? false;
     return matchesName || matchesId || matchesContent;
   });
 };

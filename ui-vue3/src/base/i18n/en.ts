@@ -674,7 +674,6 @@ const words: I18nType = {
     promptPlaceholder: 'Describe the plan you want to generate...',
     generating: 'Generating...',
     generate: 'Generate Plan',
-    updatePlan: 'Update Plan',
     executing: 'Executing...',
     execute: 'Execute Plan',
     executionParams: 'Execution Parameters',
@@ -768,6 +767,7 @@ const words: I18nType = {
   input: {
     placeholder: 'Send a message to JManus',
     send: 'Send',
+    stop: 'Stop',
     planMode: 'PLAN-ACT Template Mode',
     waiting: 'Waiting for user input...',
     maxLength: 'Max Length',
@@ -807,8 +807,6 @@ const words: I18nType = {
     generatorPlaceholder:
       'Step 1: Enter the task you want to accomplish here in natural language, as detailed as possible. Then click Generate Plan to create a precise, repeatable plan.',
     generating: 'Generating...',
-    generatePlan: 'Generate Plan',
-    updatePlan: 'Update Plan',
     executionController: 'Execution Controller',
     executionParams: 'Execution Parameters',
     executionParamsPlaceholder: 'Enter execution parameters...',
@@ -902,6 +900,8 @@ const words: I18nType = {
   stepRequirementPlaceholder: 'Please enter the specific requirements and description for this task...',
   terminateColumns: 'Task Output Requirements Description',
   terminateColumnsPlaceholder: 'Specify structured return values. If specified, returns a JSON list where each row contains your specified columns. For example: col1,col2 will output [(col1:val1,col2:val2), (col1:val3,col2:val4)]',
+  preview: 'Preview',
+  systemWillReturnListWithTableHeaderFormat: 'System will return a multi-row list in JSON format with table header',
     titlePlaceholder: 'Please enter plan title...',
     moveUp: 'Move Up',
     moveDown: 'Move Down',
@@ -946,17 +946,6 @@ const words: I18nType = {
     networkError: 'Network error',
     apiError: 'API call failed',
     resizeHint: 'Drag to resize',
-
-    // Copy plan functionality
-    copyPlan: 'Copy Plan',
-    newPlanTitle: 'New Plan Title',
-    enterNewPlanTitle: 'Enter new plan title',
-    copying: 'Copying...',
-    selectPlanFirst: 'Please select a plan template first',
-    titleRequired: 'Title cannot be empty',
-    noPlanToCopy: 'No plan to copy',
-    copyPlanSuccess: 'Plan copied successfully: {title}',
-    copyPlanFailed: 'Plan copy failed: {message}',
   },
 
   // Tool Selection

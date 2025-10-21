@@ -217,7 +217,7 @@ useI18n()
 
 // Local state
 const formInputsStore = reactive<Record<number, string | string[]>>({})
-const genericInput = ref(props.genericInput || '')
+const genericInput = ref(props.genericInput ?? '')
 const isInitialized = ref(false)
 const initializationTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
@@ -277,14 +277,12 @@ const handleUserInputSubmit = async () => {
       Object.entries(formInputsStore).forEach(([index, value]) => {
         const numIndex = parseInt(index, 10)
         const input = formInputs[numIndex]
-        if (input) {
-          const label = input.label || `input_${index}`
-          // Handle checkbox arrays - convert to string if it's an array
-          if (Array.isArray(value)) {
-            inputData[label] = value.join(', ')
-          } else {
-            inputData[label] = value
-          }
+        const label = input.label || `input_${index}`
+        // Handle checkbox arrays - convert to string if it's an array
+        if (Array.isArray(value)) {
+          inputData[label] = value.join(', ')
+        } else {
+          inputData[label] = value
         }
       })
     } else {

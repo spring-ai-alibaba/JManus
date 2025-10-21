@@ -216,13 +216,4 @@ public class UserService {
 		return entityOpt.map(UserEntity::getCurrentConversationId).orElse(null);
 	}
 
-	/**
-	 * Map User VO to UserEntity
-	 */
-	private UserEntity mapToUserEntity(User user) {
-		UserEntity entity = new UserEntity();
-		BeanUtils.copyProperties(user, entity);
-		return entity;
-	}
-
 }

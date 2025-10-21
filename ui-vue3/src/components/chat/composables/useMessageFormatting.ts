@@ -117,8 +117,8 @@ export function useMessageFormatting() {
   const hasDisplayableContent = (message: ChatMessage): boolean => {
     return !!(
       message.content ||
-      message.thinking ||
-      message.planExecution ||
+      (message.thinking ?? false) ||
+      (message.planExecution ?? false) ||
       message.error
     )
   }

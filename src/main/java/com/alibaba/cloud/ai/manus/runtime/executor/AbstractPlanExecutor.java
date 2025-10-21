@@ -29,6 +29,7 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.StepResult;
 import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
+import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -62,6 +63,8 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 
 	protected final AgentService agentService;
 
+	protected AgentInterruptionHelper agentInterruptionHelper;
+
 	protected LlmService llmService;
 
 	protected final ManusProperties manusProperties;
@@ -81,7 +84,8 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 
 	public AbstractPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			AgentService agentService, LlmService llmService, ManusProperties manusProperties,
-			LevelBasedExecutorPool levelBasedExecutorPool, FileUploadService fileUploadService) {
+			LevelBasedExecutorPool levelBasedExecutorPool, FileUploadService fileUploadService,
+			AgentInterruptionHelper agentInterruptionHelper) {
 		this.agents = agents;
 		this.recorder = recorder;
 		this.agentService = agentService;
@@ -89,6 +93,7 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 		this.manusProperties = manusProperties;
 		this.levelBasedExecutorPool = levelBasedExecutorPool;
 		this.fileUploadService = fileUploadService;
+		this.agentInterruptionHelper = agentInterruptionHelper;
 	}
 
 	/**
@@ -112,6 +117,15 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 			recorder.recordStepStart(step, context.getCurrentPlanId());
 			String stepResultStr = executor.run();
 			step.setResult(stepResultStr);
+
+			// Check if agent was interrupted
+			if (executor.getState() == AgentState.FAILED && stepResultStr.contains("interrupted")) {
+				logger.info("Agent {} was interrupted during step execution", executor.getName());
+				// Don't return null, return the executor so interruption can be handled
+				// at plan
+				// level
+			}
+
 			recorder.recordStepEnd(step, context.getCurrentPlanId());
 
 			return executor;
@@ -203,27 +217,29 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 	 * Execute all steps asynchronously and return a CompletableFuture with execution
 	 * results. Uses level-based executor pools based on plan depth.
 	 *
-	 * Usage example: <pre>
+	 * Usage example:
+	 *
+	 * <pre>
 	 * CompletableFuture<PlanExecutionResult> future = planExecutor.executeAllStepsAsync(context);
 	 *
 	 * future.whenComplete((result, throwable) -> {
-	 *     if (throwable != null) {
-	 *         // Handle execution error
-	 *         System.err.println("Execution failed: " + throwable.getMessage());
-	 *     } else {
-	 *         // Handle successful completion
-	 *         if (result.isSuccess()) {
-	 *             String finalResult = result.getEffectiveResult();
-	 *             System.out.println("Final result: " + finalResult);
+	 *   if (throwable != null) {
+	 *     // Handle execution error
+	 *     System.err.println("Execution failed: " + throwable.getMessage());
+	 *   } else {
+	 *     // Handle successful completion
+	 *     if (result.isSuccess()) {
+	 *       String finalResult = result.getEffectiveResult();
+	 *       System.out.println("Final result: " + finalResult);
 	 *
-	 *             // Access individual step results
-	 *             for (StepResult step : result.getStepResults()) {
-	 *                 System.out.println("Step " + step.getStepIndex() + ": " + step.getResult());
-	 *             }
-	 *         } else {
-	 *             System.err.println("Execution failed: " + result.getErrorMessage());
-	 *         }
+	 *       // Access individual step results
+	 *       for (StepResult step : result.getStepResults()) {
+	 *         System.out.println("Step " + step.getStepIndex() + ": " + step.getResult());
+	 *       }
+	 *     } else {
+	 *       System.err.println("Execution failed: " + result.getErrorMessage());
 	 *     }
+	 *   }
 	 * });
 	 * </pre>
 	 * @param context Execution context containing user request and execution process
@@ -256,7 +272,20 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 						context.getToolCallId());
 
 				if (steps != null && !steps.isEmpty()) {
-					for (ExecutionStep step : steps) {
+					for (int i = 0; i < steps.size(); i++) {
+						ExecutionStep step = steps.get(i);
+
+						// Check for interruption before each step
+						if (agentInterruptionHelper != null
+								&& !agentInterruptionHelper.checkInterruptionAndContinue(context.getRootPlanId())) {
+							logger.info("Plan execution interrupted at step {}/{} for planId: {}", i + 1, steps.size(),
+									context.getRootPlanId());
+							context.setSuccess(false);
+							result.setSuccess(false);
+							result.setErrorMessage("Plan execution interrupted by user");
+							break; // Stop executing remaining steps
+						}
+
 						BaseAgent stepExecutor = executeStep(step, context);
 						if (stepExecutor != null) {
 							lastExecutor = stepExecutor;
@@ -270,13 +299,25 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 							stepResult.setAgentName(stepExecutor.getName());
 
 							result.addStepResult(stepResult);
+
+							// Check if this step was interrupted
+							if (step.getResult().contains("Execution interrupted by user")) {
+								logger.info("Step execution was interrupted, stopping plan execution");
+								context.setSuccess(false);
+								result.setSuccess(false);
+								result.setErrorMessage("Plan execution interrupted by user");
+								break; // Stop executing remaining steps
+							}
 						}
 					}
 				}
 
-				context.setSuccess(true);
-				result.setSuccess(true);
-				result.setFinalResult(context.getPlan().getResult());
+				// Only set success if no interruption occurred
+				if (result.getErrorMessage() == null || !result.getErrorMessage().contains("interrupted")) {
+					context.setSuccess(true);
+					result.setSuccess(true);
+					result.setFinalResult(context.getPlan().getResult());
+				}
 
 			}
 			catch (Exception e) {

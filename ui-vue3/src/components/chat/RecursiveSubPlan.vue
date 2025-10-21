@@ -317,12 +317,12 @@ const handleSubPlanClick = () => {
 }
 
 const handleSubPlanAgentClick = (agentIndex: number, agent: AgentExecutionRecord) => {
-  const stepId = agent.stepId || `subplan-${props.subPlanIndex}-agent-${agentIndex}`
+  const stepId = agent.stepId ?? `subplan-${props.subPlanIndex}-agent-${agentIndex}`
   emit('step-selected', stepId)
 }
 
 const handleThinkActStepClick = (agentIndex: number, _stepIndex: number, agent: AgentExecutionRecord) => {
-  const stepId = agent.stepId || `subplan-${props.subPlanIndex}-agent-${agentIndex}`
+  const stepId = agent.stepId ?? `subplan-${props.subPlanIndex}-agent-${agentIndex}`
   emit('step-selected', stepId)
 }
 

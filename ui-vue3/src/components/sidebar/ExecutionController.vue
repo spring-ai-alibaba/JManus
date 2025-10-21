@@ -314,8 +314,8 @@ Response: {
 
 // Computed properties
 const isAnyServiceEnabled = computed(() => {
-  return props.toolInfo.enableInternalToolcall || 
-         props.toolInfo.enableHttpService || 
+  return props.toolInfo.enableInternalToolcall ?? 
+         props.toolInfo.enableHttpService ?? 
          props.toolInfo.enableMcpService
 })
 
@@ -440,6 +440,15 @@ const loadParameterRequirements = async () => {
     return
   }
 
+  // Clear previous data immediately to prevent stale data display
+  parameterRequirements.value = {
+    parameters: [],
+    hasParameters: false,
+    requirements: ''
+  }
+  parameterValues.value = {}
+  console.log('[ExecutionController] 🧹 Cleared previous data before loading new template')
+
   isLoadingParameters.value = true
   try {
     console.log('[ExecutionController] 🌐 Fetching parameter requirements from API...')
@@ -471,7 +480,10 @@ const loadParameterRequirements = async () => {
       hasParameters: false,
       requirements: ''
     }
+    // Clear parameter values when there's an error to prevent stale data
+    parameterValues.value = {}
     console.log('[ExecutionController] 🔄 Reset parameterRequirements due to error:', JSON.stringify(parameterRequirements.value, null, 2))
+    console.log('[ExecutionController] 🔄 Cleared parameterValues:', JSON.stringify(parameterValues.value, null, 2))
   } finally {
     isLoadingParameters.value = false
     console.log('[ExecutionController] ✅ loadParameterRequirements completed')

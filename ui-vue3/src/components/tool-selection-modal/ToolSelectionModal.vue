@@ -192,7 +192,7 @@ const filteredTools = computed(() => {
       tool =>
         tool.name.toLowerCase().includes(query) ||
         tool.description.toLowerCase().includes(query) ||
-        (tool.serviceGroup.toLowerCase().includes(query) ?? false)
+        tool.serviceGroup.toLowerCase().includes(query)
     )
   }
 
@@ -213,8 +213,8 @@ const filteredTools = computed(() => {
     case 'group':
     default:
       filtered = [...filtered].sort((a, b) => {
-        const groupA = a.serviceGroup ?? 'Ungrouped'
-        const groupB = b.serviceGroup ?? 'Ungrouped'
+        const groupA = a.serviceGroup || 'Ungrouped'
+        const groupB = b.serviceGroup || 'Ungrouped'
         if (groupA !== groupB) {
           return groupA.localeCompare(groupB)
         }
@@ -231,7 +231,7 @@ const groupedTools = computed(() => {
   const groups = new Map<string, Tool[]>()
 
   filteredTools.value.forEach(tool => {
-    const groupName = tool.serviceGroup ?? 'Ungrouped'
+    const groupName = tool.serviceGroup || 'Ungrouped'
     if (!groups.has(groupName)) {
       groups.set(groupName, [])
     }

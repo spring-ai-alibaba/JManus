@@ -294,7 +294,7 @@ public class ModelServiceImpl implements ModelService {
 		return apiKey.substring(0, 4) + "****" + apiKey.substring(apiKey.length() - 4);
 	}
 
-	private List<AvailableModel> parseModelsResponse(Map response) {
+	private List<AvailableModel> parseModelsResponse(Map<String, Object> response) {
 		log.debug("Starting to parse API response: {}", response);
 
 		List<AvailableModel> models = new ArrayList<>();
@@ -307,11 +307,12 @@ public class ModelServiceImpl implements ModelService {
 		// Try to parse standard OpenAI format: {"data": [...]}
 		Object data = response.get("data");
 		if (data instanceof List) {
-			List<Map> modelList = (List<Map>) data;
+			@SuppressWarnings("unchecked")
+			List<Map<String, Object>> modelList = (List<Map<String, Object>>) data;
 			log.debug("Found response data containing {} models", modelList.size());
 
 			for (int i = 0; i < modelList.size(); i++) {
-				Map modelData = modelList.get(i);
+				Map<String, Object> modelData = modelList.get(i);
 				log.debug("Parsing model data #{}: {}", i + 1, modelData);
 
 				String modelId = (String) modelData.get("id");
@@ -436,6 +437,7 @@ public class ModelServiceImpl implements ModelService {
 	/**
 	 * Internal method that actually makes the API call
 	 */
+	@SuppressWarnings("deprecation")
 	private List<AvailableModel> callThirdPartyApiInternal(String baseUrl, String apiKey) {
 		log.debug("Starting third-party API call - URL: {}", baseUrl);
 
@@ -458,6 +460,7 @@ public class ModelServiceImpl implements ModelService {
 			// Create HttpEntity to wrap request headers
 			HttpEntity<String> entity = new HttpEntity<>(headers);
 			// Send GET request with HttpEntity containing headers
+			@SuppressWarnings("rawtypes")
 			ResponseEntity<Map> response = restTemplate.exchange(requestUrl, HttpMethod.GET, entity, Map.class);
 			long endTime = System.currentTimeMillis();
 
@@ -465,7 +468,9 @@ public class ModelServiceImpl implements ModelService {
 					endTime - startTime);
 
 			// Parse response
-			List<AvailableModel> models = parseModelsResponse(response.getBody());
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+			List<AvailableModel> models = parseModelsResponse(responseBody);
 			log.info("Successfully parsed response, obtained {} models", models.size());
 
 			return models;

@@ -56,7 +56,7 @@ export class MemoryApiService {
             const response = await fetch(`${this.BASE_URL}`)
             const result = await this.handleResponse(response)
             const data: MemoryResponse = await result.json()
-            return data.memories || []
+            return data.memories ?? []
         } catch (error) {
             console.error('Failed to get memory list:', error)
             throw error

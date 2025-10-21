@@ -141,13 +141,6 @@ public class McpCacheManager {
 		}
 
 		/**
-		 * Get background cache (for building new data)
-		 */
-		public Map<String, McpServiceEntity> getBackgroundCache() {
-			return backgroundCache;
-		}
-
-		/**
 		 * Update background cache
 		 */
 		public void updateBackgroundCache(Map<String, McpServiceEntity> newCache) {
@@ -159,8 +152,6 @@ public class McpCacheManager {
 	private final McpConnectionFactory connectionFactory;
 
 	private final McpConfigRepository mcpConfigRepository;
-
-	private final McpProperties mcpProperties;
 
 	private final ManusProperties manusProperties;
 
@@ -188,7 +179,6 @@ public class McpCacheManager {
 			McpProperties mcpProperties, ManusProperties manusProperties) {
 		this.connectionFactory = connectionFactory;
 		this.mcpConfigRepository = mcpConfigRepository;
-		this.mcpProperties = mcpProperties;
 		this.manusProperties = manusProperties;
 
 		// Initialize thread pool
