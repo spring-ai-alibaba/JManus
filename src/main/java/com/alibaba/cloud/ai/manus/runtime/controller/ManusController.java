@@ -49,7 +49,6 @@ import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
-import com.alibaba.cloud.ai.manus.recorder.repository.PlanExecutionRecordRepository;
 import com.alibaba.cloud.ai.manus.recorder.service.NewRepoPlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
 import com.alibaba.cloud.ai.manus.runtime.entity.po.RootTaskManagerEntity;
@@ -108,9 +107,6 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	@Autowired
 	private IPlanParameterMappingService parameterMappingService;
-
-	@Autowired
-	private PlanExecutionRecordRepository planExecutionRecordRepository;
 
 	@Autowired
 	private RootTaskManagerService rootTaskManagerService;

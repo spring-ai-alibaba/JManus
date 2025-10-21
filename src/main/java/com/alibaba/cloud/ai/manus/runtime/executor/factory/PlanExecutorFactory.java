@@ -15,9 +15,15 @@
  */
 package com.alibaba.cloud.ai.manus.runtime.executor.factory;
 
-import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
 import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.agent.service.AgentService;
+import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
@@ -26,15 +32,9 @@ import com.alibaba.cloud.ai.manus.runtime.executor.DirectResponseExecutor;
 import com.alibaba.cloud.ai.manus.runtime.executor.DynamicToolPlanExecutor;
 import com.alibaba.cloud.ai.manus.runtime.executor.LevelBasedExecutorPool;
 import com.alibaba.cloud.ai.manus.runtime.executor.PlanExecutorInterface;
-import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
+import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * Plan Executor Factory - Creates appropriate executor based on plan type Factory class
@@ -54,6 +54,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final ManusProperties manusProperties;
 
+	@SuppressWarnings("unused")
 	private final ObjectMapper objectMapper;
 
 	private final LevelBasedExecutorPool levelBasedExecutorPool;
