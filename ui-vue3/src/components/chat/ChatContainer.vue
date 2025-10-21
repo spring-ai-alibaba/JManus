@@ -73,8 +73,6 @@ import { useScrollBehavior } from './composables/useScrollBehavior'
 import { planExecutionManager } from '@/utils/plan-execution-manager'
 
 interface Props {
-  mode?: 'plan' | 'direct'
-  initialPrompt?: string
 }
 
 interface Emits {
@@ -84,8 +82,6 @@ interface Emits {
 // InputMessage interface removed - not needed in display component
 
 withDefaults(defineProps<Props>(), {
-  mode: 'plan',
-  initialPrompt: ''
 })
 
 const emit = defineEmits<Emits>()

@@ -71,12 +71,12 @@ export class LlmCheckService {
     showAlert?: boolean
     redirectToInit?: boolean
   }): Promise<void> {
-    const { showAlert = true, redirectToInit = true } = options || {}
+    const { showAlert = true, redirectToInit = true } = options ?? {}
 
     const checkResult = await this.checkLlmConfiguration()
 
     if (!checkResult.initialized) {
-      const message = checkResult.message || 'Please configure LLM model first'
+      const message = checkResult.message ?? 'Please configure LLM model first'
 
       if (showAlert) {
         alert(message)

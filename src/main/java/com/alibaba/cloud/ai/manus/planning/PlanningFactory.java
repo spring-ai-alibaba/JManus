@@ -46,7 +46,6 @@ import org.springframework.web.client.RestClient;
 import com.alibaba.cloud.ai.manus.agent.ToolCallbackProvider;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.cron.service.CronService;
-import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
@@ -54,16 +53,10 @@ import com.alibaba.cloud.ai.manus.mcp.model.vo.McpServiceEntity;
 import com.alibaba.cloud.ai.manus.mcp.model.vo.McpTool;
 import com.alibaba.cloud.ai.manus.mcp.service.McpService;
 import com.alibaba.cloud.ai.manus.mcp.service.McpStateHolderService;
-import com.alibaba.cloud.ai.manus.planning.service.PlanCreator;
 import com.alibaba.cloud.ai.manus.planning.service.PlanFinalizer;
-import com.alibaba.cloud.ai.manus.planning.service.IPlanCreator;
-import com.alibaba.cloud.ai.manus.planning.service.DynamicAgentPlanCreator;
 import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.tool.FormInputTool;
-import com.alibaba.cloud.ai.manus.tool.PlanningTool;
-import com.alibaba.cloud.ai.manus.tool.PlanningToolInterface;
-import com.alibaba.cloud.ai.manus.tool.DynamicAgentPlanningTool;
 import com.alibaba.cloud.ai.manus.tool.TerminateTool;
 import com.alibaba.cloud.ai.manus.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.manus.tool.bash.Bash;
@@ -118,8 +111,6 @@ public class PlanningFactory {
 
 	private final TableProcessingService tableProcessingService;
 
-	private final IExcelProcessingService excelProcessingService;
-
 	private final static Logger log = LoggerFactory.getLogger(PlanningFactory.class);
 
 	private final McpService mcpService;
@@ -151,18 +142,22 @@ public class PlanningFactory {
 	@Autowired
 	private SubplanToolService subplanToolService;
 
+	@SuppressWarnings("unused")
 	@Autowired
 	private AgentService agentService;
 
+	@SuppressWarnings("unused")
 	@Autowired
 	private PptGeneratorOperator pptGeneratorOperator;
 
 	@Value("${agent.init}")
 	private Boolean agentInit = true;
 
+	@SuppressWarnings("unused")
 	@Autowired
 	private JsxGeneratorOperator jsxGeneratorOperator;
 
+	@SuppressWarnings("unused")
 	@Autowired
 	private ApplicationContext applicationContext;
 
@@ -180,28 +175,6 @@ public class PlanningFactory {
 		this.unifiedDirectoryManager = unifiedDirectoryManager;
 		this.dataSourceService = dataSourceService;
 		this.tableProcessingService = tableProcessingService;
-		this.excelProcessingService = excelProcessingService;
-	}
-
-	/**
-	 * Create a plan creator based on plan type
-	 * @param planType the type of plan to create ("dynamic_agent" for dynamic agent
-	 * plans, any other value for standard plans)
-	 * @return configured plan creator instance
-	 */
-	public IPlanCreator createPlanCreator(String planType) {
-		if ("dynamic_agent".equals(planType)) {
-			DynamicAgentPlanningTool dynamicAgentPlanningTool = new DynamicAgentPlanningTool();
-			return new DynamicAgentPlanCreator(llmService, dynamicAgentPlanningTool, recorder, promptService,
-					manusProperties, streamingResponseHandler, agentService);
-		}
-		else {
-			// Get all dynamic agents from the database for simple plans
-			List<DynamicAgentEntity> agentEntities = agentService.getAllAgents();
-			PlanningToolInterface planningTool = new PlanningTool();
-			return new PlanCreator(agentEntities, llmService, planningTool, recorder, promptService, manusProperties,
-					streamingResponseHandler);
-		}
 	}
 
 	/**
@@ -337,6 +310,7 @@ public class PlanningFactory {
 		return toolCallbackMap;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Bean
 	public RestClient.Builder createRestClient() {
 		// Create RequestConfig and set the timeout (10 minutes for all timeouts)

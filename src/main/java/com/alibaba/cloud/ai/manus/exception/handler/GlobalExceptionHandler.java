@@ -30,6 +30,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	/**
 	 * Handle plan exceptions
 	 */
+	@SuppressWarnings("rawtypes")
 	@ExceptionHandler(PlanException.class)
 	public ResponseEntity handlePlanException(PlanException ex) {
 		return ResponseEntity.internalServerError().body(ex.getMessage());
@@ -38,6 +39,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	/**
 	 * Handle all uncaught exceptions
 	 */
+	@SuppressWarnings("rawtypes")
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity handleGlobalException(Exception ex) {
 		return ResponseEntity.internalServerError().body(ex.getMessage());

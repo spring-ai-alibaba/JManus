@@ -21,9 +21,6 @@ import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
 public class SwitchTabAction extends BrowserAction {
-
-	private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SwitchTabAction.class);
-
 	public SwitchTabAction(BrowserUseTool browserUseTool) {
 		super(browserUseTool);
 	}

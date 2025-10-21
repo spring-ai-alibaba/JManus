@@ -32,6 +32,7 @@ public class JmanusListenerRegister implements BeanPostProcessor {
 	@Autowired
 	private JmanusEventPublisher jmanusEventPublisher;
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 		if (bean instanceof JmanusListener) {

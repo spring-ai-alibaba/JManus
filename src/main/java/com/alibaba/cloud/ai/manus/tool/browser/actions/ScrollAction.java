@@ -21,9 +21,6 @@ import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
 public class ScrollAction extends BrowserAction {
-
-	private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ScrollAction.class);
-
 	public ScrollAction(BrowserUseTool browserUseTool) {
 		super(browserUseTool);
 	}

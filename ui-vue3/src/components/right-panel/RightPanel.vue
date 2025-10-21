@@ -394,8 +394,8 @@ const handleStepSelected = async (stepId: string) => {
     // Create step data object
     const stepData: SelectedStep = {
       stepId: stepId,
-      title: agentExecutionDetail.agentName || `Step ${stepId}`,
-      description: agentExecutionDetail.agentDescription || '',
+      title: agentExecutionDetail.agentName ?? `Step ${stepId}`,
+      description: agentExecutionDetail.agentDescription ?? '',
       agentExecution: agentExecutionDetail,
       completed: agentExecutionDetail.status === 'FINISHED',
       current: agentExecutionDetail.status === 'RUNNING'
@@ -440,7 +440,7 @@ const refreshCurrentStep = async () => {
   try {
     const agentExecutionDetail = await refreshAgentExecutionDetail(selectedStep.value.stepId)
     
-    if (agentExecutionDetail && selectedStep.value) {
+    if (agentExecutionDetail) {
       // Update the existing step data
       selectedStep.value.agentExecution = agentExecutionDetail
       selectedStep.value.completed = agentExecutionDetail.status === 'FINISHED'

@@ -82,6 +82,7 @@ public class GoogleSearch extends AbstractBaseTool<GoogleSearch.GoogleSearchInpu
 		service = new SerpApiService(new SerpApiProperties(SERP_API_KEY, "google"));
 	}
 
+	@SuppressWarnings("unchecked")
 	public ToolExecuteResult run(String toolInput) {
 		log.info("GoogleSearch toolInput:{}", toolInput);
 
@@ -185,6 +186,7 @@ public class GoogleSearch extends AbstractBaseTool<GoogleSearch.GoogleSearchInpu
 		return GoogleSearchInput.class;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public ToolExecuteResult run(GoogleSearchInput input) {
 		String query = input.getQuery();

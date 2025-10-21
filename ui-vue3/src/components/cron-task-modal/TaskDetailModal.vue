@@ -184,7 +184,7 @@ const fetchTemplates = async () => {
     if (response?.templates) {
       templates.value = response.templates.map((template: PlanTemplate) => ({
         id: template.id,
-        name: template.title || 'Unnamed Template'
+        name: template.title ?? 'Unnamed Template'
       }))
     }
   } catch (error) {
@@ -284,7 +284,7 @@ const handleSave = async () => {
       cronTime: formData.value.cronTime.trim(),
       planDesc: formData.value.planDesc.trim(),
       status: formData.value.status,
-      planTemplateId: formData.value.linkTemplate ? formData.value.templateId || '' : ''
+      planTemplateId: formData.value.linkTemplate ? formData.value.templateId ?? '' : ''
     }
 
     // Trigger save event
@@ -300,13 +300,13 @@ watch(
   (newTask) => {
     if (newTask) {
       // Unified handling of template ID field
-      const templateId = newTask.templateId || newTask.planTemplateId || ''
+      const templateId = newTask.templateId ?? newTask.planTemplateId ?? ''
 
       formData.value = {
         cronName: newTask.cronName || '',
         cronTime: newTask.cronTime || '',
         planDesc: newTask.planDesc || '',
-        status: newTask.status ?? 1,
+        status: newTask.status,
         linkTemplate: !!templateId,
         templateId: templateId,
         planTemplateId: templateId

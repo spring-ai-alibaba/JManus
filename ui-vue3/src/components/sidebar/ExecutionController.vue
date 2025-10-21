@@ -314,8 +314,8 @@ Response: {
 
 // Computed properties
 const isAnyServiceEnabled = computed(() => {
-  return props.toolInfo.enableInternalToolcall || 
-         props.toolInfo.enableHttpService || 
+  return props.toolInfo.enableInternalToolcall ?? 
+         props.toolInfo.enableHttpService ?? 
          props.toolInfo.enableMcpService
 })
 

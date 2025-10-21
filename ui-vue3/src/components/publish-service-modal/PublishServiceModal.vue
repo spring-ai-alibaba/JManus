@@ -202,14 +202,12 @@ const { t } = useI18n()
 interface Props {
   modelValue: boolean
   planTemplateId?: string
-  planTitle?: string
   planDescription?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: false,
   planTemplateId: '',
-  planTitle: '',
   planDescription: ''
 })
 
@@ -555,11 +553,11 @@ const loadCoordinatorToolData = async () => {
     // Fill form data
     formData.serviceName = tool.toolName || ''
     formData.userRequest = tool.toolDescription || props.planDescription || ''
-    formData.serviceGroup = tool.serviceGroup || ''
+    formData.serviceGroup = tool.serviceGroup ?? ''
     
     // Set form data based on service type
-    publishAsHttpService.value = tool.enableHttpService || false
-    publishAsInternalToolcall.value = tool.enableInternalToolcall || false
+    publishAsHttpService.value = tool.enableHttpService ?? false
+    publishAsInternalToolcall.value = tool.enableInternalToolcall ?? false
     
     
     // Parse inputSchema as parameters

@@ -329,10 +329,10 @@ const refreshParameterRequirements = async () => {
 // Version control handlers
 const handleRollback = () => {
   try {
-    if (sidebarStore && typeof sidebarStore.rollbackVersion === 'function') {
+    if (typeof sidebarStore.rollbackVersion === 'function') {
       sidebarStore.rollbackVersion()
     } else {
-      console.warn('sidebarStore or rollbackVersion method is not available')
+      console.warn('rollbackVersion method is not available')
     }
   } catch (error) {
     console.error('Error during rollback operation:', error)
@@ -342,10 +342,10 @@ const handleRollback = () => {
 
 const handleRestore = () => {
   try {
-    if (sidebarStore && typeof sidebarStore.restoreVersion === 'function') {
+    if (typeof sidebarStore.restoreVersion === 'function') {
       sidebarStore.restoreVersion()
     } else {
-      console.warn('sidebarStore or restoreVersion method is not available')
+      console.warn('restoreVersion method is not available')
     }
   } catch (error) {
     console.error('Error during restore operation:', error)
@@ -454,8 +454,8 @@ const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
     // Update tool information
     currentToolInfo.value = {
       ...tool,
-      toolName: tool.toolName || '',
-      serviceGroup: tool.serviceGroup || ''
+      toolName: tool.toolName,
+      serviceGroup: tool.serviceGroup ?? ''
     }
   }
   
@@ -496,8 +496,8 @@ const loadToolInfo = async (planTemplateId: string | null) => {
     if (toolData) {
       currentToolInfo.value = {
         ...toolData,
-        toolName: toolData.toolName || '',
-        serviceGroup: toolData.serviceGroup || ''
+        toolName: toolData.toolName,
+        serviceGroup: toolData.serviceGroup ?? ''
       }
     } else {
       // No tool found or not published, don't show any call examples

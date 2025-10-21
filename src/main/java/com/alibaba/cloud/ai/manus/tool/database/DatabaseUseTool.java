@@ -36,7 +36,6 @@ public class DatabaseUseTool extends AbstractBaseTool<DatabaseRequest> {
 
 	private static final Logger log = LoggerFactory.getLogger(DatabaseUseTool.class);
 
-	private final ManusProperties manusProperties;
 
 	private final DataSourceService dataSourceService;
 
@@ -44,7 +43,6 @@ public class DatabaseUseTool extends AbstractBaseTool<DatabaseRequest> {
 
 	public DatabaseUseTool(ManusProperties manusProperties, DataSourceService dataSourceService,
 			ObjectMapper objectMapper) {
-		this.manusProperties = manusProperties;
 		this.dataSourceService = dataSourceService;
 		this.objectMapper = objectMapper;
 	}

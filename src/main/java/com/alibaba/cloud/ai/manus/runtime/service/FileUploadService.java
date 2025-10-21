@@ -360,8 +360,6 @@ public class FileUploadService {
 		FileUploadResult.FileInfo fileInfo = new FileUploadResult.FileInfo();
 
 		String fileName = filePath.getFileName().toString();
-		Path rootDirectory = directoryManager.getWorkingDirectory();
-		String relativePath = rootDirectory.relativize(filePath).toString();
 
 		fileInfo.setOriginalName(fileName); // Assume same as fileName for existing files
 		fileInfo.setSize(Files.size(filePath));

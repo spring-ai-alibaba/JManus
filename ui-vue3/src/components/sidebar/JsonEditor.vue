@@ -220,8 +220,9 @@ import { Icon } from '@iconify/vue'
 import { useJsonEditor, type JsonEditorProps } from './json-editor-logic'
 
 // Props
+// eslint-disable-next-line vue/no-unused-properties
 const props = withDefaults(defineProps<JsonEditorProps>(), {
-  hiddenFields: () => ['currentPlanId', 'userRequest', 'rootPlanId']
+  currentPlanTemplateId: ''
 })
 
 // Emits
@@ -249,7 +250,6 @@ const {
 
 const autoResizeTextarea = (event: Event) => {
   const textarea = event.target as HTMLTextAreaElement
-  if (!textarea) return
   
   textarea.style.height = 'auto'
   

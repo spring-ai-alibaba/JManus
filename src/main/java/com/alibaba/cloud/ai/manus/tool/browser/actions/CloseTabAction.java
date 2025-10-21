@@ -22,8 +22,6 @@ import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
 public class CloseTabAction extends BrowserAction {
 
-	private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CloseTabAction.class);
-
 	public CloseTabAction(BrowserUseTool browserUseTool) {
 		super(browserUseTool);
 	}

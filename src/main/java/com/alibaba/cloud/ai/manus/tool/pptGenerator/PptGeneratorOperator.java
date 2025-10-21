@@ -30,17 +30,11 @@ public class PptGeneratorOperator extends AbstractBaseTool<PptInput> {
 
 	private final PptGeneratorService pptGeneratorService;
 
-	private final ObjectMapper objectMapper;
-
-	private final UnifiedDirectoryManager unifiedDirectoryManager;
-
 	private static final String TOOL_NAME = "ppt_generator_operator";
 
 	public PptGeneratorOperator(PptGeneratorService pptGeneratorService, ObjectMapper objectMapper,
 			UnifiedDirectoryManager unifiedDirectoryManager) {
 		this.pptGeneratorService = pptGeneratorService;
-		this.objectMapper = objectMapper;
-		this.unifiedDirectoryManager = unifiedDirectoryManager;
 	}
 
 	/**

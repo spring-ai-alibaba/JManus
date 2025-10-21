@@ -307,9 +307,19 @@ import AssignedTools from '@/components/shared/AssignedTools.vue'
 import { ConfigApiService, type ModelOption } from '@/api/config-api-service'
 import { sidebarStore } from '@/stores/sidebar'
 
+// Define props interface specific to JsonEditorV2
+interface JsonEditorV2Props {
+  // eslint-disable-next-line vue/no-unused-properties
+  jsonContent: string
+  canRollback: boolean
+  canRestore: boolean
+  isGenerating: boolean
+  isExecuting: boolean
+  currentPlanTemplateId: string
+}
+
 // Props
-const props = withDefaults(defineProps<JsonEditorProps>(), {
-  hiddenFields: () => [],
+const props = withDefaults(defineProps<JsonEditorV2Props>(), {
   currentPlanTemplateId: ''
 })
 
@@ -320,6 +330,12 @@ const emit = defineEmits<{
   save: []
   'update:jsonContent': [value: string]
 }>()
+
+// Create compatible props object for useJsonEditor
+const compatibleProps: JsonEditorProps = {
+  ...props,
+  hiddenFields: []
+}
 
 const {
   showJsonPreview,
@@ -334,7 +350,7 @@ const {
   handleSave,
   toggleJsonPreview,
   closeJsonPreview
-} = useJsonEditor(props, emit)
+} = useJsonEditor(compatibleProps, emit)
 
 // Error state
 const planTypeError = ref<string | null>(null)
@@ -359,11 +375,7 @@ const loadAvailableModels = async () => {
   
   try {
     const response = await ConfigApiService.getAvailableModels()
-    if (response && response.options) {
-      availableModels.value = response.options
-    } else {
-      availableModels.value = []
-    }
+    availableModels.value = response.options
   } catch (error) {
     console.error('Failed to load models:', error)
     modelsLoadError.value = error instanceof Error ? error.message : 'Failed to load models'
@@ -410,9 +422,6 @@ const initializeParsedData = () => {
     if (!displayData.title) {
       displayData.title = ''
     }
-    if (!displayData.steps) {
-      displayData.steps = []
-    }
     displayData.directResponse = false // Always false for dynamic agent planning
 
   } catch (error) {
@@ -450,7 +459,6 @@ onMounted(() => {
 
 const autoResizeTextarea = (event: Event) => {
   const textarea = event.target as HTMLTextAreaElement
-  if (!textarea) return
   
   textarea.style.height = 'auto'
   
@@ -474,7 +482,7 @@ const autoResizeTextarea = (event: Event) => {
 
 // Format table header preview
 const formatTableHeader = (terminateColumns: string): string => {
-  if (!terminateColumns || !terminateColumns.trim()) {
+  if (!terminateColumns.trim()) {
     return ''
   }
   

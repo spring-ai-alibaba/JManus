@@ -125,13 +125,10 @@ import RecursiveSubPlan from './RecursiveSubPlan.vue'
 
 interface Props {
   planExecution: CompatiblePlanExecutionRecord
-  genericInput?: string
 }
 
 interface Emits {
-  (e: 'agent-selected', agentIndex: number, agent: AgentExecutionRecord): void
   (e: 'sub-plan-selected', agentIndex: number, subPlanIndex: number, subPlan: PlanExecutionRecord): void
-  (e: 'user-input-submitted', inputData: any): void
   (e: 'step-selected', stepId: string): void
 }
 
@@ -155,8 +152,6 @@ const handleAgentClick = (agentExecution: AgentExecutionRecord) => {
 
 // Plan status methods
 const getPlanStatusClass = (): string => {
-  if (!props.planExecution) return 'unknown'
-  
   if (props.planExecution.completed) {
     return 'completed'
   }
@@ -251,7 +246,7 @@ const formatToolParameters = (parameters?: string): string => {
   try {
     const parsed = JSON.parse(parameters)
     return JSON.stringify(parsed, null, 2)
-  } catch (error) {
+  } catch {
     return parameters
   }
 }

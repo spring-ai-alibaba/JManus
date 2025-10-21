@@ -96,12 +96,12 @@ export class SidebarStore {
   }
 
   get canRollback(): boolean {
-    return this.planVersions && this.planVersions.length > 1 && this.currentVersionIndex > 0
+    return this.planVersions.length > 1 && this.currentVersionIndex > 0
   }
 
   get canRestore(): boolean {
     return (
-      this.planVersions && this.planVersions.length > 1 && this.currentVersionIndex < this.planVersions.length - 1
+      this.planVersions.length > 1 && this.currentVersionIndex < this.planVersions.length - 1
     )
   }
 
@@ -249,14 +249,14 @@ export class SidebarStore {
   }
 
   rollbackVersion() {
-    if (this.canRollback && this.planVersions && this.currentVersionIndex > 0) {
+    if (this.canRollback && this.currentVersionIndex > 0) {
       this.currentVersionIndex--
       this.jsonContent = this.planVersions[this.currentVersionIndex] || ''
     }
   }
 
   restoreVersion() {
-    if (this.canRestore && this.planVersions && this.currentVersionIndex < this.planVersions.length - 1) {
+    if (this.canRestore && this.currentVersionIndex < this.planVersions.length - 1) {
       this.currentVersionIndex++
       this.jsonContent = this.planVersions[this.currentVersionIndex] || ''
     }
@@ -298,70 +298,7 @@ export class SidebarStore {
     }
   }
 
-  async generatePlan() {
-    if (!this.generatorPrompt.trim()) return
-    this.isGenerating = true
-    try {
-      const response = await PlanActApiService.generatePlan(this.generatorPrompt, undefined, this.planType)
-      this.jsonContent = response.planJson || ''
-      if (this.selectedTemplate && this.selectedTemplate.id.startsWith('new-')) {
-        let title = 'New Plan Template'
-        try {
-          const planData = JSON.parse(response.planJson || '{}')
-          title = planData.title || title
-        } catch {
-          console.warn('Unable to parse plan JSON to get title')
-        }
-        this.selectedTemplate = {
-          id: response.planTemplateId,
-          title: title,
-          description: i18n.global.t('sidebar.generatedTemplateDescription'),
-          createTime: new Date().toISOString(),
-          updateTime: new Date().toISOString(),
-          planJson: response.planJson,
-        }
-        this.currentPlanTemplateId = response.planTemplateId
-        await this.loadPlanTemplateList()
-      }
-      if (this.currentVersionIndex < this.planVersions.length - 1) {
-        this.planVersions = this.planVersions.slice(0, this.currentVersionIndex + 1)
-      }
-      this.planVersions.push(this.jsonContent)
-      this.currentVersionIndex = this.planVersions.length - 1
-      return response
-    } catch (error: any) {
-      console.error('Failed to generate plan:', error)
-      throw error
-    } finally {
-      this.isGenerating = false
-    }
-  }
 
-  async updatePlan() {
-    if (!this.generatorPrompt.trim() || !this.jsonContent.trim()) return
-    if (!this.selectedTemplate) return
-    this.isGenerating = true
-    try {
-      const response = await PlanActApiService.updatePlanTemplate(
-        this.selectedTemplate.id,
-        this.generatorPrompt,
-        this.jsonContent,
-        this.planType
-      )
-      this.jsonContent = response.planJson || ''
-      if (this.currentVersionIndex < this.planVersions.length - 1) {
-        this.planVersions = this.planVersions.slice(0, this.currentVersionIndex + 1)
-      }
-      this.planVersions.push(this.jsonContent)
-      this.currentVersionIndex = this.planVersions.length - 1
-      return response
-    } catch (error: any) {
-      console.error('Failed to update plan:', error)
-      throw error
-    } finally {
-      this.isGenerating = false
-    }
-  }
 
   preparePlanExecution() {
     if (!this.selectedTemplate) return null
@@ -414,7 +351,7 @@ export class SidebarStore {
           description: tool.description || '',
           enabled: tool.enabled || false,
           serviceGroup: tool.serviceGroup || 'default',
-          selectable: tool.selectable !== undefined ? tool.selectable : true
+          selectable: tool.selectable
         }))
       } else {
         console.error('[SidebarStore] Failed to load tools:', response.statusText)

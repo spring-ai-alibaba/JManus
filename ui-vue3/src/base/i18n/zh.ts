@@ -642,7 +642,6 @@ const words: I18nType = {
     promptPlaceholder: '描述您想要生成的计划...',
     generating: '生成中...',
     generate: '生成计划',
-    updatePlan: '更新计划',
     executing: '执行中...',
     execute: '执行计划',
     executionParams: '执行参数',
@@ -775,8 +774,6 @@ const words: I18nType = {
     generatorPlaceholder:
       'step1 : 在这里用自然语言输入你希望完成的任务，尽可能详细，然后点击生成计划，就可以生产一个可重复执行的精确计划',
     generating: '生成中...',
-    generatePlan: '生成计划',
-    updatePlan: '更新计划',
     executionController: '执行控制器',
     executionParams: '执行参数',
     executionParamsPlaceholder: '输入执行参数...',

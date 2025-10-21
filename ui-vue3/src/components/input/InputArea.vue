@@ -240,7 +240,7 @@ const getQuery = () => {
 watch(
   () => props.initialValue,
   (newValue) => {
-    if (newValue && newValue.trim()) {
+    if (newValue.trim()) {
       currentInput.value = newValue
       adjustInputHeight()
     }

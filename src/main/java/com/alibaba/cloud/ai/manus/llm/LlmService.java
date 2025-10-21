@@ -15,7 +15,6 @@
  */
 package com.alibaba.cloud.ai.manus.llm;
 
-import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.event.JmanusListener;
 import com.alibaba.cloud.ai.manus.event.ModelChangeEvent;
 import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
@@ -88,8 +87,6 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 	@Autowired
 	private ObjectProvider<ToolExecutionEligibilityPredicate> openAiToolExecutionEligibilityPredicate;
 
-	@Autowired(required = false)
-	private ManusProperties manusProperties;
 
 	@Autowired
 	private DynamicModelRepository dynamicModelRepository;

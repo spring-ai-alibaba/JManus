@@ -417,12 +417,9 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 
 		final String planId;
 
-		final boolean isCurrentPlan;
-
 		FileLocation(Path filePath, String planId, boolean isCurrentPlan) {
 			this.filePath = filePath;
 			this.planId = planId;
-			this.isCurrentPlan = isCurrentPlan;
 		}
 
 	}

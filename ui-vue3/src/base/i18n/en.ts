@@ -674,7 +674,6 @@ const words: I18nType = {
     promptPlaceholder: 'Describe the plan you want to generate...',
     generating: 'Generating...',
     generate: 'Generate Plan',
-    updatePlan: 'Update Plan',
     executing: 'Executing...',
     execute: 'Execute Plan',
     executionParams: 'Execution Parameters',
@@ -807,8 +806,6 @@ const words: I18nType = {
     generatorPlaceholder:
       'Step 1: Enter the task you want to accomplish here in natural language, as detailed as possible. Then click Generate Plan to create a precise, repeatable plan.',
     generating: 'Generating...',
-    generatePlan: 'Generate Plan',
-    updatePlan: 'Update Plan',
     executionController: 'Execution Controller',
     executionParams: 'Execution Parameters',
     executionParamsPlaceholder: 'Enter execution parameters...',

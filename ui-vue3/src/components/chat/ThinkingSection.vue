@@ -87,7 +87,7 @@ const emit = defineEmits<Emits>()
 
 // Computed properties
 const shouldShowThinking = computed(() => {
-  return props.thinking || 
+  return (props.thinking ?? false) || 
          (props.thinkingDetails?.agentExecutionSequence?.length ?? 0) > 0 ||
          (props.planExecution?.agentExecutionSequence?.length ?? 0) > 0
 })

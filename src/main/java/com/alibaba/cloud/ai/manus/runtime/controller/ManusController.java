@@ -470,6 +470,8 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	/**
 	 * Execute a plan template by its ID with parameter replacement support
+	 * 
+	 * key method
 	 * @param planTemplateId The ID of the plan template to execute
 	 * @param uploadedFiles List of uploaded file names (can be null)
 	 * @param conversationId Conversation ID for the execution (can be null)

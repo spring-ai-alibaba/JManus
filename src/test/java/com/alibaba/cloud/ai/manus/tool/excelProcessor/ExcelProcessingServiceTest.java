@@ -20,9 +20,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 
 import java.nio.file.Files;
@@ -37,8 +34,6 @@ import static org.mockito.Mockito.when;
  * Excel Processing Service Test Class
  */
 public class ExcelProcessingServiceTest {
-
-	private static final Logger log = LoggerFactory.getLogger(ExcelProcessingServiceTest.class);
 
 	private ExcelProcessingService excelProcessingService;
 

@@ -511,6 +511,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 		return BrowserRequestVO.class;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public String getCurrentToolStateString() {
 		// Only initialize browser if run method has been called at least once
@@ -526,6 +527,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 		String urlInfo = String.format("\n   URL: %s\n   Title: %s", state.get("url"), state.get("title"));
 
 		// Build tab information
+		
 		List<Map<String, Object>> tabs = (List<Map<String, Object>>) state.get("tabs");
 		String tabsInfo = (tabs != null) ? String.format("\n   %d tab(s) available", tabs.size()) : "";
 		if (tabs != null) {
@@ -537,14 +539,21 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 			}
 		}
 		// Get scroll information
-		Map<String, Object> scrollInfo = (Map<String, Object>) state.get("scroll_info");
+		Object scrollInfoObj = state.get("scroll_info");
 		String contentAbove = "";
 		String contentBelow = "";
-		if (scrollInfo != null) {
-			Long pixelsAbove = (Long) scrollInfo.get("pixels_above");
-			Long pixelsBelow = (Long) scrollInfo.get("pixels_below");
-			contentAbove = pixelsAbove > 0 ? String.format(" (%d pixels)", pixelsAbove) : "";
-			contentBelow = pixelsBelow > 0 ? String.format(" (%d pixels)", pixelsBelow) : "";
+		if (scrollInfoObj instanceof Map<?, ?> scrollInfoMap) {
+			
+			Map<String, Object> scrollInfo = (Map<String, Object>) scrollInfoMap;
+			Object pixelsAboveObj = scrollInfo.get("pixels_above");
+			Object pixelsBelowObj = scrollInfo.get("pixels_below");
+			
+			if (pixelsAboveObj instanceof Long pixelsAbove) {
+				contentAbove = pixelsAbove > 0 ? String.format(" (%d pixels)", pixelsAbove) : "";
+			}
+			if (pixelsBelowObj instanceof Long pixelsBelow) {
+				contentBelow = pixelsBelow > 0 ? String.format(" (%d pixels)", pixelsBelow) : "";
+			}
 		}
 
 		// Get interactive element information

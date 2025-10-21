@@ -18,7 +18,6 @@ package com.alibaba.cloud.ai.manus.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 
 import jakarta.annotation.PostConstruct;
 import java.io.File;
@@ -32,10 +31,7 @@ public class PlaywrightConfig {
 
 	private static final Logger log = LoggerFactory.getLogger(PlaywrightConfig.class);
 
-	private final Environment environment;
-
-	public PlaywrightConfig(Environment environment) {
-		this.environment = environment;
+	public PlaywrightConfig() {
 	}
 
 	@PostConstruct

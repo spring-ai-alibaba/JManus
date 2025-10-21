@@ -105,7 +105,7 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
         steps: displayData.steps.map(step => ({
           stepRequirement: step.stepRequirement,
           agentName: step.agentName,
-          modelName: step.modelName || '', // Convert null to empty string for JSON
+          modelName: step.modelName ?? '', // Convert null to empty string for JSON
           selectedToolKeys: step.selectedToolKeys,
           terminateColumns: step.terminateColumns
         })),

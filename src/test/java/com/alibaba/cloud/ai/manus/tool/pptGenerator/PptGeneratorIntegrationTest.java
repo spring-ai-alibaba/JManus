@@ -205,6 +205,7 @@ public class PptGeneratorIntegrationTest {
 		log.info("===== Test complete: Create PPT with minimal input =====");
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	void testApplyTemplate() throws Exception {
 		log.info("\n===== Starting test: Apply template test =====");

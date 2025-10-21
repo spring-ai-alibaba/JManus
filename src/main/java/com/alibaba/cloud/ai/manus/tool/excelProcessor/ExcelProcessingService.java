@@ -29,7 +29,6 @@ import java.time.format.DateTimeFormatter;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.CompletableFuture;
@@ -79,9 +78,6 @@ public class ExcelProcessingService implements IExcelProcessingService {
 
 	// Performance metrics tracking
 	private final Map<String, Map<String, Object>> performanceMetrics = new ConcurrentHashMap<>();
-
-	// Thread pool for parallel processing
-	private final ExecutorService executorService = Executors.newCachedThreadPool();
 
 	// JSON mapper for export
 	private final ObjectMapper jsonMapper = new ObjectMapper();
@@ -404,12 +400,6 @@ public class ExcelProcessingService implements IExcelProcessingService {
 		log.info("Wrote {} rows to worksheet: {} in file: {}", data.size(), worksheetName, absolutePath);
 	}
 
-	private void writeLargeExcelData(String planId, Path absolutePath, String worksheetName, List<List<String>> data,
-			boolean appendMode) throws IOException {
-		// Delegate to the new method with null headers
-		writeLargeExcelDataWithHeaders(planId, absolutePath, worksheetName, data, null, appendMode);
-	}
-
 	private void writeLargeExcelDataWithHeaders(String planId, Path absolutePath, String worksheetName,
 			List<List<String>> data, List<String> headers, boolean appendMode) throws IOException {
 		// For large data, we need to handle existing workbooks differently
@@ -675,6 +665,7 @@ public class ExcelProcessingService implements IExcelProcessingService {
 			AtomicLong processedRows = new AtomicLong(0);
 
 			EasyExcel.read(filePath, new ReadListener<Map<Integer, String>>() {
+				@SuppressWarnings("deprecation")
 				@Override
 				public void invoke(Map<Integer, String> data, AnalysisContext context) {
 					List<String> rowData = data.values().stream().collect(Collectors.toList());
@@ -855,395 +846,6 @@ public class ExcelProcessingService implements IExcelProcessingService {
 		return (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
 	}
 
-	/**
-	 * Enhanced batch processing with memory monitoring and adaptive batch sizing
-	 */
-	private void processExcelWithAdaptiveBatching(String planId, String filePath, String worksheetName,
-			int initialBatchSize, int maxParallelism, BatchProcessor processor) throws IOException {
-		long startTime = System.currentTimeMillis();
-		initializePerformanceMetrics(planId);
-
-		try {
-			Runtime runtime = Runtime.getRuntime();
-			long maxMemory = runtime.maxMemory() / (1024 * 1024); // Convert to MB
-			long memoryThreshold = (long) (maxMemory * 0.8); // Use 80% of max memory
-
-			AtomicInteger currentBatchSize = new AtomicInteger(initialBatchSize);
-			AtomicInteger currentParallelism = new AtomicInteger(
-					Math.min(maxParallelism, Runtime.getRuntime().availableProcessors()));
-			AtomicLong totalRows = new AtomicLong(0);
-			AtomicInteger batchCount = new AtomicInteger(0);
-			AtomicBoolean memoryPressure = new AtomicBoolean(false);
-
-			// Memory monitoring thread
-			ExecutorService memoryMonitor = Executors.newSingleThreadExecutor();
-			CompletableFuture<Void> memoryMonitorFuture = CompletableFuture.runAsync(() -> {
-				while (!Thread.currentThread().isInterrupted()) {
-					try {
-						long currentMemory = getMemoryUsage();
-						if (currentMemory > memoryThreshold) {
-							// Reduce batch size and parallelism
-							currentBatchSize.set(Math.max(100, currentBatchSize.get() / 2));
-							currentParallelism.set(Math.max(1, currentParallelism.get() - 1));
-							memoryPressure.set(true);
-							log.warn(
-									"High memory usage detected: {} MB. Reducing batch size to {} and parallelism to {}",
-									currentMemory, currentBatchSize.get(), currentParallelism.get());
-
-							// Force garbage collection
-							System.gc();
-						}
-						else if (currentMemory < memoryThreshold * 0.5 && !memoryPressure.get()) {
-							// Increase batch size if memory usage is low and no pressure
-							currentBatchSize.set(Math.min(initialBatchSize * 2, currentBatchSize.get() + 200));
-							currentParallelism.set(Math.min(maxParallelism, currentParallelism.get() + 1));
-						}
-						Thread.sleep(1000); // Check every second
-					}
-					catch (InterruptedException e) {
-						Thread.currentThread().interrupt();
-						break;
-					}
-				}
-			}, memoryMonitor);
-
-			// Enhanced batch processor with memory monitoring
-			BatchProcessor enhancedProcessor = new BatchProcessor() {
-				@Override
-				public boolean processBatch(List<List<String>> batchData, int batchNumber, int totalBatches) {
-					// Monitor memory before processing
-					long memoryBefore = getMemoryUsage();
-
-					boolean result = processor.processBatch(batchData, batchNumber, totalBatches);
-
-					// Log memory usage after processing
-					long memoryAfter = getMemoryUsage();
-					long memoryDelta = memoryAfter - memoryBefore;
-
-					if (batchNumber % 10 == 0) { // Log every 10 batches
-						log.info("Batch {}/{}: Memory usage {} MB (delta: {} MB), Batch size: {}, Parallelism: {}",
-								batchNumber, totalBatches, memoryAfter, memoryDelta, batchData.size(),
-								currentParallelism.get());
-					}
-
-					return result;
-				}
-			};
-
-			// Use the optimized parallel processing with adaptive parameters
-			processExcelInParallelBatches(planId, filePath, worksheetName, currentBatchSize.get(),
-					currentParallelism.get(), enhancedProcessor);
-
-			// Stop memory monitoring
-			memoryMonitorFuture.cancel(true);
-			memoryMonitor.shutdown();
-			memoryMonitor.awaitTermination(5, TimeUnit.SECONDS);
-
-			updatePerformanceMetrics(planId, "adaptive_batch_processing", System.currentTimeMillis() - startTime,
-					totalRows.get(), currentParallelism.get());
-
-			log.info("Adaptive batch processing completed. Final batch size: {}, Final parallelism: {}",
-					currentBatchSize.get(), currentParallelism.get());
-
-		}
-		catch (Exception e) {
-			throw new IOException("Failed to process Excel with adaptive batching: " + e.getMessage(), e);
-		}
-	}
-
-	/**
-	 * Stream processing for very large Excel files with real-time processing
-	 */
-	private void streamProcessExcel(String planId, String filePath, String worksheetName,
-			IExcelProcessingService.StreamProcessor streamProcessor) throws IOException {
-		long startTime = System.currentTimeMillis();
-		initializePerformanceMetrics(planId);
-
-		try {
-			AtomicLong processedRows = new AtomicLong(0);
-			AtomicLong totalMemoryUsed = new AtomicLong(0);
-			AtomicInteger currentBatchSize = new AtomicInteger(500); // Start with smaller
-																		// batches for
-																		// streaming
-
-			// Create a streaming listener that processes data in real-time
-			ReadListener<List<String>> streamingListener = new ReadListener<List<String>>() {
-				private List<List<String>> currentBatch = new ArrayList<>();
-
-				private long lastMemoryCheck = System.currentTimeMillis();
-
-				@Override
-				public void invoke(List<String> data, AnalysisContext context) {
-					currentBatch.add(new ArrayList<>(data));
-					processedRows.incrementAndGet();
-
-					// Process batch when it reaches the current batch size
-					if (currentBatch.size() >= currentBatchSize.get()) {
-						processBatchInStream();
-					}
-
-					// Check memory usage every 1000 rows
-					if (processedRows.get() % 1000 == 0) {
-						checkAndAdjustMemory();
-					}
-				}
-
-				@Override
-				public void doAfterAllAnalysed(AnalysisContext context) {
-					// Process remaining data
-					if (!currentBatch.isEmpty()) {
-						processBatchInStream();
-					}
-
-					log.info("Stream processing completed. Total rows processed: {}", processedRows.get());
-				}
-
-				private void processBatchInStream() {
-					try {
-						long memoryBefore = getMemoryUsage();
-
-						// Process each row in the batch using the provided stream
-						// processor
-						for (List<String> row : currentBatch) {
-							streamProcessor.processRow(row, (int) processedRows.incrementAndGet());
-						}
-
-						long memoryAfter = getMemoryUsage();
-						totalMemoryUsed.addAndGet(memoryAfter - memoryBefore);
-
-						// Clear the batch to free memory
-						currentBatch.clear();
-
-						// Log progress every 50 batches
-						if ((processedRows.get() / currentBatchSize.get()) % 50 == 0) {
-							log.info("Streaming progress: {} rows processed, current memory: {} MB",
-									processedRows.get(), memoryAfter);
-						}
-
-					}
-					catch (Exception e) {
-						log.error("Error processing stream batch: {}", e.getMessage(), e);
-						throw new RuntimeException("Stream processing failed", e);
-					}
-				}
-
-				private void checkAndAdjustMemory() {
-					long currentTime = System.currentTimeMillis();
-					if (currentTime - lastMemoryCheck > 5000) { // Check every 5 seconds
-						long currentMemory = getMemoryUsage();
-						Runtime runtime = Runtime.getRuntime();
-						long maxMemory = runtime.maxMemory() / (1024 * 1024);
-
-						if (currentMemory > maxMemory * 0.8) {
-							// Reduce batch size if memory usage is high
-							currentBatchSize.set(Math.max(100, currentBatchSize.get() / 2));
-							log.warn("High memory usage detected: {} MB. Reducing batch size to {}", currentMemory,
-									currentBatchSize.get());
-							System.gc(); // Suggest garbage collection
-						}
-						else if (currentMemory < maxMemory * 0.4) {
-							// Increase batch size if memory usage is low
-							currentBatchSize.set(Math.min(2000, currentBatchSize.get() + 100));
-						}
-
-						lastMemoryCheck = currentTime;
-					}
-				}
-			};
-
-			// Start streaming processing
-			EasyExcel.read(filePath, streamingListener).sheet(worksheetName).doRead();
-
-			updatePerformanceMetrics(planId, "stream_processing", System.currentTimeMillis() - startTime,
-					processedRows.get(), 1);
-
-		}
-		catch (Exception e) {
-			throw new IOException("Failed to stream process Excel file: " + e.getMessage(), e);
-		}
-	}
-
-	/**
-	 * Interface for stream processing callbacks
-	 */
-
-	/**
-	 * Enhanced memory management for processing very large datasets
-	 */
-	private void processExcelWithMemoryOptimization(String planId, String filePath, String worksheetName,
-			MemoryOptimizedProcessor processor) throws IOException {
-		long startTime = System.currentTimeMillis();
-		initializePerformanceMetrics(planId);
-
-		try {
-			Runtime runtime = Runtime.getRuntime();
-			long maxMemory = runtime.maxMemory() / (1024 * 1024); // Convert to MB
-			long memoryThreshold = (long) (maxMemory * 0.7); // Use 70% of max memory as
-																// threshold
-
-			AtomicLong processedRows = new AtomicLong(0);
-			AtomicInteger dynamicBatchSize = new AtomicInteger(200); // Start with small
-																		// batch
-			AtomicBoolean memoryPressureMode = new AtomicBoolean(false);
-
-			// Memory monitoring and cleanup service
-			ExecutorService memoryService = Executors.newSingleThreadExecutor();
-			CompletableFuture<Void> memoryMonitorTask = CompletableFuture.runAsync(() -> {
-				while (!Thread.currentThread().isInterrupted()) {
-					try {
-						long currentMemory = getMemoryUsage();
-
-						if (currentMemory > memoryThreshold) {
-							memoryPressureMode.set(true);
-							dynamicBatchSize.set(Math.max(50, dynamicBatchSize.get() / 2));
-
-							// Aggressive garbage collection
-							System.gc();
-							Thread.sleep(100); // Give GC time to work
-							System.runFinalization();
-
-							log.warn("Memory pressure detected: {} MB / {} MB. Reduced batch size to {}", currentMemory,
-									maxMemory, dynamicBatchSize.get());
-						}
-						else if (currentMemory < memoryThreshold * 0.5 && !memoryPressureMode.get()) {
-							// Gradually increase batch size when memory is available
-							dynamicBatchSize.set(Math.min(1000, dynamicBatchSize.get() + 50));
-						}
-						else if (currentMemory < memoryThreshold * 0.6) {
-							memoryPressureMode.set(false);
-						}
-
-						Thread.sleep(2000); // Check every 2 seconds
-					}
-					catch (InterruptedException e) {
-						Thread.currentThread().interrupt();
-						break;
-					}
-				}
-			}, memoryService);
-
-			// Memory-optimized data processing
-			ReadListener<List<String>> memoryOptimizedListener = new ReadListener<List<String>>() {
-				private List<List<String>> currentBatch = new ArrayList<>();
-
-				private long lastGcTime = System.currentTimeMillis();
-
-				private int consecutiveMemoryWarnings = 0;
-
-				@Override
-				public void invoke(List<String> data, AnalysisContext context) {
-					// Create a defensive copy to avoid memory leaks
-					List<String> rowCopy = new ArrayList<>(data.size());
-					for (String cell : data) {
-						rowCopy.add(cell != null ? cell.intern() : null); // Use string
-																			// interning
-																			// for memory
-																			// efficiency
-					}
-					currentBatch.add(rowCopy);
-					processedRows.incrementAndGet();
-
-					// Process batch when it reaches dynamic size or memory pressure
-					if (currentBatch.size() >= dynamicBatchSize.get()
-							|| (memoryPressureMode.get() && currentBatch.size() >= 25)) {
-						processMemoryOptimizedBatch();
-					}
-
-					// Periodic memory check and cleanup
-					if (processedRows.get() % 500 == 0) {
-						performMemoryMaintenance();
-					}
-				}
-
-				@Override
-				public void doAfterAllAnalysed(AnalysisContext context) {
-					// Process any remaining data
-					if (!currentBatch.isEmpty()) {
-						processMemoryOptimizedBatch();
-					}
-
-					// Final cleanup
-					currentBatch = null;
-					System.gc();
-
-					log.info("Memory-optimized processing completed. Total rows: {}, Final batch size: {}",
-							processedRows.get(), dynamicBatchSize.get());
-				}
-
-				private void processMemoryOptimizedBatch() {
-					try {
-						long memoryBefore = getMemoryUsage();
-
-						// Process with memory monitoring
-						processor.processWithMemoryOptimization(new ArrayList<>(currentBatch), processedRows.get(),
-								memoryBefore, memoryPressureMode.get());
-
-						long memoryAfter = getMemoryUsage();
-
-						// Clear batch immediately to free memory
-						currentBatch.clear();
-
-						// Log memory usage periodically
-						if (processedRows.get() % 5000 == 0) {
-							log.info("Memory usage: {} MB -> {} MB, Batch size: {}, Pressure mode: {}", memoryBefore,
-									memoryAfter, dynamicBatchSize.get(), memoryPressureMode.get());
-						}
-
-						// Check for memory leaks
-						if (memoryAfter > memoryBefore + 50) { // Memory increased by more
-																// than 50MB
-							consecutiveMemoryWarnings++;
-							if (consecutiveMemoryWarnings > 3) {
-								log.warn("Potential memory leak detected. Forcing aggressive cleanup.");
-								System.gc();
-								System.runFinalization();
-								consecutiveMemoryWarnings = 0;
-							}
-						}
-						else {
-							consecutiveMemoryWarnings = 0;
-						}
-
-					}
-					catch (Exception e) {
-						log.error("Error in memory-optimized batch processing: {}", e.getMessage(), e);
-						throw new RuntimeException("Memory-optimized processing failed", e);
-					}
-				}
-
-				private void performMemoryMaintenance() {
-					long currentTime = System.currentTimeMillis();
-					if (currentTime - lastGcTime > 10000) { // Every 10 seconds
-						long memoryBefore = getMemoryUsage();
-						System.gc();
-						long memoryAfter = getMemoryUsage();
-
-						if (memoryBefore - memoryAfter > 10) { // If GC freed more than
-																// 10MB
-							log.debug("Memory maintenance: freed {} MB", memoryBefore - memoryAfter);
-						}
-
-						lastGcTime = currentTime;
-					}
-				}
-			};
-
-			// Start processing with memory optimization
-			EasyExcel.read(filePath, memoryOptimizedListener).sheet(worksheetName).doRead();
-
-			// Stop memory monitoring
-			memoryMonitorTask.cancel(true);
-			memoryService.shutdown();
-			memoryService.awaitTermination(5, TimeUnit.SECONDS);
-
-			updatePerformanceMetrics(planId, "memory_optimized_processing", System.currentTimeMillis() - startTime,
-					processedRows.get(), 1);
-
-		}
-		catch (Exception e) {
-			throw new IOException("Failed to process Excel with memory optimization: " + e.getMessage(), e);
-		}
-	}
 
 	/**
 	 * Interface for memory-optimized processing callbacks
@@ -1856,10 +1458,6 @@ public class ExcelProcessingService implements IExcelProcessingService {
 			.put(filePath, Map.of("state", state, "timestamp", System.currentTimeMillis()));
 	}
 
-	private void updateProcessingStatus(String planId, String key, Object value) {
-		planProcessingStatus.computeIfAbsent(planId, k -> new ConcurrentHashMap<>()).put(key, value);
-	}
-
 	private int[] parseCellAddress(String cellAddress) {
 		if (cellAddress == null || cellAddress.trim().isEmpty()) {
 			throw new IllegalArgumentException("Cell address cannot be null or empty");
@@ -2099,7 +1697,7 @@ public class ExcelProcessingService implements IExcelProcessingService {
 
 	public boolean validateFilePath(String filePath) {
 		try {
-			Path path = Path.of(filePath);
+			
 			return isSupportedFileType(filePath) && !filePath.trim().isEmpty();
 		}
 		catch (Exception e) {

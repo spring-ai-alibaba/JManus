@@ -23,29 +23,6 @@ export class PlanActApiService {
   private static readonly PLAN_TEMPLATE_URL = '/api/plan-template'
   private static readonly CRON_TASK_URL = '/api/cron-tasks'
 
-  // Generate plan
-  public static async generatePlan(query: string, existingJson?: string, planType: string = 'simple'): Promise<any> {
-    return LlmCheckService.withLlmCheck(async () => {
-      const requestBody: Record<string, any> = { query, planType }
-      if (existingJson) requestBody.existingJson = existingJson
-      
-      const response = await fetch(`${this.PLAN_TEMPLATE_URL}/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      })
-      if (!response.ok) throw new Error(`Failed to generate plan: ${response.status}`)
-      const responseData = await response.json()
-      if (responseData.planJson) {
-        try {
-          responseData.plan = JSON.parse(responseData.planJson)
-        } catch {
-          responseData.plan = { error: 'Unable to parse plan data' }
-        }
-      }
-      return responseData
-    })
-  }
 
   // Execute generated plan using ManusController.executeByToolNameAsync
   public static async executePlan(planTemplateId: string, rawParam?: string, uploadedFiles?: string[], replacementParams?: Record<string, string>, uploadKey?: string): Promise<any> {
@@ -147,29 +124,6 @@ export class PlanActApiService {
     return await response.json()
   }
 
-  // Update existing plan template
-  public static async updatePlanTemplate(planId: string, query: string, existingJson?: string, planType: string = 'simple'): Promise<any> {
-    return LlmCheckService.withLlmCheck(async () => {
-      const requestBody: Record<string, any> = { planId, query, planType }
-      if (existingJson) requestBody.existingJson = existingJson
-      
-      const response = await fetch(`${this.PLAN_TEMPLATE_URL}/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      })
-      if (!response.ok) throw new Error(`Failed to update plan template: ${response.status}`)
-      const responseData = await response.json()
-      if (responseData.planJson) {
-        try {
-          responseData.plan = JSON.parse(responseData.planJson)
-        } catch {
-          responseData.plan = { error: 'Unable to parse plan data' }
-        }
-      }
-      return responseData
-    })
-  }
 
   // Delete plan template
   public static async deletePlanTemplate(planId: string): Promise<any> {

@@ -89,6 +89,7 @@ public class SerpApiService {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private Map<String, Object> parseJson(String jsonResponse) {
 		Gson gson = new Gson();
 		return gson.fromJson(jsonResponse, Map.class);

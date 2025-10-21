@@ -10,7 +10,6 @@ import * as monaco from 'monaco-editor'
 
 interface Props {
   modelValue: string
-  placeholder?: string
   readonly?: boolean
   language?: string
 }
@@ -21,7 +20,6 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: '',
   readonly: false,
   language: 'json'
 })
@@ -66,7 +64,7 @@ const createEditor = () => {
 
   // Listen for content changes
   editor.onDidChangeModelContent(() => {
-    const value = editor?.getValue() || ''
+    const value = editor?.getValue() ?? ''
     emit('update:modelValue', value)
     emit('change', value)
   })

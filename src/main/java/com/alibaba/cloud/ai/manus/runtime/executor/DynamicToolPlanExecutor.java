@@ -30,18 +30,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Dynamic Agent Plan Executor - Specialized executor for DynamicAgentExecutionPlan with
  * user-selected tools support
  */
 public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
-
-	private static final Logger logger = LoggerFactory.getLogger(DynamicToolPlanExecutor.class);
-
-	private final DynamicModelRepository dynamicModelRepository;
 
 	/**
 	 * Constructor for DynamicAgentPlanExecutor
@@ -58,7 +51,6 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 			LevelBasedExecutorPool levelBasedExecutorPool, DynamicModelRepository dynamicModelRepository,
 			FileUploadService fileUploadService) {
 		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
-		this.dynamicModelRepository = dynamicModelRepository;
 	}
 
 	protected String getStepFromStepReq(String stepRequirement) {
