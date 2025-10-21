@@ -111,10 +111,19 @@ export const useTaskStore = defineStore('task', () => {
   // Set task as running with plan ID
   const setTaskRunning = (planId: string) => {
     console.log('[TaskStore] setTaskRunning called with planId:', planId)
-    if (currentTask.value) {
+    // Create a new task if one doesn't exist
+    if (!currentTask.value) {
+      currentTask.value = {
+        prompt: '', // Empty prompt for running tasks
+        timestamp: Date.now(),
+        planId: planId,
+        isRunning: true
+      }
+      console.log('[TaskStore] Created new task:', currentTask.value)
+    } else {
       currentTask.value.planId = planId
       currentTask.value.isRunning = true
-      console.log('[TaskStore] Task marked as running:', currentTask.value)
+      console.log('[TaskStore] Updated existing task:', currentTask.value)
     }
   }
 

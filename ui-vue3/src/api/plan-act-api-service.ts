@@ -18,6 +18,7 @@
 
 import type { CronConfig } from '@/types/cron-task'
 import { LlmCheckService } from '@/utils/llm-check'
+import { DirectApiService } from '@/api/direct-api-service'
 
 export class PlanActApiService {
   private static readonly PLAN_TEMPLATE_URL = '/api/plan-template'
@@ -29,11 +30,6 @@ export class PlanActApiService {
     return LlmCheckService.withLlmCheck(async () => {
       console.log('[PlanActApiService] executePlan called with:', { planTemplateId, rawParam, uploadedFiles, replacementParams, uploadKey})
       
-      // Use planTemplateId as toolName to call executeByToolNameAsync
-      const requestBody: Record<string, any> = { 
-        toolName: planTemplateId  // Use planTemplateId as toolName
-      }
-      
       // Add rawParam to replacementParams if provided (backend expects it in replacementParams)
       if (rawParam) {
         if (!replacementParams) {
@@ -43,44 +39,8 @@ export class PlanActApiService {
         console.log('[PlanActApiService] Added rawParam to replacementParams:', rawParam)
       }
       
-      if (uploadedFiles && uploadedFiles.length > 0) {
-        requestBody.uploadedFiles = uploadedFiles
-        console.log('[PlanActApiService] Including uploaded files:', uploadedFiles.length)
-        console.log('[PlanActApiService] 🔍 DEBUG - uploadedFiles content:', uploadedFiles)
-      } else {
-        console.log('[PlanActApiService] 🔍 DEBUG - No uploaded files to include')
-        console.log('[PlanActApiService] 🔍 DEBUG - uploadedFiles value:', uploadedFiles)
-      }
-      if (replacementParams && Object.keys(replacementParams).length > 0) {
-        requestBody.replacementParams = replacementParams
-        console.log('[PlanActApiService] Including replacement params:', replacementParams)
-      }
-      if (uploadKey) {
-        requestBody.uploadKey = uploadKey
-        console.log('[PlanActApiService] Including uploadKey:', uploadKey)
-      }
-      requestBody.isVueRequest = true
-      
-      console.log('[PlanActApiService] Making request to:', `/api/executor/executeByToolNameAsync`)
-      console.log('[PlanActApiService] Request body:', requestBody)
-      
-      const response = await fetch(`/api/executor/executeByToolNameAsync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      })
-      
-      console.log('[PlanActApiService] Response status:', response.status, response.ok)
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('[PlanActApiService] Request failed:', errorText)
-        throw new Error(`Failed to execute plan: ${response.status}`)
-      }
-      
-      const result = await response.json()
-      console.log('[PlanActApiService] executePlan response:', result)
-      return result
+      // Use the unified DirectApiService method
+      return await DirectApiService.executeByToolName(planTemplateId, replacementParams, uploadedFiles, uploadKey)
     })
   }
 
