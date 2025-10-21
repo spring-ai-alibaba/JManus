@@ -143,7 +143,7 @@
           <!-- Use JsonEditor for simple or other types -->
           <JsonEditor
             v-else
-            :key="sidebarStore.currentPlanTemplateId || 'default'"
+            :key="'simple-' + (sidebarStore.currentPlanTemplateId || 'default')"
             :json-content="sidebarStore.jsonContent"
             :can-rollback="sidebarStore.canRollback"
             :can-restore="sidebarStore.canRestore"

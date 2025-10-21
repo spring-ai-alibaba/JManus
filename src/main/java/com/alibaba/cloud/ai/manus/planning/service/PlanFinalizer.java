@@ -23,7 +23,6 @@ import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.StepResult;
 import com.alibaba.cloud.ai.manus.workspace.conversation.advisor.CustomMessageChatMemoryAdvisor;
 
 import org.slf4j.Logger;
