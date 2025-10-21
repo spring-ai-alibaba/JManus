@@ -28,7 +28,6 @@ export default defineConfig({
   server: {
     open: true, // Automatically open browser on startup
     host: true, // Allow external access
-    sourcemap: true, // Enable source maps for development
     proxy: {
       '/api': {
         target: 'http://localhost:18080',

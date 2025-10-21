@@ -91,7 +91,6 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  modelValue: undefined,
   placeholder: 'Please select a model',
   dropdownTitle: 'Available Models'
 })
