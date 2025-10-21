@@ -87,7 +87,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy JAR file
-COPY target/jmanus-${BUILD_VERSION}.jar app.jar
+COPY target/jmanus.jar app.jar
 
 # Install Playwright browsers, extract JAR and setup directories
 RUN java -jar app.jar playwright-init && \
@@ -129,7 +129,7 @@ EXPOSE 18080
 LABEL org.opencontainers.image.title="JManus"
 LABEL org.opencontainers.image.description="Spring AI Alibaba JManus - Web Automation Platform"
 LABEL org.opencontainers.image.vendor="Alibaba Cloud"
-LABEL org.opencontainers.image.version="${BUILD_VERSION}"
+LABEL org.opencontainers.image.version="latest"
 LABEL org.opencontainers.image.url="https://github.com/alibaba/spring-ai-alibaba"
 LABEL org.opencontainers.image.source="https://github.com/alibaba/spring-ai-alibaba"
 

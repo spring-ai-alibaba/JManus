@@ -339,7 +339,7 @@
 
 
     <build>
-        <finalName>jmanus-${version}</finalName>
+        <finalName>jmanus</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
