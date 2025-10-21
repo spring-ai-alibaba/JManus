@@ -18,8 +18,8 @@ name: 🔍 Check Chinese Content in Jmanus
 on:
   pull_request:
     paths:
-      - 'src/main/java/**/*.java'
-      - 'ui-vue3/src/**'
+      - "src/main/java/**/*.java"
+      - "ui-vue3/src/**"
 
 permissions:
   contents: read
@@ -38,7 +38,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.9"
 
       - name: Check Chinese content in Jmanus
         run: |
