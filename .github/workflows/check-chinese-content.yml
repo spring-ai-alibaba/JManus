@@ -18,8 +18,8 @@ name: 🔍 Check Chinese Content in Jmanus
 on:
   pull_request:
     paths:
-      - 'src/main/java/**/*.java'
-      - 'ui-vue3/src/**'
+      - "src/main/java/**/*.java"
+      - "ui-vue3/src/**"
 
 permissions:
   contents: read
@@ -38,7 +38,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.9"
 
       - name: Check Chinese content in Jmanus
         run: |
@@ -49,9 +49,9 @@ jobs:
           echo ""
 
           # Create a simple Chinese content checker script
-          chmod +x tools/scripts/check-chinese-content.py
+          chmod +x tools/scripts/ci/check-chinese-content.py
 
-          if python tools/scripts/check-chinese-content.py; then
+          if python tools/scripts/ci/check-chinese-content.py --fail-on-found; then
             echo "✅ No Chinese content found - Check passed!"
           else
             echo ""
