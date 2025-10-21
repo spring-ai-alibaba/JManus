@@ -36,9 +36,9 @@
       <div class="plan-basic-info">
         <div class="form-row">
           <label class="form-label">{{ $t('sidebar.title') }}</label>
-          <input 
-            v-model="displayData.title" 
-            type="text" 
+          <input
+            v-model="displayData.title"
+            type="text"
             class="form-input"
             :class="{ 'error': titleError }"
             :placeholder="$t('sidebar.titlePlaceholder')"
@@ -49,13 +49,13 @@
             {{ titleError }}
           </div>
         </div>
-        
+
         <!-- Plan Template ID (Read-only) -->
         <div class="form-row">
           <label class="form-label">{{ $t('sidebar.planTemplateId') }}</label>
-          <input 
-            :value="currentPlanTemplateId" 
-            type="text" 
+          <input
+            :value="currentPlanTemplateId"
+            type="text"
             class="form-input readonly-input"
             readonly
             :placeholder="$t('sidebar.planTemplateIdPlaceholder')"
@@ -69,8 +69,8 @@
         <div class="steps-header">
           <label class="form-label">{{ $t('sidebar.tasks') }}</label>
           <div class="steps-actions">
-            <button 
-              @click="addStep" 
+            <button
+              @click="addStep"
               class="btn btn-xs"
               :title="$t('sidebar.addStep')"
             >
@@ -78,17 +78,17 @@
             </button>
           </div>
         </div>
-        
+
         <div class="steps-container">
-          <div 
-            v-for="(step, index) in displayData.steps" 
+          <div
+            v-for="(step, index) in displayData.steps"
             :key="index"
             class="step-item"
           >
             <div class="step-header">
               <span class="step-number">{{ $t('sidebar.subtask') }} {{ index + 1 }}</span>
               <div class="step-actions">
-                <button 
+                <button
                   @click="moveStepUp(index)"
                   :disabled="index === 0"
                   class="btn btn-xs"
@@ -96,7 +96,7 @@
                 >
                   <Icon icon="carbon:chevron-up" width="12" />
                 </button>
-                <button 
+                <button
                   @click="moveStepDown(index)"
                   :disabled="index === displayData.steps.length - 1"
                   class="btn btn-xs"
@@ -104,7 +104,7 @@
                 >
                   <Icon icon="carbon:chevron-down" width="12" />
                 </button>
-                <button 
+                <button
                   @click="removeStep(index)"
                   class="btn btn-xs btn-danger"
                   :title="$t('sidebar.removeStep')"
@@ -113,13 +113,13 @@
                 </button>
               </div>
             </div>
-            
+
             <div class="step-content">
-              
+
               <!-- Step Requirement -->
               <div class="form-row">
                 <label class="form-label">{{ $t('sidebar.stepRequirement') }}</label>
-                <textarea 
+                <textarea
                   v-model="step.stepRequirement"
                   class="form-textarea auto-resize"
                   :placeholder="$t('sidebar.stepRequirementPlaceholder')"
@@ -127,11 +127,11 @@
                   @input="autoResizeTextarea($event)"
                 ></textarea>
               </div>
-              
+
                <!-- Terminate Columns -->
                <div class="form-row">
                  <label class="form-label">{{ $t('sidebar.terminateColumns') }}</label>
-                 <textarea 
+                 <textarea
                    v-model="step.terminateColumns"
                    class="form-textarea auto-resize"
                    :placeholder="$t('sidebar.terminateColumnsPlaceholder')"
@@ -145,26 +145,26 @@
               <div class="form-row">
                 <label class="form-label">{{ $t('sidebar.modelName') }}</label>
                 <div class="model-selector">
-                  <select 
-                    v-model="step.modelName" 
+                  <select
+                    v-model="step.modelName"
                     class="form-select model-select"
                     :disabled="isLoadingModels"
                   >
                     <!-- Loading state -->
                     <option v-if="isLoadingModels" disabled value="">{{ $t('sidebar.loading') }}</option>
-                    
+
                     <!-- Error state -->
                     <option v-else-if="modelsLoadError" disabled value="">{{ $t('sidebar.modelLoadError') }}</option>
-                    
+
                     <!-- Placeholder option -->
                     <option value="" disabled>{{ $t('sidebar.modelNameDescription') }}</option>
-                    
+
                     <!-- Default empty option -->
                     <option value="">{{ $t('sidebar.noModelSelected') }}</option>
-                    
+
                     <!-- Model options -->
-                    <option 
-                      v-for="model in availableModels" 
+                    <option
+                      v-for="model in availableModels"
                       :key="model.value"
                       :value="model.value"
                       :title="model.label"
@@ -172,11 +172,11 @@
                       {{ model.label }}
                     </option>
                   </select>
-                  
+
                   <!-- Error refresh button -->
-                  <button 
+                  <button
                     v-if="modelsLoadError"
-                    @click="loadAvailableModels" 
+                    @click="loadAvailableModels"
                     class="btn btn-sm btn-danger"
                     :title="$t('sidebar.retryLoadModels')"
                   >
@@ -184,14 +184,14 @@
                     {{ $t('sidebar.retry') }}
                   </button>
                 </div>
-                
+
                 <!-- Error message -->
                 <div v-if="modelsLoadError" class="error-message">
                   <Icon icon="carbon:warning" width="12" />
                   {{ modelsLoadError }}
                 </div>
               </div>
-              
+
               <!-- Tool Selection -->
               <div class="form-row">
                 <AssignedTools
@@ -205,12 +205,12 @@
                   @tools-filtered="(filteredTools: string[]) => handleToolsFiltered(index, filteredTools)"
                 />
               </div>
-              
+
             </div>
 
-            
+
           </div>
-          
+
           <!-- Empty State -->
           <div v-if="displayData.steps.length === 0" class="empty-steps">
             <Icon icon="carbon:add-alt" width="32" class="empty-icon" />
@@ -228,7 +228,7 @@
       <div class="json-preview" v-if="showJsonPreview">
         <div class="preview-header">
           <label class="form-label">{{ $t('sidebar.jsonPreview') }}</label>
-          <button 
+          <button
             @click="closeJsonPreview"
             class="btn btn-xs"
           >
@@ -237,10 +237,10 @@
         </div>
         <pre class="json-code">{{ formattedJsonOutput }}</pre>
       </div>
-      
+
       <!-- Toggle JSON Preview -->
       <div class="editor-footer">
-        <button 
+        <button
           @click="toggleJsonPreview"
           class="btn btn-sm btn-secondary"
         >
@@ -248,6 +248,14 @@
           {{ showJsonPreview ? $t('sidebar.hideJson') : $t('sidebar.showJson') }}
         </button>
         <div class="section-actions">
+          <button
+            class="btn btn-sm"
+            @click="handleCopyPlan"
+            :disabled="isGenerating || isExecuting"
+            :title="$t('sidebar.copyPlan')"
+          >
+            <Icon icon="carbon:copy" width="14" />
+          </button>
           <button
             class="btn btn-sm"
             @click="handleRollback"
@@ -306,6 +314,7 @@ const emit = defineEmits<{
   rollback: []
   restore: []
   save: []
+  'copy-plan': []
   'update:jsonContent': [value: string]
 }>()
 
@@ -341,10 +350,10 @@ const currentStepIndex = ref<number>(-1)
 // Load available models
 const loadAvailableModels = async () => {
   if (isLoadingModels.value) return
-  
+
   isLoadingModels.value = true
   modelsLoadError.value = ''
-  
+
   try {
     const response = await ConfigApiService.getAvailableModels()
     if (response && response.options) {
@@ -393,7 +402,7 @@ const initializeParsedData = () => {
   try {
     // Clear any previous errors
     planTypeError.value = null
-    
+
     // Initialize with default structure if not exists
     if (!displayData.title) {
       displayData.title = ''
@@ -419,7 +428,7 @@ watch(() => displayData, (newData) => {
     } else {
       titleError.value = ''
     }
-    
+
     // Clear any structural errors
     planTypeError.value = null
   } catch (error) {
@@ -428,7 +437,9 @@ watch(() => displayData, (newData) => {
   }
 }, { immediate: true, deep: true })
 
-
+const handleCopyPlan = () => {
+  emit('copy-plan')
+}
 
 // Initialize on mount
 onMounted(() => {
@@ -439,20 +450,20 @@ onMounted(() => {
 const autoResizeTextarea = (event: Event) => {
   const textarea = event.target as HTMLTextAreaElement
   if (!textarea) return
-  
+
   textarea.style.height = 'auto'
-  
+
   const lineHeight = 20
   const lines = Math.ceil(textarea.scrollHeight / lineHeight)
-  
+
   const minRows = 4
   const maxRows = 12
   const targetRows = Math.max(minRows, Math.min(maxRows, lines))
-  
+
   const newHeight = targetRows * lineHeight
   textarea.style.height = `${newHeight}px`
   textarea.rows = targetRows
-  
+
   if (lines > maxRows) {
     textarea.style.overflowY = 'auto'
   } else {
