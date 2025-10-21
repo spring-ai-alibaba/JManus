@@ -794,7 +794,7 @@ const words: I18nType = {
     executePlan: '执行计划',
   publishMcpService: '发布为工具服务',
   updateServiceStatus: '更新服务状态',
-  
+
   // Execution Controller - Call Examples
   internalCall: '内部调用',
   internalCallDescription: '您已将此计划-行动发布为内部方法。您可以在代理配置的添加工具部分找到此工具的方法并添加和使用它。',
@@ -803,23 +803,33 @@ const words: I18nType = {
   serviceGroup: '服务组',
   internalCallUsage: '在代理配置中添加此工具后，您可以直接在代理中调用此方法',
   internalCallExample: '在代理配置的"添加工具"部分中，搜索并添加此工具，然后在代理中直接调用它',
-  
+
   httpCallExample: 'HTTP调用示例',
   httpCallDescription: '您已将此计划-行动发布为HTTP服务。您可以根据下面的示例调用它。',
   httpServiceCall: 'HTTP服务调用',
   httpEndpoint: 'HTTP端点',
   httpCallUsage: '通过HTTP POST接口调用',
-  
+
   mcpCall: 'MCP调用',
   mcpCallDescription: '您已将此计划-行动发布为MCP服务。您可以通过MCP流式或SSE方法使用它。',
   mcpServiceCall: 'MCP服务调用',
   mcpEndpoint: 'MCP端点',
   mcpCallUsage: '通过MCP协议使用流式或SSE方法调用',
   mcpCallExample: '通过MCP客户端连接到此服务，使用流式或SSE方法进行调用',
-  
+
   usage: '用法',
   example: '示例',
   enterValueFor: '为{param}输入值',
+    copyPlan: '复制计划',
+    newPlanTitle: '新计划标题',
+    enterNewPlanTitle: '输入新计划标题',
+    copying: '复制中...',
+    selectPlanFirst: '请先选择一个计划模板',
+    titleRequired: '标题不能为空',
+    noPlanToCopy: '没有可复制的计划',
+    copyPlanSuccess: '计划复制成功: {title}',
+    copyPlanFailed: '计划复制失败: {message}',
+
     newTemplate: '新建模板',
     templateName: '模板名称',
     templateDescription: '模板描述',
@@ -883,14 +893,14 @@ const words: I18nType = {
     agentLoadError: '加载智能体失败',
     retryLoadAgents: '重新加载智能体',
     availableTools: '可用工具',
-    
+
     // Plan Type Selection
     planType: '计划类型',
     simplePlan: '简单计划（逐步会废弃，请慎用）',
     advancedPlan: '高级计划（MapReduce）',
     dynamicAgentPlan: '动态智能体计划',
     dynamicAgentInstruction: '使用动态智能体计划，直接输入指令而无需经过生成过程。请直接在动态智能体计划部分构建您的计划。',
-    
+
     // Tool Selection
     selectedTools: '已选工具',
     addTools: '添加工具',
@@ -898,7 +908,7 @@ const words: I18nType = {
   clearAllTools: '清空所有工具',
   noToolsSelected: '未选择任何工具',
   planTypeError: '计划类型错误',
-  
+
   // 模型和工具键
   modelName: '模型名称',
   modelNameDescription: '指定模型名字用于处理特定任务（如图片识别等），如不指定则使用默认的模型',
