@@ -155,8 +155,6 @@ public class DataSplitTool extends AbstractBaseTool<DataSplitTool.DataSplitInput
 
 	private final ObjectMapper objectMapper;
 
-	private final TableProcessingService tableProcessingService;
-
 	public DataSplitTool(String planId, ManusProperties manusProperties, MapReduceSharedStateManager sharedStateManager,
 			UnifiedDirectoryManager unifiedDirectoryManager, ObjectMapper objectMapper,
 			TableProcessingService tableProcessingService) {
@@ -165,7 +163,6 @@ public class DataSplitTool extends AbstractBaseTool<DataSplitTool.DataSplitInput
 		this.unifiedDirectoryManager = unifiedDirectoryManager;
 		this.sharedStateManager = sharedStateManager;
 		this.objectMapper = objectMapper;
-		this.tableProcessingService = tableProcessingService;
 	}
 
 	/**
@@ -500,15 +497,6 @@ public class DataSplitTool extends AbstractBaseTool<DataSplitTool.DataSplitInput
 				|| lowercaseFileName.endsWith(".log") || lowercaseFileName.endsWith(".json")
 				|| lowercaseFileName.endsWith(".xml") || lowercaseFileName.endsWith(".yaml")
 				|| lowercaseFileName.endsWith(".yml") || lowercaseFileName.endsWith(".md");
-	}
-
-	/**
-	 * Check if file is a table file
-	 */
-	private boolean isTableFile(String fileName) {
-		String lowercaseFileName = fileName.toLowerCase();
-		return lowercaseFileName.endsWith(".csv") || lowercaseFileName.endsWith(".tsv")
-				|| lowercaseFileName.endsWith(".xls") || lowercaseFileName.endsWith(".xlsx");
 	}
 
 	@Override

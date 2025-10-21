@@ -113,7 +113,7 @@ const toggleDropdown = () => {
 
 // Calculate dropdown position to avoid being cut off
 const calculateDropdownPosition = () => {
-  const selectElement = document.querySelector('.custom-select') as HTMLElement
+  const selectElement = document.querySelector('.custom-select') as HTMLElement | null
   if (!selectElement) return
   
   const rect = selectElement.getBoundingClientRect()

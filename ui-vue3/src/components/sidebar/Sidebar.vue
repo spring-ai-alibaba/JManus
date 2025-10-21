@@ -14,7 +14,11 @@
  * limitations under the License.
 -->
 <template>
-  <div class="sidebar-wrapper" :class="{ 'sidebar-wrapper-collapsed': sidebarStore.isCollapsed }" :style="{ width: sidebarWidth + '%' }">
+  <div
+    class="sidebar-wrapper"
+    :class="{ 'sidebar-wrapper-collapsed': sidebarStore.isCollapsed }"
+    :style="{ width: sidebarWidth + '%' }"
+  >
     <div class="sidebar-content">
       <div class="sidebar-content-header">
         <div class="sidebar-content-title">{{ $t('sidebar.title') }}</div>
@@ -44,7 +48,10 @@
       <!-- List Tab Content -->
       <div v-if="sidebarStore.currentTab === 'list'" class="tab-content">
         <div class="new-task-section">
-          <button class="new-task-btn" @click="() => sidebarStore.createNewTemplate(sidebarStore.planType)">
+          <button
+            class="new-task-btn"
+            @click="() => sidebarStore.createNewTemplate(sidebarStore.planType)"
+          >
             <Icon icon="carbon:add" width="16" />
             {{ $t('sidebar.newPlan') }}
             <span class="shortcut">⌘ K</span>
@@ -62,7 +69,9 @@
           <div v-else-if="sidebarStore.errorMessage" class="error-state">
             <Icon icon="carbon:warning" width="20" />
             <span>{{ sidebarStore.errorMessage }}</span>
-            <button @click="sidebarStore.loadPlanTemplateList" class="retry-btn">{{ $t('sidebar.retry') }}</button>
+            <button @click="sidebarStore.loadPlanTemplateList" class="retry-btn">
+              {{ $t('sidebar.retry') }}
+            </button>
           </div>
 
           <!-- Empty state -->
@@ -93,7 +102,11 @@
               </div>
             </div>
             <div class="task-time">
-              {{ getRelativeTimeString(sidebarStore.parseDateTime(template.updateTime || template.createTime)) }}
+              {{
+                getRelativeTimeString(
+                  sidebarStore.parseDateTime(template.updateTime || template.createTime)
+                )
+              }}
             </div>
             <div class="task-actions">
               <button
@@ -122,11 +135,11 @@
             </button>
           </div>
 
-
           <!-- Section 2: JSON Editor (Conditional based on plan type) -->
           <!-- Use JsonEditorV2 for dynamic_agent type -->
           <JsonEditorV2
             v-if="sidebarStore.planType === 'dynamic_agent'"
+            :key="sidebarStore.currentPlanTemplateId || 'default'"
             :json-content="sidebarStore.jsonContent"
             :can-rollback="sidebarStore.canRollback"
             :can-restore="sidebarStore.canRestore"
@@ -137,12 +150,13 @@
             @restore="handleRestore"
             @save="handleSaveTemplate"
             @copy-plan="handleCopyPlan"
-            @update:json-content="(value: string) => sidebarStore.jsonContent = value"
+            @update:json-content="(value: string) => (sidebarStore.jsonContent = value)"
           />
 
           <!-- Use JsonEditor for simple or other types -->
           <JsonEditor
             v-else
+            :key="'simple-' + (sidebarStore.currentPlanTemplateId || 'default')"
             :json-content="sidebarStore.jsonContent"
             :can-rollback="sidebarStore.canRollback"
             :can-restore="sidebarStore.canRestore"
@@ -152,7 +166,7 @@
             @rollback="handleRollback"
             @restore="handleRestore"
             @save="handleSaveTemplate"
-            @update:json-content="(value: string) => sidebarStore.jsonContent = value"
+            @update:json-content="(value: string) => (sidebarStore.jsonContent = value)"
           />
 
           <!-- Section 3: Execution Controller -->
@@ -188,15 +202,15 @@
     ref="publishMcpModalRef"
     v-model="showPublishMcpModal"
     :plan-template-id="sidebarStore.currentPlanTemplateId || ''"
-    :plan-title="sidebarStore.selectedTemplate?.title || ''"
     :plan-description="sidebarStore.selectedTemplate?.description || ''"
     @published="handleMcpServicePublished"
   />
 
+  <!-- Copy Plan Modal -->
   <div v-if="showCopyPlanModal" class="modal-overlay" @click="closeCopyPlanModal">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
-      <h3>{{ $t('sidebar.copyPlan') }}</h3>
+        <h3>{{ $t('sidebar.copyPlan') }}</h3>
         <button class="close-btn" @click="closeCopyPlanModal">
           <Icon icon="carbon:close" width="16" />
         </button>
@@ -231,18 +245,18 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed, onUnmounted, watch, nextTick } from 'vue'
-import { Icon } from '@iconify/vue'
-import { useI18n } from 'vue-i18n'
-import { sidebarStore } from '@/stores/sidebar'
-import PublishServiceModal from '@/components/publish-service-modal/PublishServiceModal.vue'
-import type { CoordinatorToolVO, CoordinatorToolConfig } from '@/api/coordinator-tool-api-service'
+import type { CoordinatorToolConfig, CoordinatorToolVO } from '@/api/coordinator-tool-api-service'
 import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
+import PublishServiceModal from '@/components/publish-service-modal/PublishServiceModal.vue'
+import { useToast } from '@/plugins/useToast'
+import { sidebarStore } from '@/stores/sidebar'
+import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
+import { Icon } from '@iconify/vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import ExecutionController from './ExecutionController.vue'
 import JsonEditor from './JsonEditor.vue'
 import JsonEditorV2 from './JsonEditorV2.vue'
-import ExecutionController from './ExecutionController.vue'
-import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
-import { useToast } from '@/plugins/useToast'
 
 const { t } = useI18n()
 const toast = useToast()
@@ -265,22 +279,35 @@ const currentToolInfo = ref<CoordinatorToolVO>({
   enableHttpService: false,
   enableMcpService: false,
   enableInternalToolcall: false,
-  serviceGroup: ''
+  serviceGroup: '',
 })
 const publishMcpModalRef = ref<InstanceType<typeof PublishServiceModal> | null>(null)
-
-
 
 // CoordinatorTool configuration
 const coordinatorToolConfig = ref<CoordinatorToolConfig>({
   enabled: true,
-  success: true
+  success: true,
 })
 
 // Computed property: whether to show publish MCP service button
 const showPublishButton = computed(() => {
   return coordinatorToolConfig.value.enabled
 })
+
+// Watch for changes in currentPlanTemplateId and jsonContent
+watch(
+  () => sidebarStore.currentPlanTemplateId,
+  (newId, oldId) => {
+    console.log('[Sidebar] currentPlanTemplateId changed from', oldId, 'to', newId)
+  }
+)
+
+watch(
+  () => sidebarStore.jsonContent,
+  (newContent, oldContent) => {
+    console.log('[Sidebar] jsonContent changed from', oldContent, 'to', newContent)
+  }
+)
 
 // Load CoordinatorTool configuration
 const loadCoordinatorToolConfig = async () => {
@@ -293,7 +320,7 @@ const loadCoordinatorToolConfig = async () => {
     coordinatorToolConfig.value = {
       enabled: true,
       success: false,
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     }
   }
 }
@@ -312,9 +339,19 @@ const handleSaveTemplate = async () => {
     const saveResult = await sidebarStore.saveTemplate()
 
     if (saveResult?.duplicate) {
-      toast.success(t('sidebar.saveCompleted', { message: saveResult.message, versionCount: saveResult.versionCount }))
+      toast.success(
+        t('sidebar.saveCompleted', {
+          message: saveResult.message,
+          versionCount: saveResult.versionCount,
+        })
+      )
     } else if (saveResult?.saved) {
-      toast.success(t('sidebar.saveSuccess', { message: saveResult.message, versionCount: saveResult.versionCount }))
+      toast.success(
+        t('sidebar.saveSuccess', {
+          message: saveResult.message,
+          versionCount: saveResult.versionCount,
+        })
+      )
       // Refresh parameter requirements after successful save
       refreshParameterRequirements()
     } else if (saveResult?.message) {
@@ -331,7 +368,10 @@ const refreshParameterRequirements = async () => {
   // Add a delay to ensure the backend has processed the new template and committed the transaction
   await new Promise(resolve => setTimeout(resolve, 1000))
 
-  console.log('[Sidebar] 🔄 Refreshing parameter requirements for templateId:', sidebarStore.currentPlanTemplateId)
+  console.log(
+    '[Sidebar] 🔄 Refreshing parameter requirements for templateId:',
+    sidebarStore.currentPlanTemplateId
+  )
 
   // Use nextTick to ensure all reactive updates are complete
   await nextTick()
@@ -344,7 +384,9 @@ const refreshParameterRequirements = async () => {
     // Add a retry mechanism in case the first call fails due to timing
     setTimeout(() => {
       if (executionControllerRef.value) {
-        console.log('[Sidebar] 🔄 Retry: Calling ExecutionController.loadParameterRequirements() again')
+        console.log(
+          '[Sidebar] 🔄 Retry: Calling ExecutionController.loadParameterRequirements() again'
+        )
         executionControllerRef.value.loadParameterRequirements()
       }
     }, 2000) // Increased delay to 2 seconds for database transaction commit
@@ -361,15 +403,13 @@ const refreshParameterRequirements = async () => {
   }
 }
 
-
-
 // Version control handlers
 const handleRollback = () => {
   try {
-    if (sidebarStore && typeof sidebarStore.rollbackVersion === 'function') {
+    if (typeof sidebarStore.rollbackVersion === 'function') {
       sidebarStore.rollbackVersion()
     } else {
-      console.warn('sidebarStore or rollbackVersion method is not available')
+      console.warn('rollbackVersion method is not available')
     }
   } catch (error) {
     console.error('Error during rollback operation:', error)
@@ -379,10 +419,10 @@ const handleRollback = () => {
 
 const handleRestore = () => {
   try {
-    if (sidebarStore && typeof sidebarStore.restoreVersion === 'function') {
+    if (typeof sidebarStore.restoreVersion === 'function') {
       sidebarStore.restoreVersion()
     } else {
-      console.warn('sidebarStore or restoreVersion method is not available')
+      console.warn('restoreVersion method is not available')
     }
   } catch (error) {
     console.error('Error during restore operation:', error)
@@ -391,11 +431,14 @@ const handleRestore = () => {
 }
 
 const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
-  console.log('[Sidebar] 🎯 handleExecutePlan called with payload:', JSON.stringify(payload, null, 2))
+  console.log(
+    '[Sidebar] 🎯 handleExecutePlan called with payload:',
+    JSON.stringify(payload, null, 2)
+  )
   console.log('[Sidebar] 📊 Current sidebarStore state:', {
     currentPlanTemplateId: sidebarStore.currentPlanTemplateId,
     selectedTemplate: sidebarStore.selectedTemplate?.id,
-    jsonContent: sidebarStore.jsonContent.substring(0, 100) + '...'
+    jsonContent: sidebarStore.jsonContent.substring(0, 100) + '...',
   })
 
   try {
@@ -412,7 +455,7 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
     const finalPlanData = {
       ...planData,
       uploadedFiles: payload.uploadedFiles,
-      uploadKey: payload.uploadKey
+      uploadKey: payload.uploadKey,
     }
 
     if (payload.replacementParams && Object.keys(payload.replacementParams).length > 0) {
@@ -429,10 +472,13 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
       planData: finalPlanData.planData,
       params: finalPlanData.params,
       uploadedFiles: finalPlanData.uploadedFiles,
-      uploadKey: finalPlanData.uploadKey
+      uploadKey: finalPlanData.uploadKey,
     }
 
-    console.log('[Sidebar] 📤 Emitting planExecutionRequested with final payload:', JSON.stringify(finalPayload, null, 2))
+    console.log(
+      '[Sidebar] 📤 Emitting planExecutionRequested with final payload:',
+      JSON.stringify(finalPayload, null, 2)
+    )
     emit('planExecutionRequested', finalPayload)
 
     console.log('[Sidebar] ✅ Event emitted successfully')
@@ -488,7 +534,7 @@ const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
       enableHttpService: false,
       enableMcpService: false,
       enableInternalToolcall: false,
-      serviceGroup: ''
+      serviceGroup: '',
     }
   } else {
     console.log('MCP service published successfully:', tool)
@@ -496,8 +542,8 @@ const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
     // Update tool information
     currentToolInfo.value = {
       ...tool,
-      toolName: tool.toolName || '',
-      serviceGroup: tool.serviceGroup || ''
+      toolName: tool.toolName,
+      serviceGroup: tool.serviceGroup ?? '',
     }
   }
 
@@ -506,6 +552,16 @@ const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
   await sidebarStore.loadAvailableTools()
 }
 
+// Execution Controller event handlers
+const handleClearExecutionParams = () => {
+  sidebarStore.clearExecutionParams()
+}
+
+const handleUpdateExecutionParams = (params: string) => {
+  sidebarStore.executionParams = params
+}
+
+// Copy plan handler functions
 const handleCopyPlan = () => {
   console.log('[Sidebar] Copy plan clicked')
 
@@ -515,8 +571,8 @@ const handleCopyPlan = () => {
     return
   }
 
-  newPlanTitle.value = (sidebarStore.selectedTemplate.title || t('sidebar.unnamedPlan')) + ' (copy)'
-  console.log('[sidebar] Opening copy plan modal')
+  newPlanTitle.value = (sidebarStore.selectedTemplate.title ?? t('sidebar.unnamedPlan')) + ' (copy)'
+  console.log('[Sidebar] Opening copy plan modal')
   showCopyPlanModal.value = true
 }
 
@@ -552,9 +608,7 @@ const confirmCopyPlan = async () => {
 
     if (result.saved) {
       toast.success(t('sidebar.copyPlanSuccess', { title: newPlanTitle.value.trim() }))
-
       await sidebarStore.loadPlanTemplateList()
-
       closeCopyPlanModal()
     } else {
       toast.error(t('sidebar.copyPlanFailed', { message: result.message || 'Unknown error' }))
@@ -567,17 +621,6 @@ const confirmCopyPlan = async () => {
   }
 }
 
-// Execution Controller event handlers
-const handleClearExecutionParams = () => {
-  sidebarStore.clearExecutionParams()
-}
-
-const handleUpdateExecutionParams = (params: string) => {
-  sidebarStore.executionParams = params
-}
-
-
-
 // Load tool information when plan template changes
 const loadToolInfo = async (planTemplateId: string | null) => {
   if (!planTemplateId) {
@@ -589,7 +632,7 @@ const loadToolInfo = async (planTemplateId: string | null) => {
       enableHttpService: false,
       enableMcpService: false,
       enableInternalToolcall: false,
-      serviceGroup: ''
+      serviceGroup: '',
     }
     return
   }
@@ -599,8 +642,8 @@ const loadToolInfo = async (planTemplateId: string | null) => {
     if (toolData) {
       currentToolInfo.value = {
         ...toolData,
-        toolName: toolData.toolName || '',
-        serviceGroup: toolData.serviceGroup || ''
+        toolName: toolData.toolName,
+        serviceGroup: toolData.serviceGroup ?? '',
       }
     } else {
       // No tool found or not published, don't show any call examples
@@ -612,7 +655,7 @@ const loadToolInfo = async (planTemplateId: string | null) => {
         enableHttpService: false,
         enableMcpService: false,
         enableInternalToolcall: false,
-        serviceGroup: ''
+        serviceGroup: '',
       }
     }
   } catch (error) {
@@ -625,7 +668,7 @@ const loadToolInfo = async (planTemplateId: string | null) => {
       enableHttpService: false,
       enableMcpService: false,
       enableInternalToolcall: false,
-      serviceGroup: ''
+      serviceGroup: '',
     }
   }
 }
@@ -703,9 +746,13 @@ const resetSidebarWidth = () => {
 }
 
 // Watch for plan template changes to load tool information
-watch(() => sidebarStore.currentPlanTemplateId, (newPlanTemplateId) => {
-  loadToolInfo(newPlanTemplateId)
-}, { immediate: true })
+watch(
+  () => sidebarStore.currentPlanTemplateId,
+  newPlanTemplateId => {
+    loadToolInfo(newPlanTemplateId)
+  },
+  { immediate: true }
+)
 
 // Lifecycle
 onMounted(() => {
@@ -756,14 +803,14 @@ defineExpose({
   }
 }
 
-  .sidebar-content {
-    height: 100%;
-    width: 100%;
-    padding: 12px 0 12px 12px;
-    display: flex;
-    flex-direction: column;
-    transition: all 0.3s ease-in-out;
-    flex: 1;
+.sidebar-content {
+  height: 100%;
+  width: 100%;
+  padding: 12px 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease-in-out;
+  flex: 1;
 
   .sidebar-content-header {
     display: flex;
@@ -892,214 +939,210 @@ defineExpose({
         }
       }
 
-
-        .json-editor {
-          width: 100%;
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 6px;
-          color: white;
-          font-size: 12px;
-          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-          padding: 8px;
-          resize: vertical;
-          min-height: 100px;
-
-          &:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-          }
-
-          &::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-          }
-        }
-
-        .json-editor {
-            min-height: 200px;
-            font-size: 11px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            overflow-wrap: break-word;
-            word-break: break-word;
-            tab-size: 2;
-            font-variant-ligatures: none;
-        }
-
-
-      }
-    }
-  }
-
-
-  .new-task-section {
-    margin-bottom: 16px;
-    padding-right: 12px;
-
-    .new-task-btn {
-      width: 100%;
-      padding: 12px 16px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border: none;
-      border-radius: 8px;
-      color: white;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-
-      &:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-      }
-
-      .shortcut {
+      .json-editor {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        color: white;
         font-size: 12px;
-        opacity: 0.8;
-        margin-left: auto;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        padding: 8px;
+        resize: vertical;
+        min-height: 100px;
+
+        &:focus {
+          outline: none;
+          border-color: #667eea;
+          box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        &::placeholder {
+          color: rgba(255, 255, 255, 0.4);
+        }
+      }
+
+      .json-editor {
+        min-height: 200px;
+        font-size: 11px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        tab-size: 2;
+        font-variant-ligatures: none;
       }
     }
   }
+}
 
-  .sidebar-content-list {
+.new-task-section {
+  margin-bottom: 16px;
+  padding-right: 12px;
+
+  .new-task-btn {
+    width: 100%;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .shortcut {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-left: auto;
+    }
+  }
+}
+
+.sidebar-content-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 12px;
+
+  .loading-state,
+  .error-state,
+  .empty-state {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    overflow-y: auto;
-    padding-right: 12px;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    text-align: center;
+    gap: 12px;
 
-    .loading-state,
-    .error-state,
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 32px 16px;
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 14px;
-      text-align: center;
-      gap: 12px;
+    .spinning {
+      animation: spin 1s linear infinite;
+    }
 
-      .spinning {
-        animation: spin 1s linear infinite;
+    .retry-btn {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+
+  .sidebar-content-list-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    &.sidebar-content-list-item-active {
+      border: 2px solid #667eea;
+      background: rgba(102, 126, 234, 0.1);
+    }
+
+    .task-icon {
+      margin-right: 12px;
+      color: #667eea;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .task-details {
+      flex: 1;
+      min-width: 0;
+
+      .task-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
-      .retry-btn {
-        padding: 8px 16px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 4px;
-        color: white;
-        cursor: pointer;
+      .task-preview {
         font-size: 12px;
-        transition: background-color 0.2s ease;
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.4;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     }
 
-    .sidebar-content-list-item {
+    .task-time {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-left: 8px;
+      flex-shrink: 0;
+      position: absolute;
+      top: 12px;
+      right: 40px;
+    }
+
+    .task-actions {
       display: flex;
-      align-items: flex-start;
-      padding: 12px;
-      margin-bottom: 8px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
+      align-items: center;
+      margin-left: 8px;
+      flex-shrink: 0;
 
-      &:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.2);
-        transform: translateY(-1px);
-      }
-
-      &.sidebar-content-list-item-active {
-        border: 2px solid #667eea;
-        background: rgba(102, 126, 234, 0.1);
-      }
-
-      .task-icon {
-        margin-right: 12px;
-        color: #667eea;
-        flex-shrink: 0;
-        margin-top: 2px;
-      }
-
-      .task-details {
-        flex: 1;
-        min-width: 0;
-
-        .task-title {
-          font-size: 14px;
-          font-weight: 600;
-          color: white;
-          margin-bottom: 4px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .task-preview {
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.7);
-          line-height: 1.4;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-      }
-
-      .task-time {
-        font-size: 11px;
+      .delete-task-btn {
+        width: 24px;
+        height: 24px;
+        background: transparent;
+        border: none;
+        border-radius: 4px;
         color: rgba(255, 255, 255, 0.5);
-        margin-left: 8px;
-        flex-shrink: 0;
-        position: absolute;
-        top: 12px;
-        right: 40px;
-      }
-
-      .task-actions {
+        cursor: pointer;
         display: flex;
         align-items: center;
-        margin-left: 8px;
-        flex-shrink: 0;
+        justify-content: center;
+        transition: all 0.2s ease;
+        position: absolute;
+        top: 12px;
+        right: 12px;
 
-        .delete-task-btn {
-          width: 24px;
-          height: 24px;
-          background: transparent;
-          border: none;
-          border-radius: 4px;
-          color: rgba(255, 255, 255, 0.5);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-          position: absolute;
-          top: 12px;
-          right: 12px;
-
-          &:hover {
-            background: rgba(255, 0, 0, 0.2);
-            color: #ff6b6b;
-          }
+        &:hover {
+          background: rgba(255, 0, 0, 0.2);
+          color: #ff6b6b;
         }
       }
     }
   }
+}
 
 @keyframes spin {
   from {
@@ -1145,6 +1188,7 @@ defineExpose({
   transition: all 0.2s ease;
 }
 
+/* Copy Plan Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1199,7 +1243,7 @@ defineExpose({
 }
 
 .modal-body {
-  padding: 20px
+  padding: 20px;
 }
 
 .modal-footer {

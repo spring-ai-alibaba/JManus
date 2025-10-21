@@ -39,12 +39,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PERSONAL_ACCESS_TOKEN: ${{ secrets.CLA_REPO_ACCESS_TOKEN }}
         with:
-          path-to-signatures: 'signatures/cla.json'
-          path-to-document: 'https://github.com/spring-ai-alibaba/JManus/blob/main/CLA.md'
-          branch: 'main'
-          allowlist: 'bot*,dependabot*,*[bot]'
-          remote-organization-name: 'spring-ai-alibaba'
-          remote-repository-name: 'cla'
+          path-to-signatures: "signatures/cla.json"
+          path-to-document: "https://github.com/spring-ai-alibaba/JManus/blob/main/CLA.md"
+          branch: "main"
+          allowlist: "bot*,dependabot*,*[bot],EvoltoStart,HunterPorter"
+          remote-organization-name: "spring-ai-alibaba"
+          remote-repository-name: "cla"
           lock-pullrequest-aftermerge: false
 
           # create-file-commit-message: 'Creating file for storing CLA Signatures'

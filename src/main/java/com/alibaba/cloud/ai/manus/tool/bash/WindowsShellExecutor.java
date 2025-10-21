@@ -36,6 +36,7 @@ public class WindowsShellExecutor implements ShellCommandExecutor {
 
 	private static final int DEFAULT_TIMEOUT = 60; // Default timeout (seconds)
 
+	@SuppressWarnings("unused")
 	private BufferedWriter processInput;
 
 	@Override

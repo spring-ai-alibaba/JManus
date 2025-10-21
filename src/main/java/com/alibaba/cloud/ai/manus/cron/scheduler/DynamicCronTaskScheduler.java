@@ -210,30 +210,34 @@ public class DynamicCronTaskScheduler {
 	 * @param planDesc The plan description/user query
 	 */
 	private void executePlanByuserQueryDesc(String planId, String planDesc) {
-		try {
-			log.info("Executing plan by user query description: {} - {}", planId, planDesc);
+		// try {
+		// log.info("Executing plan by user query description: {} - {}", planId,
+		// planDesc);
 
-			// Use PlanningCoordinator to execute the plan by user query
-			CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByUserQuery(planDesc, planId,
-					null, planId, null, null);
+		// // Use PlanningCoordinator to execute the plan by user query
+		// CompletableFuture<PlanExecutionResult> future =
+		// planningCoordinator.executeByUserQuery(planDesc, planId,
+		// null, planId, null, null);
 
-			// Handle the execution result asynchronously
-			future.thenAccept(result -> {
-				if (result.isSuccess()) {
-					log.info("Plan execution successful for description: {}", planDesc);
-				}
-				else {
-					log.error("Plan execution failed for description: {}: {}", planDesc, result.getErrorMessage());
-				}
-			}).exceptionally(throwable -> {
-				log.error("Plan execution failed for description: {}", planDesc, throwable);
-				return null;
-			});
+		// // Handle the execution result asynchronously
+		// future.thenAccept(result -> {
+		// if (result.isSuccess()) {
+		// log.info("Plan execution successful for description: {}", planDesc);
+		// }
+		// else {
+		// log.error("Plan execution failed for description: {}: {}", planDesc,
+		// result.getErrorMessage());
+		// }
+		// }).exceptionally(throwable -> {
+		// log.error("Plan execution failed for description: {}", planDesc, throwable);
+		// return null;
+		// });
 
-		}
-		catch (Exception e) {
-			log.error("Failed to execute plan by user query description: {}", planId, e);
-		}
+		// }
+		// catch (Exception e) {
+		// log.error("Failed to execute plan by user query description: {}", planId, e);
+		// }
+		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	/**

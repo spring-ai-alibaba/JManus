@@ -72,6 +72,7 @@ public class ExecutionContext {
 	 * Whether to use conversation, scenario is if only building plan, then conversation
 	 * should not be used, otherwise conversation cannot be deleted
 	 */
+	@SuppressWarnings("unused")
 	private boolean useConversation = false;
 
 	/**

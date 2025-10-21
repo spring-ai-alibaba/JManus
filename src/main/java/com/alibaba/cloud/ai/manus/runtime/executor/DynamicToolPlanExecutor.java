@@ -21,6 +21,7 @@ import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
+import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
@@ -30,18 +31,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Dynamic Agent Plan Executor - Specialized executor for DynamicAgentExecutionPlan with
  * user-selected tools support
  */
 public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
-
-	private static final Logger logger = LoggerFactory.getLogger(DynamicToolPlanExecutor.class);
-
-	private final DynamicModelRepository dynamicModelRepository;
 
 	/**
 	 * Constructor for DynamicAgentPlanExecutor
@@ -56,9 +50,9 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 	public DynamicToolPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			AgentService agentService, LlmService llmService, ManusProperties manusProperties,
 			LevelBasedExecutorPool levelBasedExecutorPool, DynamicModelRepository dynamicModelRepository,
-			FileUploadService fileUploadService) {
-		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
-		this.dynamicModelRepository = dynamicModelRepository;
+			FileUploadService fileUploadService, AgentInterruptionHelper agentInterruptionHelper) {
+		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService,
+				agentInterruptionHelper);
 	}
 
 	protected String getStepFromStepReq(String stepRequirement) {

@@ -34,17 +34,11 @@ public class JsxGeneratorOperator extends AbstractBaseTool<JsxGeneratorOperator.
 
 	private final IJsxGeneratorService jsxGeneratorService;
 
-	private final ObjectMapper objectMapper;
-
-	private final UnifiedDirectoryManager unifiedDirectoryManager;
-
 	private static final String TOOL_NAME = "jsx_generator_operator";
 
 	public JsxGeneratorOperator(IJsxGeneratorService jsxGeneratorService, ObjectMapper objectMapper,
 			UnifiedDirectoryManager unifiedDirectoryManager) {
 		this.jsxGeneratorService = jsxGeneratorService;
-		this.objectMapper = objectMapper;
-		this.unifiedDirectoryManager = unifiedDirectoryManager;
 	}
 
 	/**

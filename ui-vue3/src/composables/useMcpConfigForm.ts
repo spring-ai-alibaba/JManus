@@ -71,7 +71,7 @@ export function useMcpConfigForm() {
         configForm.env = ''
       }
 
-      configForm.status = server.status || 'ENABLE'
+      configForm.status = server.status
     } catch (error) {
       console.error('Failed to parse server configuration:', error)
       // If parsing fails, use default values
@@ -81,7 +81,7 @@ export function useMcpConfigForm() {
       configForm.url = ''
       configForm.args = ''
       configForm.env = ''
-      configForm.status = server.status || 'ENABLE'
+      configForm.status = server.status
     }
   }
 
@@ -97,7 +97,7 @@ export function useMcpConfigForm() {
       if (!configForm.command.trim()) {
         errors.push('Please enter Command')
       }
-    } else if (configForm.connectionType === 'SSE' || configForm.connectionType === 'STREAMING') {
+    } else {
       if (!configForm.url.trim()) {
         errors.push('Please enter URL')
       }

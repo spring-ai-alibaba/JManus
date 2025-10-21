@@ -15,22 +15,26 @@
  */
 package com.alibaba.cloud.ai.manus.tool.uploadedFileLoader;
 
-import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Smart file analysis and tool recommendation system. Analyzes uploaded files and
@@ -59,6 +63,7 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 	private static final long MEDIUM_FILE_THRESHOLD = 5L * 1024 * 1024; // 5MB
 
 	// File type constants
+	@SuppressWarnings("unused")
 	private static final Set<String> TEXT_FILE_EXTENSIONS = Set.of(".txt", ".md", ".csv", ".json", ".xml", ".html",
 			".htm", ".log", ".java", ".py", ".js", ".ts", ".css", ".sql", ".yaml", ".yml", ".properties", ".conf",
 			".ini", ".sh", ".bat");
@@ -68,6 +73,7 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 
 	private final UnifiedDirectoryManager directoryManager;
 
+	@SuppressWarnings("unused")
 	private final ObjectMapper objectMapper;
 
 	// Cache for fallback uploads directory to improve performance

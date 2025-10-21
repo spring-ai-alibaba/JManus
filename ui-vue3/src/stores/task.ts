@@ -21,6 +21,8 @@ export interface TaskPayload {
   prompt: string
   timestamp: number
   processed?: boolean
+  planId?: string
+  isRunning?: boolean
 }
 
 export const useTaskStore = defineStore('task', () => {
@@ -106,6 +108,52 @@ export const useTaskStore = defineStore('task', () => {
     window.dispatchEvent(new CustomEvent('plan-execution-requested', { detail: payload }))
   }
 
+  // Set task as running with plan ID
+  const setTaskRunning = (planId: string) => {
+    console.log('[TaskStore] setTaskRunning called with planId:', planId)
+    // Create a new task if one doesn't exist
+    if (!currentTask.value) {
+      currentTask.value = {
+        prompt: '', // Empty prompt for running tasks
+        timestamp: Date.now(),
+        planId: planId,
+        isRunning: true
+      }
+      console.log('[TaskStore] Created new task:', currentTask.value)
+    } else {
+      currentTask.value.planId = planId
+      currentTask.value.isRunning = true
+      console.log('[TaskStore] Updated existing task:', currentTask.value)
+    }
+  }
+
+  // Stop current running task
+  const stopCurrentTask = async () => {
+    console.log('[TaskStore] stopCurrentTask called')
+    if (currentTask.value && currentTask.value.isRunning && currentTask.value.planId) {
+      try {
+        const { DirectApiService } = await import('@/api/direct-api-service')
+        await DirectApiService.stopTask(currentTask.value.planId)
+        console.log('[TaskStore] Task stopped successfully')
+        
+        // Mark task as no longer running
+        currentTask.value.isRunning = false
+        return true
+      } catch (error) {
+        console.error('[TaskStore] Failed to stop task:', error)
+        return false
+      }
+    }
+    return false
+  }
+
+  // Check if there's a running task
+  const hasRunningTask = () => {
+    const result = currentTask.value && currentTask.value.isRunning
+    console.log('[TaskStore] hasRunningTask check - result:', result)
+    return result
+  }
+
   return {
     currentTask,
     taskToInput,
@@ -119,6 +167,9 @@ export const useTaskStore = defineStore('task', () => {
     markHomeVisited,
     checkHomeVisited,
     resetHomeVisited,
-    emitPlanExecutionRequested
+    emitPlanExecutionRequested,
+    setTaskRunning,
+    stopCurrentTask,
+    hasRunningTask
   }
 })

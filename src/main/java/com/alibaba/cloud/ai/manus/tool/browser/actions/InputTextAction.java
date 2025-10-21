@@ -16,7 +16,6 @@
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
 import com.microsoft.playwright.Locator;
-import com.microsoft.playwright.Page;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.browser.InteractiveElement;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
@@ -32,7 +31,6 @@ public class InputTextAction extends BrowserAction {
 		Integer index = request.getIndex();
 		String text = request.getText();
 
-		Page page = getCurrentPage(); // Get Playwright Page instance
 		if (index == null || text == null) {
 			return new ToolExecuteResult("Index and text are required for 'input_text' action");
 		}

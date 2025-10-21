@@ -36,6 +36,7 @@ public class MacShellExecutor implements ShellCommandExecutor {
 
 	private static final int DEFAULT_TIMEOUT = 60; // Default timeout in seconds
 
+	@SuppressWarnings("unused")
 	private BufferedWriter processInput;
 
 	// Cache for shell path to avoid repeated detection

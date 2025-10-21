@@ -36,9 +36,9 @@
       <div class="plan-basic-info">
         <div class="form-row">
           <label class="form-label">{{ $t('sidebar.title') }}</label>
-          <input 
-            v-model="displayData.title" 
-            type="text" 
+          <input
+            v-model="displayData.title"
+            type="text"
             class="form-input"
             :placeholder="$t('sidebar.titlePlaceholder')"
           />
@@ -50,17 +50,13 @@
         <div class="steps-header">
           <label class="form-label">{{ $t('sidebar.tasks') }}</label>
         </div>
-        
+
         <div class="steps-container">
-          <div 
-            v-for="(step, index) in displayData.steps" 
-            :key="index"
-            class="step-item"
-          >
+          <div v-for="(step, index) in displayData.steps" :key="index" class="step-item">
             <div class="step-header">
               <span class="step-number">{{ $t('sidebar.subtask') }} {{ index + 1 }}</span>
               <div class="step-actions">
-                <button 
+                <button
                   @click="moveStepUp(index)"
                   :disabled="index === 0"
                   class="btn btn-xs"
@@ -68,7 +64,7 @@
                 >
                   <Icon icon="carbon:chevron-up" width="12" />
                 </button>
-                <button 
+                <button
                   @click="moveStepDown(index)"
                   :disabled="index === displayData.steps.length - 1"
                   class="btn btn-xs"
@@ -76,7 +72,7 @@
                 >
                   <Icon icon="carbon:chevron-down" width="12" />
                 </button>
-                <button 
+                <button
                   @click="removeStep(index)"
                   class="btn btn-xs btn-danger"
                   :title="$t('sidebar.removeStep')"
@@ -85,7 +81,7 @@
                 </button>
               </div>
             </div>
-            
+
             <div class="step-content">
               <!-- Agent Selection -->
               <div class="form-row">
@@ -99,10 +95,10 @@
                     <option value="JSX_GENERATOR_AGENT">JSX_GENERATOR_AGENT</option>
                     <option value="FILE_MANAGER_AGENT">FILE_MANAGER_AGENT</option>
                   </select>
-                  
+
                   <!-- Add step button -->
-                  <button 
-                    @click="addStep" 
+                  <button
+                    @click="addStep"
                     class="btn btn-sm btn-add-step"
                     :title="$t('sidebar.addStep')"
                   >
@@ -110,11 +106,11 @@
                   </button>
                 </div>
               </div>
-              
+
               <!-- Step Requirement -->
               <div class="form-row">
                 <label class="form-label">{{ $t('sidebar.stepRequirement') }}</label>
-                <textarea 
+                <textarea
                   v-model="step.stepContent"
                   class="form-textarea auto-resize"
                   :placeholder="$t('sidebar.stepRequirementPlaceholder')"
@@ -122,20 +118,20 @@
                   @input="autoResizeTextarea($event)"
                 ></textarea>
               </div>
-              
+
               <!-- Terminate Columns -->
               <div class="form-row">
                 <label class="form-label">{{ $t('sidebar.terminateColumns') }}</label>
-                <input 
+                <input
                   v-model="step.terminateColumns"
-                  type="text" 
+                  type="text"
                   class="form-input"
                   :placeholder="$t('sidebar.terminateColumnsPlaceholder')"
                 />
               </div>
             </div>
           </div>
-          
+
           <!-- Empty State -->
           <div v-if="displayData.steps.length === 0" class="empty-steps">
             <Icon icon="carbon:add-alt" width="32" class="empty-icon" />
@@ -152,9 +148,9 @@
       <div class="plan-id-section">
         <div class="form-row">
           <label class="form-label">{{ $t('sidebar.planId') }}</label>
-          <input 
-            v-model="displayData.planTemplateId" 
-            type="text" 
+          <input
+            v-model="displayData.planTemplateId"
+            type="text"
             class="form-input"
             placeholder="planTemplate-1756109892045"
           />
@@ -165,22 +161,16 @@
       <div class="json-preview" v-if="showJsonPreview">
         <div class="preview-header">
           <label class="form-label">{{ $t('sidebar.jsonPreview') }}</label>
-          <button 
-            @click="closeJsonPreview"
-            class="btn btn-xs"
-          >
+          <button @click="closeJsonPreview" class="btn btn-xs">
             <Icon icon="carbon:close" width="12" />
           </button>
         </div>
         <pre class="json-code">{{ formattedJsonOutput }}</pre>
       </div>
-      
+
       <!-- Toggle JSON Preview -->
       <div class="editor-footer">
-        <button 
-          @click="toggleJsonPreview"
-          class="btn btn-sm btn-secondary"
-        >
+        <button @click="toggleJsonPreview" class="btn btn-sm btn-secondary">
           <Icon icon="carbon:code" width="14" />
           {{ showJsonPreview ? $t('sidebar.hideJson') : $t('sidebar.showJson') }}
         </button>
@@ -207,7 +197,7 @@
             :disabled="isGenerating || isExecuting"
           >
             <Icon icon="carbon:save" width="14" />
-                Save
+            Save
           </button>
         </div>
       </div>
@@ -220,8 +210,10 @@ import { Icon } from '@iconify/vue'
 import { useJsonEditor, type JsonEditorProps } from './json-editor-logic'
 
 // Props
+// eslint-disable-next-line vue/no-unused-properties
 const props = withDefaults(defineProps<JsonEditorProps>(), {
-  hiddenFields: () => ['currentPlanId', 'userRequest', 'rootPlanId']
+  currentPlanTemplateId: '',
+  hiddenFields: () => [],
 })
 
 // Emits
@@ -244,26 +236,25 @@ const {
   handleRestore,
   handleSave,
   toggleJsonPreview,
-  closeJsonPreview
+  closeJsonPreview,
 } = useJsonEditor(props, emit)
 
 const autoResizeTextarea = (event: Event) => {
   const textarea = event.target as HTMLTextAreaElement
-  if (!textarea) return
-  
+
   textarea.style.height = 'auto'
-  
+
   const lineHeight = 20
   const lines = Math.ceil(textarea.scrollHeight / lineHeight)
-  
+
   const minRows = 4
   const maxRows = 12
   const targetRows = Math.max(minRows, Math.min(maxRows, lines))
-  
+
   const newHeight = targetRows * lineHeight
   textarea.style.height = `${newHeight}px`
   textarea.rows = targetRows
-  
+
   if (lines > maxRows) {
     textarea.style.overflowY = 'auto'
   } else {

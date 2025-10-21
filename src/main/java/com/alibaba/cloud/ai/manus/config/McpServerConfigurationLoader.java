@@ -51,6 +51,7 @@ public class McpServerConfigurationLoader implements EnvironmentPostProcessor {
 		this.objectMapper = objectMapper;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
 		logger.info("Starting to process MCP server configuration...");

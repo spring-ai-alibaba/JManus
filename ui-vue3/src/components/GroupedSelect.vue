@@ -109,7 +109,7 @@ const groupedOptions = computed(() => {
   const groups: { [key: string]: ModelOption[] } = {}
 
   props.options.forEach(option => {
-    if (!groups[option.category]) {
+    if (!(option.category in groups)) {
       groups[option.category] = []
     }
     groups[option.category].push(option)
@@ -118,7 +118,7 @@ const groupedOptions = computed(() => {
   // Sort groups by priority
   const priorityOrder = ['Turbo', 'Plus', 'Max', 'Coder', 'Math', 'Vision', 'TTS', 'Standard']
   return priorityOrder
-    .filter(category => groups[category])
+    .filter(category => category in groups)
     .map(category => ({
       category,
       models: groups[category].sort((a, b) => a.name.localeCompare(b.name))

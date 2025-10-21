@@ -50,7 +50,7 @@ export class FileBrowserApiService {
         if (!response.ok) {
             try {
                 const errorData = await response.json()
-                throw new Error(errorData.message || `API request failed: ${response.status}`)
+                throw new Error(errorData.message ?? `API request failed: ${response.status}`)
             } catch {
                 throw new Error(`API request failed: ${response.status} ${response.statusText}`)
             }
@@ -68,7 +68,7 @@ export class FileBrowserApiService {
             const apiResponse: ApiResponse<FileNode> = await result.json()
 
             if (!apiResponse.success) {
-                throw new Error(apiResponse.message || 'Failed to get file tree')
+                throw new Error(apiResponse.message ?? 'Failed to get file tree')
             }
 
             return apiResponse.data!
@@ -88,7 +88,7 @@ export class FileBrowserApiService {
             const apiResponse: ApiResponse<FileContent> = await result.json()
 
             if (!apiResponse.success) {
-                throw new Error(apiResponse.message || 'Failed to get file content')
+                throw new Error(apiResponse.message ?? 'Failed to get file content')
             }
 
             return apiResponse.data!
@@ -110,7 +110,7 @@ export class FileBrowserApiService {
             const url = window.URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
-            a.download = fileName || filePath.split('/').pop() || 'download'
+            a.download = fileName ?? filePath.split('/').pop() ?? 'download'
             document.body.appendChild(a)
             a.click()
             window.URL.revokeObjectURL(url)

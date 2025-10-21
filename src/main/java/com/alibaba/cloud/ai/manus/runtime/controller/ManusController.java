@@ -15,33 +15,13 @@
  */
 package com.alibaba.cloud.ai.manus.runtime.controller;
 
-import com.alibaba.cloud.ai.manus.event.JmanusListener;
-import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
-import com.alibaba.cloud.ai.manus.event.PlanExceptionClearedEvent;
-import com.alibaba.cloud.ai.manus.exception.PlanException;
-import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
-import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
-import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
-import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
-import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
-import com.alibaba.cloud.ai.manus.recorder.service.NewRepoPlanExecutionRecorder;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionWrapper;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.UserInputWaitState;
-import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
-import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
-import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
-import com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo.Memory;
-import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
-import com.alibaba.cloud.ai.manus.coordinator.repository.CoordinatorToolRepository;
-import com.alibaba.cloud.ai.manus.coordinator.entity.po.CoordinatorToolEntity;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,13 +30,45 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import com.alibaba.cloud.ai.manus.coordinator.entity.po.CoordinatorToolEntity;
+import com.alibaba.cloud.ai.manus.coordinator.repository.CoordinatorToolRepository;
+import com.alibaba.cloud.ai.manus.event.JmanusListener;
+import com.alibaba.cloud.ai.manus.event.PlanExceptionClearedEvent;
+import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
+import com.alibaba.cloud.ai.manus.exception.PlanException;
+import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
+import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
+import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
+import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
+import com.alibaba.cloud.ai.manus.recorder.service.NewRepoPlanExecutionRecorder;
+import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
+import com.alibaba.cloud.ai.manus.runtime.entity.po.RootTaskManagerEntity;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionWrapper;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.UserInputWaitState;
+import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
+import com.alibaba.cloud.ai.manus.runtime.service.RootTaskManagerService;
+import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
+import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
+import com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo.Memory;
+import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 @RestController
 @RequestMapping("/api/executor")
@@ -97,6 +109,12 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	private IPlanParameterMappingService parameterMappingService;
 
 	@Autowired
+	private RootTaskManagerService rootTaskManagerService;
+
+	@Autowired
+	private TaskInterruptionManager taskInterruptionManager;
+
+	@Autowired
 	public ManusController(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 		// Register JavaTimeModule to handle LocalDateTime serialization/deserialization
@@ -122,7 +140,8 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		@SuppressWarnings("unchecked")
 		List<String> uploadedFiles = (List<String>) request.get("uploadedFiles");
 
-		// If the plan template is executed and there is an uploaded file, it is likely to
+		// If the plan template is executed and there is an uploaded file, it is likely
+		// to
 		// be the Vue front-end
 		if (toolName != null && toolName.startsWith("planTemplate-") && uploadedFiles != null) {
 			logger.info("🔍 [AUTO-DETECT] Detected Vue request pattern: toolName={}, hasFiles={}", toolName,
@@ -160,7 +179,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		logger.info("Execute tool '{}' synchronously with plan template ID '{}', parameters: {}", toolName,
 				planTemplateId, allParams);
 		// Execute synchronously and return result directly
-		return executePlanSyncAndBuildResponse(planTemplateId, null, null, false, null);
+		return executePlanSync(planTemplateId, null, null, false, null);
 	}
 
 	/**
@@ -239,13 +258,25 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, conversationId,
 					replacementParams, isVueRequest, uploadKey);
 
+			// Create or update task manager entity for database-driven interruption
+			if (wrapper.getRootPlanId() != null) {
+				rootTaskManagerService.createOrUpdateTask(wrapper.getRootPlanId(),
+						RootTaskManagerEntity.DesiredTaskState.START);
+			}
+
 			// Start the async execution (fire and forget)
 			wrapper.getResult().whenComplete((result, throwable) -> {
 				if (throwable != null) {
 					logger.error("Async plan execution failed for planId: {}", wrapper.getRootPlanId(), throwable);
+					// Update task state to indicate failure
+					rootTaskManagerService.updateTaskResult(wrapper.getRootPlanId(),
+							"Execution failed: " + throwable.getMessage());
 				}
 				else {
 					logger.info("Async plan execution completed for planId: {}", wrapper.getRootPlanId());
+					// Update task state to indicate completion
+					rootTaskManagerService.updateTaskResult(wrapper.getRootPlanId(),
+							result != null ? result.getFinalResult() : "Execution completed");
 				}
 			});
 
@@ -319,8 +350,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				toolName, planTemplateId, uploadedFiles != null ? uploadedFiles.size() : "null",
 				replacementParams != null ? replacementParams.size() : "null", uploadKey);
 
-		return executePlanSyncAndBuildResponse(planTemplateId, uploadedFiles, replacementParams, isVueRequest,
-				uploadKey);
+		return executePlanSync(planTemplateId, uploadedFiles, replacementParams, isVueRequest, uploadKey);
 	}
 
 	/**
@@ -443,24 +473,43 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	 * @param uploadKey Optional uploadKey provided by frontend (can be null)
 	 * @return ResponseEntity with execution result
 	 */
-	private ResponseEntity<Map<String, Object>> executePlanSyncAndBuildResponse(String planTemplateId,
-			List<String> uploadedFiles, Map<String, Object> replacementParams, boolean isVueRequest, String uploadKey) {
+	private ResponseEntity<Map<String, Object>> executePlanSync(String planTemplateId, List<String> uploadedFiles,
+			Map<String, Object> replacementParams, boolean isVueRequest, String uploadKey) {
+		PlanExecutionWrapper wrapper = null;
 		try {
 			// Execute the plan template using the new unified method
-			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, null, replacementParams,
-					isVueRequest, uploadKey);
+			wrapper = executePlanTemplate(planTemplateId, uploadedFiles, null, replacementParams, isVueRequest,
+					uploadKey);
+
+			// Create or update task manager entity for database-driven interruption
+			if (wrapper.getRootPlanId() != null) {
+				rootTaskManagerService.createOrUpdateTask(wrapper.getRootPlanId(),
+						RootTaskManagerEntity.DesiredTaskState.START);
+			}
+
 			PlanExecutionResult planExecutionResult = wrapper.getResult().get();
+
+			// Update task result with execution result
+			if (planExecutionResult != null) {
+				rootTaskManagerService.updateTaskResult(wrapper.getRootPlanId(), planExecutionResult.getFinalResult());
+			}
 
 			// Return success with execution result
 			Map<String, Object> response = new HashMap<>();
 			response.put("status", "completed");
-			response.put("result", planExecutionResult.getFinalResult());
+			response.put("result", planExecutionResult != null ? planExecutionResult.getFinalResult() : "No result");
 
 			return ResponseEntity.ok(response);
 
 		}
 		catch (Exception e) {
 			logger.error("Failed to execute plan template synchronously: {}", planTemplateId, e);
+
+			// Update task result to indicate failure
+			if (wrapper != null && wrapper.getRootPlanId() != null) {
+				rootTaskManagerService.updateTaskResult(wrapper.getRootPlanId(), "Execution failed: " + e.getMessage());
+			}
+
 			Map<String, Object> errorResponse = new HashMap<>();
 			errorResponse.put("error", "Execution failed: " + e.getMessage());
 			errorResponse.put("status", "failed");
@@ -470,6 +519,8 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	/**
 	 * Execute a plan template by its ID with parameter replacement support
+	 *
+	 * key method
 	 * @param planTemplateId The ID of the plan template to execute
 	 * @param uploadedFiles List of uploaded file names (can be null)
 	 * @param conversationId Conversation ID for the execution (can be null)
@@ -632,6 +683,92 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	public void onPlanExceptionCleared(PlanExceptionClearedEvent event) {
 		logger.info("Clearing exception cache for planId: {}", event.getPlanId());
 		this.exceptionCache.invalidate(event.getPlanId());
+	}
+
+	/**
+	 * Stop a running task by plan ID
+	 * @param planId The plan ID to stop
+	 * @return Response indicating success or failure
+	 */
+	@PostMapping("/stopTask/{planId}")
+	public ResponseEntity<Map<String, Object>> stopTask(@PathVariable("planId") String planId) {
+		try {
+			logger.info("Received stop task request for planId: {}", planId);
+
+			// Check if task is currently running using database state
+			boolean isTaskRunning = taskInterruptionManager.isTaskRunning(planId);
+			boolean taskExists = rootTaskManagerService.taskExists(planId);
+
+			if (!isTaskRunning && !taskExists) {
+				logger.warn("No active task found for planId: {}", planId);
+				return ResponseEntity.badRequest()
+					.body(Map.of("error", "No active task found for the given plan ID", "planId", planId));
+			}
+
+			// Mark task for stop in database (database-driven interruption)
+			boolean taskMarkedForStop = taskInterruptionManager.stopTask(planId);
+
+			// Update task result to indicate manual stop
+			if (taskMarkedForStop) {
+				rootTaskManagerService.updateTaskResult(planId, "Task manually stopped by user");
+			}
+
+			logger.info("Successfully marked task for stop for planId: {}", planId);
+			return ResponseEntity
+				.ok(Map.of("status", "stopped", "planId", planId, "message", "Task stop request processed successfully",
+						"taskMarkedForStop", taskMarkedForStop, "wasRunning", isTaskRunning));
+
+		}
+		catch (Exception e) {
+			logger.error("Failed to stop task for planId: {}", planId, e);
+			return ResponseEntity.internalServerError()
+				.body(Map.of("error", "Failed to stop task: " + e.getMessage(), "planId", planId));
+		}
+	}
+
+	/**
+	 * Get task status by plan ID
+	 * @param planId The plan ID to check
+	 * @return Task status information
+	 */
+	@GetMapping("/taskStatus/{planId}")
+	public ResponseEntity<Map<String, Object>> getTaskStatus(@PathVariable("planId") String planId) {
+		try {
+			logger.info("Getting task status for planId: {}", planId);
+
+			boolean isTaskRunning = taskInterruptionManager.isTaskRunning(planId);
+			Optional<RootTaskManagerEntity> taskEntity = rootTaskManagerService.getTaskByRootPlanId(planId);
+
+			Map<String, Object> response = new HashMap<>();
+			response.put("planId", planId);
+			response.put("isRunning", isTaskRunning);
+
+			if (taskEntity.isPresent()) {
+				RootTaskManagerEntity task = taskEntity.get();
+				response.put("desiredState", task.getDesiredTaskState());
+				response.put("startTime", task.getStartTime());
+				response.put("endTime", task.getEndTime());
+				response.put("lastUpdated", task.getLastUpdated());
+				response.put("taskResult", task.getTaskResult());
+				response.put("exists", true);
+			}
+			else {
+				response.put("exists", false);
+				response.put("desiredState", null);
+				response.put("startTime", null);
+				response.put("endTime", null);
+				response.put("lastUpdated", null);
+				response.put("taskResult", null);
+			}
+
+			return ResponseEntity.ok(response);
+
+		}
+		catch (Exception e) {
+			logger.error("Failed to get task status for planId: {}", planId, e);
+			return ResponseEntity.internalServerError()
+				.body(Map.of("error", "Failed to get task status: " + e.getMessage(), "planId", planId));
+		}
 	}
 
 }

@@ -127,9 +127,7 @@ const handleFileChange = async (event: Event) => {
   await uploadFiles(fileArray)
 
   // Reset file input
-  if (target) {
-    target.value = ''
-  }
+  target.value = ''
 }
 
 const uploadFiles = async (files: File[]) => {
@@ -142,7 +140,7 @@ const uploadFiles = async (files: File[]) => {
     // Upload files using the new API service
     const result: FileUploadResult = await FileUploadApiService.uploadFiles(files)
 
-    if (result.success && result.uploadedFiles) {
+    if (result.success) {
       // Set uploadKey for file management
       if (!uploadKey.value && result.uploadKey) {
         uploadKey.value = result.uploadKey

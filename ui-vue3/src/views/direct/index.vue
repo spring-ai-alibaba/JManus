@@ -371,7 +371,7 @@ watch(
   () => taskStore.currentTask,
   newTask => {
     console.log('[Direct] Watch taskStore.currentTask triggered, newTask:', newTask)
-    if (newTask && !newTask.processed) {
+    if (newTask && !newTask.processed && newTask.prompt.trim()) {
       const taskContent = newTask.prompt
       taskStore.markTaskAsProcessed()
       console.log('[Direct] Received new task from store:', taskContent)
@@ -386,7 +386,7 @@ watch(
         }
       })
     } else {
-      console.log('[Direct] Task is null or already processed, ignoring')
+      console.log('[Direct] Task is null, already processed, or has empty prompt - ignoring')
     }
   },
   { immediate: false }
