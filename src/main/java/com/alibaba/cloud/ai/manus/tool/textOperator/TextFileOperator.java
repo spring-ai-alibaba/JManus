@@ -329,9 +329,9 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 	}
 
 	/**
-	 * Ensure file is opened, create if it doesn't exist
-	 * Uses hierarchical file access: sub-plans can read/write files from root folder,
-	 * but new files are created in the sub-plan directory
+	 * Ensure file is opened, create if it doesn't exist Uses hierarchical file access:
+	 * sub-plans can read/write files from root folder, but new files are created in the
+	 * sub-plan directory
 	 */
 	private ToolExecuteResult ensureFileOpen(String filePath) {
 		try {
@@ -358,15 +358,17 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 			// If file doesn't exist, create it using the create file path method
 			if (!Files.exists(absolutePath)) {
 				try {
-					// Use getCreateFilePath to ensure new files are created in the appropriate directory
+					// Use getCreateFilePath to ensure new files are created in the
+					// appropriate directory
 					Path createPath = textFileService.getCreateFilePath(this.rootPlanId, filePath, this.currentPlanId);
 					Files.createDirectories(createPath.getParent());
 					Files.createFile(createPath);
-					
-					String location = (this.currentPlanId != null && !this.currentPlanId.equals(this.rootPlanId)) 
-						? "sub-plan directory" : "root directory";
-					
-					textFileService.updateFileState(this.currentPlanId, filePath, "Success: New file created in " + location);
+
+					String location = (this.currentPlanId != null && !this.currentPlanId.equals(this.rootPlanId))
+							? "sub-plan directory" : "root directory";
+
+					textFileService.updateFileState(this.currentPlanId, filePath,
+							"Success: New file created in " + location);
 					return new ToolExecuteResult("New file created successfully in " + location + ": " + createPath);
 				}
 				catch (IOException e) {
@@ -376,9 +378,9 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 				}
 			}
 
-			String location = (this.currentPlanId != null && !this.currentPlanId.equals(this.rootPlanId)) 
-				? "sub-plan accessing root file" : "root directory";
-			
+			String location = (this.currentPlanId != null && !this.currentPlanId.equals(this.rootPlanId))
+					? "sub-plan accessing root file" : "root directory";
+
 			textFileService.updateFileState(this.currentPlanId, filePath, "Success: File opened from " + location);
 			return new ToolExecuteResult("File opened successfully from " + location + ": " + absolutePath);
 		}
