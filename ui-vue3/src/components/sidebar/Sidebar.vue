@@ -127,6 +127,7 @@
           <!-- Use JsonEditorV2 for dynamic_agent type -->
           <JsonEditorV2
             v-if="sidebarStore.planType === 'dynamic_agent'"
+            :key="sidebarStore.currentPlanTemplateId || 'default'"
             :json-content="sidebarStore.jsonContent"
             :can-rollback="sidebarStore.canRollback"
             :can-restore="sidebarStore.canRestore"
@@ -142,6 +143,7 @@
           <!-- Use JsonEditor for simple or other types -->
           <JsonEditor
             v-else
+            :key="sidebarStore.currentPlanTemplateId || 'default'"
             :json-content="sidebarStore.jsonContent"
             :can-rollback="sidebarStore.canRollback"
             :can-restore="sidebarStore.canRestore"
@@ -187,7 +189,6 @@
     ref="publishMcpModalRef"
     v-model="showPublishMcpModal"
     :plan-template-id="sidebarStore.currentPlanTemplateId || ''"
-    :plan-title="sidebarStore.selectedTemplate?.title || ''"
     :plan-description="sidebarStore.selectedTemplate?.description || ''"
     @published="handleMcpServicePublished"
   />
@@ -243,6 +244,15 @@ const coordinatorToolConfig = ref<CoordinatorToolConfig>({
 // Computed property: whether to show publish MCP service button
 const showPublishButton = computed(() => {
   return coordinatorToolConfig.value.enabled
+})
+
+// Watch for changes in currentPlanTemplateId and jsonContent
+watch(() => sidebarStore.currentPlanTemplateId, (newId, oldId) => {
+  console.log('[Sidebar] currentPlanTemplateId changed from', oldId, 'to', newId)
+})
+
+watch(() => sidebarStore.jsonContent, (newContent, oldContent) => {
+  console.log('[Sidebar] jsonContent changed from', oldContent, 'to', newContent)
 })
 
 // Load CoordinatorTool configuration

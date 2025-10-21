@@ -148,6 +148,10 @@ export class SidebarStore {
     this.currentPlanTemplateId = template.id
     this.selectedTemplate = template
     this.currentTab = 'config'
+    
+    // Clear jsonContent immediately to prevent stale data
+    this.jsonContent = ''
+    
     await this.loadTemplateData(template)
     console.log(`[SidebarStore] Selected plan template: ${template.id}`)
   }

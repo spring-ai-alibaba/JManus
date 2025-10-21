@@ -451,8 +451,54 @@ watch(() => displayData, (newData) => {
 
 
 
+// Watch for props changes
+watch(() => props.jsonContent, (newContent, oldContent) => {
+  console.log('[JsonEditorV2] Props watch triggered - jsonContent changed from', oldContent, 'to', newContent)
+  if (newContent && newContent !== oldContent) {
+    console.log('[JsonEditorV2] Force parsing new jsonContent:', newContent)
+    try {
+      const parsed = JSON.parse(newContent)
+      console.log('[JsonEditorV2] Parsed new jsonContent:', parsed)
+      Object.assign(displayData, {
+        title: parsed.title || '',
+        steps: parsed.steps || [],
+        directResponse: false,
+        planTemplateId: parsed.planTemplateId || props.currentPlanTemplateId || '',
+        planType: parsed.planType || 'dynamic_agent'
+      })
+      console.log('[JsonEditorV2] Updated displayData with new content:', displayData)
+    } catch (error) {
+      console.warn('[JsonEditorV2] Failed to parse new jsonContent:', error)
+    }
+  }
+}, { immediate: true })
+
 // Initialize on mount
 onMounted(() => {
+  console.log('[JsonEditorV2] Component mounted with jsonContent:', props.jsonContent)
+  console.log('[JsonEditorV2] Component mounted with currentPlanTemplateId:', props.currentPlanTemplateId)
+  console.log('[JsonEditorV2] Component mounted with displayData:', displayData)
+  
+  // Force parse the current jsonContent to ensure it's processed
+  if (props.jsonContent) {
+    console.log('[JsonEditorV2] Force parsing jsonContent on mount:', props.jsonContent)
+    // Call parseJsonToVisual directly to ensure it's processed
+    try {
+      const parsed = JSON.parse(props.jsonContent)
+      console.log('[JsonEditorV2] Parsed jsonContent on mount:', parsed)
+      Object.assign(displayData, {
+        title: parsed.title || '',
+        steps: parsed.steps || [],
+        directResponse: false,
+        planTemplateId: parsed.planTemplateId || props.currentPlanTemplateId || '',
+        planType: parsed.planType || 'dynamic_agent'
+      })
+      console.log('[JsonEditorV2] Updated displayData on mount:', displayData)
+    } catch (error) {
+      console.warn('[JsonEditorV2] Failed to parse jsonContent on mount:', error)
+    }
+  }
+  
   initializeParsedData()
   loadAvailableModels()
 })

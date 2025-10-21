@@ -59,8 +59,12 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
    * Maps backend DynamicAgentExecutionPlan structure to frontend DisplayPlanData
    */
   const parseJsonToVisual = (jsonContent: string) => {
+    console.log('[JsonEditorLogic] parseJsonToVisual called with jsonContent:', jsonContent)
+    console.log('[JsonEditorLogic] parseJsonToVisual called with currentPlanTemplateId:', props.currentPlanTemplateId)
+    
     try {
       if (!jsonContent) {
+        console.log('[JsonEditorLogic] No jsonContent, resetting to default')
         // Reset to default - matches DynamicAgentExecutionPlan structure
         Object.assign(displayData, {
           title: '',
@@ -69,10 +73,12 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
           planTemplateId: props.currentPlanTemplateId || '',
           planType: 'dynamic_agent'
         })
+        console.log('[JsonEditorLogic] Reset displayData to:', displayData)
         return
       }
 
       const parsed = JSON.parse(jsonContent)
+      console.log('[JsonEditorLogic] Parsed JSON:', parsed)
       
       // Map basic fields from DynamicAgentExecutionPlan
       displayData.title = parsed.title || ''
@@ -88,9 +94,19 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
         selectedToolKeys: step.selectedToolKeys || [],
         terminateColumns: step.terminateColumns || ''
       }))
+      
+      console.log('[JsonEditorLogic] Updated displayData to:', displayData)
     } catch (error) {
       console.warn('Failed to parse JSON content:', error)
-      // Keep current data if parsing fails
+      // Reset to default when parsing fails to prevent stale data
+      Object.assign(displayData, {
+        title: '',
+        steps: [],
+        directResponse: false,
+        planTemplateId: props.currentPlanTemplateId || '',
+        planType: 'dynamic_agent'
+      })
+      console.log('[JsonEditorLogic] Error occurred, reset displayData to:', displayData)
     }
   }
 
@@ -125,7 +141,8 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
   const formattedJsonOutput = computed(() => convertVisualToJson())
 
   // Watch for JSON content changes
-  watch(() => props.jsonContent, (newContent) => {
+  watch(() => props.jsonContent, (newContent, oldContent) => {
+    console.log('[JsonEditorLogic] Watch triggered - jsonContent changed from', oldContent, 'to', newContent)
     parseJsonToVisual(newContent)
   }, { immediate: true })
 
