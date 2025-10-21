@@ -498,6 +498,7 @@ public class DataSplitTool extends AbstractBaseTool<DataSplitTool.DataSplitInput
 				|| lowercaseFileName.endsWith(".xml") || lowercaseFileName.endsWith(".yaml")
 				|| lowercaseFileName.endsWith(".yml") || lowercaseFileName.endsWith(".md");
 	}
+
 	@Override
 	public String getCurrentToolStateString() {
 		if (sharedStateManager != null && currentPlanId != null) {

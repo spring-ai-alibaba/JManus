@@ -25,10 +25,9 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.executor.DirectResponseExecutor;
 import com.alibaba.cloud.ai.manus.runtime.executor.DynamicToolPlanExecutor;
 import com.alibaba.cloud.ai.manus.runtime.executor.LevelBasedExecutorPool;
-import com.alibaba.cloud.ai.manus.runtime.executor.MapReducePlanExecutor;
-import com.alibaba.cloud.ai.manus.runtime.executor.PlanExecutor;
 import com.alibaba.cloud.ai.manus.runtime.executor.PlanExecutorInterface;
 import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
+import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.slf4j.Logger;
@@ -63,9 +62,12 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final FileUploadService fileUploadService;
 
+	private final AgentInterruptionHelper agentInterruptionHelper;
+
 	public PlanExecutorFactory(LlmService llmService, AgentService agentService, PlanExecutionRecorder recorder,
 			ManusProperties manusProperties, ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
-			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService) {
+			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
+			AgentInterruptionHelper agentInterruptionHelper) {
 		this.llmService = llmService;
 		this.agentService = agentService;
 		this.recorder = recorder;
@@ -74,17 +76,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		this.levelBasedExecutorPool = levelBasedExecutorPool;
 		this.dynamicModelRepository = dynamicModelRepository;
 		this.fileUploadService = fileUploadService;
-	}
-
-	/**
-	 * Create a simple plan executor for basic sequential execution
-	 * @return PlanExecutor instance for simple plans
-	 */
-	private PlanExecutorInterface createSimpleExecutor() {
-		log.debug("Creating simple plan executor");
-		List<DynamicAgentEntity> agents = agentService.getAllAgents();
-		return new PlanExecutor(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool,
-				fileUploadService);
+		this.agentInterruptionHelper = agentInterruptionHelper;
 	}
 
 	/**
@@ -95,18 +87,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		log.debug("Creating direct response executor");
 		List<DynamicAgentEntity> agents = agentService.getAllAgents();
 		return new DirectResponseExecutor(agents, recorder, agentService, llmService, manusProperties,
-				levelBasedExecutorPool, fileUploadService);
-	}
-
-	/**
-	 * Create an advanced plan executor for MapReduce execution
-	 * @return MapReducePlanExecutor instance for advanced plans
-	 */
-	private PlanExecutorInterface createAdvancedExecutor() {
-		log.debug("Creating advanced MapReduce plan executor");
-		List<DynamicAgentEntity> agents = agentService.getAllAgents();
-		return new MapReducePlanExecutor(agents, recorder, agentService, llmService, manusProperties, objectMapper,
-				levelBasedExecutorPool, fileUploadService);
+				levelBasedExecutorPool, fileUploadService, agentInterruptionHelper);
 	}
 
 	/**
@@ -117,7 +98,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		log.debug("Creating dynamic agent plan executor");
 		List<DynamicAgentEntity> agents = agentService.getAllAgents();
 		return new DynamicToolPlanExecutor(agents, recorder, agentService, llmService, manusProperties,
-				levelBasedExecutorPool, dynamicModelRepository, fileUploadService);
+				levelBasedExecutorPool, dynamicModelRepository, fileUploadService, agentInterruptionHelper);
 	}
 
 	/**
@@ -125,7 +106,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 	 * @return Array of supported plan type strings
 	 */
 	public String[] getSupportedPlanTypes() {
-		return new String[] { "simple", "advanced", "direct", "dynamic_agent" };
+		return new String[] { "simple", "direct", "dynamic_agent" };
 	}
 
 	/**
@@ -138,7 +119,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 			return false;
 		}
 		String normalizedType = planType.toLowerCase();
-		return "simple".equals(normalizedType) || "advanced".equals(normalizedType) || "direct".equals(normalizedType)
+		return "simple".equals(normalizedType) || "direct".equals(normalizedType)
 				|| "dynamic_agent".equals(normalizedType);
 	}
 
@@ -167,12 +148,10 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		log.info("Creating executor for plan type: {} (planId: {})", planType, plan.getCurrentPlanId());
 
 		return switch (planType.toLowerCase()) {
-			case "simple" -> createSimpleExecutor();
-			case "advanced" -> createAdvancedExecutor();
 			case "dynamic_agent" -> createDynamicToolExecutor();
 			default -> {
-				log.warn("Unknown plan type: {}, defaulting to simple executor", planType);
-				yield createSimpleExecutor();
+				log.warn("Unknown plan type: {}, defaulting to dynamic agent executor", planType);
+				yield createDynamicToolExecutor();
 			}
 		};
 	}

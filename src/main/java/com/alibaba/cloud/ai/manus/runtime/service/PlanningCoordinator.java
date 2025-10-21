@@ -54,11 +54,9 @@ public class PlanningCoordinator {
 		this.memoryService = memoryService;
 	}
 
-
 	/**
-	 * 
-	 * key method
-	 * Execute a plan directly using the provided plan interface
+	 *
+	 * key method Execute a plan directly using the provided plan interface
 	 * @param plan The plan to execute
 	 * @param rootPlanId The root plan ID for the execution context
 	 * @param parentPlanId The ID of the parent plan (can be null for root plans)

@@ -25,7 +25,6 @@ public class GetTextAction extends BrowserAction {
 
 	// Removed the static initialization block, directly using string constants
 
-
 	public GetTextAction(BrowserUseTool browserUseTool) {
 		super(browserUseTool);
 	}

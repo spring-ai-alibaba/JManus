@@ -23,6 +23,7 @@ import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.StepResult;
 import com.alibaba.cloud.ai.manus.workspace.conversation.advisor.CustomMessageChatMemoryAdvisor;
 
 import org.slf4j.Logger;
@@ -160,6 +161,13 @@ public class PlanFinalizer {
 		}
 
 		try {
+			// Check if the task was interrupted
+			if (isTaskInterrupted(result)) {
+				log.debug("Task was interrupted for plan: {}", context.getCurrentPlanId());
+				handleInterruptedTask(context, result);
+				return result;
+			}
+
 			// Check if we need to generate a summary
 			if (context.isNeedSummary()) {
 				log.debug("Generating LLM summary for plan: {}", context.getCurrentPlanId());
@@ -234,6 +242,64 @@ public class PlanFinalizer {
 	private void handleLlmError(String operationType, Exception e) {
 		log.error("Error generating {} with LLM", operationType, e);
 		throw new RuntimeException("Failed to generate " + operationType, e);
+	}
+
+	/**
+	 * Check if the task execution was interrupted
+	 * @param result The execution result to check
+	 * @return true if the task was interrupted, false otherwise
+	 */
+	private boolean isTaskInterrupted(PlanExecutionResult result) {
+		if (result == null) {
+			return false;
+		}
+
+		// Check if errorMessage indicates interruption
+		String errorMessage = result.getErrorMessage();
+		if (errorMessage != null && (errorMessage.contains("interrupted") || errorMessage.contains("interruption"))) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Handle interrupted task execution
+	 * @param context Execution context
+	 * @param result Execution result to update
+	 */
+	private void handleInterruptedTask(ExecutionContext context, PlanExecutionResult result) {
+		log.info("Handling interrupted task for plan: {}", context.getCurrentPlanId());
+
+		// Set correct status for interrupted task
+		result.setSuccess(false);
+		result.setErrorMessage("Task execution was interrupted by user");
+
+		// Generate appropriate interruption message
+		String interruptionMessage = generateInterruptionMessage(context, result);
+		result.setFinalResult(interruptionMessage);
+
+		// Record the interruption
+		recordPlanCompletion(context, interruptionMessage);
+		log.info("Task interruption handled: {}", interruptionMessage);
+	}
+
+	/**
+	 * Generate appropriate message for interrupted task
+	 * @param context Execution context
+	 * @param result Execution result
+	 * @return Formatted interruption message
+	 */
+	private String generateInterruptionMessage(ExecutionContext context, PlanExecutionResult result) {
+		String userRequest = context.getUserRequest();
+		StringBuilder message = new StringBuilder();
+		message.append("❌ **Task Interrupted**\n\n");
+		message.append("Your request \"")
+			.append(userRequest)
+			.append("\" was interrupted and could not be completed.\n\n");
+		message.append("**Status:** Task stopped by user request\n");
+
+		return message.toString();
 	}
 
 }

@@ -21,6 +21,7 @@ import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
 public class ScrollAction extends BrowserAction {
+
 	public ScrollAction(BrowserUseTool browserUseTool) {
 		super(browserUseTool);
 	}

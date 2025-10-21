@@ -527,7 +527,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 		String urlInfo = String.format("\n   URL: %s\n   Title: %s", state.get("url"), state.get("title"));
 
 		// Build tab information
-		
+
 		List<Map<String, Object>> tabs = (List<Map<String, Object>>) state.get("tabs");
 		String tabsInfo = (tabs != null) ? String.format("\n   %d tab(s) available", tabs.size()) : "";
 		if (tabs != null) {
@@ -543,11 +543,11 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 		String contentAbove = "";
 		String contentBelow = "";
 		if (scrollInfoObj instanceof Map<?, ?> scrollInfoMap) {
-			
+
 			Map<String, Object> scrollInfo = (Map<String, Object>) scrollInfoMap;
 			Object pixelsAboveObj = scrollInfo.get("pixels_above");
 			Object pixelsBelowObj = scrollInfo.get("pixels_below");
-			
+
 			if (pixelsAboveObj instanceof Long pixelsAbove) {
 				contentAbove = pixelsAbove > 0 ? String.format(" (%d pixels)", pixelsAbove) : "";
 			}

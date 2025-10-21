@@ -36,7 +36,6 @@ public class DatabaseUseTool extends AbstractBaseTool<DatabaseRequest> {
 
 	private static final Logger log = LoggerFactory.getLogger(DatabaseUseTool.class);
 
-
 	private final DataSourceService dataSourceService;
 
 	private final ObjectMapper objectMapper;

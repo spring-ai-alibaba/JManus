@@ -60,7 +60,6 @@ public class OpenAIAdapterService {
 	@Autowired
 	private PlanIdDispatcher planIdDispatcher;
 
-
 	/**
 	 * Process OpenAI chat completion request and return response
 	 */
@@ -211,48 +210,60 @@ public class OpenAIAdapterService {
 	private String executePlan(ExecutionContext context) throws Exception {
 
 		// try {
-		// 	// Execute the plan using PlanningCoordinator
-		// 	CompletableFuture<com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult> future = planningCoordinator
-		// 		.executeByUserQuery(context.getUserRequest(), context.getCurrentPlanId(), context.getCurrentPlanId(),
-		// 				context.getCurrentPlanId(), context.getConversationId(), null);
+		// // Execute the plan using PlanningCoordinator
+		// CompletableFuture<com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult>
+		// future = planningCoordinator
+		// .executeByUserQuery(context.getUserRequest(), context.getCurrentPlanId(),
+		// context.getCurrentPlanId(),
+		// context.getCurrentPlanId(), context.getConversationId(), null);
 
-		// 	// Wait for completion with extended timeout for complex tasks
-		// 	logger.info("Waiting for plan execution to complete for planId: {}", context.getCurrentPlanId());
-		// 	com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult result = future
-		// 		.get(PLAN_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES);
-		// 	logger.info("Plan execution completed for planId: {}", context.getCurrentPlanId());
+		// // Wait for completion with extended timeout for complex tasks
+		// logger.info("Waiting for plan execution to complete for planId: {}",
+		// context.getCurrentPlanId());
+		// com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult result =
+		// future
+		// .get(PLAN_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+		// logger.info("Plan execution completed for planId: {}",
+		// context.getCurrentPlanId());
 
-		// 	// Check if execution was successful
-		// 	if (!result.isSuccess()) {
-		// 		logger.warn("Plan execution failed for planId: {} - {}", context.getCurrentPlanId(),
-		// 				result.getErrorMessage());
-		// 		return "Task execution failed: " + result.getErrorMessage();
-		// 	}
+		// // Check if execution was successful
+		// if (!result.isSuccess()) {
+		// logger.warn("Plan execution failed for planId: {} - {}",
+		// context.getCurrentPlanId(),
+		// result.getErrorMessage());
+		// return "Task execution failed: " + result.getErrorMessage();
+		// }
 
-		// 	// Get execution record for more detailed result
-		// 	PlanExecutionRecord record = planHierarchyReaderService.readPlanTreeByRootId(context.getCurrentPlanId());
-		// 	if (record != null && record.getSummary() != null) {
-		// 		logger.info("Retrieved summary for planId {}: {}", context.getCurrentPlanId(),
-		// 				record.getSummary().substring(0, Math.min(100, record.getSummary().length())) + "...");
-		// 		return record.getSummary();
-		// 	}
+		// // Get execution record for more detailed result
+		// PlanExecutionRecord record =
+		// planHierarchyReaderService.readPlanTreeByRootId(context.getCurrentPlanId());
+		// if (record != null && record.getSummary() != null) {
+		// logger.info("Retrieved summary for planId {}: {}", context.getCurrentPlanId(),
+		// record.getSummary().substring(0, Math.min(100, record.getSummary().length())) +
+		// "...");
+		// return record.getSummary();
+		// }
 
-		// 	// Return a summary based on execution context
-		// 	logger.warn("No summary found for planId: {}, returning default message", context.getCurrentPlanId());
-		// 	return "Task completed successfully. Plan ID: " + context.getCurrentPlanId();
+		// // Return a summary based on execution context
+		// logger.warn("No summary found for planId: {}, returning default message",
+		// context.getCurrentPlanId());
+		// return "Task completed successfully. Plan ID: " + context.getCurrentPlanId();
 
 		// }
 		// catch (Exception e) {
-		// 	String planId = context.getCurrentPlanId();
-		// 	logger.error("JManus execution failed for planId {}: {}", planId, e.getMessage(), e);
+		// String planId = context.getCurrentPlanId();
+		// logger.error("JManus execution failed for planId {}: {}", planId,
+		// e.getMessage(), e);
 
-		// 	// Log additional context for debugging
-		// 	logger.debug("Execution failure context - planId: {}, userRequest: {}, memoryId: {}", planId,
-		// 			context.getUserRequest(), context.getConversationId());
+		// // Log additional context for debugging
+		// logger.debug("Execution failure context - planId: {}, userRequest: {},
+		// memoryId: {}", planId,
+		// context.getUserRequest(), context.getConversationId());
 
-		// 	// Return a simple fallback response when LLM is not configured
-		// 	logger.info("Generating fallback response for planId {} due to execution failure", planId);
-		// 	return createSimpleFallbackResponse();
+		// // Return a simple fallback response when LLM is not configured
+		// logger.info("Generating fallback response for planId {} due to execution
+		// failure", planId);
+		// return createSimpleFallbackResponse();
 		// }
 		throw new RuntimeException("Not implemented");
 	}
@@ -263,67 +274,73 @@ public class OpenAIAdapterService {
 	private void executePlanWithStreaming(ExecutionContext context, OpenAIRequest request,
 			StreamResponseHandler handler) {
 		// try {
-		// 	String planId = context.getCurrentPlanId();
+		// String planId = context.getCurrentPlanId();
 
-		// 	// Send initial streaming response
-		// 	handler.onResponse(createStreamStartResponse(request, planId));
+		// // Send initial streaming response
+		// handler.onResponse(createStreamStartResponse(request, planId));
 
-		// 	// Execute plan asynchronously
-		// 	CompletableFuture.runAsync(() -> {
-		// 		try {
-		// 			logger.info("Starting plan execution for planId: {}", planId);
+		// // Execute plan asynchronously
+		// CompletableFuture.runAsync(() -> {
+		// try {
+		// logger.info("Starting plan execution for planId: {}", planId);
 
-		// 			// Execute the plan using PlanningCoordinator
-		// 			CompletableFuture<com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult> future = planningCoordinator
-		// 				.executeByUserQuery(context.getUserRequest(), planId, planId, planId,
-		// 						context.getConversationId(), null);
+		// // Execute the plan using PlanningCoordinator
+		// CompletableFuture<com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult>
+		// future = planningCoordinator
+		// .executeByUserQuery(context.getUserRequest(), planId, planId, planId,
+		// context.getConversationId(), null);
 
-		// 			// Wait for completion
-		// 			com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult result = future.get();
+		// // Wait for completion
+		// com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult result =
+		// future.get();
 
-		// 			logger.info("Plan execution completed for planId: {}", planId);
+		// logger.info("Plan execution completed for planId: {}", planId);
 
-		// 			// Check if execution was successful
-		// 			if (!result.isSuccess()) {
-		// 				logger.warn("Plan execution failed for planId: {} - {}", planId, result.getErrorMessage());
-		// 				handler.onError("Execution failed: " + result.getErrorMessage());
-		// 				return;
-		// 			}
+		// // Check if execution was successful
+		// if (!result.isSuccess()) {
+		// logger.warn("Plan execution failed for planId: {} - {}", planId,
+		// result.getErrorMessage());
+		// handler.onError("Execution failed: " + result.getErrorMessage());
+		// return;
+		// }
 
-		// 			// Wait to ensure database persistence
-		// 			Thread.sleep(DATABASE_PERSISTENCE_DELAY_MS);
+		// // Wait to ensure database persistence
+		// Thread.sleep(DATABASE_PERSISTENCE_DELAY_MS);
 
-		// 			// Get execution record for final result
-		// 			PlanExecutionRecord record = planHierarchyReaderService.readPlanTreeByRootId(planId);
-		// 			String finalResult;
+		// // Get execution record for final result
+		// PlanExecutionRecord record =
+		// planHierarchyReaderService.readPlanTreeByRootId(planId);
+		// String finalResult;
 
-		// 			if (record != null && record.getSummary() != null && !record.getSummary().trim().isEmpty()) {
-		// 				finalResult = record.getSummary();
-		// 			}
-		// 			else {
-		// 				finalResult = "Task completed successfully. Plan ID: " + planId;
-		// 			}
+		// if (record != null && record.getSummary() != null &&
+		// !record.getSummary().trim().isEmpty()) {
+		// finalResult = record.getSummary();
+		// }
+		// else {
+		// finalResult = "Task completed successfully. Plan ID: " + planId;
+		// }
 
-		// 			logger.info("Sending final result for planId: {} - {}", planId, finalResult);
+		// logger.info("Sending final result for planId: {} - {}", planId, finalResult);
 
-		// 			// Send final result chunk
-		// 			OpenAIResponse finalResponse = createStreamEndResponse(request, finalResult, planId);
-		// 			handler.onResponse(finalResponse);
+		// // Send final result chunk
+		// OpenAIResponse finalResponse = createStreamEndResponse(request, finalResult,
+		// planId);
+		// handler.onResponse(finalResponse);
 
-		// 			// Complete the stream
-		// 			handler.onComplete();
-
-		// 		}
-		// 		catch (Exception e) {
-		// 			logger.error("Error executing plan for planId: " + planId, e);
-		// 			handler.onError("Execution failed: " + e.getMessage());
-		// 		}
-		// 	});
+		// // Complete the stream
+		// handler.onComplete();
 
 		// }
 		// catch (Exception e) {
-		// 	logger.error("Failed to start plan execution", e);
-		// 	handler.onError("Failed to start plan execution: " + e.getMessage());
+		// logger.error("Error executing plan for planId: " + planId, e);
+		// handler.onError("Execution failed: " + e.getMessage());
+		// }
+		// });
+
+		// }
+		// catch (Exception e) {
+		// logger.error("Failed to start plan execution", e);
+		// handler.onError("Failed to start plan execution: " + e.getMessage());
 		// }
 		throw new RuntimeException("Not implemented");
 	}

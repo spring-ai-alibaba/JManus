@@ -38,7 +38,6 @@ public class InitController {
 
 	private static final Logger log = LoggerFactory.getLogger(InitController.class);
 
-
 	@Autowired
 	private ModelService modelService;
 

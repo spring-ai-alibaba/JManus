@@ -31,7 +31,6 @@ public class InputTextAction extends BrowserAction {
 		Integer index = request.getIndex();
 		String text = request.getText();
 
-	
 		if (index == null || text == null) {
 			return new ToolExecuteResult("Index and text are required for 'input_text' action");
 		}

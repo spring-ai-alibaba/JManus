@@ -305,7 +305,6 @@ public class PlanTemplateController {
 		}
 	}
 
-
 	/**
 	 * Delete plan template
 	 * @param request Request containing plan ID

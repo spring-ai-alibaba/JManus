@@ -24,6 +24,7 @@ import java.util.Map;
  * Class representing a single interactive element, holding the element's Locator.
  */
 public class InteractiveElement {
+
 	// Global index
 	private int index;
 

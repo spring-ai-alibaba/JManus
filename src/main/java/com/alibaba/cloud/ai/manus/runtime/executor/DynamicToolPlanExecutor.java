@@ -21,6 +21,7 @@ import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
+import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
@@ -49,8 +50,9 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 	public DynamicToolPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			AgentService agentService, LlmService llmService, ManusProperties manusProperties,
 			LevelBasedExecutorPool levelBasedExecutorPool, DynamicModelRepository dynamicModelRepository,
-			FileUploadService fileUploadService) {
-		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService);
+			FileUploadService fileUploadService, AgentInterruptionHelper agentInterruptionHelper) {
+		super(agents, recorder, agentService, llmService, manusProperties, levelBasedExecutorPool, fileUploadService,
+				agentInterruptionHelper);
 	}
 
 	protected String getStepFromStepReq(String stepRequirement) {

@@ -87,7 +87,6 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 	@Autowired
 	private ObjectProvider<ToolExecutionEligibilityPredicate> openAiToolExecutionEligibilityPredicate;
 
-
 	@Autowired
 	private DynamicModelRepository dynamicModelRepository;
 

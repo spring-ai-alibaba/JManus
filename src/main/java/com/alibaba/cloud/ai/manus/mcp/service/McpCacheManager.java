@@ -140,7 +140,6 @@ public class McpCacheManager {
 			return activeCache;
 		}
 
-
 		/**
 		 * Update background cache
 		 */
@@ -153,7 +152,6 @@ public class McpCacheManager {
 	private final McpConnectionFactory connectionFactory;
 
 	private final McpConfigRepository mcpConfigRepository;
-
 
 	private final ManusProperties manusProperties;
 

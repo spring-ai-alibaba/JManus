@@ -846,7 +846,6 @@ public class ExcelProcessingService implements IExcelProcessingService {
 		return (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
 	}
 
-
 	/**
 	 * Interface for memory-optimized processing callbacks
 	 */
@@ -1697,7 +1696,7 @@ public class ExcelProcessingService implements IExcelProcessingService {
 
 	public boolean validateFilePath(String filePath) {
 		try {
-			
+
 			return isSupportedFileType(filePath) && !filePath.trim().isEmpty();
 		}
 		catch (Exception e) {

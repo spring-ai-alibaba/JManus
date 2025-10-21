@@ -36,7 +36,6 @@ public class McpConfigValidator {
 
 	private static final Logger logger = LoggerFactory.getLogger(McpConfigValidator.class);
 
-
 	public McpConfigValidator(McpProperties mcpProperties) {
 	}
 

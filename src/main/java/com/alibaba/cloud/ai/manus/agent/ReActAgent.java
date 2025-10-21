@@ -79,15 +79,20 @@ public abstract class ReActAgent extends BaseAgent {
 	 */
 	@Override
 	public AgentExecResult step() {
+		try {
+			boolean shouldAct = think();
+			if (!shouldAct) {
+				AgentExecResult result = new AgentExecResult("Thinking complete - no action needed",
+						AgentState.IN_PROGRESS);
 
-		boolean shouldAct = think();
-		if (!shouldAct) {
-			AgentExecResult result = new AgentExecResult("Thinking complete - no action needed",
-					AgentState.IN_PROGRESS);
-
-			return result;
+				return result;
+			}
+			return act();
 		}
-		return act();
+		catch (com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionCheckerService.TaskInterruptedException e) {
+			// Agent was interrupted, return FAILED state to stop execution
+			return new AgentExecResult("Agent execution interrupted: " + e.getMessage(), AgentState.FAILED);
+		}
 	}
 
 }
