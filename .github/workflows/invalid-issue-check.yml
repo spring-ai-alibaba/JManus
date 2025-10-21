@@ -11,12 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 name: "Close Invalid Issue"
+
 on:
   schedule:
     - cron: "0 0,8,16 * * *"
+
 permissions:
   contents: read
+
 jobs:
   stale:
     permissions:

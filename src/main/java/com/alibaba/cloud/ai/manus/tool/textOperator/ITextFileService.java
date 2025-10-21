@@ -101,8 +101,8 @@ public interface ITextFileService {
 	void cleanup();
 
 	/**
-	 * Get absolute path for creating new files with hierarchical access
-	 * For sub-plans, new files are always created in the sub-plan directory
+	 * Get absolute path for creating new files with hierarchical access For sub-plans,
+	 * new files are always created in the sub-plan directory
 	 * @param rootPlanId Root plan ID for directory operations
 	 * @param filePath File path
 	 * @param subPlanId Optional subplan ID for subplan-specific paths

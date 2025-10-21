@@ -49,9 +49,9 @@ jobs:
           echo ""
 
           # Create a simple Chinese content checker script
-          chmod +x check_chinese.py
+          chmod +x tools/scripts/check-chinese-content.py
 
-          if python check_chinese.py; then
+          if python tools/scripts/check-chinese-content.py; then
             echo "✅ No Chinese content found - Check passed!"
           else
             echo ""

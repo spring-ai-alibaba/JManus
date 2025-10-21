@@ -37,17 +37,18 @@ jobs:
         uses: contributor-assistant/github-action@v2.3.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.CLA_REPO_ACCESS_TOKEN }}
         with:
-          path-to-signatures: 'signatures/version1/cla.json'
+          path-to-signatures: 'signatures/cla.json'
           path-to-document: 'https://github.com/spring-ai-alibaba/JManus/blob/main/CLA.md'
           branch: 'main'
           allowlist: 'bot*,dependabot*,*[bot]'
           remote-organization-name: 'spring-ai-alibaba'
-          remote-repository-name: 'CLA'
-          create-file-commit-message: 'Creating file for storing CLA Signatures'
-          signed-commit-message: '$contributorName has signed the CLA in #$pullRequestNo'
-          custom-notsigned-prcomment: 'Thanks for your contribution! Please sign our [Contributor License Agreement (CLA)]($pathToDocument) before we can merge your pull request. You can sign the CLA by posting a comment here with the following text: **I have read the CLA Document and I hereby sign the CLA**'
-          custom-pr-sign-comment: 'I have read the CLA Document and I hereby sign the CLA'
-          custom-allsigned-prcomment: 'All contributors have signed the CLA. Thank you!'
+          remote-repository-name: 'cla'
           lock-pullrequest-aftermerge: false
+
+          # create-file-commit-message: 'Creating file for storing CLA Signatures'
+          # signed-commit-message: '$contributorName has signed the CLA in #$pullRequestNo'
+          # custom-notsigned-prcomment: 'Thanks for your contribution! Please sign our [Contributor License Agreement (CLA)](https://github.com/spring-ai-alibaba/JManus/blob/main/CLA.md) before we can merge your pull request. You can sign the CLA by posting a comment here with the following text: **I have read the CLA Document and I hereby sign the CLA**'
+          # custom-pr-sign-comment: 'I have read the CLA Document and I hereby sign the CLA'
+          # custom-allsigned-prcomment: 'All contributors have signed the CLA. Thank you!'
