@@ -946,6 +946,17 @@ const words: I18nType = {
     networkError: 'Network error',
     apiError: 'API call failed',
     resizeHint: 'Drag to resize',
+
+    // Copy plan functionality
+    copyPlan: 'Copy Plan',
+    newPlanTitle: 'New Plan Title',
+    enterNewPlanTitle: 'Enter new plan title',
+    copying: 'Copying...',
+    selectPlanFirst: 'Please select a plan template first',
+    titleRequired: 'Title cannot be empty',
+    noPlanToCopy: 'No plan to copy',
+    copyPlanSuccess: 'Plan copied successfully: {title}',
+    copyPlanFailed: 'Plan copy failed: {message}',
   },
 
   // Tool Selection
