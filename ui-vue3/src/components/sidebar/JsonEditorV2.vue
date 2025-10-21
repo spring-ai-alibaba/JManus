@@ -255,6 +255,7 @@
             :title="$t('sidebar.copyPlan')"
           >
             <Icon icon="carbon:copy" width="14" />
+            {{ $t('sidebar.copyPlan') }}
           </button>
           <button
             class="btn btn-sm"
