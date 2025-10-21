@@ -48,10 +48,10 @@ jobs:
           echo "  - ui-vue3/src (excluding i18n files)"
           echo ""
 
-          # Create a simple Chinese content checker script
+          # Run the unified Chinese content checker script
           chmod +x tools/scripts/check-chinese-content.py
 
-          if python tools/scripts/check-chinese-content.py; then
+          if python tools/scripts/check-chinese-content.py --fail-on-found; then
             echo "✅ No Chinese content found - Check passed!"
           else
             echo ""

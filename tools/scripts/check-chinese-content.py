@@ -18,8 +18,8 @@
 #
 
 """
-Spring AI Alibaba JManus UI-Vue3 Chinese Content Checker
-Tool for checking Chinese content in frontend code for GitHub Actions
+Spring AI Alibaba JManus Chinese Content Checker
+Unified tool for checking Chinese content in Java and frontend code for GitHub Actions
 """
 
 import os
@@ -32,7 +32,7 @@ from typing import List, Dict, Set
 from collections import defaultdict
 
 class ChineseContentChecker:
-    def __init__(self, target_dir: str):
+    def __init__(self, target_dir: str = "."):
         self.target_dir = Path(target_dir)
         # Detect Chinese characters, excluding Chinese punctuation to avoid false positives
         self.chinese_pattern = re.compile(r'[\u4e00-\u9fff]')
@@ -46,6 +46,8 @@ class ChineseContentChecker:
             r'\bIS NOT\b',  # "IS NOT" in SQL
             r'@author\s+\w+',  # Author information
             r'@time\s+\d{4}/\d{1,2}/\d{1,2}',  # Time information
+            r'Copyright.*the original author',  # Copyright notices
+            r'Licensed under the Apache License',  # License text
         ]
 
         # Exclude i18n configuration files
@@ -56,6 +58,7 @@ class ChineseContentChecker:
             'type.ts',  # i18n type definitions
             'sortI18n.ts',  # i18n sorting utility
             'plan-act-api-service.ts',  # API service file with Chinese content
+            'direct-api-service.ts',  # Direct API service file
         ]
 
         # Exclude directories
@@ -65,6 +68,9 @@ class ChineseContentChecker:
             'build',
             '.git',
             'coverage',
+            'target',
+            'bin',
+            'i18n',  # i18n directories
         ]
 
         self.issues = []
@@ -141,7 +147,7 @@ class ChineseContentChecker:
                             in_template_section = False
 
                     issues.append({
-                        'file': str(file_path.relative_to(self.target_dir.parent)),
+                        'file': str(file_path.relative_to(self.target_dir)),
                         'line': line_num,
                         'content': original_line,
                         'type': content_type,
@@ -199,28 +205,52 @@ class ChineseContentChecker:
 
         return "unknown location"
 
-    def check_directory(self) -> bool:
+    def check_directory(self, java_only: bool = False, frontend_only: bool = False) -> bool:
         """Check entire directory, return whether there are issues"""
         if not self.target_dir.exists():
             print(f"::error::Directory does not exist: {self.target_dir}")
             return False
 
-        # Find Vue, TypeScript, and JavaScript files
-        frontend_files = []
-        for pattern in ['**/*.vue', '**/*.ts', '**/*.js', '**/*.jsx', '**/*.tsx']:
-            frontend_files.extend(list(self.target_dir.rglob(pattern)))
+        all_files = []
 
-        # Filter out excluded files
-        frontend_files = [f for f in frontend_files if not self.should_exclude_file(f)]
+        # Check Java files if not frontend-only
+        if not frontend_only:
+            java_files = []
+            java_dir = self.target_dir / 'src' / 'main' / 'java'
+            if java_dir.exists():
+                for pattern in ['**/*.java']:
+                    java_files.extend(list(java_dir.rglob(pattern)))
+            
+            # Filter out excluded files
+            java_files = [f for f in java_files if not self.should_exclude_file(f)]
+            all_files.extend(java_files)
+            
+            if java_files:
+                print(f"::notice::Found {len(java_files)} Java files, starting check...")
 
-        if not frontend_files:
-            print(f"::notice::No frontend files found in {self.target_dir}")
+        # Check frontend files if not java-only
+        if not java_only:
+            frontend_files = []
+            frontend_dir = self.target_dir / 'ui-vue3' / 'src'
+            if frontend_dir.exists():
+                for pattern in ['**/*.vue', '**/*.ts', '**/*.js', '**/*.jsx', '**/*.tsx']:
+                    frontend_files.extend(list(frontend_dir.rglob(pattern)))
+            
+            # Filter out excluded files
+            frontend_files = [f for f in frontend_files if not self.should_exclude_file(f)]
+            all_files.extend(frontend_files)
+            
+            if frontend_files:
+                print(f"::notice::Found {len(frontend_files)} frontend files, starting check...")
+
+        if not all_files:
+            print(f"::notice::No files found to check in {self.target_dir}")
             return True
 
-        print(f"::notice::Found {len(frontend_files)} frontend files, starting check...")
+        print(f"::notice::Checking {len(all_files)} files total...")
 
-        for frontend_file in frontend_files:
-            file_issues = self.check_file(frontend_file)
+        for file_path in all_files:
+            file_issues = self.check_file(file_path)
             self.issues.extend(file_issues)
 
         return len(self.issues) == 0
@@ -228,7 +258,7 @@ class ChineseContentChecker:
     def report_issues(self) -> None:
         """Report discovered issues"""
         if not self.issues:
-            print("::notice::✅ No frontend files with Chinese content found")
+            print("::notice::✅ No files with Chinese content found")
             return
 
         print(f"::error::❌ Found {len(self.issues)} Chinese content issues")
@@ -253,11 +283,17 @@ class ChineseContentChecker:
         print("::notice::5. For test data, consider using English or placeholders")
 
 def main():
-    parser = argparse.ArgumentParser(description='Check Chinese content in frontend code')
+    parser = argparse.ArgumentParser(description='Check Chinese content in Java and frontend code')
     parser.add_argument('--dir', '-d',
-                       default='src',
-                       help='Directory path to check (relative to current directory)')
-    parser.add_argument('--fail-on-found', '-f',
+                       default='.',
+                       help='Directory path to check (default: current directory)')
+    parser.add_argument('--java-only', '-j',
+                       action='store_true',
+                       help='Check only Java files')
+    parser.add_argument('--frontend-only', '-f',
+                       action='store_true',
+                       help='Check only frontend files')
+    parser.add_argument('--fail-on-found',
                        action='store_true',
                        help='Return non-zero exit code when Chinese content is found')
 
@@ -265,7 +301,10 @@ def main():
 
     try:
         checker = ChineseContentChecker(args.dir)
-        is_clean = checker.check_directory()
+        is_clean = checker.check_directory(
+            java_only=args.java_only,
+            frontend_only=args.frontend_only
+        )
         checker.report_issues()
 
         if args.fail_on_found and not is_clean:
