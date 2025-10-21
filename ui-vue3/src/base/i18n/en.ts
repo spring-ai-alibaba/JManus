@@ -902,6 +902,8 @@ const words: I18nType = {
   stepRequirementPlaceholder: 'Please enter the specific requirements and description for this task...',
   terminateColumns: 'Task Output Requirements Description',
   terminateColumnsPlaceholder: 'Specify structured return values. If specified, returns a JSON list where each row contains your specified columns. For example: col1,col2 will output [(col1:val1,col2:val2), (col1:val3,col2:val4)]',
+  preview: 'Preview',
+  systemWillReturnListWithTableHeaderFormat: 'System will return a multi-row list in JSON format with table header',
     titlePlaceholder: 'Please enter plan title...',
     moveUp: 'Move Up',
     moveDown: 'Move Down',

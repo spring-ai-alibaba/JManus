@@ -131,6 +131,7 @@
                <!-- Terminate Columns -->
                <div class="form-row">
                  <label class="form-label">{{ $t('sidebar.terminateColumns') }}</label>
+                 
                  <textarea 
                    v-model="step.terminateColumns"
                    class="form-textarea auto-resize"
@@ -138,6 +139,17 @@
                    rows="4"
                    @input="autoResizeTextarea($event)"
                  ></textarea>
+                 
+                 <!-- Preview Section -->
+                 <div v-if="step.terminateColumns && step.terminateColumns.trim()" class="preview-section">
+                   <div class="preview-label">{{ $t('sidebar.preview') }}:</div>
+                   <div class="preview-content">
+                     <div class="preview-text">
+                       {{ $t('sidebar.systemWillReturnListWithTableHeaderFormat') }}: 
+                       <span class="preview-table-header">{{ formatTableHeader(step.terminateColumns) }}</span>
+                     </div>
+                   </div>
+                 </div>
                </div>
 
 
@@ -458,6 +470,26 @@ const autoResizeTextarea = (event: Event) => {
   } else {
     textarea.style.overflowY = 'hidden'
   }
+}
+
+// Format table header preview
+const formatTableHeader = (terminateColumns: string): string => {
+  if (!terminateColumns || !terminateColumns.trim()) {
+    return ''
+  }
+  
+  // Split by comma and clean up each column name
+  const columns = terminateColumns
+    .split(',')
+    .map(col => col.trim())
+    .filter(col => col.length > 0)
+  
+  if (columns.length === 0) {
+    return ''
+  }
+  
+  // Format as |col1|col2|col3|
+  return `|${columns.join('|')}|`
 }
 </script>
 
@@ -905,6 +937,42 @@ const autoResizeTextarea = (event: Event) => {
 .btn-danger:hover:not(:disabled) {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Preview Section Styles */
+.preview-section {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 6px;
+  font-size: 10px;
+}
+
+.preview-label {
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 4px;
+  font-size: 9px;
+}
+
+.preview-content {
+  color: white;
+}
+
+.preview-text {
+  line-height: 1.4;
+  color: white;
+}
+
+.preview-table-header {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #ef4444;
+  font-weight: 600;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 </style>
