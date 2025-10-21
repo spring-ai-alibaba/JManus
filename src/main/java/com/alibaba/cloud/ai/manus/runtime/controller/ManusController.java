@@ -766,46 +766,4 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				.body(Map.of("error", "Failed to get task status: " + e.getMessage(), "planId", planId));
 		}
 	}
-
-	/**
-	 * Cancel a running task by plan ID
-	 * @param planId The plan ID to cancel
-	 * @return Response indicating success or failure
-	 */
-	@PostMapping("/cancelTask/{planId}")
-	public ResponseEntity<Map<String, Object>> cancelTask(@PathVariable("planId") String planId) {
-		try {
-			logger.info("Received cancel task request for planId: {}", planId);
-
-			// Check if task is currently running using database state
-			boolean isTaskRunning = taskInterruptionManager.isTaskRunning(planId);
-			boolean taskExists = rootTaskManagerService.taskExists(planId);
-
-			if (!isTaskRunning && !taskExists) {
-				logger.warn("No active task found for planId: {}", planId);
-				return ResponseEntity.badRequest()
-					.body(Map.of("error", "No active task found for the given plan ID", "planId", planId));
-			}
-
-			// Mark task for cancellation in database (database-driven interruption)
-			boolean taskMarkedForCancel = taskInterruptionManager.cancelTask(planId);
-
-			// Update task result to indicate manual cancellation
-			if (taskMarkedForCancel) {
-				rootTaskManagerService.updateTaskResult(planId, "Task manually cancelled by user");
-			}
-
-			logger.info("Successfully marked task for cancellation for planId: {}", planId);
-			return ResponseEntity.ok(Map.of("status", "cancelled", "planId", planId, "message",
-					"Task cancel request processed successfully", "taskMarkedForCancel", taskMarkedForCancel,
-					"wasRunning", isTaskRunning));
-
-		}
-		catch (Exception e) {
-			logger.error("Failed to cancel task for planId: {}", planId, e);
-			return ResponseEntity.internalServerError()
-				.body(Map.of("error", "Failed to cancel task: " + e.getMessage(), "planId", planId));
-		}
-	}
-
 }
