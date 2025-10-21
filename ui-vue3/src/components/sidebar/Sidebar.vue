@@ -515,7 +515,7 @@ const handleCopyPlan = () => {
     return
   }
 
-  newPlanTitle.value = sidebarStore.selectedTemplate.title || t('sidebar.unnamedPlan')
+  newPlanTitle.value = (sidebarStore.selectedTemplate.title || t('sidebar.unnamedPlan')) + ' (copy)'
   console.log('[sidebar] Opening copy plan modal')
   showCopyPlanModal.value = true
 }
