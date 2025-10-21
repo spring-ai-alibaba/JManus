@@ -23,10 +23,12 @@ export default defineConfig({
   base: '/ui',
   build: {
     outDir: './ui',
+    sourcemap: true, // Enable source maps for production builds
   },
   server: {
     open: true, // Automatically open browser on startup
     host: true, // Allow external access
+    sourcemap: true, // Enable source maps for development
     proxy: {
       '/api': {
         target: 'http://localhost:18080',
@@ -46,7 +48,7 @@ export default defineConfig({
       typescript: true,
       // Temporarily disable Vue template type checking due to @volar/typescript compatibility issue
       // vueTsc: true,
-      // Enable ESLint checking
+      // Temporarily disable ESLint checking during debugging to avoid conflicts
       eslint: {
         lintCommand: 'eslint "./src/**/*.{ts,tsx,vue}"'
       }
