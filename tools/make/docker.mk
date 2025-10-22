@@ -17,7 +17,7 @@
 ##@ Docker
 
 DOCKER_REGISTRY := ghcr.io
-DOCKER_ORG := spring-ai-aliabba
+DOCKER_ORG := spring-ai-alibaba
 DOCKER_IMAGE_NAME := jmanus
 DOCKER_CONTAINER_NAME := jmanus-container
 
