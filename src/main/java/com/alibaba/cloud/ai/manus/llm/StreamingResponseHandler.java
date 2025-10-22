@@ -58,8 +58,8 @@ public class StreamingResponseHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(StreamingResponseHandler.class);
 	
-	// Logger for llm-requests log file
-	private static final Logger llmRequestLogger = LoggerFactory.getLogger("LLM_REQUEST_LOGGER");
+	// Logger for streaming progress log file (separate from llm-requests)
+	private static final Logger streamingProgressLogger = LoggerFactory.getLogger("STREAMING_PROGRESS_LOGGER");
 
 	@Autowired
 	private JmanusEventPublisher jmanusEventPublisher;
@@ -270,18 +270,12 @@ public class StreamingResponseHandler {
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		double charsPerSecond = elapsedTime > 0 ? (textLength * 1000.0 / elapsedTime) : 0;
 
+		// Log only to streaming progress log file
 		String progressMessage = String.format(
 				"🔄 %s - Progress[%dms]: %d responses received, %d characters (%.1f chars/sec), %d tool calls. Last 100 chars: '%s'",
 				contextName, elapsedTime, responseCount, textLength, charsPerSecond, toolCallCount, preview);
-
-		// Log to regular log file
-		log.info(progressMessage);
 		
-		// Log to llm-requests log file with full content
-		String fullContentMessage = String.format(
-				"Progress[%s]: %d responses, %d chars, %d tool calls. Full content: %s",
-				contextName, responseCount, textLength, toolCallCount, currentText != null ? currentText : "(empty)");
-		llmRequestLogger.info(fullContentMessage);
+		streamingProgressLogger.info(progressMessage);
 	}
 
 	private void logCompletion(String contextName, String finalText, int toolCallCount, int responseCount,

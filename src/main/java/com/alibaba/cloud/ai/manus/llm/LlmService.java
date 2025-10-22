@@ -104,7 +104,8 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 
 	/**
 	 * Unified ChatClient builder method that uses the existing openAiApi() method
-	 * @param model Dynamic model entity
+	 * 
+	 * @param model   Dynamic model entity
 	 * @param options Chat options (with internalToolExecutionEnabled already set)
 	 * @return Configured ChatClient
 	 */
@@ -113,9 +114,9 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 		OpenAiChatModel chatModel = openAiChatModel(modelName, model, options);
 
 		return ChatClient.builder(chatModel)
-			.defaultAdvisors(new SimpleLoggerAdvisor())
-			.defaultOptions(OpenAiChatOptions.fromOptions(options))
-			.build();
+				.defaultAdvisors(new SimpleLoggerAdvisor())
+				.defaultOptions(OpenAiChatOptions.fromOptions(options))
+				.build();
 	}
 
 	private void initializeChatClientsWithModel(DynamicModelEntity model) {
@@ -151,8 +152,7 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 				log.info("Lazy init ChatClient, using model: {}", fetchedDefaultModel.getModelName());
 				initializeChatClientsWithModel(fetchedDefaultModel);
 			}
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error("Lazy init ChatClient failed", e);
 		}
 	}
@@ -199,10 +199,10 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 	public ChatMemory getAgentMemory(Integer maxMessages) {
 		if (agentMemory == null) {
 			agentMemory = MessageWindowChatMemory.builder()
-				// in memory use by agent
-				.chatMemoryRepository(new InMemoryChatMemoryRepository())
-				.maxMessages(maxMessages)
-				.build();
+					// in memory use by agent
+					.chatMemoryRepository(new InMemoryChatMemoryRepository())
+					.maxMessages(maxMessages)
+					.build();
 		}
 		return agentMemory;
 	}
@@ -230,9 +230,9 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 		if (this.conversationMemory == null) {
 			// Default to 100 messages if not specified elsewhere
 			this.conversationMemory = MessageWindowChatMemory.builder()
-				.chatMemoryRepository(chatMemoryRepository)
-				.maxMessages(100)
-				.build();
+					.chatMemoryRepository(chatMemoryRepository)
+					.maxMessages(100)
+					.build();
 		}
 		this.conversationMemory.clear(memoryId);
 	}
@@ -240,9 +240,9 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 	public ChatMemory getConversationMemory(Integer maxMessages) {
 		if (conversationMemory == null) {
 			conversationMemory = MessageWindowChatMemory.builder()
-				.chatMemoryRepository(chatMemoryRepository)
-				.maxMessages(maxMessages)
-				.build();
+					.chatMemoryRepository(chatMemoryRepository)
+					.maxMessages(maxMessages)
+					.build();
 		}
 		return conversationMemory;
 	}
@@ -264,7 +264,8 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 	}
 
 	/**
-	 * Refresh the cached default model from database Call this method when you need to
+	 * Refresh the cached default model from database Call this method when you need
+	 * to
 	 * update the cache
 	 */
 	public void refreshDefaultModelCache() {
@@ -278,6 +279,7 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 
 	/**
 	 * Clear specific ChatClient from cache by model name
+	 * 
 	 * @param modelName The model name to remove from cache
 	 */
 	public void clearChatClientCache(String modelName) {
@@ -297,6 +299,7 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 
 	/**
 	 * Get cache size for monitoring purposes
+	 * 
 	 * @return Number of cached ChatClient instances
 	 */
 	public int getChatClientCacheSize() {
@@ -333,14 +336,15 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 				webClientBuilderProvider.getIfAvailable(WebClient::builder), dynamicModelEntity);
 		OpenAiChatOptions options = OpenAiChatOptions.fromOptions(defaultOptions);
 		var chatModel = OpenAiChatModel.builder()
-			.openAiApi(openAiApi)
-			.defaultOptions(options)
-			// .toolCallingManager(toolCallingManager)
-			.toolExecutionEligibilityPredicate(
-					openAiToolExecutionEligibilityPredicate.getIfUnique(DefaultToolExecutionEligibilityPredicate::new))
-			// .retryTemplate(retryTemplate)
-			.observationRegistry(observationRegistry.getIfUnique(() -> ObservationRegistry.NOOP))
-			.build();
+				.openAiApi(openAiApi)
+				.defaultOptions(options)
+				// .toolCallingManager(toolCallingManager)
+				.toolExecutionEligibilityPredicate(
+						openAiToolExecutionEligibilityPredicate
+								.getIfUnique(DefaultToolExecutionEligibilityPredicate::new))
+				// .retryTemplate(retryTemplate)
+				.observationRegistry(observationRegistry.getIfUnique(() -> ObservationRegistry.NOOP))
+				.build();
 
 		observationConvention.ifAvailable(chatModel::setObservationConvention);
 
@@ -349,7 +353,8 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 
 	/**
 	 * Create enhanced WebClient builder with DNS cache or timeout configuration
-	 * @param webClientBuilder Default WebClient builder
+	 * 
+	 * @param webClientBuilder   Default WebClient builder
 	 * @param dynamicModelEntity Model entity for logging
 	 * @return Enhanced WebClient builder
 	 */
@@ -360,13 +365,12 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 		if (webClientWithDnsCache != null) {
 			log.info("Using DNS-cached WebClient for model: {}", dynamicModelEntity.getModelName());
 			enhancedWebClientBuilder = webClientWithDnsCache.mutate();
-		}
-		else {
+		} else {
 			log.warn("DNS-cached WebClient not available, using default WebClient builder");
 			enhancedWebClientBuilder = webClientBuilder.clone()
-				// Add 5 minutes default timeout setting
-				.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
-				.filter((request, next) -> next.exchange(request).timeout(Duration.ofMinutes(10)));
+					// Add 5 minutes default timeout setting
+					.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
+					.filter((request, next) -> next.exchange(request).timeout(Duration.ofMinutes(10)));
 		}
 		return enhancedWebClientBuilder;
 	}
@@ -388,6 +392,7 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 		return new OpenAiApi(dynamicModelEntity.getBaseUrl(), new SimpleApiKey(dynamicModelEntity.getApiKey()),
 				multiValueMap, completionsPath, "/v1/embeddings", restClientBuilder, enhancedWebClientBuilder,
 				RetryUtils.DEFAULT_RESPONSE_ERROR_HANDLER) {
+
 			@Override
 			public ResponseEntity<ChatCompletion> chatCompletionEntity(ChatCompletionRequest chatRequest,
 					MultiValueMap<String, String> additionalHttpHeader) {

@@ -100,8 +100,7 @@ public class DynamicAgent extends ReActAgent {
 		for (ToolCallBackContext toolCallBack : toolCallBackContext.values()) {
 			try {
 				toolCallBack.getFunctionInstance().cleanup(planId);
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				log.error("Error cleaning up tool callback context: {}", e.getMessage(), e);
 			}
 		}
@@ -125,8 +124,7 @@ public class DynamicAgent extends ReActAgent {
 		this.nextStepPrompt = nextStepPrompt;
 		if (availableToolKeys == null) {
 			this.availableToolKeys = new ArrayList<>();
-		}
-		else {
+		} else {
 			this.availableToolKeys = availableToolKeys;
 		}
 		this.toolCallingManager = toolCallingManager;
@@ -152,12 +150,10 @@ public class DynamicAgent extends ReActAgent {
 
 		try {
 			return executeWithRetry(3);
-		}
-		catch (TaskInterruptionCheckerService.TaskInterruptedException e) {
+		} catch (TaskInterruptionCheckerService.TaskInterruptedException e) {
 			log.info("Agent {} thinking process interrupted: {}", getName(), e.getMessage());
 			throw e; // Re-throw the interruption exception
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error(String.format("🚨 Oops! The %s's thinking process hit a snag: %s", getName(), e.getMessage()), e);
 			log.info("Exception occurred", e);
 			return false;
@@ -201,26 +197,25 @@ public class DynamicAgent extends ReActAgent {
 				String toolcallId = planIdDispatcher.generateToolCallId();
 				// Call the LLM
 				ToolCallingChatOptions chatOptions = ToolCallingChatOptions.builder()
-					.internalToolExecutionEnabled(false)
-					.toolContext(Map.of("toolcallId", toolcallId))
-					// can't support by toocall options :
-					// .parallelToolCalls(manusProperties.getParallelToolCalls())
-					.build();
+						.internalToolExecutionEnabled(false)
+						.toolContext(Map.of("toolcallId", toolcallId))
+						// can't support by toocall options :
+						// .parallelToolCalls(manusProperties.getParallelToolCalls())
+						.build();
 				userPrompt = new Prompt(messages, chatOptions);
 				List<ToolCallback> callbacks = getToolCallList();
 				ChatClient chatClient;
 				if (modelName == null || modelName.isEmpty()) {
 					chatClient = llmService.getDefaultDynamicAgentChatClient();
-				}
-				else {
+				} else {
 					chatClient = llmService.getDynamicAgentChatClient(modelName);
 				}
 				// Use streaming response handler for better user experience and content
 				// merging
 				Flux<ChatResponse> responseFlux = chatClient.prompt(userPrompt)
-					.toolCallbacks(callbacks)
-					.stream()
-					.chatResponse();
+						.toolCallbacks(callbacks)
+						.stream()
+						.chatResponse();
 				streamResult = streamingResponseHandler.processStreamingResponse(responseFlux,
 						"Agent " + getName() + " thinking", getCurrentPlanId());
 
@@ -260,8 +255,7 @@ public class DynamicAgent extends ReActAgent {
 				}
 				log.warn("Attempt {}: No tools selected. Retrying...", attempt);
 
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				lastException = e;
 				log.warn("Attempt {} failed: {}", attempt, e.getMessage());
 
@@ -272,15 +266,13 @@ public class DynamicAgent extends ReActAgent {
 						log.info("Retrying in {}ms due to retryable error: {}", waitTime, e.getMessage());
 						try {
 							Thread.sleep(waitTime);
-						}
-						catch (InterruptedException ie) {
+						} catch (InterruptedException ie) {
 							Thread.currentThread().interrupt();
 							throw new Exception("Retry interrupted", ie);
 						}
 						continue;
 					}
-				}
-				else {
+				} else {
 					// Non-retryable error, throw immediately
 					throw e;
 				}
@@ -335,7 +327,7 @@ public class DynamicAgent extends ReActAgent {
 
 			// Get tool response messages
 			ToolResponseMessage toolResponseMessage = (ToolResponseMessage) toolExecutionResult.conversationHistory()
-				.get(toolExecutionResult.conversationHistory().size() - 1);
+					.get(toolExecutionResult.conversationHistory().size() - 1);
 
 			// Get execution result of the last tool
 			List<String> resultList = new ArrayList<>();
@@ -365,8 +357,7 @@ public class DynamicAgent extends ReActAgent {
 						AgentExecResult formResult = handleFormInputTool((FormInputTool) toolInstance, param);
 						param.setResult(formResult.getResult());
 						resultList.add(param.getResult());
-					}
-					else if (toolInstance instanceof TerminableTool) {
+					} else if (toolInstance instanceof TerminableTool) {
 						TerminableTool terminableTool = (TerminableTool) toolInstance;
 						param.setResult(toolCallResponse.responseData());
 						resultList.add(param.getResult());
@@ -378,12 +369,10 @@ public class DynamicAgent extends ReActAgent {
 							executedToolCount++;
 							break; // Stop processing remaining tools when termination is
 									// indicated
-						}
-						else {
+						} else {
 							log.info("TerminableTool cannot terminate yet for planId: {}", getCurrentPlanId());
 						}
-					}
-					else {
+					} else {
 						param.setResult(toolCallResponse.responseData());
 						resultList.add(toolCallResponse.responseData());
 						log.info("Tool {} executed successfully for planId: {}", toolName, getCurrentPlanId());
@@ -401,8 +390,7 @@ public class DynamicAgent extends ReActAgent {
 			}
 			return new AgentExecResult("tool call is empty", AgentState.IN_PROGRESS);
 
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			log.error(e.getMessage());
 			log.info("Exception occurred", e);
 
@@ -411,7 +399,8 @@ public class DynamicAgent extends ReActAgent {
 
 			String firstToolcall = actToolInfoList != null && !actToolInfoList.isEmpty()
 					&& actToolInfoList.get(0).getParameters() != null
-							? actToolInfoList.get(0).getParameters().toString() : "unknown";
+							? actToolInfoList.get(0).getParameters().toString()
+							: "unknown";
 			errorMessage.append("  . llm return param :  ").append(firstToolcall);
 
 			userInputService.removeFormInputTool(getCurrentPlanId()); // Clean up on error
@@ -436,16 +425,15 @@ public class DynamicAgent extends ReActAgent {
 				log.info("User input received for planId: {}", getCurrentPlanId());
 
 				UserMessage userMessage = UserMessage.builder()
-					.text("User input received for form: " + formInputTool.getCurrentToolStateString())
-					.build();
+						.text("User input received for form: " + formInputTool.getCurrentToolStateString())
+						.build();
 				processUserInputToMemory(userMessage);
 
 				// Update the result in actToolInfoList
 				param.setResult(formInputTool.getCurrentToolStateString());
 				return new AgentExecResult(param.getResult(), AgentState.IN_PROGRESS);
 
-			}
-			else if (formInputTool.getInputState() == FormInputTool.InputState.INPUT_TIMEOUT) {
+			} else if (formInputTool.getInputState() == FormInputTool.InputState.INPUT_TIMEOUT) {
 				log.warn("Input timeout occurred for FormInputTool for planId: {}", getCurrentPlanId());
 
 				UserMessage userMessage = UserMessage.builder().text("Input timeout occurred for form: ").build();
@@ -454,12 +442,10 @@ public class DynamicAgent extends ReActAgent {
 				param.setResult("Input timeout occurred");
 
 				return new AgentExecResult("Input timeout occurred.", AgentState.IN_PROGRESS);
-			}
-			else {
+			} else {
 				throw new RuntimeException("FormInputTool is not in the correct state");
 			}
-		}
-		else {
+		} else {
 			throw new RuntimeException("FormInputTool is not in the correct state");
 		}
 	}
@@ -556,6 +542,7 @@ public class DynamicAgent extends ReActAgent {
 
 	/**
 	 * Current step env data
+	 * 
 	 * @return User message for current step environment data
 	 */
 	private Message currentStepEnvMessage() {
@@ -570,8 +557,7 @@ public class DynamicAgent extends ReActAgent {
 		Map<String, ToolCallBackContext> toolCallBackContext = toolCallbackProvider.getToolCallBackContext();
 		if (toolCallBackContext.containsKey(toolKey)) {
 			return toolCallBackContext.get(toolKey);
-		}
-		else {
+		} else {
 			log.warn("Tool callback for {} not found in the map.", toolKey);
 			return null;
 		}
@@ -587,8 +573,7 @@ public class DynamicAgent extends ReActAgent {
 				if (toolCallback != null) {
 					toolCallbacks.add(toolCallback.getToolCallback());
 				}
-			}
-			else {
+			} else {
 				log.warn("Tool callback for {} not found in the map.", toolKey);
 			}
 		}
@@ -685,8 +670,7 @@ public class DynamicAgent extends ReActAgent {
 				// Poll for input state change. In a real scenario, this might involve
 				// a more sophisticated mechanism like a Future or a callback from the UI.
 				TimeUnit.MILLISECONDS.sleep(500); // Check every 500ms
-			}
-			catch (InterruptedException e) {
+			} catch (InterruptedException e) {
 				log.warn("Interrupted while waiting for user input for planId: {}", getCurrentPlanId());
 				Thread.currentThread().interrupt();
 				formInputTool.handleInputTimeout(); // Treat interruption as timeout for
@@ -696,8 +680,7 @@ public class DynamicAgent extends ReActAgent {
 		}
 		if (formInputTool.getInputState() == FormInputTool.InputState.INPUT_RECEIVED) {
 			log.info("User input received for planId: {}", getCurrentPlanId());
-		}
-		else if (formInputTool.getInputState() == FormInputTool.InputState.INPUT_TIMEOUT) {
+		} else if (formInputTool.getInputState() == FormInputTool.InputState.INPUT_TIMEOUT) {
 			log.warn("User input timed out for planId: {}", getCurrentPlanId());
 		}
 	}
