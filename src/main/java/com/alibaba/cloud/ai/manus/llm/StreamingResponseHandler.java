@@ -15,28 +15,41 @@
  */
 package com.alibaba.cloud.ai.manus.llm;
 
-import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
-import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.AssistantMessage.ToolCall;
-import org.springframework.ai.chat.metadata.*;
+import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
+import org.springframework.ai.chat.metadata.ChatResponseMetadata;
+import org.springframework.ai.chat.metadata.EmptyRateLimit;
+import org.springframework.ai.chat.metadata.PromptMetadata;
+import org.springframework.ai.chat.metadata.RateLimit;
+import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.model.MessageAggregator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+
+import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
+
 import reactor.core.publisher.Flux;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
 /**
- * A utility class for handling streaming chat responses with periodic progress logging.
- * This class merges text content and tool calls from multiple streaming responses and
+ * A utility class for handling streaming chat responses with periodic progress
+ * logging.
+ * This class merges text content and tool calls from multiple streaming
+ * responses and
  * provides regular progress updates to prevent users from thinking the model is
  * unresponsive.
  */
@@ -44,6 +57,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class StreamingResponseHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(StreamingResponseHandler.class);
+	
+	// Logger for llm-requests log file
+	private static final Logger llmRequestLogger = LoggerFactory.getLogger("LLM_REQUEST_LOGGER");
 
 	@Autowired
 	private JmanusEventPublisher jmanusEventPublisher;
@@ -73,7 +89,8 @@ public class StreamingResponseHandler {
 		public List<ToolCall> getEffectiveToolCalls() {
 			return lastResponse != null && lastResponse.getResult() != null
 					&& lastResponse.getResult().getOutput() != null
-							? lastResponse.getResult().getOutput().getToolCalls() : Collections.emptyList();
+							? lastResponse.getResult().getOutput().getToolCalls()
+							: Collections.emptyList();
 		}
 
 		/**
@@ -90,9 +107,11 @@ public class StreamingResponseHandler {
 
 	/**
 	 * Process a streaming chat response flux with periodic progress logging
+	 * 
 	 * @param responseFlux The streaming chat response flux
-	 * @param contextName A descriptive name for logging context (e.g., "Agent thinking",
-	 * "Plan creation")
+	 * @param contextName  A descriptive name for logging context (e.g., "Agent
+	 *                     thinking",
+	 *                     "Plan creation")
 	 * @return StreamingResult containing merged content and the last response
 	 */
 	public StreamingResult processStreamingResponse(Flux<ChatResponse> responseFlux, String contextName,
@@ -157,7 +176,8 @@ public class StreamingResponseHandler {
 						metadataUsagePromptTokensRef.set(usage.getPromptTokens() > 0 ? usage.getPromptTokens()
 								: metadataUsagePromptTokensRef.get());
 						metadataUsageGenerationTokensRef.set(usage.getCompletionTokens() > 0
-								? usage.getCompletionTokens() : metadataUsageGenerationTokensRef.get());
+								? usage.getCompletionTokens()
+								: metadataUsageGenerationTokensRef.get());
 						metadataUsageTotalTokensRef.set(usage.getTotalTokens() > 0 ? usage.getTotalTokens()
 								: metadataUsageTotalTokensRef.get());
 					}
@@ -191,12 +211,12 @@ public class StreamingResponseHandler {
 						metadataUsageGenerationTokensRef.get(), metadataUsageTotalTokensRef.get());
 
 				var chatResponseMetadata = ChatResponseMetadata.builder()
-					.id(metadataIdRef.get())
-					.model(metadataModelRef.get())
-					.rateLimit(metadataRateLimitRef.get())
-					.usage(usage)
-					.promptMetadata(metadataPromptMetadataRef.get())
-					.build();
+						.id(metadataIdRef.get())
+						.model(metadataModelRef.get())
+						.rateLimit(metadataRateLimitRef.get())
+						.usage(usage)
+						.promptMetadata(metadataPromptMetadataRef.get())
+						.build();
 				finalChatResponseRef.set(
 						new ChatResponse(List.of(new Generation(
 								new AssistantMessage(messageTextContentRef.get().toString(),
@@ -223,16 +243,17 @@ public class StreamingResponseHandler {
 
 			llmTraceRecorder.recordResponse(finalChatResponseRef.get());
 			return new StreamingResult(finalChatResponseRef.get());
-		}
-		finally {
+		} finally {
 			LlmTraceRecorder.clearRequest();
 		}
 	}
 
 	/**
-	 * Process a streaming chat response flux for text-only content (e.g., summaries)
+	 * Process a streaming chat response flux for text-only content (e.g.,
+	 * summaries)
+	 * 
 	 * @param responseFlux The streaming chat response flux
-	 * @param contextName A descriptive name for logging context
+	 * @param contextName  A descriptive name for logging context
 	 * @return The merged text content
 	 */
 	public String processStreamingTextResponse(Flux<ChatResponse> responseFlux, String contextName, String planId) {
@@ -243,10 +264,24 @@ public class StreamingResponseHandler {
 	private void logProgress(String contextName, String currentText, int toolCallCount, int responseCount,
 			long startTime) {
 		int textLength = currentText != null ? currentText.length() : 0;
-		String preview = getTextPreview(currentText, 100); // Show first 100 chars
+		String preview = getLastTextPreview(currentText, 100); // Show last 100 chars
 
-		log.info("🔄 {} - Progress[{}ms]: {} responses received, {} characters, {} tool calls. Preview: '{}'",
-				contextName, System.currentTimeMillis() - startTime, responseCount, textLength, toolCallCount, preview);
+		// Calculate characters per second
+		long elapsedTime = System.currentTimeMillis() - startTime;
+		double charsPerSecond = elapsedTime > 0 ? (textLength * 1000.0 / elapsedTime) : 0;
+
+		String progressMessage = String.format(
+				"🔄 %s - Progress[%dms]: %d responses received, %d characters (%.1f chars/sec), %d tool calls. Last 100 chars: '%s'",
+				contextName, elapsedTime, responseCount, textLength, charsPerSecond, toolCallCount, preview);
+
+		// Log to regular log file
+		log.info(progressMessage);
+		
+		// Log to llm-requests log file with full content
+		String fullContentMessage = String.format(
+				"Progress[%s]: %d responses, %d chars, %d tool calls. Full content: %s",
+				contextName, responseCount, textLength, toolCallCount, currentText != null ? currentText : "(empty)");
+		llmRequestLogger.info(fullContentMessage);
 	}
 
 	private void logCompletion(String contextName, String finalText, int toolCallCount, int responseCount,
@@ -270,6 +305,19 @@ public class StreamingResponseHandler {
 			return text;
 		}
 		return text.substring(0, maxLength) + "...";
+	}
+
+	/**
+	 * Get the last N characters of the text for preview
+	 */
+	private String getLastTextPreview(String text, int maxLength) {
+		if (text == null || text.isEmpty()) {
+			return "(empty)";
+		}
+		if (text.length() <= maxLength) {
+			return text;
+		}
+		return "..." + text.substring(text.length() - maxLength);
 	}
 
 }
