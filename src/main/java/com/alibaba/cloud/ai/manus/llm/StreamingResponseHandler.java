@@ -271,14 +271,24 @@ public class StreamingResponseHandler {
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		double charsPerSecond = elapsedTime > 0 ? (textLength * 1000.0 / elapsedTime) : 0;
 
-		// Build tool call details
+		// Build tool call details with parameters
 		StringBuilder toolCallDetails = new StringBuilder();
 		if (toolCalls != null && !toolCalls.isEmpty()) {
 			toolCallDetails.append("Tool calls: ");
 			for (int i = 0; i < toolCalls.size(); i++) {
 				ToolCall toolCall = toolCalls.get(i);
-				if (i > 0) toolCallDetails.append(", ");
-				toolCallDetails.append(String.format("[%d]%s", toolCall.id(), toolCall.name()));
+				if (i > 0)
+					toolCallDetails.append(", ");
+				
+				// Format: [id]name(args)
+				toolCallDetails.append(String.format("[%s]%s", toolCall.id(), toolCall.name()));
+				
+				// Add parameters if available
+				if (toolCall.arguments() != null && !toolCall.arguments().isEmpty()) {
+					toolCallDetails.append("(");
+					toolCallDetails.append(toolCall.arguments());
+					toolCallDetails.append(")");
+				}
 			}
 		} else {
 			toolCallDetails.append("No tool calls");
@@ -287,7 +297,7 @@ public class StreamingResponseHandler {
 		// Log only to streaming progress log file
 		String progressMessage = String.format(
 				"🔄 %s - Progress[%dms]: %d responses received, %d characters (%.1f chars/sec), %d tool calls. %s. Last 100 chars: '%s'",
-				contextName, elapsedTime, responseCount, textLength, charsPerSecond, toolCallCount, 
+				contextName, elapsedTime, responseCount, textLength, charsPerSecond, toolCallCount,
 				toolCallDetails.toString(), preview);
 
 		streamingProgressLogger.info(progressMessage);
