@@ -7,7 +7,7 @@
     <groupId>com.jmanus</groupId>
     <name>JManus - AI Agent Management System</name>
     <artifactId>jmanus</artifactId>
-    <version>4.1.2-SNAPSHOT</version>
+    <version>4.1.2</version>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
