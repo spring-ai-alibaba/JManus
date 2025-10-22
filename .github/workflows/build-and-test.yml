@@ -54,11 +54,11 @@ jobs:
 
       - name: Verify JAR file exists
         run: |
-          if [ -f "target/jmanus-${{ steps.version.outputs.BUILD_VERSION }}.jar" ]; then
-            echo "✅ JAR file found: target/jmanus-${{ steps.version.outputs.BUILD_VERSION }}.jar"
-            ls -lh target/jmanus-${{ steps.version.outputs.BUILD_VERSION }}.jar
+          if [ -f "target/jmanus.jar" ]; then
+            echo "✅ JAR file found: target/jmanus.jar"
+            ls -lh target/jmanus.jar
           else
-            echo "❌ JAR file not found: target/jmanus-${{ steps.version.outputs.BUILD_VERSION }}.jar"
+            echo "❌ JAR file not found: target/jmanus.jar"
             echo "Files in target directory:"
             ls -la target/*.jar || echo "No JAR files found"
             exit 1

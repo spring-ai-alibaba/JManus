@@ -16,30 +16,29 @@
 
 package com.alibaba.cloud.ai.manus.coordinator.service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.cloud.ai.manus.config.CoordinatorProperties;
+import com.alibaba.cloud.ai.manus.coordinator.tool.CoordinatorTool;
+import com.alibaba.cloud.ai.manus.recorder.entity.po.ThinkActRecordEntity;
+import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
+import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
+import com.alibaba.cloud.ai.manus.recorder.repository.ThinkActRecordRepository;
+import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import com.alibaba.cloud.ai.manus.coordinator.tool.CoordinatorTool;
-import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
-import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
-import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
-import com.alibaba.cloud.ai.manus.recorder.repository.ThinkActRecordRepository;
-import com.alibaba.cloud.ai.manus.recorder.entity.po.ThinkActRecordEntity;
-import com.alibaba.cloud.ai.manus.config.CoordinatorProperties;
-
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
-import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
+import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 
 /**
  * Coordinator Tool Execution Engine
@@ -195,7 +194,7 @@ public class CoordinatorToolExecutor {
 			// In a real implementation, you would integrate with the planning system
 			log.info("{} Plan template execution started for: {}", LOG_PREFIX, toolName);
 
-			// TODO: Integrate with PlanningCoordinator or other execution service
+			// TODO: Integrate with PlanningCoordinator or other execution services
 			// This is a placeholder implementation
 
 		}
@@ -253,7 +252,8 @@ public class CoordinatorToolExecutor {
 		// Get the last Agent execution record
 		AgentExecutionRecord lastAgentRecord = sequence.get(sequence.size() - 1);
 
-		// Since AgentExecutionRecord doesn't maintain thinkActSteps in the sequence view,
+		// Since AgentExecutionRecord doesn't maintain thinkActSteps in the sequence
+		// view,
 		// we need to retrieve them from the database using the agent execution ID
 		List<ThinkActRecordEntity> thinkActEntities = thinkActRecordRepository
 			.findByParentExecutionId(lastAgentRecord.getId());
@@ -271,7 +271,8 @@ public class CoordinatorToolExecutor {
 		}
 
 		// Get the result from the last tool call
-		// Since we're working with Entity objects, we need to extract the result directly
+		// Since we're working with Entity objects, we need to extract the result
+		// directly
 		// For now, we'll use a simple approach - you may need to convert this to VO
 		// objects
 		String result = extractResultFromActToolInfo(lastThinkActEntity);

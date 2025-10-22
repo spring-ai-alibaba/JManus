@@ -186,5 +186,5 @@ goto:eof
     call:log_info "Example startup commands:"
     call:log_info "  mvn spring-boot:run"
     call:log_info "  or"
-    call:log_info "  java -jar target\spring-ai-alibaba-jmanus-*.jar"
+    call:log_info "  java -jar target\jmanus.jar"
 goto:eof
