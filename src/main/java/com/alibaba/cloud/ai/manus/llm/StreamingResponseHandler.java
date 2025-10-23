@@ -279,10 +279,10 @@ public class StreamingResponseHandler {
 				ToolCall toolCall = toolCalls.get(i);
 				if (i > 0)
 					toolCallDetails.append(", ");
-				
+
 				// Format: [id]name(args)
 				toolCallDetails.append(String.format("[%s]%s", toolCall.id(), toolCall.name()));
-				
+
 				// Add parameters if available
 				if (toolCall.arguments() != null && !toolCall.arguments().isEmpty()) {
 					toolCallDetails.append("(");

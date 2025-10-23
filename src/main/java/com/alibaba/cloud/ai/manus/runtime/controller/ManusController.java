@@ -156,6 +156,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	/**
 	 * Execute plan by tool name synchronously (GET method)
+	 * 
 	 * @param toolName Tool name
 	 * @return Execution result directly
 	 */
@@ -173,7 +174,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		}
 		if (planTemplateId.trim().isEmpty()) {
 			return ResponseEntity.badRequest()
-				.body(Map.of("error", "No plan template ID associated with tool: " + toolName));
+					.body(Map.of("error", "No plan template ID associated with tool: " + toolName));
 		}
 
 		logger.info("Execute tool '{}' synchronously with plan template ID '{}', parameters: {}", toolName,
@@ -183,8 +184,10 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	}
 
 	/**
-	 * Execute plan by tool name asynchronously If tool is not published, treat toolName
+	 * Execute plan by tool name asynchronously If tool is not published, treat
+	 * toolName
 	 * as planTemplateId
+	 * 
 	 * @param request Request containing tool name and parameters
 	 * @return Task ID and status
 	 */
@@ -199,8 +202,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		// Log request source
 		if (isVueRequest) {
 			logger.info("🌐 [VUE] Received query request from Vue frontend: ");
-		}
-		else {
+		} else {
 			logger.info("🔗 [HTTP] Received query request from HTTP client: ");
 		}
 
@@ -211,8 +213,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		if (planTemplateId != null) {
 			// Tool is published, get plan template ID from coordinator tool
 			logger.info("Found published tool: {} with plan template ID: {}", toolName, planTemplateId);
-		}
-		else {
+		} else {
 			// Tool is not published, treat toolName as planTemplateId
 			planTemplateId = toolName;
 			logger.info("Tool not published, using toolName as planTemplateId: {}", planTemplateId);
@@ -271,8 +272,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 					// Update task state to indicate failure
 					rootTaskManagerService.updateTaskResult(wrapper.getRootPlanId(),
 							"Execution failed: " + throwable.getMessage());
-				}
-				else {
+				} else {
 					logger.info("Async plan execution completed for planId: {}", wrapper.getRootPlanId());
 					// Update task state to indicate completion
 					rootTaskManagerService.updateTaskResult(wrapper.getRootPlanId(),
@@ -291,8 +291,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 			return ResponseEntity.ok(response);
 
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			logger.error("Failed to start plan execution for tool: {} with planTemplateId: {}", toolName,
 					planTemplateId, e);
 			Map<String, Object> errorResponse = new HashMap<>();
@@ -305,6 +304,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	/**
 	 * Execute plan by tool name synchronously (POST method)
+	 * 
 	 * @param request Request containing tool name
 	 * @return Execution result directly
 	 */
@@ -320,8 +320,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		// Log request source
 		if (isVueRequest) {
 			logger.info("🌐 [VUE] Received query request from Vue frontend: ");
-		}
-		else {
+		} else {
 			logger.info("🔗 [HTTP] Received query request from HTTP client: ");
 		}
 
@@ -332,7 +331,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		}
 		if (planTemplateId.trim().isEmpty()) {
 			return ResponseEntity.badRequest()
-				.body(Map.of("error", "No plan template ID associated with tool: " + toolName));
+					.body(Map.of("error", "No plan template ID associated with tool: " + toolName));
 		}
 
 		// Handle uploaded files if present
@@ -354,9 +353,11 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	}
 
 	/**
-	 * Get execution record overview (without detailed ThinkActRecord information) Note:
+	 * Get execution record overview (without detailed ThinkActRecord information)
+	 * Note:
 	 * This method returns basic execution information and does not include detailed
 	 * ThinkActRecord steps for each agent execution.
+	 * 
 	 * @param planId Plan ID
 	 * @return JSON representation of execution record overview
 	 */
@@ -376,15 +377,19 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		}
 
 		// Check for user input wait state and merge it into the plan record
-		UserInputWaitState waitState = userInputService.getWaitState(planId);
+		// Since form input tools are now stored by root plan ID, check using the root
+		// plan ID
+		String rootPlanId = planRecord.getRootPlanId() != null ? planRecord.getRootPlanId() : planId;
+		UserInputWaitState waitState = userInputService.getWaitState(rootPlanId);
 		if (waitState != null && waitState.isWaiting()) {
-			// Assuming PlanExecutionRecord has a method like setUserInputWaitState
-			// You will need to add this field and method to your PlanExecutionRecord
-			// class
+			// Set the planId in the wait state to the root plan ID for proper submission
+			// This ensures frontend submits to the correct plan ID where the form is stored
+			waitState.setPlanId(rootPlanId);
 			planRecord.setUserInputWaitState(waitState);
-			logger.info("Plan {} is waiting for user input. Merged waitState into details response.", planId);
-		}
-		else {
+			logger.info(
+					"Root plan {} is waiting for user input. Set waitState planId to rootPlanId for proper submission.",
+					rootPlanId);
+		} else {
 			planRecord.setUserInputWaitState(null); // Clear if not waiting
 		}
 
@@ -398,16 +403,16 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			// Use Jackson ObjectMapper to convert object to JSON string
 			String jsonResponse = objectMapper.writeValueAsString(planRecord);
 			return ResponseEntity.ok(jsonResponse);
-		}
-		catch (JsonProcessingException e) {
+		} catch (JsonProcessingException e) {
 			logger.error("Error serializing PlanExecutionRecord to JSON for planId: {}", planId, e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body("Error processing request: " + e.getMessage());
+					.body("Error processing request: " + e.getMessage());
 		}
 	}
 
 	/**
 	 * Delete execution record for specified plan ID
+	 * 
 	 * @param planId Plan ID
 	 * @return Result of delete operation
 	 */
@@ -426,8 +431,10 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	/**
 	 * Submits user input for a plan that is waiting.
-	 * @param planId The ID of the plan.
-	 * @param formData The user-submitted form data, expected as Map<String, String>.
+	 * 
+	 * @param planId   The ID of the plan.
+	 * @param formData The user-submitted form data, expected as Map<String,
+	 *                 String>.
 	 * @return ResponseEntity indicating success or failure.
 	 */
 	@PostMapping("/submit-input/{planId}")
@@ -436,41 +443,42 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		// Map<String, String>
 		try {
 			logger.info("Received user input for plan {}: {}", planId, formData);
+
+			// Submit user input to the provided planId
+			// Since getExecutionDetails now sets the correct planId in waitState, this
+			// should work correctly
 			boolean success = userInputService.submitUserInputs(planId, formData);
 			if (success) {
+				logger.info("Successfully submitted user input to plan {}", planId);
 				return ResponseEntity.ok(Map.of("message", "Input submitted successfully", "planId", planId));
 			}
-			else {
-				// This case might mean the plan was no longer waiting, or input was
-				// invalid.
-				// UserInputService should ideally throw specific exceptions for clearer
-				// error handling.
-				logger.warn("Failed to submit user input for plan {}, it might not be waiting or input was invalid.",
-						planId);
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-					.body(Map.of("error", "Failed to submit input. Plan not waiting or input invalid.", "planId",
-							planId));
-			}
-		}
-		catch (IllegalArgumentException e) {
+
+			// No waiting plan found
+			logger.warn("No waiting plan found for user input submission. Plan {} is not waiting for input.", planId);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(Map.of("error", "No plan is currently waiting for user input.", "planId", planId));
+		} catch (IllegalArgumentException e) {
 			logger.error("Error submitting user input for plan {}: {}", planId, e.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-				.body(Map.of("error", e.getMessage(), "planId", planId));
-		}
-		catch (Exception e) {
+					.body(Map.of("error", e.getMessage(), "planId", planId));
+		} catch (Exception e) {
 			logger.error("Unexpected error submitting user input for plan {}: {}", planId, e.getMessage(), e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(Map.of("error", "An unexpected error occurred.", "planId", planId));
+					.body(Map.of("error", "An unexpected error occurred.", "planId", planId));
 		}
 	}
 
 	/**
-	 * Execute plan synchronously and build response with parameter replacement support
-	 * @param planTemplateId The plan template ID to execute
-	 * @param uploadedFiles List of uploaded file names (can be null)
+	 * Execute plan synchronously and build response with parameter replacement
+	 * support
+	 * 
+	 * @param planTemplateId    The plan template ID to execute
+	 * @param uploadedFiles     List of uploaded file names (can be null)
 	 * @param replacementParams Parameters for <<>> replacement (can be null)
-	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
-	 * @param uploadKey Optional uploadKey provided by frontend (can be null)
+	 * @param isVueRequest      Flag indicating whether this is a Vue frontend
+	 *                          request
+	 * @param uploadKey         Optional uploadKey provided by frontend (can be
+	 *                          null)
 	 * @return ResponseEntity with execution result
 	 */
 	private ResponseEntity<Map<String, Object>> executePlanSync(String planTemplateId, List<String> uploadedFiles,
@@ -501,8 +509,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 			return ResponseEntity.ok(response);
 
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			logger.error("Failed to execute plan template synchronously: {}", planTemplateId, e);
 
 			// Update task result to indicate failure
@@ -521,13 +528,17 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	 * Execute a plan template by its ID with parameter replacement support
 	 *
 	 * key method
-	 * @param planTemplateId The ID of the plan template to execute
-	 * @param uploadedFiles List of uploaded file names (can be null)
-	 * @param conversationId Conversation ID for the execution (can be null)
+	 * 
+	 * @param planTemplateId    The ID of the plan template to execute
+	 * @param uploadedFiles     List of uploaded file names (can be null)
+	 * @param conversationId    Conversation ID for the execution (can be null)
 	 * @param replacementParams Parameters for <<>> replacement (can be null)
-	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
-	 * @param uploadKey Optional uploadKey provided by frontend (can be null)
-	 * @return PlanExecutionWrapper containing both PlanExecutionResult and rootPlanId
+	 * @param isVueRequest      Flag indicating whether this is a Vue frontend
+	 *                          request
+	 * @param uploadKey         Optional uploadKey provided by frontend (can be
+	 *                          null)
+	 * @return PlanExecutionWrapper containing both PlanExecutionResult and
+	 *         rootPlanId
 	 */
 	private PlanExecutionWrapper executePlanTemplate(String planTemplateId, List<String> uploadedFiles,
 			String conversationId, Map<String, Object> replacementParams, boolean isVueRequest, String uploadKey) {
@@ -570,16 +581,14 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 							parametersForReplacement.keySet());
 					planJson = parameterMappingService.replaceParametersInJson(planJson, parametersForReplacement);
 					logger.debug("Parameter replacement completed successfully");
-				}
-				catch (Exception e) {
+				} catch (Exception e) {
 					String errorMsg = "Failed to replace parameters in plan template: " + e.getMessage();
 					logger.error(errorMsg, e);
 					CompletableFuture<PlanExecutionResult> failedFuture = new CompletableFuture<>();
 					failedFuture.completeExceptionally(new RuntimeException(errorMsg, e));
 					return new PlanExecutionWrapper(failedFuture, null);
 				}
-			}
-			else {
+			} else {
 				logger.debug("No parameter replacement needed - replacementParams: {}",
 						replacementParams != null ? replacementParams.size() : 0);
 			}
@@ -622,8 +631,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			// Return the wrapper containing both the future and rootPlanId
 			return new PlanExecutionWrapper(future, rootPlanId);
 
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			logger.error("Failed to execute plan template: {}", planTemplateId, e);
 			logger.error("Failed to execute plan json : {}", planJson);
 			CompletableFuture<PlanExecutionResult> failedFuture = new CompletableFuture<>();
@@ -633,7 +641,9 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	}
 
 	/**
-	 * Get detailed agent execution record by stepId (includes ThinkActRecord details)
+	 * Get detailed agent execution record by stepId (includes ThinkActRecord
+	 * details)
+	 * 
 	 * @param stepId The step ID to query
 	 * @return Detailed agent execution record with ThinkActRecord details
 	 */
@@ -650,8 +660,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 			logger.info("Successfully retrieved agent execution detail for stepId: {}", stepId);
 			return ResponseEntity.ok(detail);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			logger.error("Error fetching agent execution detail for stepId: {}", stepId, e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
@@ -659,6 +668,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	/**
 	 * Get plan template ID from coordinator tool by tool name
+	 * 
 	 * @param toolName The tool name to look up
 	 * @return Plan template ID if found, null if tool not found
 	 */
@@ -687,6 +697,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	/**
 	 * Stop a running task by plan ID
+	 * 
 	 * @param planId The plan ID to stop
 	 * @return Response indicating success or failure
 	 */
@@ -702,7 +713,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			if (!isTaskRunning && !taskExists) {
 				logger.warn("No active task found for planId: {}", planId);
 				return ResponseEntity.badRequest()
-					.body(Map.of("error", "No active task found for the given plan ID", "planId", planId));
+						.body(Map.of("error", "No active task found for the given plan ID", "planId", planId));
 			}
 
 			// Mark task for stop in database (database-driven interruption)
@@ -715,19 +726,20 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 			logger.info("Successfully marked task for stop for planId: {}", planId);
 			return ResponseEntity
-				.ok(Map.of("status", "stopped", "planId", planId, "message", "Task stop request processed successfully",
-						"taskMarkedForStop", taskMarkedForStop, "wasRunning", isTaskRunning));
+					.ok(Map.of("status", "stopped", "planId", planId, "message",
+							"Task stop request processed successfully",
+							"taskMarkedForStop", taskMarkedForStop, "wasRunning", isTaskRunning));
 
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			logger.error("Failed to stop task for planId: {}", planId, e);
 			return ResponseEntity.internalServerError()
-				.body(Map.of("error", "Failed to stop task: " + e.getMessage(), "planId", planId));
+					.body(Map.of("error", "Failed to stop task: " + e.getMessage(), "planId", planId));
 		}
 	}
 
 	/**
 	 * Get task status by plan ID
+	 * 
 	 * @param planId The plan ID to check
 	 * @return Task status information
 	 */
@@ -751,8 +763,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				response.put("lastUpdated", task.getLastUpdated());
 				response.put("taskResult", task.getTaskResult());
 				response.put("exists", true);
-			}
-			else {
+			} else {
 				response.put("exists", false);
 				response.put("desiredState", null);
 				response.put("startTime", null);
@@ -763,11 +774,10 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 			return ResponseEntity.ok(response);
 
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			logger.error("Failed to get task status for planId: {}", planId, e);
 			return ResponseEntity.internalServerError()
-				.body(Map.of("error", "Failed to get task status: " + e.getMessage(), "planId", planId));
+					.body(Map.of("error", "Failed to get task status: " + e.getMessage(), "planId", planId));
 		}
 	}
 

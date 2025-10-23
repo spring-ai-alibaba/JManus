@@ -16,10 +16,12 @@
 package com.alibaba.cloud.ai.manus.tool;
 
 import org.springframework.ai.chat.model.ToolContext;
+
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
 /**
- * Abstract base class for tools providing common functionality All concrete tool
+ * Abstract base class for tools providing common functionality All concrete
+ * tool
  * implementations should extend this class
  *
  * @param <I> Tool input type
@@ -38,6 +40,7 @@ public abstract class AbstractBaseTool<I> implements ToolCallBiFunctionDef<I> {
 
 	/**
 	 * Whether the tool is selectable in front end UI
+	 * 
 	 * @return
 	 */
 	public abstract boolean isSelectable();
@@ -58,7 +61,26 @@ public abstract class AbstractBaseTool<I> implements ToolCallBiFunctionDef<I> {
 	}
 
 	/**
-	 * Default implementation delegates to run method Subclasses can override this method
+	 * Get the current plan ID
+	 * 
+	 * @return the current plan ID
+	 */
+	public String getCurrentPlanId() {
+		return this.currentPlanId;
+	}
+
+	/**
+	 * Get the root plan ID
+	 * 
+	 * @return the root plan ID
+	 */
+	public String getRootPlanId() {
+		return this.rootPlanId;
+	}
+
+	/**
+	 * Default implementation delegates to run method Subclasses can override this
+	 * method
 	 * if needed
 	 */
 	@Override
@@ -67,8 +89,10 @@ public abstract class AbstractBaseTool<I> implements ToolCallBiFunctionDef<I> {
 	}
 
 	/**
-	 * Abstract method that subclasses must implement to define tool-specific execution
+	 * Abstract method that subclasses must implement to define tool-specific
+	 * execution
 	 * logic
+	 * 
 	 * @param input Tool input parameters
 	 * @return Tool execution result
 	 */
