@@ -26,11 +26,15 @@ import com.alibaba.cloud.ai.manus.tool.FormInputTool;
 public interface IUserInputService {
 
 	/**
-	 * Store form input tool
-	 * @param planId Plan ID
-	 * @param tool Form input tool
+	 * Store a form input tool with exclusive access per root plan. Only one form can be
+	 * stored at a time per root plan. If another form is already stored, this method will
+	 * wait using spin lock.
+	 * @param planId The root plan ID
+	 * @param tool The form input tool to store
+	 * @param requesterPlanId The sub-plan ID requesting to store the tool
+	 * @return true if successfully stored, false if interrupted or timeout
 	 */
-	void storeFormInputTool(String planId, FormInputTool tool);
+	boolean storeFormInputToolExclusive(String planId, FormInputTool tool, String requesterPlanId);
 
 	/**
 	 * Get form input tool

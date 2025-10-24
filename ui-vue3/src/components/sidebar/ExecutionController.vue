@@ -26,7 +26,7 @@
         <div class="params-help-text">
           {{ t('sidebar.parameterRequirementsHelp') }}
         </div>
-        
+
         <!-- Show parameter fields only if there are parameters -->
         <div v-if="parameterRequirements.hasParameters" class="parameter-fields">
           <div
@@ -41,7 +41,7 @@
             <input
               v-model="parameterValues[param]"
               class="parameter-input"
-              :class="{ 'error': parameterErrors[param] }"
+              :class="{ error: parameterErrors[param] }"
               :placeholder="t('sidebar.enterValueFor', { param })"
               @input="updateParameterValue(param, ($event.target as HTMLInputElement).value)"
               required
@@ -51,15 +51,22 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Validation status message -->
-        <div v-if="parameterRequirements.hasParameters && !canExecute && !props.isExecuting && !props.isGenerating" class="validation-message">
+        <div
+          v-if="
+            parameterRequirements.hasParameters &&
+            !canExecute &&
+            !props.isExecuting &&
+            !props.isGenerating
+          "
+          class="validation-message"
+        >
           <Icon icon="carbon:warning" width="14" />
           {{ t('sidebar.fillAllRequiredParameters') }}
         </div>
-        
       </div>
-      
+
       <!-- File Upload Component -->
       <FileUploadComponent
         ref="fileUploadRef"
@@ -71,7 +78,7 @@
         @upload-completed="handleUploadCompleted"
         @upload-error="handleUploadError"
       />
-      
+
       <button
         class="btn btn-primary execute-btn"
         @click="handleExecutePlan"
@@ -93,7 +100,7 @@
         <Icon icon="carbon:application" width="16" />
         {{ buttonText }}
       </button>
-      
+
       <!-- Internal Call wrapper - only show when enableInternalToolcall is true -->
       <div v-if="toolInfo?.enableInternalToolcall" class="call-example-wrapper">
         <div class="call-example-header">
@@ -103,8 +110,12 @@
         <div class="internal-call-wrapper">
           <div class="call-info">
             <div class="call-method">{{ t('sidebar.internalMethodCall') }}</div>
-            <div class="call-endpoint">{{ t('sidebar.toolName') }}: {{ toolInfo?.toolName || currentPlanTemplateId }}</div>
-            <div v-if="toolInfo?.serviceGroup" class="call-endpoint">{{ t('sidebar.serviceGroup') }}: {{ toolInfo.serviceGroup }}</div>
+            <div class="call-endpoint">
+              {{ t('sidebar.toolName') }}: {{ toolInfo?.toolName || currentPlanTemplateId }}
+            </div>
+            <div v-if="toolInfo?.serviceGroup" class="call-endpoint">
+              {{ t('sidebar.serviceGroup') }}: {{ toolInfo.serviceGroup }}
+            </div>
             <div class="call-description">{{ t('sidebar.internalCallUsage') }}</div>
             <div class="call-example">
               <strong>{{ t('sidebar.usage') }}:</strong>
@@ -123,8 +134,8 @@
         <div class="http-api-urls-wrapper">
           <div class="tab-container">
             <div class="tab-header">
-              <button 
-                v-for="tab in apiTabs" 
+              <button
+                v-for="tab in apiTabs"
                 :key="tab.id"
                 :class="['tab-button', { active: activeTab === tab.id }]"
                 @click="activeTab = tab.id"
@@ -133,7 +144,12 @@
               </button>
             </div>
             <div class="tab-content">
-              <div v-for="tab in apiTabs" :key="tab.id" v-show="activeTab === tab.id" class="tab-panel">
+              <div
+                v-for="tab in apiTabs"
+                :key="tab.id"
+                v-show="activeTab === tab.id"
+                class="tab-panel"
+              >
                 <div class="http-api-url-display">
                   <div class="api-method">{{ tab.method }}</div>
                   <div class="api-endpoint">{{ tab.endpoint }}</div>
@@ -172,17 +188,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
-import { Icon } from '@iconify/vue'
-import { useI18n } from 'vue-i18n'
-import { PlanParameterApiService, type ParameterRequirements } from '@/api/plan-parameter-api-service'
 import type { CoordinatorToolVO } from '@/api/coordinator-tool-api-service'
 import { FileInfo } from '@/api/file-upload-api-service'
+import {
+  PlanParameterApiService,
+  type ParameterRequirements,
+} from '@/api/plan-parameter-api-service'
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
+import { Icon } from '@iconify/vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
-
 
 // Props
 interface Props {
@@ -206,8 +224,8 @@ const props = withDefaults(defineProps<Props>(), {
     enableHttpService: false,
     enableMcpService: false,
     enableInternalToolcall: false,
-    serviceGroup: ''
-  })
+    serviceGroup: '',
+  }),
 })
 
 // Emits
@@ -223,7 +241,7 @@ const executionParams = ref('')
 const parameterRequirements = ref<ParameterRequirements>({
   parameters: [],
   hasParameters: false,
-  requirements: ''
+  requirements: '',
 })
 const parameterValues = ref<Record<string, string>>({})
 const isLoadingParameters = ref(false)
@@ -249,7 +267,7 @@ const apiTabs = ref([
 Response: {
   "status": "completed",
   "result": "Execution result here"
-}`
+}`,
   },
   {
     id: 'post-sync',
@@ -271,7 +289,7 @@ Content-Type: application/json
 Response: {
   "status": "completed",
   "result": "Execution result here"
-}`
+}`,
   },
   {
     id: 'post-async',
@@ -308,33 +326,38 @@ Response: {
   "summary": "Execution completed successfully",
   "agentExecutionSequence": [...],
   "userInputWaitState": null
-}`
-  }
+}`,
+  },
 ])
 
 // Computed properties
 const isAnyServiceEnabled = computed(() => {
-  return props.toolInfo.enableInternalToolcall ?? 
-         props.toolInfo.enableHttpService ?? 
-         props.toolInfo.enableMcpService
+  return (
+    props.toolInfo.enableInternalToolcall ??
+    props.toolInfo.enableHttpService ??
+    props.toolInfo.enableMcpService
+  )
 })
 
 const buttonText = computed(() => {
-  return isAnyServiceEnabled.value ? t('sidebar.updateServiceStatus') : t('sidebar.publishMcpService')
+  return isAnyServiceEnabled.value
+    ? t('sidebar.updateServiceStatus')
+    : t('sidebar.publishMcpService')
 })
 
 const canExecute = computed(() => {
   if (props.isExecuting || props.isGenerating) {
     return false
   }
-  
+
   if (parameterRequirements.value.hasParameters) {
     // Check if all required parameters are filled
-    return parameterRequirements.value.parameters.every(param => 
-      parameterValues.value[param].trim()
-    )
+    return parameterRequirements.value.parameters.every(param => {
+      const value = parameterValues.value[param]
+      return typeof value === 'string' && value.trim() !== ''
+    })
   }
-  
+
   return true
 })
 
@@ -370,39 +393,43 @@ const handleUploadError = (error: any) => {
 // Methods
 const handleExecutePlan = () => {
   console.log('[ExecutionController] 🚀 Execute button clicked')
-  
+
   // Set execution flag to prevent parameter reload
   isExecutingPlan.value = true
   console.log('[ExecutionController] 🔒 Set isExecutingPlan to true')
-  
+
   // Validate parameters before execution
   if (!validateParameters()) {
     console.log('[ExecutionController] ❌ Parameter validation failed:', parameterErrors.value)
     isExecutingPlan.value = false // Reset flag on validation failure
     return
   }
-  
+
   // Pass replacement parameters if available
-  const replacementParams = parameterRequirements.value.hasParameters && Object.keys(parameterValues.value).length > 0 
-    ? parameterValues.value 
-    : undefined
-  
+  const replacementParams =
+    parameterRequirements.value.hasParameters && Object.keys(parameterValues.value).length > 0
+      ? parameterValues.value
+      : undefined
+
   console.log('[ExecutionController] 🔄 Replacement params:', replacementParams)
-  
+
   const payload: PlanExecutionRequestPayload = {
     title: '', // Will be set by the parent component
     planData: {
       title: '',
       steps: [],
-      directResponse: false
+      directResponse: false,
     }, // Will be set by the parent component
     params: undefined, // Will be set by the parent component
     replacementParams,
     uploadedFiles: uploadedFiles.value,
-    uploadKey: uploadKey.value
+    uploadKey: uploadKey.value,
   }
-  
-  console.log('[ExecutionController] 📤 Emitting executePlan with payload:', JSON.stringify(payload, null, 2))
+
+  console.log(
+    '[ExecutionController] 📤 Emitting executePlan with payload:',
+    JSON.stringify(payload, null, 2)
+  )
   emit('executePlan', payload)
 }
 
@@ -415,26 +442,32 @@ const clearExecutionParams = () => {
   executionParams.value = ''
   // Clear parameter values as well
   parameterValues.value = {}
-  
+
   // Reset execution flag after clearing
   isExecutingPlan.value = false
   console.log('[ExecutionController] 🔓 Reset isExecutingPlan to false')
-  
+
   console.log('[ExecutionController] ✅ After clear - parameterValues cleared')
   emit('clearParams')
 }
 
 // Load parameter requirements when plan template changes
 const loadParameterRequirements = async () => {
-  console.log('[ExecutionController] 🔄 loadParameterRequirements called for templateId:', props.currentPlanTemplateId)
-  console.log('[ExecutionController] 📊 Current parameterRequirements before load:', JSON.stringify(parameterRequirements.value, null, 2))
-  
+  console.log(
+    '[ExecutionController] 🔄 loadParameterRequirements called for templateId:',
+    props.currentPlanTemplateId
+  )
+  console.log(
+    '[ExecutionController] 📊 Current parameterRequirements before load:',
+    JSON.stringify(parameterRequirements.value, null, 2)
+  )
+
   if (!props.currentPlanTemplateId) {
     console.log('[ExecutionController] ❌ No template ID, resetting parameters')
     parameterRequirements.value = {
       parameters: [],
       hasParameters: false,
-      requirements: ''
+      requirements: '',
     }
     parameterValues.value = {}
     return
@@ -444,7 +477,7 @@ const loadParameterRequirements = async () => {
   parameterRequirements.value = {
     parameters: [],
     hasParameters: false,
-    requirements: ''
+    requirements: '',
   }
   parameterValues.value = {}
   console.log('[ExecutionController] 🧹 Cleared previous data before loading new template')
@@ -452,38 +485,57 @@ const loadParameterRequirements = async () => {
   isLoadingParameters.value = true
   try {
     console.log('[ExecutionController] 🌐 Fetching parameter requirements from API...')
-    const requirements = await PlanParameterApiService.getParameterRequirements(props.currentPlanTemplateId)
-    console.log('[ExecutionController] 📥 Received requirements from API:', JSON.stringify(requirements, null, 2))
-    
+    const requirements = await PlanParameterApiService.getParameterRequirements(
+      props.currentPlanTemplateId
+    )
+    console.log(
+      '[ExecutionController] 📥 Received requirements from API:',
+      JSON.stringify(requirements, null, 2)
+    )
+
     parameterRequirements.value = requirements
-    
+
     // Initialize parameter values
     const newValues: Record<string, string> = {}
     requirements.parameters.forEach(param => {
       newValues[param] = parameterValues.value[param] || ''
     })
     parameterValues.value = newValues
-    
-    console.log('[ExecutionController] ✅ Updated parameterRequirements:', JSON.stringify(parameterRequirements.value, null, 2))
-    console.log('[ExecutionController] ✅ Updated parameterValues:', JSON.stringify(parameterValues.value, null, 2))
-    
+
+    console.log(
+      '[ExecutionController] ✅ Updated parameterRequirements:',
+      JSON.stringify(parameterRequirements.value, null, 2)
+    )
+    console.log(
+      '[ExecutionController] ✅ Updated parameterValues:',
+      JSON.stringify(parameterValues.value, null, 2)
+    )
+
     // Update execution params with current parameter values
     updateExecutionParamsFromParameters()
   } catch (error) {
     console.error('[ExecutionController] ❌ Failed to load parameter requirements:', error)
     // Don't show error for 404 - template might not be ready yet
     if (error instanceof Error && !error.message.includes('404')) {
-      console.warn('[ExecutionController] ⚠️ Parameter requirements not available yet, will retry later')
+      console.warn(
+        '[ExecutionController] ⚠️ Parameter requirements not available yet, will retry later'
+      )
     }
     parameterRequirements.value = {
       parameters: [],
       hasParameters: false,
-      requirements: ''
+      requirements: '',
     }
     // Clear parameter values when there's an error to prevent stale data
     parameterValues.value = {}
-    console.log('[ExecutionController] 🔄 Reset parameterRequirements due to error:', JSON.stringify(parameterRequirements.value, null, 2))
-    console.log('[ExecutionController] 🔄 Cleared parameterValues:', JSON.stringify(parameterValues.value, null, 2))
+    console.log(
+      '[ExecutionController] 🔄 Reset parameterRequirements due to error:',
+      JSON.stringify(parameterRequirements.value, null, 2)
+    )
+    console.log(
+      '[ExecutionController] 🔄 Cleared parameterValues:',
+      JSON.stringify(parameterValues.value, null, 2)
+    )
   } finally {
     isLoadingParameters.value = false
     console.log('[ExecutionController] ✅ loadParameterRequirements completed')
@@ -504,21 +556,21 @@ const updateParameterValue = (paramName: string, value: string) => {
 const validateParameters = (): boolean => {
   parameterErrors.value = {}
   isValidationError.value = false
-  
+
   if (!parameterRequirements.value.hasParameters) {
     return true
   }
-  
+
   let hasErrors = false
-  
+
   parameterRequirements.value.parameters.forEach(param => {
-    const value = parameterValues.value[param].trim()
+    const value = parameterValues.value[param] ? parameterValues.value[param].trim() : ''
     if (!value) {
       parameterErrors.value[param] = `${param} is required`
       hasErrors = true
     }
   })
-  
+
   isValidationError.value = hasErrors
   return !hasErrors
 }
@@ -534,37 +586,41 @@ const updateExecutionParamsFromParameters = () => {
   emit('updateExecutionParams', executionParams.value)
 }
 
-
 // Watch for changes in plan template ID
-watch(() => props.currentPlanTemplateId, (newId, oldId) => {
-  
-  if (newId && newId !== oldId) {
-    // Skip parameter reload if we're currently executing a plan
-    if (isExecutingPlan.value) {
-      console.log('[ExecutionController] ⏸️ Skipping parameter reload - plan is executing')
-      return
-    }
-    
-    console.log('[ExecutionController] 🔄 Template ID changed, will reload parameters')
-    // If this is a new template ID (not from initial load), retry loading parameters
-    if (oldId && newId.startsWith('planTemplate-')) {
-      console.log('[ExecutionController] ⏰ New template detected, retrying with delay...')
-      // Retry loading parameters with a delay for new templates
-      setTimeout(() => {
-        console.log('[ExecutionController] ⏰ Delay timeout, calling loadParameterRequirements')
+watch(
+  () => props.currentPlanTemplateId,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      // Skip parameter reload if we're currently executing a plan
+      if (isExecutingPlan.value) {
+        console.log('[ExecutionController] ⏸️ Skipping parameter reload - plan is executing')
+        return
+      }
+
+      console.log('[ExecutionController] 🔄 Template ID changed, will reload parameters')
+      // If this is a new template ID (not from initial load), retry loading parameters
+      if (oldId && newId.startsWith('planTemplate-')) {
+        console.log('[ExecutionController] ⏰ New template detected, retrying with delay...')
+        // Retry loading parameters with a delay for new templates
+        setTimeout(() => {
+          console.log('[ExecutionController] ⏰ Delay timeout, calling loadParameterRequirements')
+          loadParameterRequirements()
+        }, 1000)
+      } else {
+        console.log('[ExecutionController] 🚀 Immediate reload of parameters')
         loadParameterRequirements()
-      }, 1000)
-    } else {
-      console.log('[ExecutionController] 🚀 Immediate reload of parameters')
-      loadParameterRequirements()
+      }
     }
   }
-})
+)
 
 // Watch for changes in execution params (for backward compatibility)
-watch(() => executionParams.value, (newValue) => {
-  emit('updateExecutionParams', newValue)
-})
+watch(
+  () => executionParams.value,
+  newValue => {
+    emit('updateExecutionParams', newValue)
+  }
+)
 
 // Load parameters on mount
 onMounted(() => {
@@ -578,7 +634,7 @@ defineExpose({
   loadParameterRequirements,
   fileUploadRef,
   uploadedFiles,
-  uploadKey
+  uploadKey,
 })
 </script>
 
@@ -701,9 +757,7 @@ defineExpose({
     border-radius: 4px;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   }
-
 }
-
 
 .call-example-wrapper {
   margin-top: 12px;

@@ -21,7 +21,7 @@
         <span class="model-category">[{{ selectedOption.category }}]</span>
       </span>
       <span v-else class="placeholder-text">{{ placeholder }}</span>
-      <Icon icon="carbon:chevron-down" class="chevron" :class="{ 'rotated': isOpen }" />
+      <Icon icon="carbon:chevron-down" class="chevron" :class="{ rotated: isOpen }" />
     </button>
 
     <div v-if="isOpen" class="dropdown-overlay" @click="closeDropdown"></div>
@@ -54,7 +54,7 @@
               v-for="model in group.models"
               :key="model.id"
               class="model-option"
-              :class="{ 'selected': model.id === modelValue }"
+              :class="{ selected: model.id === modelValue }"
               @click="selectModel(model)"
               :title="model.description"
             >
@@ -72,9 +72,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface ModelOption {
   id: string
@@ -91,8 +91,9 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  modelValue: '',
   placeholder: 'Please select a model',
-  dropdownTitle: 'Available Models'
+  dropdownTitle: 'Available Models',
 })
 
 const emit = defineEmits<{
@@ -121,7 +122,7 @@ const groupedOptions = computed(() => {
     .filter(category => category in groups)
     .map(category => ({
       category,
-      models: groups[category].sort((a, b) => a.name.localeCompare(b.name))
+      models: groups[category].sort((a, b) => a.name.localeCompare(b.name)),
     }))
 })
 
@@ -131,14 +132,17 @@ const filteredGroups = computed(() => {
     return groupedOptions.value
   }
 
-  return groupedOptions.value.map(group => ({
-    ...group,
-    models: group.models.filter(model =>
-      model.name.toLowerCase().includes(searchText.value.toLowerCase()) ||
-      model.description.toLowerCase().includes(searchText.value.toLowerCase()) ||
-      model.category.toLowerCase().includes(searchText.value.toLowerCase())
-    )
-  })).filter(group => group.models.length > 0)
+  return groupedOptions.value
+    .map(group => ({
+      ...group,
+      models: group.models.filter(
+        model =>
+          model.name.toLowerCase().includes(searchText.value.toLowerCase()) ||
+          model.description.toLowerCase().includes(searchText.value.toLowerCase()) ||
+          model.category.toLowerCase().includes(searchText.value.toLowerCase())
+      ),
+    }))
+    .filter(group => group.models.length > 0)
 })
 
 // Currently selected option

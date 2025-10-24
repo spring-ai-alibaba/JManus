@@ -16,13 +16,16 @@
 package com.alibaba.cloud.ai.manus.tool.innerStorage;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
-import com.alibaba.cloud.ai.manus.config.ManusProperties;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 
 /**
  * Internal file storage service for storing intermediate data in MapReduce processes
@@ -92,7 +95,7 @@ public class SmartContentSavingService implements ISmartContentSavingService {
 		// Check if content is empty
 		if (content.trim().isEmpty()) {
 			log.warn("processContent called with empty content: planId={}, callingMethod={}", planId, callingMethod);
-			return new SmartProcessResult(null, "No content available");
+			return new SmartProcessResult(null, "");
 		}
 
 		// Check if infinite context is enabled
@@ -106,7 +109,8 @@ public class SmartContentSavingService implements ISmartContentSavingService {
 			return new SmartProcessResult(null, content != null && !content.trim().isEmpty() ? content : "");
 		}
 
-		// Use configured threshold from ManusProperties when infinite context is enabled
+		// Use configured threshold from ManusProperties when infinite context is
+		// enabled
 		int threshold = manusProperties.getInfiniteContextTaskContextSize();
 
 		log.info("Processing content for plan {}: content length = {}, threshold = {}, infinite context enabled",

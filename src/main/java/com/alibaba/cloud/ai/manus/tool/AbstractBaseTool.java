@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.manus.tool;
 
 import org.springframework.ai.chat.model.ToolContext;
+
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
 /**
@@ -55,6 +56,22 @@ public abstract class AbstractBaseTool<I> implements ToolCallBiFunctionDef<I> {
 	@Override
 	public void setRootPlanId(String rootPlanId) {
 		this.rootPlanId = rootPlanId;
+	}
+
+	/**
+	 * Get the current plan ID
+	 * @return the current plan ID
+	 */
+	public String getCurrentPlanId() {
+		return this.currentPlanId;
+	}
+
+	/**
+	 * Get the root plan ID
+	 * @return the root plan ID
+	 */
+	public String getRootPlanId() {
+		return this.rootPlanId;
 	}
 
 	/**

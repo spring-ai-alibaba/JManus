@@ -90,6 +90,7 @@ const words: I18nType = {
     search: '搜索',
     loading: '加载中...',
     parameters: '参数',
+    success: '成功',
   },
 
   // 文件浏览器
@@ -470,6 +471,13 @@ const words: I18nType = {
         maxRetryCount: 'MCP连接最大重试次数',
         maxConcurrentConnections: 'MCP最大并发连接数',
       },
+      imageRecognition: {
+        poolSize: '线程池大小',
+        modelName: '模型名称',
+        dpi: 'DPI',
+        imageType: '图像类型',
+        maxRetryAttempts: '最大重试次数',
+      },
       systemSettings: {
         systemName: '系统名称',
         language: '语言',
@@ -744,7 +752,8 @@ const words: I18nType = {
   input: {
     placeholder: '向 JManus 发送消息',
     send: '发送',
-    planMode: 'PLAN-ACT计划模式',
+    stop: '停止',
+    planMode: 'Func-Agent模式',
     waiting: '等待用户输入...',
     maxLength: '最大长度',
     charactersRemaining: '剩余字符',
@@ -764,17 +773,17 @@ const words: I18nType = {
 
   // 侧边栏
   sidebar: {
-    title: 'PLAN-ACT 计划模板名字',
+    title: 'Func-Agent 编辑器',
     templateList: '模板列表',
     configuration: '配置',
-    newPlan: '新建计划',
+    newPlan: '新建Func-Agent计划',
     loading: '加载中...',
     retry: '重试',
     noTemplates: '没有可用的计划模板',
     unnamedPlan: '未命名计划',
     noDescription: '无描述',
     deleteTemplate: '删除此计划模板',
-    jsonTemplate: 'plan-act计划模板编辑器',
+    jsonTemplate: 'Func-Agent计划模板编辑器',
     rollback: '回滚',
     restore: '恢复',
     jsonPlaceholder:
@@ -1285,6 +1294,11 @@ const words: I18nType = {
     toolNameRequiredError: '工具名称不能为空',
     toolDescriptionRequiredError: '工具描述不能为空',
   },
+
+  // Missing translation keys for basicConfig.vue
+  dpi: 'DPI',
+  imageType: '图像类型',
+  maxRetryAttempts: '最大重试次数',
 
   // 通用占位符
   memory: {

@@ -376,13 +376,19 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		}
 
 		// Check for user input wait state and merge it into the plan record
-		UserInputWaitState waitState = userInputService.getWaitState(planId);
+		// Since form input tools are now stored by root plan ID, check using the root
+		// plan ID
+		String rootPlanId = planRecord.getRootPlanId() != null ? planRecord.getRootPlanId() : planId;
+		UserInputWaitState waitState = userInputService.getWaitState(rootPlanId);
 		if (waitState != null && waitState.isWaiting()) {
-			// Assuming PlanExecutionRecord has a method like setUserInputWaitState
-			// You will need to add this field and method to your PlanExecutionRecord
-			// class
+			// Set the planId in the wait state to the root plan ID for proper submission
+			// This ensures frontend submits to the correct plan ID where the form is
+			// stored
+			waitState.setPlanId(rootPlanId);
 			planRecord.setUserInputWaitState(waitState);
-			logger.info("Plan {} is waiting for user input. Merged waitState into details response.", planId);
+			logger.info(
+					"Root plan {} is waiting for user input. Set waitState planId to rootPlanId for proper submission.",
+					rootPlanId);
 		}
 		else {
 			planRecord.setUserInputWaitState(null); // Clear if not waiting
@@ -436,21 +442,20 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		// Map<String, String>
 		try {
 			logger.info("Received user input for plan {}: {}", planId, formData);
+
+			// Submit user input to the provided planId
+			// Since getExecutionDetails now sets the correct planId in waitState, this
+			// should work correctly
 			boolean success = userInputService.submitUserInputs(planId, formData);
 			if (success) {
+				logger.info("Successfully submitted user input to plan {}", planId);
 				return ResponseEntity.ok(Map.of("message", "Input submitted successfully", "planId", planId));
 			}
-			else {
-				// This case might mean the plan was no longer waiting, or input was
-				// invalid.
-				// UserInputService should ideally throw specific exceptions for clearer
-				// error handling.
-				logger.warn("Failed to submit user input for plan {}, it might not be waiting or input was invalid.",
-						planId);
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-					.body(Map.of("error", "Failed to submit input. Plan not waiting or input invalid.", "planId",
-							planId));
-			}
+
+			// No waiting plan found
+			logger.warn("No waiting plan found for user input submission. Plan {} is not waiting for input.", planId);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+				.body(Map.of("error", "No plan is currently waiting for user input.", "planId", planId));
 		}
 		catch (IllegalArgumentException e) {
 			logger.error("Error submitting user input for plan {}: {}", planId, e.getMessage());
