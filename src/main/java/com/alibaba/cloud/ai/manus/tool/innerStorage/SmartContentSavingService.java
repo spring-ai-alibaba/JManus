@@ -28,8 +28,7 @@ import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 
 /**
- * Internal file storage service for storing intermediate data in MapReduce
- * processes
+ * Internal file storage service for storing intermediate data in MapReduce processes
  */
 @Service
 public class SmartContentSavingService implements ISmartContentSavingService {
@@ -79,12 +78,10 @@ public class SmartContentSavingService implements ISmartContentSavingService {
 	}
 
 	/**
-	 * Intelligently process content, automatically store and return summary if
-	 * content is
+	 * Intelligently process content, automatically store and return summary if content is
 	 * too long
-	 * 
-	 * @param planId        Plan ID
-	 * @param content       Content
+	 * @param planId Plan ID
+	 * @param content Content
 	 * @param callingMethod Calling method name
 	 * @return Processing result containing filename and summary
 	 */
@@ -148,7 +145,8 @@ public class SmartContentSavingService implements ISmartContentSavingService {
 
 			return new SmartProcessResult(storageFileName, summary);
 
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			log.error("Failed to save content to storage for plan {}", planId, e);
 			// If save fails, return truncated content
 			return new SmartProcessResult(null,
@@ -161,7 +159,7 @@ public class SmartContentSavingService implements ISmartContentSavingService {
 	 */
 	private String generateStorageFileName(String planId) {
 		String timestamp = java.time.LocalDateTime.now()
-				.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+			.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
 		// Generate 4-digit random number
 		int randomNum = (int) (Math.random() * 9000) + 1000; // 1000-9999
 		return String.format("%s_%s_%04d.md", planId, timestamp, randomNum);
@@ -184,8 +182,7 @@ public class SmartContentSavingService implements ISmartContentSavingService {
 	private String generateSmartSummary(String content, String storageFileName, String callingMethod) {
 		// Build calling method information
 		String methodInfo = (callingMethod != null && !callingMethod.trim().isEmpty())
-				? "Successfully called " + callingMethod + " function,\n\n"
-				: "";
+				? "Successfully called " + callingMethod + " function,\n\n" : "";
 
 		return String.format(
 				"""
@@ -210,7 +207,6 @@ public class SmartContentSavingService implements ISmartContentSavingService {
 
 	/**
 	 * Check if infinite context is enabled
-	 * 
 	 * @return true if infinite context is enabled, false otherwise
 	 */
 	private boolean isInfiniteContextEnabled() {

@@ -15,6 +15,22 @@
  */
 package com.alibaba.cloud.ai.manus.agent;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.tool.ToolCallback;
+
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
@@ -23,14 +39,8 @@ import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.tool.ToolCallback;
-
-import java.util.*;
+import com.alibaba.cloud.ai.manus.tool.TerminateTool;
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
 /**
  * An abstract base class for implementing AI agents that can execute multi-step tasks.
@@ -233,7 +243,13 @@ public abstract class BaseAgent {
 			}
 
 			if (currentStep >= maxSteps) {
+				log.info("Agent reached max rounds ({}), generating final summary and terminating", maxSteps);
+				String finalSummary = generateFinalSummary();
 				results.add("Terminated: Reached max rounds (" + maxSteps + ")");
+
+				// Call TerminateTool with the summary
+				String result = terminateWithSummary(finalSummary);
+				results.add(result);
 			}
 
 		}
@@ -373,6 +389,74 @@ public abstract class BaseAgent {
 
 	public void setEnvData(Map<String, Object> envData) {
 		this.envData = Collections.unmodifiableMap(new HashMap<>(envData));
+	}
+
+	/**
+	 * Generate a final summary of all agent memories when max rounds are reached
+	 * @return Summary string of all memories
+	 */
+	private String generateFinalSummary() {
+		try {
+			log.info("Generating final summary for agent execution");
+
+			// Get all memory entries for the current plan
+			List<Message> memoryEntries = llmService.getAgentMemory(manusProperties.getMaxMemory())
+				.get(getCurrentPlanId());
+
+			if (memoryEntries == null || memoryEntries.isEmpty()) {
+				return "No memory entries found for final summary";
+			}
+
+			// Use LLM to generate a concise summary
+			String summaryPrompt = """
+					Based on the completed steps, try to answer the user's original request.
+					If the current steps are insufficient to support answering the original request,
+					simply describe that the step limit has been reached and please try again.
+
+					""";
+			// Create a simple prompt for summary generation
+			UserMessage summaryRequest = new UserMessage(summaryPrompt);
+			memoryEntries.add(getThinkMessage());
+			memoryEntries.add(getNextStepWithEnvMessage());
+			memoryEntries.add(summaryRequest);
+			Prompt prompt = new Prompt(memoryEntries);
+
+			// Get LLM response for summary
+			ChatClient chatClient = llmService.getDiaChatClient();
+			ChatResponse response = chatClient.prompt(prompt).call().chatResponse();
+
+			String summary = response.getResult().getOutput().getText();
+			log.info("Generated final summary: {}", summary);
+			return summary;
+
+		}
+		catch (Exception e) {
+			log.error("Failed to generate final summary", e);
+			return "Summary generation failed: " + e.getMessage();
+		}
+	}
+
+	/**
+	 * Terminate the agent execution with a summary using TerminateTool
+	 * @param summary The summary to include in termination
+	 */
+	private String terminateWithSummary(String summary) {
+		try {
+			log.info("Terminating agent execution with summary");
+
+			// Create TerminateTool instance
+			TerminateTool terminateTool = new TerminateTool(getCurrentPlanId(), "message");
+			// Prepare termination data
+			Map<String, Object> terminationData = new HashMap<>();
+			terminationData.put("message", "Agent execution terminated due to max rounds reached. Summary: " + summary);
+			// Execute the terminate tool
+			ToolExecuteResult result = terminateTool.run(terminationData);
+			return result.getOutput();
+		}
+		catch (Exception e) {
+			log.error("Failed to terminate agent execution with summary", e);
+			return "Terminate failed: " + e.getMessage();
+		}
 	}
 
 }

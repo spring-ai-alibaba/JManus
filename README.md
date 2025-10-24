@@ -15,7 +15,7 @@
 
 </div>
 
-![image](https://github.com/user-attachments/assets/07feeb29-c410-4f56-89bf-532210bc1b63)
+![image](https://github.com/user-attachments/assets/b06988e4-4091-48aa-9469-ed72d8a7179c)
 
 ---
 
@@ -27,26 +27,21 @@ JManus also provides HTTP service invocation capabilities, making it suitable fo
 
 ## 🎯 JManus Product Features
 
-### 🤖 **Pure Java Manus Implementation**: 
+### 🤖 **Pure Java Manus Implementation**:
 
 A pure Java multi-agent collaboration implementation that provides a complete set of HTTP call interfaces, suitable for secondary integration by Java developers.
 
-![Image](https://github.com/user-attachments/assets/3d98c1c6-aabb-45a2-b192-7b687093a1ee)
+### 🛠️ **Func-Agent Mode**:
 
-### 🛠️ **Plan-Act Mode**: 
+Allows you to precisely control every execution detail, providing extremely high execution determinism and completing complex repetitive processes and functions. For specific examples, see [JManus Use Cases - FuncAgent Use Case](https://github.com/talk-flow/public-usecase/blob/main/eng/query-plan.md)
 
-Allows you to precisely control every execution detail, providing extremely high execution determinism.
-
-![Image](https://github.com/user-attachments/assets/a689791f-adf5-44b6-9ea6-151f557a26d4)
+![Image](https://github.com/user-attachments/assets/0075b210-feed-4c67-97e1-e79756493e4e)
 
 ### 🔗 **MCP Integration**:
 
- Natively supports the Model Context Protocol (MCP) for seamless integration with external services and tools.
+Natively supports the Model Context Protocol (MCP) for seamless integration with external services and tools.
 
-![Image](https://github.com/user-attachments/assets/2d3f833f-ba45-42b6-8e1b-f3e9cfd40212)
-
-
-
+![Image](https://github.com/user-attachments/assets/231b05e5-9c72-43ac-85b2-fd7d0b500be8)
 
 ## 🚀 Quick Start
 
@@ -96,10 +91,10 @@ cd JManus
 #### 2. Database Configuration (Optional)
 
 > 💡 **Get your DashScope API Key**: Visit [Alibaba Cloud Console](https://bailian.console.aliyun.com/?tab=model#/api-key) to obtain your free API key.
-> 
+>
 > **Using other providers?** Update the configuration in `src/main/resources/application.yml` to use your preferred AI model platform.
 
-JManus supports both H2 (default)、MySQL and PostgreSQL databases. 
+JManus supports both H2 (default)、MySQL and PostgreSQL databases.
 
 **How To Use MySQL/PostgreSQL**
 
@@ -123,7 +118,7 @@ JManus supports both H2 (default)、MySQL and PostgreSQL databases.
    spring:
      ...
      profiles:
-       active: mysql/postgres  
+       active: mysql/postgres
    ```
 
 > 💡 **Note**: The application will automatically create required tables on first startup using JPA's `ddl-auto: update` configuration.
@@ -131,11 +126,13 @@ JManus supports both H2 (default)、MySQL and PostgreSQL databases.
 #### 3. Launch the Application
 
 **For Unix-like systems (macOS, Linux):**
+
 ```bash
 ../mvnw spring-boot:run
 ```
 
 **For Windows systems:**
+
 ```bash
 ../mvnw.cmd spring-boot:run
 ```
@@ -146,13 +143,10 @@ Navigate to `http://localhost:18080` in your browser.
 
 🎉 **Congratulations!** Your multi-agent system is now live and ready for action. You can visit https://github.com/talk-flow/public-usecase to explore some effective practices we recommend.
 
-
-
 ## Stable Release
 
 you can find stable release from here:
 [release](https://github.com/spring-ai-alibaba/JManus/releases)
-
 
 ## 🤝 Contributing
 

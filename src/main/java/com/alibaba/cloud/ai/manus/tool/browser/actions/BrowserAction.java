@@ -21,13 +21,13 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.alibaba.cloud.ai.manus.tool.browser.InteractiveElementRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.browser.DriverWrapper;
 import com.alibaba.cloud.ai.manus.tool.browser.InteractiveElement;
+import com.alibaba.cloud.ai.manus.tool.browser.InteractiveElementRegistry;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.ElementHandle;

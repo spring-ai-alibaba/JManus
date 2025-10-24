@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { ref } from 'vue'
 import { defineStore } from 'pinia'
+import { ref } from 'vue'
 
 export interface TaskPayload {
   prompt: string
@@ -33,10 +33,17 @@ export const useTaskStore = defineStore('task', () => {
   // Set new task
   const setTask = (prompt: string) => {
     console.log('[TaskStore] setTask called with prompt:', prompt)
+
+    // Don't create tasks with empty prompts
+    if (!prompt.trim()) {
+      console.warn('[TaskStore] Empty prompt provided, not creating task')
+      return
+    }
+
     const newTask = {
       prompt,
       timestamp: Date.now(),
-      processed: false
+      processed: false,
     }
     currentTask.value = newTask
     console.log('[TaskStore] Task set, currentTask.value:', currentTask.value)
@@ -76,7 +83,12 @@ export const useTaskStore = defineStore('task', () => {
   // Check if there are unprocessed tasks
   const hasUnprocessedTask = () => {
     const result = currentTask.value && !currentTask.value.processed
-    console.log('[TaskStore] hasUnprocessedTask check - currentTask:', currentTask.value, 'result:', result)
+    console.log(
+      '[TaskStore] hasUnprocessedTask check - currentTask:',
+      currentTask.value,
+      'result:',
+      result
+    )
     return result
   }
 
@@ -101,7 +113,11 @@ export const useTaskStore = defineStore('task', () => {
   }
 
   // Emit plan execution requested event
-  const emitPlanExecutionRequested = (payload: { title: string; planData: any; params?: string }) => {
+  const emitPlanExecutionRequested = (payload: {
+    title: string
+    planData: any
+    params?: string
+  }) => {
     console.log('[TaskStore] emitPlanExecutionRequested called with payload:', payload)
 
     // User is on direct page, send event directly
@@ -111,15 +127,11 @@ export const useTaskStore = defineStore('task', () => {
   // Set task as running with plan ID
   const setTaskRunning = (planId: string) => {
     console.log('[TaskStore] setTaskRunning called with planId:', planId)
-    // Create a new task if one doesn't exist
+    // Only update existing task or create one if we have a valid prompt
     if (!currentTask.value) {
-      currentTask.value = {
-        prompt: '', // Empty prompt for running tasks
-        timestamp: Date.now(),
-        planId: planId,
-        isRunning: true
-      }
-      console.log('[TaskStore] Created new task:', currentTask.value)
+      // Don't create empty tasks for running state
+      console.log('[TaskStore] No existing task to mark as running, skipping empty task creation')
+      return
     } else {
       currentTask.value.planId = planId
       currentTask.value.isRunning = true
@@ -135,7 +147,7 @@ export const useTaskStore = defineStore('task', () => {
         const { DirectApiService } = await import('@/api/direct-api-service')
         await DirectApiService.stopTask(currentTask.value.planId)
         console.log('[TaskStore] Task stopped successfully')
-        
+
         // Mark task as no longer running
         currentTask.value.isRunning = false
         return true
@@ -170,6 +182,6 @@ export const useTaskStore = defineStore('task', () => {
     emitPlanExecutionRequested,
     setTaskRunning,
     stopCurrentTask,
-    hasRunningTask
+    hasRunningTask,
   }
 })

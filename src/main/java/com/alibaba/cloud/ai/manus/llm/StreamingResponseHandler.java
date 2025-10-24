@@ -46,10 +46,8 @@ import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
 import reactor.core.publisher.Flux;
 
 /**
- * A utility class for handling streaming chat responses with periodic progress
- * logging.
- * This class merges text content and tool calls from multiple streaming
- * responses and
+ * A utility class for handling streaming chat responses with periodic progress logging.
+ * This class merges text content and tool calls from multiple streaming responses and
  * provides regular progress updates to prevent users from thinking the model is
  * unresponsive.
  */
@@ -89,8 +87,7 @@ public class StreamingResponseHandler {
 		public List<ToolCall> getEffectiveToolCalls() {
 			return lastResponse != null && lastResponse.getResult() != null
 					&& lastResponse.getResult().getOutput() != null
-							? lastResponse.getResult().getOutput().getToolCalls()
-							: Collections.emptyList();
+							? lastResponse.getResult().getOutput().getToolCalls() : Collections.emptyList();
 		}
 
 		/**
@@ -107,11 +104,9 @@ public class StreamingResponseHandler {
 
 	/**
 	 * Process a streaming chat response flux with periodic progress logging
-	 * 
 	 * @param responseFlux The streaming chat response flux
-	 * @param contextName  A descriptive name for logging context (e.g., "Agent
-	 *                     thinking",
-	 *                     "Plan creation")
+	 * @param contextName A descriptive name for logging context (e.g., "Agent thinking",
+	 * "Plan creation")
 	 * @return StreamingResult containing merged content and the last response
 	 */
 	public StreamingResult processStreamingResponse(Flux<ChatResponse> responseFlux, String contextName,
@@ -176,8 +171,7 @@ public class StreamingResponseHandler {
 						metadataUsagePromptTokensRef.set(usage.getPromptTokens() > 0 ? usage.getPromptTokens()
 								: metadataUsagePromptTokensRef.get());
 						metadataUsageGenerationTokensRef.set(usage.getCompletionTokens() > 0
-								? usage.getCompletionTokens()
-								: metadataUsageGenerationTokensRef.get());
+								? usage.getCompletionTokens() : metadataUsageGenerationTokensRef.get());
 						metadataUsageTotalTokensRef.set(usage.getTotalTokens() > 0 ? usage.getTotalTokens()
 								: metadataUsageTotalTokensRef.get());
 					}
@@ -211,12 +205,12 @@ public class StreamingResponseHandler {
 						metadataUsageGenerationTokensRef.get(), metadataUsageTotalTokensRef.get());
 
 				var chatResponseMetadata = ChatResponseMetadata.builder()
-						.id(metadataIdRef.get())
-						.model(metadataModelRef.get())
-						.rateLimit(metadataRateLimitRef.get())
-						.usage(usage)
-						.promptMetadata(metadataPromptMetadataRef.get())
-						.build();
+					.id(metadataIdRef.get())
+					.model(metadataModelRef.get())
+					.rateLimit(metadataRateLimitRef.get())
+					.usage(usage)
+					.promptMetadata(metadataPromptMetadataRef.get())
+					.build();
 				finalChatResponseRef.set(
 						new ChatResponse(List.of(new Generation(
 								new AssistantMessage(messageTextContentRef.get().toString(),
@@ -243,17 +237,16 @@ public class StreamingResponseHandler {
 
 			llmTraceRecorder.recordResponse(finalChatResponseRef.get());
 			return new StreamingResult(finalChatResponseRef.get());
-		} finally {
+		}
+		finally {
 			LlmTraceRecorder.clearRequest();
 		}
 	}
 
 	/**
-	 * Process a streaming chat response flux for text-only content (e.g.,
-	 * summaries)
-	 * 
+	 * Process a streaming chat response flux for text-only content (e.g., summaries)
 	 * @param responseFlux The streaming chat response flux
-	 * @param contextName  A descriptive name for logging context
+	 * @param contextName A descriptive name for logging context
 	 * @return The merged text content
 	 */
 	public String processStreamingTextResponse(Flux<ChatResponse> responseFlux, String contextName, String planId) {
@@ -290,7 +283,8 @@ public class StreamingResponseHandler {
 					toolCallDetails.append(")");
 				}
 			}
-		} else {
+		}
+		else {
 			toolCallDetails.append("No tool calls");
 		}
 
