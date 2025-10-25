@@ -127,11 +127,17 @@ export const useTaskStore = defineStore('task', () => {
   // Set task as running with plan ID
   const setTaskRunning = (planId: string) => {
     console.log('[TaskStore] setTaskRunning called with planId:', planId)
-    // Only update existing task or create one if we have a valid prompt
+    // Create a task if none exists, or update existing one
     if (!currentTask.value) {
-      // Don't create empty tasks for running state
-      console.log('[TaskStore] No existing task to mark as running, skipping empty task creation')
-      return
+      // Create a new task for running state
+      currentTask.value = {
+        prompt: '', // Empty prompt since this is just for tracking running state
+        timestamp: Date.now(),
+        processed: false,
+        planId: planId,
+        isRunning: true,
+      }
+      console.log('[TaskStore] Created new task for running state:', currentTask.value)
     } else {
       currentTask.value.planId = planId
       currentTask.value.isRunning = true

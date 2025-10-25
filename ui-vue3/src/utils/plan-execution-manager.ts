@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import { reactive } from 'vue'
-import { PlanActApiService } from '@/api/plan-act-api-service'
-import { DirectApiService } from '@/api/direct-api-service'
 import { CommonApiService } from '@/api/common-api-service'
-import type { PlanExecutionRecord } from '@/types/plan-execution-record'
+import { DirectApiService } from '@/api/direct-api-service'
+import { PlanActApiService } from '@/api/plan-act-api-service'
+import { useTaskStore } from '@/stores/task'
 import type { UIStateData } from '@/types/cache-data'
+import type { PlanExecutionRecord } from '@/types/plan-execution-record'
+import { reactive } from 'vue'
 
 // Define event callback interface
 interface EventCallbacks {
@@ -38,7 +39,6 @@ interface ExecutionState {
   pollTimer: number | null
 }
 
-
 export class PlanExecutionManager {
   private static instance: PlanExecutionManager | null = null
   private readonly POLL_INTERVAL = 5000
@@ -48,7 +48,7 @@ export class PlanExecutionManager {
     activePlanId: null,
     lastSequenceSize: 0,
     isPolling: false,
-    pollTimer: null
+    pollTimer: null,
   })
 
   // Event callbacks
@@ -110,7 +110,9 @@ export class PlanExecutionManager {
   clearCachedPlanRecord(rootPlanId: string): boolean {
     const deleted = this.planExecutionCache.delete(rootPlanId)
     if (deleted) {
-      console.log(`[PlanExecutionManager] Cleared cached plan execution record for rootPlanId: ${rootPlanId}`)
+      console.log(
+        `[PlanExecutionManager] Cleared cached plan execution record for rootPlanId: ${rootPlanId}`
+      )
     }
     return deleted
   }
@@ -125,7 +127,9 @@ export class PlanExecutionManager {
     this.planExecutionCache.clear()
     this.uiStateCache.clear()
 
-    console.log(`[PlanExecutionManager] Cleared all caches - Plans: ${planCacheSize}, UI States: ${uiStateCacheSize}`)
+    console.log(
+      `[PlanExecutionManager] Cleared all caches - Plans: ${planCacheSize}, UI States: ${uiStateCacheSize}`
+    )
   }
 
   private constructor() {
@@ -213,11 +217,15 @@ export class PlanExecutionManager {
     const cachedRecord = this.getCachedPlanRecord(rootPlanId)
 
     if (cachedRecord?.currentPlanId) {
-      console.log(`[PlanExecutionManager] Found cached plan execution record for rootPlanId: ${rootPlanId}`)
+      console.log(
+        `[PlanExecutionManager] Found cached plan execution record for rootPlanId: ${rootPlanId}`
+      )
       this.handlePlanExecutionRequested(cachedRecord.currentPlanId, query)
       return true
     } else {
-      console.log(`[PlanExecutionManager] No cached plan execution record found for rootPlanId: ${rootPlanId}`)
+      console.log(
+        `[PlanExecutionManager] No cached plan execution record found for rootPlanId: ${rootPlanId}`
+      )
       return false
     }
   }
@@ -254,7 +262,7 @@ export class PlanExecutionManager {
     try {
       // Use direct execution mode API to send message
       const response = await DirectApiService.sendMessage({
-        input: query
+        input: query,
       })
 
       if (response?.planId) {
@@ -278,17 +286,17 @@ export class PlanExecutionManager {
    * Start plan execution sequence
    */
   public initiatePlanExecutionSequence(query: string, planId: string): void {
-    console.log(`[PlanExecutionManager] Starting plan execution sequence for query: "${query}", planId: ${planId}`)
+    console.log(
+      `[PlanExecutionManager] Starting plan execution sequence for query: "${query}", planId: ${planId}`
+    )
 
     // Use planId as rootPlanId for now (assume they are the same initially)
     const rootPlanId = planId
 
     // Mark task as running in task store
-    import('@/stores/task').then(({ useTaskStore }) => {
-      const taskStore = useTaskStore()
-      taskStore.setTaskRunning(planId)
-      console.log('[PlanExecutionManager] Task marked as running with planId:', planId)
-    })
+    const taskStore = useTaskStore()
+    taskStore.setTaskRunning(planId)
+    console.log('[PlanExecutionManager] Task marked as running with planId:', planId)
 
     // Try to emit dialog start
     this.emitDialogRoundStart(rootPlanId)
@@ -300,18 +308,16 @@ export class PlanExecutionManager {
    * Handle plan completion common logic
    */
   private handlePlanCompletion(details: PlanExecutionRecord): void {
-    this.emitPlanCompleted(details.rootPlanId ?? "");
+    this.emitPlanCompleted(details.rootPlanId ?? '')
     this.state.lastSequenceSize = 0
     this.stopPolling()
 
     // Mark task as no longer running
-    import('@/stores/task').then(({ useTaskStore }) => {
-      const taskStore = useTaskStore()
-      if (taskStore.currentTask && taskStore.currentTask.isRunning) {
-        taskStore.currentTask.isRunning = false
-        console.log('[PlanExecutionManager] Task marked as completed')
-      }
-    })
+    const taskStore = useTaskStore()
+    if (taskStore.currentTask && taskStore.currentTask.isRunning) {
+      taskStore.currentTask.isRunning = false
+      console.log('[PlanExecutionManager] Task marked as completed')
+    }
 
     // Delay deletion of plan execution record
     try {
@@ -319,7 +325,9 @@ export class PlanExecutionManager {
         if (this.state.activePlanId) {
           try {
             await PlanActApiService.deletePlanTemplate(this.state.activePlanId)
-            console.log(`[PlanExecutionManager] Plan template ${this.state.activePlanId} deleted successfully`)
+            console.log(
+              `[PlanExecutionManager] Plan template ${this.state.activePlanId} deleted successfully`
+            )
           } catch (error: any) {
             console.log(`Delete plan execution record failed: ${error.message}`)
           }
@@ -331,23 +339,21 @@ export class PlanExecutionManager {
 
     if (details.completed) {
       this.state.activePlanId = null
-      this.emitChatInputUpdateState(details.rootPlanId ?? "");
+      this.emitChatInputUpdateState(details.rootPlanId ?? '')
     }
   }
 
   private handlePlanError(details: PlanExecutionRecord): void {
-    this.emitPlanError(details.message ?? "");
+    this.emitPlanError(details.message ?? '')
     this.state.lastSequenceSize = 0
     this.stopPolling()
 
     // Mark task as no longer running
-    import('@/stores/task').then(({ useTaskStore }) => {
-      const taskStore = useTaskStore()
-      if (taskStore.currentTask && taskStore.currentTask.isRunning) {
-        taskStore.currentTask.isRunning = false
-        console.log('[PlanExecutionManager] Task marked as stopped due to error')
-      }
-    })
+    const taskStore = useTaskStore()
+    if (taskStore.currentTask && taskStore.currentTask.isRunning) {
+      taskStore.currentTask.isRunning = false
+      console.log('[PlanExecutionManager] Task marked as stopped due to error')
+    }
 
     // Delay deletion of plan execution record
     try {
@@ -355,7 +361,9 @@ export class PlanExecutionManager {
         if (this.state.activePlanId) {
           try {
             await PlanActApiService.deletePlanTemplate(this.state.activePlanId)
-            console.log(`[PlanExecutionManager] Plan template ${this.state.activePlanId} deleted successfully`)
+            console.log(
+              `[PlanExecutionManager] Plan template ${this.state.activePlanId} deleted successfully`
+            )
           } catch (error: any) {
             console.log(`Delete plan execution record failed: ${error.message}`)
           }
@@ -386,14 +394,21 @@ export class PlanExecutionManager {
       const details = await this.getPlanDetails(this.state.activePlanId)
 
       if (!details) {
-        console.warn('[PlanExecutionManager] No details received from API - this might be a temporary network issue')
+        console.warn(
+          '[PlanExecutionManager] No details received from API - this might be a temporary network issue'
+        )
         return
       }
 
       // Only handle actual plan execution failures, not network errors
-      if(details.status && details.status === 'failed' && details.message && !details.message.includes('Failed to get detailed information')){
+      if (
+        details.status &&
+        details.status === 'failed' &&
+        details.message &&
+        !details.message.includes('Failed to get detailed information')
+      ) {
         this.handlePlanError(details)
-        return;
+        return
       }
 
       // Update cache with latest plan details if rootPlanId exists
@@ -401,9 +416,7 @@ export class PlanExecutionManager {
         this.setCachedPlanRecord(details.rootPlanId, details)
       }
 
-
-
-      this.emitPlanUpdate(details.rootPlanId ?? "");
+      this.emitPlanUpdate(details.rootPlanId ?? '')
 
       if (details.completed) {
         this.handlePlanCompletion(details)
@@ -426,7 +439,9 @@ export class PlanExecutionManager {
       // Cache the plan execution record by rootPlanId if it exists
       if (details?.rootPlanId) {
         this.planExecutionCache.set(details.rootPlanId, details)
-        console.log(`[PlanExecutionManager] Cached plan execution record for rootPlanId: ${details.rootPlanId}`)
+        console.log(
+          `[PlanExecutionManager] Cached plan execution record for rootPlanId: ${details.rootPlanId}`
+        )
       }
 
       return details
@@ -435,7 +450,7 @@ export class PlanExecutionManager {
       return {
         currentPlanId: planId,
         status: 'failed',
-        message: error instanceof Error ? error.message : 'Failed to get plan'
+        message: error instanceof Error ? error.message : 'Failed to get plan',
       }
     }
   }

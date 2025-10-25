@@ -44,9 +44,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import com.alibaba.cloud.ai.manus.agent.ToolCallbackProvider;
+import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.cron.service.CronService;
-import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.mcp.model.vo.McpServiceEntity;
@@ -56,35 +56,30 @@ import com.alibaba.cloud.ai.manus.mcp.service.McpStateHolderService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanFinalizer;
 import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
+import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
+import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
 import com.alibaba.cloud.ai.manus.tool.FormInputTool;
 import com.alibaba.cloud.ai.manus.tool.TerminateTool;
 import com.alibaba.cloud.ai.manus.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.manus.tool.bash.Bash;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.browser.ChromeDriverService;
-import com.alibaba.cloud.ai.manus.tool.dirOperator.DirectoryOperator;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.ImageOcrProcessor;
+import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.MarkdownConverterTool;
+import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.PdfOcrProcessor;
+import com.alibaba.cloud.ai.manus.tool.cron.CronTool;
 import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseUseTool;
+import com.alibaba.cloud.ai.manus.tool.dirOperator.DirectoryOperator;
+import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
-import com.alibaba.cloud.ai.manus.tool.cron.CronTool;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
-import com.alibaba.cloud.ai.manus.tool.mapreduce.DataSplitTool;
-import com.alibaba.cloud.ai.manus.tool.mapreduce.FinalizeTool;
-import com.alibaba.cloud.ai.manus.tool.mapreduce.MapOutputTool;
-import com.alibaba.cloud.ai.manus.tool.mapreduce.MapReduceSharedStateManager;
-import com.alibaba.cloud.ai.manus.tool.mapreduce.ReduceOperationTool;
+import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
+import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
-import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
-import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
-import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
-import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.MarkdownConverterTool;
-import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.PdfOcrProcessor;
-import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.ImageOcrProcessor;
-import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
-import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -125,9 +120,6 @@ public class PlanningFactory {
 	@Autowired
 	@Lazy
 	private ToolCallingManager toolCallingManager;
-
-	@Autowired
-	private MapReduceSharedStateManager sharedStateManager;
 
 	@Autowired
 	private PromptService promptService;
@@ -179,6 +171,7 @@ public class PlanningFactory {
 
 	/**
 	 * Create a PlanFinalizer instance
+	 * 
 	 * @return configured PlanFinalizer instance
 	 */
 	public PlanFinalizer createPlanFinalizer() {
@@ -239,14 +232,6 @@ public class PlanningFactory {
 			// toolDefinitions.add(new PythonExecute());
 			toolDefinitions.add(new FormInputTool(objectMapper));
 			if (infiniteContextEnabled) {
-				toolDefinitions.add(new DataSplitTool(planId, manusProperties, sharedStateManager,
-						unifiedDirectoryManager, objectMapper, tableProcessingService));
-				toolDefinitions.add(new MapOutputTool(planId, manusProperties, sharedStateManager,
-						unifiedDirectoryManager, objectMapper));
-				toolDefinitions
-					.add(new ReduceOperationTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
-				toolDefinitions
-					.add(new FinalizeTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
 
 			}
 			toolDefinitions.add(new CronTool(cronService, objectMapper));
@@ -256,8 +241,7 @@ public class PlanningFactory {
 					new ImageOcrProcessor(unifiedDirectoryManager, llmService, manusProperties,
 							new ImageRecognitionExecutorPool(manusProperties))));
 			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
-		}
-		else {
+		} else {
 			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo));
 		}
 
@@ -276,20 +260,19 @@ public class PlanningFactory {
 
 			try {
 				FunctionToolCallback<?, ToolExecuteResult> functionToolcallback = FunctionToolCallback
-					.builder(toolDefinition.getName(), toolDefinition)
-					.description(toolDefinition.getDescription())
-					.inputSchema(toolDefinition.getParameters())
-					.inputType(toolDefinition.getInputType())
-					.toolMetadata(ToolMetadata.builder().returnDirect(toolDefinition.isReturnDirect()).build())
-					.build();
+						.builder(toolDefinition.getName(), toolDefinition)
+						.description(toolDefinition.getDescription())
+						.inputSchema(toolDefinition.getParameters())
+						.inputType(toolDefinition.getInputType())
+						.toolMetadata(ToolMetadata.builder().returnDirect(toolDefinition.isReturnDirect()).build())
+						.build();
 				toolDefinition.setCurrentPlanId(planId);
 				toolDefinition.setRootPlanId(rootPlanId);
 				log.info("Registering tool: {}", toolDefinition.getName());
 				ToolCallBackContext functionToolcallbackContext = new ToolCallBackContext(functionToolcallback,
 						toolDefinition);
 				toolCallbackMap.put(toolDefinition.getName(), functionToolcallbackContext);
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				log.error("Failed to register tool: {} - {}", toolDefinition.getName(), e.getMessage(), e);
 			}
 		}
@@ -298,11 +281,10 @@ public class PlanningFactory {
 		if (subplanToolService != null) {
 			try {
 				Map<String, PlanningFactory.ToolCallBackContext> subplanToolCallbacks = subplanToolService
-					.createSubplanToolCallbacks(planId, rootPlanId, expectedReturnInfo);
+						.createSubplanToolCallbacks(planId, rootPlanId, expectedReturnInfo);
 				toolCallbackMap.putAll(subplanToolCallbacks);
 				log.info("Registered {} subplan tools", subplanToolCallbacks.size());
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				log.warn("Failed to register subplan tools: {}", e.getMessage());
 			}
 		}
@@ -315,11 +297,11 @@ public class PlanningFactory {
 	public RestClient.Builder createRestClient() {
 		// Create RequestConfig and set the timeout (10 minutes for all timeouts)
 		RequestConfig requestConfig = RequestConfig.custom()
-			.setConnectTimeout(Timeout.of(10, TimeUnit.MINUTES)) // Set the connection
-																	// timeout
-			.setResponseTimeout(Timeout.of(10, TimeUnit.MINUTES))
-			.setConnectionRequestTimeout(Timeout.of(10, TimeUnit.MINUTES))
-			.build();
+				.setConnectTimeout(Timeout.of(10, TimeUnit.MINUTES)) // Set the connection
+																		// timeout
+				.setResponseTimeout(Timeout.of(10, TimeUnit.MINUTES))
+				.setConnectionRequestTimeout(Timeout.of(10, TimeUnit.MINUTES))
+				.build();
 
 		// Create CloseableHttpClient and apply the configuration
 		HttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(requestConfig).build();
