@@ -30,8 +30,7 @@ import com.alibaba.cloud.ai.manus.planning.exception.ParameterValidationExceptio
 import com.alibaba.cloud.ai.manus.planning.model.vo.ParameterValidationResult;
 
 /**
- * Plan parameter mapping service implementation class providing specific
- * implementation
+ * Plan parameter mapping service implementation class providing specific implementation
  * for handling parameter placeholders in plan templates
  */
 @Service
@@ -71,7 +70,8 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 			if (rawParams.containsKey(paramName)) {
 				foundParams.add(paramName);
 				logger.debug("Parameter validation passed: {}", paramName);
-			} else {
+			}
+			else {
 				missingParams.add(paramName);
 				logger.warn("Parameter validation failed: {} not found in raw parameters", paramName);
 			}
@@ -83,7 +83,8 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 
 		if (missingParams.isEmpty()) {
 			result.setMessage("All parameter validation passed, found " + foundParams.size() + " parameters");
-		} else {
+		}
+		else {
 			result.setMessage("Missing parameters: " + String.join(", ", missingParams) + ", found "
 					+ foundParams.size() + " parameters");
 		}
@@ -102,8 +103,7 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 	/**
 	 * Validate parameter completeness before parameter replacement. Throws detailed
 	 * exception information if validation fails
-	 * 
-	 * @param planJson  plan template JSON
+	 * @param planJson plan template JSON
 	 * @param rawParams raw parameters
 	 * @throws ParameterValidationException thrown when parameter validation fails
 	 */
@@ -118,8 +118,7 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 
 	/**
 	 * Safely replace parameters, throws exception if validation fails
-	 * 
-	 * @param planJson  plan template JSON
+	 * @param planJson plan template JSON
 	 * @param rawParams raw parameters
 	 * @return replaced plan template
 	 * @throws ParameterValidationException thrown when parameter validation fails
@@ -169,7 +168,6 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 
 	/**
 	 * Escape special JSON characters in a string to prevent JSON parsing errors
-	 * 
 	 * @param input The input string to escape
 	 * @return The escaped string safe for JSON parsing
 	 */
@@ -179,12 +177,12 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 		}
 
 		return input.replace("\\", "\\\\") // Backslash must be first
-				.replace("\"", "\\\"") // Double quote
-				.replace("\b", "\\b") // Backspace
-				.replace("\f", "\\f") // Form feed
-				.replace("\n", "\\n") // Newline
-				.replace("\r", "\\r") // Carriage return
-				.replace("\t", "\\t"); // Tab
+			.replace("\"", "\\\"") // Double quote
+			.replace("\b", "\\b") // Backspace
+			.replace("\f", "\\f") // Form feed
+			.replace("\n", "\\n") // Newline
+			.replace("\r", "\\r") // Carriage return
+			.replace("\t", "\\t"); // Tab
 	}
 
 	@Override
@@ -223,7 +221,8 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 				replacementCount++;
 
 				logger.debug("Parameter replacement successful: {} -> {}", placeholder, escapedValue);
-			} else {
+			}
+			else {
 				missingParams.add(paramName);
 				logger.warn("Parameter {} not found in raw parameters, keeping placeholder: {}", paramName,
 						placeholder);
@@ -238,7 +237,8 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 
 		if (replacementCount > 0) {
 			logger.info("Parameter replacement completed, replaced {} parameter placeholders", replacementCount);
-		} else {
+		}
+		else {
 			logger.debug("No parameter placeholders found for replacement");
 		}
 
@@ -246,8 +246,7 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 	}
 
 	/**
-	 * Check if parameter name is valid. Parameter names can only contain letters,
-	 * numbers
+	 * Check if parameter name is valid. Parameter names can only contain letters, numbers
 	 * and underscores
 	 */
 	public static boolean isValidParameterName(String paramName) {
@@ -268,10 +267,8 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 	}
 
 	/**
-	 * Get parameter requirements information for plan template to help users
-	 * understand
+	 * Get parameter requirements information for plan template to help users understand
 	 * what parameters need to be provided
-	 * 
 	 * @param planJson plan template JSON
 	 * @return parameter requirements information
 	 */
