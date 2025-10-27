@@ -229,8 +229,7 @@ public class DatabaseSqlGenerator {
 					+ "WHERE table_type = 'BASE TABLE' AND table_name LIKE ?";
 		}
 		else {
-			return "SELECT * " + "FROM information_schema.tables "
-					+ "WHERE table_type = 'BASE TABLE'";
+			return "SELECT * " + "FROM information_schema.tables " + "WHERE table_type = 'BASE TABLE'";
 		}
 	}
 

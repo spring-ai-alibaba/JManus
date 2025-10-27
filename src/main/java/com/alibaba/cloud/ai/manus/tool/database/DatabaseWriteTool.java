@@ -60,10 +60,10 @@ public class DatabaseWriteTool extends AbstractBaseTool<DatabaseRequest> {
 		return """
 				Execute write operations on database (INSERT, UPDATE, DELETE, CREATE, DROP, ALTER).
 				Use this tool when you need to modify database data or structure.
-				
+
 				Operations:
 				- 'execute_write_sql': Execute INSERT, UPDATE, DELETE, or DDL statements
-				
+
 				Important: When inserting NULL values, use NULL keyword explicitly (e.g., VALUES ('name', NULL, NULL)).
 				""";
 	}
@@ -100,7 +100,7 @@ public class DatabaseWriteTool extends AbstractBaseTool<DatabaseRequest> {
 			if (!"execute_write_sql".equals(action)) {
 				return new ToolExecuteResult("Only execute_write_sql action is supported for write operations");
 			}
-			
+
 			// Execute write SQL
 			return new ExecuteSqlAction().execute(request, dataSourceService);
 		}
@@ -153,4 +153,3 @@ public class DatabaseWriteTool extends AbstractBaseTool<DatabaseRequest> {
 	}
 
 }
-

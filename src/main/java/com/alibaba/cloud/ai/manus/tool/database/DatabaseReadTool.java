@@ -66,7 +66,7 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 				Use this tool when you need to:
 				- 'execute_read_sql': Execute SELECT queries (read-only operations only)
 				- 'get_table_name': Find table names based on table comments
-				
+
 				Important: When querying NULL values, use NULL keyword explicitly (e.g., WHERE email IS NULL).
 				""";
 	}
@@ -177,4 +177,3 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 	}
 
 }
-

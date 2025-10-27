@@ -220,4 +220,3 @@ public class DatabaseMetadataTool extends AbstractBaseTool<DatabaseRequest> {
 	}
 
 }
-
