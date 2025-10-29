@@ -17,24 +17,16 @@
   <div class="assigned-tools">
     <div class="section-header">
       <span>{{ title }} ({{ filteredSelectedToolIds.length }})</span>
-      <button 
-        class="action-btn small"
-        @click="$emit('add-tools')"
-        v-if="showAddButton"
-      >
+      <button class="action-btn small" @click="$emit('add-tools')" v-if="showAddButton">
         <Icon icon="carbon:add" />
         {{ addButtonText }}
       </button>
     </div>
 
     <div class="tools-grid" :class="{ 'grid-layout': useGridLayout }">
-      <div
-        v-for="toolId in filteredSelectedToolIds" 
-        :key="toolId"
-        class="tool-item assigned"
-      >
+      <div v-for="toolId in filteredSelectedToolIds" :key="toolId" class="tool-item assigned">
         <div class="tool-info">
-          <span class="tool-name">{{ getToolDisplayName(toolId) }}</span>
+          <span class="tool-name">{{ getToolDisplayNameWithGroup(toolId) }}</span>
           <span class="tool-desc">{{ getToolDescription(toolId) }}</span>
         </div>
       </div>
@@ -73,7 +65,7 @@ const props = withDefaults(defineProps<Props>(), {
   addButtonText: 'Add/Remove Tools',
   emptyText: 'No tools assigned',
   showAddButton: true,
-  useGridLayout: false
+  useGridLayout: false,
 })
 
 // Emits
@@ -84,23 +76,30 @@ const emit = defineEmits<{
 
 // Computed property to filter out tools that are not in availableTools
 const filteredSelectedToolIds = computed(() => {
-  return props.selectedToolIds.filter(toolId => 
+  return props.selectedToolIds.filter(toolId =>
     props.availableTools.some(tool => tool.key === toolId)
   )
 })
 
 // Watch for changes in filtered tools and emit event
-watch(filteredSelectedToolIds, (newFilteredTools) => {
-  // Only emit if there's a difference (some tools were filtered out)
-  if (newFilteredTools.length !== props.selectedToolIds.length) {
-    emit('tools-filtered', newFilteredTools)
-  }
-}, { immediate: true })
+watch(
+  filteredSelectedToolIds,
+  newFilteredTools => {
+    // Only emit if there's a difference (some tools were filtered out)
+    if (newFilteredTools.length !== props.selectedToolIds.length) {
+      emit('tools-filtered', newFilteredTools)
+    }
+  },
+  { immediate: true }
+)
 
 // Methods
-const getToolDisplayName = (toolId: string): string => {
+const getToolDisplayNameWithGroup = (toolId: string): string => {
   const tool = props.availableTools.find(t => t.key === toolId)
-  return tool ? tool.name : toolId
+  if (!tool) return toolId
+
+  const group = tool.serviceGroup || 'Ungrouped'
+  return `${group}.${tool.name}`
 }
 
 const getToolDescription = (toolId: string): string => {

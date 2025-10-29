@@ -1305,7 +1305,7 @@ const words: I18nType = {
     copyUrl: 'Double-click to copy',
     toolName: 'Tool Name',
     toolNameRequired: 'Tool Name *',
-    toolNamePlaceholder: 'Please enter tool name',
+    toolNamePlaceholder: 'Please enter tool name, recommended to use English name for HTTP calls',
     toolNameDescription:
       'Tell the model what this tool is called, also for your identification and modification',
     toolDescription: 'Tool Description',

@@ -37,13 +37,6 @@
             </button>
             <button
               class="cron-task-btn"
-              @click="showCronTaskModal = true"
-              :title="$t('cronTask.title')"
-            >
-              <Icon icon="carbon:alarm" width="20" />
-            </button>
-            <button
-              class="cron-task-btn"
               @click="memoryStore.toggleSidebar()"
               :title="$t('memory.selectMemory')"
             >
@@ -96,9 +89,6 @@
       />
     </div>
 
-    <!-- Cron Task Modal -->
-    <CronTaskModal v-model="showCronTaskModal" />
-
     <!-- Memory Modal -->
     <Memory @memory-selected="memorySelected" />
 
@@ -115,7 +105,6 @@
 import { CommonApiService } from '@/api/common-api-service'
 import { PlanActApiService } from '@/api/plan-act-api-service'
 import ChatContainer from '@/components/chat/ChatContainer.vue'
-import CronTaskModal from '@/components/cron-task-modal/CronTaskModal.vue'
 import InputArea from '@/components/input/InputArea.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
 import Memory from '@/components/memory/Memory.vue'
@@ -147,7 +136,6 @@ const sidebarRef = ref()
 const isExecutingPlan = ref(false)
 const isLoading = ref(false)
 const currentRootPlanId = ref<string | null>(null)
-const showCronTaskModal = ref(false)
 
 // Related to panel width
 const leftPanelWidth = ref(50) // Left panel width percentage

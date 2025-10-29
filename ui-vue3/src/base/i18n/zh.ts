@@ -1245,7 +1245,7 @@ const words: I18nType = {
     copyUrl: '双击复制',
     toolName: '工具名称',
     toolNameRequired: '工具名称 *',
-    toolNamePlaceholder: '请输入工具名称',
+    toolNamePlaceholder: '请输入工具名称，推荐是英文调用名，方便http调用使用',
     toolNameDescription: '告知模型这个工具叫什么，也是方便你识别和修改用',
     toolDescription: '工具描述',
     toolDescriptionRequired: '工具描述 *',

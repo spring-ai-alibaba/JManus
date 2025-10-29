@@ -51,13 +51,32 @@
       <div class="form-section">
         <div class="form-item">
           <label>{{ t('mcpService.serviceGroup') }}</label>
-          <input
-            type="text"
-            v-model="formData.serviceGroup"
-            :placeholder="t('mcpService.serviceGroupPlaceholder')"
-            :class="{ error: !formData.serviceGroup || !formData.serviceGroup.trim() }"
-            required
-          />
+          <div class="service-group-autocomplete">
+            <input
+              type="text"
+              v-model="formData.serviceGroup"
+              @input="handleServiceGroupInput"
+              @focus="showGroupSuggestions = true"
+              @blur="handleServiceGroupBlur"
+              :placeholder="t('mcpService.serviceGroupPlaceholder')"
+              :class="{ error: !formData.serviceGroup || !formData.serviceGroup.trim() }"
+              required
+            />
+            <!-- Filtered group suggestions dropdown -->
+            <div
+              v-if="showGroupSuggestions && filteredServiceGroups.length > 0"
+              class="service-group-dropdown"
+            >
+              <div
+                v-for="group in filteredServiceGroups"
+                :key="group"
+                class="service-group-option"
+                @mousedown="selectServiceGroup(group)"
+              >
+                {{ group }}
+              </div>
+            </div>
+          </div>
           <div class="field-description">{{ t('mcpService.serviceGroupDescription') }}</div>
         </div>
       </div>
@@ -173,6 +192,7 @@
 </template>
 
 <script setup lang="ts">
+import { AgentApiService } from '@/api/agent-api-service'
 import {
   CoordinatorToolApiService,
   type CoordinatorToolVO,
@@ -236,6 +256,11 @@ const parameterRequirements = ref<ParameterRequirements>({
 })
 const isLoadingParameters = ref(false)
 
+// Service group autocomplete state
+const showGroupSuggestions = ref(false)
+const availableServiceGroups = ref<string[]>([])
+const isLoadingGroups = ref(false)
+
 // Form data
 const formData = reactive({
   serviceName: '',
@@ -243,6 +268,17 @@ const formData = reactive({
   endpoint: '',
   serviceGroup: '',
   parameters: [] as Array<{ name: string; description: string }>,
+})
+
+// Filtered service groups based on input (reusing filtering pattern from ToolSelectionModal)
+const filteredServiceGroups = computed(() => {
+  const trimmedGroup = formData.serviceGroup.trim()
+  if (!trimmedGroup) {
+    return availableServiceGroups.value
+  }
+
+  const query = trimmedGroup.toLowerCase()
+  return availableServiceGroups.value.filter(group => group.toLowerCase().includes(query))
 })
 
 // Calculate modal title
@@ -279,6 +315,49 @@ watch(
     }
   }
 )
+
+// Load available service groups from tools (reusing logic from ToolSelectionModal)
+const loadAvailableServiceGroups = async () => {
+  if (isLoadingGroups.value) {
+    return
+  }
+
+  isLoadingGroups.value = true
+  try {
+    const tools = await AgentApiService.getAvailableTools()
+    // Extract unique service groups (same pattern as groupedTools in ToolSelectionModal)
+    const groupsSet = new Set<string>()
+    tools.forEach(tool => {
+      if (tool.serviceGroup) {
+        groupsSet.add(tool.serviceGroup)
+      }
+    })
+    availableServiceGroups.value = Array.from(groupsSet).sort()
+  } catch (error) {
+    console.error('[PublishModal] Failed to load service groups:', error)
+    availableServiceGroups.value = []
+  } finally {
+    isLoadingGroups.value = false
+  }
+}
+
+// Handle service group input
+const handleServiceGroupInput = () => {
+  showGroupSuggestions.value = true
+}
+
+// Handle service group blur (with delay to allow option click)
+const handleServiceGroupBlur = () => {
+  setTimeout(() => {
+    showGroupSuggestions.value = false
+  }, 200)
+}
+
+// Select a service group from dropdown
+const selectServiceGroup = (group: string) => {
+  formData.serviceGroup = group
+  showGroupSuggestions.value = false
+}
 
 // Load parameter requirements from plan template
 const loadParameterRequirements = async () => {
@@ -627,6 +706,13 @@ watch(
   }
 )
 
+// Load available service groups when modal opens
+watch(showModal, newVisible => {
+  if (newVisible) {
+    loadAvailableServiceGroups()
+  }
+})
+
 // Initialize when component mounts
 onMounted(async () => {
   if (showModal.value) {
@@ -730,6 +816,49 @@ defineExpose({
 .form-item input::placeholder,
 .form-item textarea::placeholder {
   color: rgba(255, 255, 255, 0.4);
+}
+
+/* Service Group Autocomplete Styles */
+.service-group-autocomplete {
+  position: relative;
+}
+
+.service-group-autocomplete input {
+  width: 100%;
+}
+
+.service-group-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  margin-top: 4px;
+  background: rgba(15, 15, 20, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.service-group-option {
+  padding: 12px 16px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.service-group-option:last-child {
+  border-bottom: none;
+}
+
+.service-group-option:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
 }
 
 .description-field {
