@@ -938,6 +938,7 @@ const words: I18nType = {
     modelName: '模型名称',
     modelNameDescription: '指定模型名字用于处理特定任务（如图片识别等），如不指定则使用默认的模型',
     noModelSelected: '空',
+    noModelsFound: '未找到模型',
     noTools:
       '未选择工具，模型将从所有注册的工具（包括mcp工具）自主选择适当工具进行任务，如要更精确请帮助模型选择精准的工具，效果会更好一些',
     addTool: '添加工具',

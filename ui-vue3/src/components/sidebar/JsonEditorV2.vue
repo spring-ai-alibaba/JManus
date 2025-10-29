@@ -150,38 +150,104 @@
               <!-- Model Name -->
               <div class="form-row">
                 <label class="form-label">{{ $t('sidebar.modelName') }}</label>
-                <div class="model-selector">
-                  <select
-                    v-model="step.modelName"
-                    class="form-select model-select"
-                    :disabled="isLoadingModels"
+                <div class="model-selector-wrapper">
+                  <div
+                    class="model-selector"
+                    :class="{
+                      'is-open': isModelDropdownOpenForStep(index),
+                      'is-disabled': isLoadingModels,
+                    }"
                   >
-                    <!-- Loading state -->
-                    <option v-if="isLoadingModels" disabled value="">
-                      {{ $t('sidebar.loading') }}
-                    </option>
+                    <!-- Input field with dropdown arrow -->
+                    <div class="model-input-wrapper">
+                      <input
+                        :value="getModelDisplayValue(index)"
+                        type="text"
+                        class="form-input model-search-input"
+                        :placeholder="getModelPlaceholder(index)"
+                        :disabled="isLoadingModels"
+                        @click.stop="openModelDropdown(index)"
+                        @focus="openModelDropdown(index)"
+                        @input="handleModelSearchInput($event, index)"
+                        @keydown.escape="closeModelDropdown(index)"
+                        @keydown.enter.prevent="selectFirstFilteredModel(index)"
+                        @keydown.down.prevent="navigateModelDown(index)"
+                        @keydown.up.prevent="navigateModelUp(index)"
+                      />
+                      <Icon
+                        icon="carbon:chevron-down"
+                        width="14"
+                        class="dropdown-arrow"
+                        :class="{ 'is-open': isModelDropdownOpenForStep(index) }"
+                        @click.stop="toggleModelDropdown(index)"
+                      />
+                    </div>
 
-                    <!-- Error state -->
-                    <option v-else-if="modelsLoadError" disabled value="">
-                      {{ $t('sidebar.modelLoadError') }}
-                    </option>
-
-                    <!-- Placeholder option -->
-                    <option value="" disabled>{{ $t('sidebar.modelNameDescription') }}</option>
-
-                    <!-- Default empty option -->
-                    <option value="">{{ $t('sidebar.noModelSelected') }}</option>
-
-                    <!-- Model options -->
-                    <option
-                      v-for="model in availableModels"
-                      :key="model.value"
-                      :value="model.value"
-                      :title="model.label"
+                    <!-- Dropdown list -->
+                    <div
+                      v-if="isModelDropdownOpenForStep(index)"
+                      class="model-dropdown"
+                      @click.stop
                     >
-                      {{ model.label }}
-                    </option>
-                  </select>
+                      <!-- Loading state -->
+                      <div v-if="isLoadingModels" class="dropdown-item disabled">
+                        {{ $t('sidebar.loading') }}
+                      </div>
+
+                      <!-- Error state -->
+                      <div v-else-if="modelsLoadError" class="dropdown-item disabled error">
+                        {{ $t('sidebar.modelLoadError') }}
+                      </div>
+
+                      <!-- No models found -->
+                      <div
+                        v-else-if="getFilteredModelsForStep(index).length === 0"
+                        class="dropdown-item disabled"
+                      >
+                        {{ $t('sidebar.noModelsFound') }}
+                      </div>
+
+                      <!-- Model options -->
+                      <div
+                        v-for="(model, idx) in getFilteredModelsForStep(index)"
+                        :key="model.value"
+                        class="dropdown-item"
+                        :class="{
+                          'is-selected': step.modelName === model.value,
+                          'is-highlighted': getHighlightedIndex(index) === idx,
+                        }"
+                        @click="selectModelForStep(model.value, index)"
+                        @mouseenter="setHighlightedIndex(index, idx)"
+                      >
+                        {{ model.value }}
+                        <Icon
+                          v-if="step.modelName === model.value"
+                          icon="carbon:checkmark"
+                          width="12"
+                          class="check-icon"
+                        />
+                      </div>
+
+                      <!-- Default empty option -->
+                      <div
+                        class="dropdown-item"
+                        :class="{
+                          'is-selected': !step.modelName,
+                          'is-highlighted': getHighlightedIndex(index) === -1,
+                        }"
+                        @click="selectModelForStep('', index)"
+                        @mouseenter="setHighlightedIndex(index, -1)"
+                      >
+                        {{ $t('sidebar.noModelSelected') }}
+                        <Icon
+                          v-if="!step.modelName"
+                          icon="carbon:checkmark"
+                          width="12"
+                          class="check-icon"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                   <!-- Error refresh button -->
                   <button
@@ -305,8 +371,11 @@ import AssignedTools from '@/components/shared/AssignedTools.vue'
 import ToolSelectionModal from '@/components/tool-selection-modal/ToolSelectionModal.vue'
 import { sidebarStore } from '@/stores/sidebar'
 import { Icon } from '@iconify/vue'
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useJsonEditor, type JsonEditorProps } from './json-editor-logic'
+
+const { t } = useI18n()
 
 // Define props interface specific to JsonEditorV2
 interface JsonEditorV2Props {
@@ -362,6 +431,183 @@ const titleError = ref<string>('')
 const availableModels = ref<ModelOption[]>([])
 const isLoadingModels = ref(false)
 const modelsLoadError = ref<string>('')
+
+// Per-step state for dropdown (stepIndex -> state)
+const modelSearchFilters = ref<Map<number, string>>(new Map())
+const openDropdownSteps = ref<Set<number>>(new Set())
+const highlightedIndices = ref<Map<number, number>>(new Map())
+
+// Get search filter for a specific step
+const getSearchFilter = (stepIndex: number): string => {
+  return modelSearchFilters.value.get(stepIndex) ?? ''
+}
+
+// Set search filter for a specific step
+const setSearchFilter = (stepIndex: number, value: string) => {
+  modelSearchFilters.value.set(stepIndex, value)
+}
+
+// Filtered models based on search for a specific step
+const getFilteredModelsForStep = (stepIndex: number) => {
+  const filter = getSearchFilter(stepIndex)
+  if (!filter.trim()) {
+    return availableModels.value
+  }
+  const searchTerm = filter.toLowerCase().trim()
+  return availableModels.value.filter(
+    model =>
+      model.value.toLowerCase().includes(searchTerm) ||
+      model.label.toLowerCase().includes(searchTerm)
+  )
+}
+
+// Get display value for a specific step
+const getModelDisplayValue = (stepIndex: number): string => {
+  const step = displayData.steps[stepIndex]
+  const filter = getSearchFilter(stepIndex)
+  if (openDropdownSteps.value.has(stepIndex) && filter !== '') {
+    return filter
+  }
+  return step.modelName ?? ''
+}
+
+// Get placeholder text based on selected model
+const getModelPlaceholder = (stepIndex: number) => {
+  if (isLoadingModels.value) {
+    return ''
+  }
+  if (modelsLoadError.value) {
+    return ''
+  }
+  const step = displayData.steps[stepIndex]
+  if (step.modelName) {
+    return ''
+  }
+  return (t('sidebar.modelNameDescription') as string) || ''
+}
+
+// Check if dropdown is open for a specific step
+const isModelDropdownOpenForStep = (stepIndex: number): boolean => {
+  return openDropdownSteps.value.has(stepIndex)
+}
+
+// Model dropdown functions
+const openModelDropdown = (stepIndex: number) => {
+  if (!isLoadingModels.value) {
+    openDropdownSteps.value.add(stepIndex)
+  }
+}
+
+const closeModelDropdown = (stepIndex: number) => {
+  openDropdownSteps.value.delete(stepIndex)
+  highlightedIndices.value.set(stepIndex, -1)
+  // Reset search filter to selected model name
+  const step = displayData.steps[stepIndex]
+  setSearchFilter(stepIndex, step.modelName ?? '')
+}
+
+const toggleModelDropdown = (stepIndex: number) => {
+  if (isModelDropdownOpenForStep(stepIndex)) {
+    closeModelDropdown(stepIndex)
+  } else {
+    openModelDropdown(stepIndex)
+  }
+}
+
+const selectModelForStep = (modelName: string, stepIndex: number) => {
+  const step = displayData.steps[stepIndex]
+  step.modelName = modelName
+  setSearchFilter(stepIndex, modelName)
+  closeModelDropdown(stepIndex)
+}
+
+// Handle search input
+const handleModelSearchInput = (event: Event, stepIndex: number) => {
+  const target = event.target as HTMLInputElement
+  setSearchFilter(stepIndex, target.value)
+  openModelDropdown(stepIndex)
+}
+
+// Get highlighted index for a step
+const getHighlightedIndex = (stepIndex: number): number => {
+  return highlightedIndices.value.get(stepIndex) ?? -1
+}
+
+// Set highlighted index for a step
+const setHighlightedIndex = (stepIndex: number, index: number) => {
+  highlightedIndices.value.set(stepIndex, index)
+}
+
+// Keyboard navigation
+const selectFirstFilteredModel = (stepIndex: number) => {
+  const highlightedIndex = getHighlightedIndex(stepIndex)
+  const filtered = getFilteredModelsForStep(stepIndex)
+
+  // If a specific item is highlighted, select it
+  if (highlightedIndex >= 0 && highlightedIndex < filtered.length) {
+    selectModelForStep(filtered[highlightedIndex].value, stepIndex)
+  } else if (highlightedIndex === -1) {
+    // Select empty option
+    selectModelForStep('', stepIndex)
+  } else if (filtered.length > 0) {
+    // Fallback to first item
+    selectModelForStep(filtered[0].value, stepIndex)
+  } else {
+    const step = displayData.steps[stepIndex]
+    if (!step.modelName) {
+      selectModelForStep('', stepIndex)
+    }
+  }
+}
+
+const navigateModelDown = (stepIndex: number) => {
+  if (!isModelDropdownOpenForStep(stepIndex)) {
+    openModelDropdown(stepIndex)
+    setHighlightedIndex(stepIndex, 0)
+    return
+  }
+  const filtered = getFilteredModelsForStep(stepIndex)
+  const totalItems = filtered.length + 1 // +1 for "no model selected" option
+  const currentIndex = getHighlightedIndex(stepIndex)
+  const newIndex = Math.min(currentIndex + 1, totalItems - 1)
+  setHighlightedIndex(stepIndex, newIndex)
+}
+
+const navigateModelUp = (stepIndex: number) => {
+  if (!isModelDropdownOpenForStep(stepIndex)) {
+    openModelDropdown(stepIndex)
+    const filtered = getFilteredModelsForStep(stepIndex)
+    setHighlightedIndex(stepIndex, filtered.length)
+    return
+  }
+  const currentIndex = getHighlightedIndex(stepIndex)
+  const newIndex = Math.max(currentIndex - 1, -1)
+  setHighlightedIndex(stepIndex, newIndex)
+}
+
+// Click outside to close dropdown
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  // Check if click is inside any model selector
+  const modelSelector = target.closest('.model-selector')
+  if (!modelSelector) {
+    // Close all open dropdowns
+    openDropdownSteps.value.clear()
+  }
+}
+
+// Initialize search filters when steps change
+watch(
+  () => displayData.steps,
+  newSteps => {
+    newSteps.forEach((step, index) => {
+      if (!modelSearchFilters.value.has(index)) {
+        setSearchFilter(index, step.modelName ?? '')
+      }
+    })
+  },
+  { deep: true, immediate: true }
+)
 
 // Tool selection state - use sidebar store's availableTools
 const showToolModal = ref(false)
@@ -518,6 +764,14 @@ onMounted(() => {
 
   initializeParsedData()
   loadAvailableModels()
+
+  // Add click outside listener
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  // Remove click outside listener
+  document.removeEventListener('click', handleClickOutside)
 })
 
 const autoResizeTextarea = (event: Event) => {
@@ -719,14 +973,101 @@ const formatTableHeader = (terminateColumns: string): string => {
 }
 
 /* Model Selector Styles */
-.model-selector {
+.model-selector-wrapper {
   display: flex;
   gap: 8px;
+  align-items: flex-start;
+}
+
+.model-selector {
+  position: relative;
+  flex: 1;
+}
+
+.model-input-wrapper {
+  position: relative;
+  display: flex;
   align-items: center;
 }
 
-.model-select {
+.model-search-input {
   flex: 1;
+  padding-right: 32px;
+}
+
+.dropdown-arrow {
+  position: absolute;
+  right: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.dropdown-arrow.is-open {
+  transform: rotate(180deg);
+}
+
+.model-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover,
+.dropdown-item.is-highlighted {
+  background: rgba(102, 126, 234, 0.2);
+  color: white;
+}
+
+.dropdown-item.is-selected {
+  background: rgba(102, 126, 234, 0.15);
+  color: #667eea;
+  font-weight: 500;
+}
+
+.dropdown-item.disabled {
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
+  font-style: italic;
+}
+
+.dropdown-item.disabled.error {
+  color: #ef4444;
+}
+
+.check-icon {
+  color: #667eea;
+  margin-left: 8px;
+}
+
+.model-selector.is-disabled .model-search-input {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .tool-keys-display {
