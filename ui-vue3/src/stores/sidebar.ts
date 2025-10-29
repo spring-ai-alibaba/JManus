@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-
-import { reactive } from 'vue'
-import { PlanActApiService } from '@/api/plan-act-api-service'
-import type { PlanTemplate } from '@/types/plan-template'
-import { i18n } from '@/base/i18n'
 import { Tool } from '@/api/agent-api-service'
+import { PlanActApiService } from '@/api/plan-act-api-service'
+import { i18n } from '@/base/i18n'
+import type { PlanTemplate } from '@/types/plan-template'
+import { reactive } from 'vue'
 
 type TabType = 'list' | 'config'
 
 export class SidebarStore {
   // Basic state
-  isCollapsed = true
+  isCollapsed = false
   currentTab: TabType = 'list'
 
   // Template list related state
@@ -74,7 +73,15 @@ export class SidebarStore {
     // If array format [year, month, day, hour, minute, second, nanosecond]
     if (Array.isArray(dateValue) && dateValue.length >= 6) {
       // JavaScript Date constructor months start from 0, so subtract 1
-      return new Date(dateValue[0], dateValue[1] - 1, dateValue[2], dateValue[3], dateValue[4], dateValue[5], Math.floor(dateValue[6] / 1000000))
+      return new Date(
+        dateValue[0],
+        dateValue[1] - 1,
+        dateValue[2],
+        dateValue[3],
+        dateValue[4],
+        dateValue[5],
+        Math.floor(dateValue[6] / 1000000)
+      )
     }
 
     // If string format, parse directly
@@ -100,17 +107,15 @@ export class SidebarStore {
   }
 
   get canRestore(): boolean {
-    return (
-      this.planVersions.length > 1 && this.currentVersionIndex < this.planVersions.length - 1
-    )
+    return this.planVersions.length > 1 && this.currentVersionIndex < this.planVersions.length - 1
   }
 
   get computedApiUrl(): string {
-  if (!this.selectedTemplate) return ''
-  const baseUrl = `/api/plan-template/execute/${this.selectedTemplate.id}`
-  const params = this.executionParams.trim()
-  // GET method, parameter name is allParams
-  return params ? `${baseUrl}?allParams=${encodeURIComponent(params)}` : baseUrl
+    if (!this.selectedTemplate) return ''
+    const baseUrl = `/api/plan-template/execute/${this.selectedTemplate.id}`
+    const params = this.executionParams.trim()
+    // GET method, parameter name is allParams
+    return params ? `${baseUrl}?allParams=${encodeURIComponent(params)}` : baseUrl
   }
 
   // Actions
@@ -130,7 +135,9 @@ export class SidebarStore {
       const response = await PlanActApiService.getAllPlanTemplates()
       if (response?.templates && Array.isArray(response.templates)) {
         this.planTemplateList = response.templates
-        console.log(`[SidebarStore] Successfully loaded ${response.templates.length} plan templates`)
+        console.log(
+          `[SidebarStore] Successfully loaded ${response.templates.length} plan templates`
+        )
       } else {
         this.planTemplateList = []
         console.warn('[SidebarStore] API returned abnormal data format, using empty list', response)
@@ -148,10 +155,10 @@ export class SidebarStore {
     this.currentPlanTemplateId = template.id
     this.selectedTemplate = template
     this.currentTab = 'config'
-    
+
     // Clear jsonContent immediately to prevent stale data
     this.jsonContent = ''
-    
+
     await this.loadTemplateData(template)
     console.log(`[SidebarStore] Selected plan template: ${template.id}`)
   }
@@ -210,11 +217,11 @@ export class SidebarStore {
     this.currentTab = 'config'
     // Reset to default planType for new templates
     this.planType = planType
-    
+
     // Reload available tools to ensure fresh tool list
     console.log('[SidebarStore] 🔄 Reloading available tools for new template')
     await this.loadAvailableTools()
-    
+
     console.log('[SidebarStore] Created new empty plan template, switching to config tab')
   }
 
@@ -278,18 +285,20 @@ export class SidebarStore {
       throw new Error('Invalid format, please correct and save.\nError: ' + e.message)
     }
     try {
-      const saveResult = await PlanActApiService.savePlanTemplate(
-        this.selectedTemplate.id,
-        content
-      )
-      
+      const saveResult = await PlanActApiService.savePlanTemplate(this.selectedTemplate.id, content)
+
       // Update the selected template ID with the real planId returned from backend
       if (saveResult?.planId && this.selectedTemplate.id.startsWith('new-')) {
-        console.log('[SidebarStore] Updating template ID from', this.selectedTemplate.id, 'to', saveResult.planId)
+        console.log(
+          '[SidebarStore] Updating template ID from',
+          this.selectedTemplate.id,
+          'to',
+          saveResult.planId
+        )
         this.selectedTemplate.id = saveResult.planId
         this.currentPlanTemplateId = saveResult.planId
       }
-      
+
       if (this.currentVersionIndex < this.planVersions.length - 1) {
         this.planVersions = this.planVersions.slice(0, this.currentVersionIndex + 1)
       }
@@ -301,8 +310,6 @@ export class SidebarStore {
       throw error
     }
   }
-
-
 
   preparePlanExecution() {
     if (!this.selectedTemplate) return null
@@ -320,7 +327,7 @@ export class SidebarStore {
         title,
         planData,
         params: this.executionParams.trim() || undefined,
-        replacementParams: undefined as Record<string, string> | undefined
+        replacementParams: undefined as Record<string, string> | undefined,
       }
     } catch (error: any) {
       console.error('Failed to prepare plan execution:', error)
@@ -344,7 +351,7 @@ export class SidebarStore {
     try {
       console.log('[SidebarStore] Loading available tools...')
       const response = await fetch('/api/agents/tools')
-      
+
       if (response.ok) {
         const tools = await response.json()
         console.log('[SidebarStore] Loaded available tools:', tools)
@@ -355,7 +362,7 @@ export class SidebarStore {
           description: tool.description || '',
           enabled: tool.enabled || false,
           serviceGroup: tool.serviceGroup || 'default',
-          selectable: tool.selectable
+          selectable: tool.selectable,
         }))
       } else {
         console.error('[SidebarStore] Failed to load tools:', response.statusText)
@@ -373,4 +380,3 @@ export class SidebarStore {
 }
 
 export const sidebarStore = reactive(new SidebarStore())
-
