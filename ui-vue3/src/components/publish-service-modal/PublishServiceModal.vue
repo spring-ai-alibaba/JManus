@@ -14,11 +14,7 @@
  * limitations under the License.
 -->
 <template>
-  <Modal 
-    v-model="showModal" 
-    :title="modalTitle" 
-    @confirm="handlePublish" 
-  >
+  <Modal v-model="showModal" :title="modalTitle" @confirm="handlePublish">
     <div class="modal-form wide-modal">
       <!-- Tool Name -->
       <div class="form-section">
@@ -28,7 +24,7 @@
             type="text"
             v-model="formData.serviceName"
             :placeholder="t('mcpService.toolNamePlaceholder')"
-            :class="{ 'error': !formData.serviceName || !formData.serviceName.trim() }"
+            :class="{ error: !formData.serviceName || !formData.serviceName.trim() }"
             required
           />
           <div class="field-description">{{ t('mcpService.toolNameDescription') }}</div>
@@ -42,7 +38,7 @@
           <textarea
             v-model="formData.userRequest"
             :placeholder="t('mcpService.toolDescriptionPlaceholder')"
-            :class="{ 'error': !formData.userRequest || !formData.userRequest.trim() }"
+            :class="{ error: !formData.userRequest || !formData.userRequest.trim() }"
             class="description-field"
             rows="4"
             required
@@ -59,7 +55,7 @@
             type="text"
             v-model="formData.serviceGroup"
             :placeholder="t('mcpService.serviceGroupPlaceholder')"
-            :class="{ 'error': !formData.serviceGroup || !formData.serviceGroup.trim() }"
+            :class="{ error: !formData.serviceGroup || !formData.serviceGroup.trim() }"
             required
           />
           <div class="field-description">{{ t('mcpService.serviceGroupDescription') }}</div>
@@ -69,12 +65,12 @@
       <!-- Parameter Configuration -->
       <div class="form-section">
         <div class="section-title">{{ t('mcpService.parameterConfig') }}</div>
-        
+
         <!-- Parameter Requirements Help Text -->
         <div v-if="parameterRequirements.hasParameters" class="params-help-text">
           {{ t('sidebar.parameterRequirementsHelp') }}
         </div>
-        
+
         <div class="parameter-table">
           <table>
             <thead>
@@ -117,60 +113,48 @@
           <!-- Internal Toolcall Publishing Option -->
           <div class="internal-toolcall-publish-option">
             <label class="checkbox-label">
-              <input
-                type="checkbox"
-                v-model="publishAsInternalToolcall"
-                class="checkbox-input"
-              />
+              <input type="checkbox" v-model="publishAsInternalToolcall" class="checkbox-input" />
               <span class="checkbox-text">{{ t('mcpService.publishAsInternalToolcall') }}</span>
             </label>
             <div class="checkbox-description">
               {{ t('mcpService.publishAsInternalToolcallDescription') }}
             </div>
           </div>
-          
+
           <!-- HTTP POST Service Publishing Option -->
           <div class="http-publish-option">
             <label class="checkbox-label">
-              <input
-                type="checkbox"
-                v-model="publishAsHttpService"
-                class="checkbox-input"
-              />
+              <input type="checkbox" v-model="publishAsHttpService" class="checkbox-input" />
               <span class="checkbox-text">{{ t('mcpService.publishAsHttpService') }}</span>
             </label>
             <div class="checkbox-description">
               {{ t('mcpService.publishAsHttpServiceDescription') }}
             </div>
-            
           </div>
-          
         </div>
       </div>
-
     </div>
 
     <template #footer>
       <div class="button-container">
         <!-- Delete Button - Only shown when saved -->
-        <button 
-          v-if="isSaved && currentTool?.id" 
-          class="action-btn danger" 
-          @click="handleDelete" 
+        <button
+          v-if="isSaved && currentTool?.id"
+          class="action-btn danger"
+          @click="handleDelete"
           :disabled="deleting"
         >
           <Icon icon="carbon:loading" v-if="deleting" class="loading-icon" />
           <Icon icon="carbon:trash-can" v-else />
           {{ deleting ? t('mcpService.deleting') : t('mcpService.delete') }}
         </button>
-        
+
         <!-- Publish as Service Button - Always shown -->
         <button class="action-btn primary" @click="handlePublish" :disabled="publishing">
           <Icon icon="carbon:loading" v-if="publishing" class="loading-icon" />
           <Icon icon="carbon:cloud-upload" v-else />
           {{ publishing ? t('mcpService.publishing') : t('mcpService.publishAsService') }}
         </button>
-        
       </div>
     </template>
   </Modal>
@@ -189,12 +173,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch } from 'vue'
-import { Icon } from '@iconify/vue'
-import { useI18n } from 'vue-i18n'
+import {
+  CoordinatorToolApiService,
+  type CoordinatorToolVO,
+} from '@/api/coordinator-tool-api-service'
+import {
+  PlanParameterApiService,
+  type ParameterRequirements,
+} from '@/api/plan-parameter-api-service'
 import Modal from '@/components/modal/index.vue'
-import { CoordinatorToolApiService, type CoordinatorToolVO } from '@/api/coordinator-tool-api-service'
-import { PlanParameterApiService, type ParameterRequirements } from '@/api/plan-parameter-api-service'
+import { Icon } from '@iconify/vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
@@ -208,19 +198,19 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   modelValue: false,
   planTemplateId: '',
-  planDescription: ''
+  planDescription: '',
 })
 
 // Emits
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'published': [tool: CoordinatorToolVO | null]
+  published: [tool: CoordinatorToolVO | null]
 }>()
 
 // Reactive data
 const showModal = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: value => emit('update:modelValue', value),
 })
 
 const error = ref('')
@@ -242,13 +232,9 @@ const publishAsInternalToolcall = ref(true) // Default to true
 const parameterRequirements = ref<ParameterRequirements>({
   parameters: [],
   hasParameters: false,
-  requirements: ''
+  requirements: '',
 })
 const isLoadingParameters = ref(false)
-
-
-
-
 
 // Form data
 const formData = reactive({
@@ -256,7 +242,7 @@ const formData = reactive({
   userRequest: '',
   endpoint: '',
   serviceGroup: '',
-  parameters: [] as Array<{ name: string; description: string }>
+  parameters: [] as Array<{ name: string; description: string }>,
 })
 
 // Calculate modal title
@@ -279,6 +265,20 @@ const initializeFormData = () => {
   isSaved.value = false
 }
 
+// Watch tool description and copy to tool name when description changes
+watch(
+  () => formData.userRequest,
+  newDescription => {
+    // Copy description to tool name when description is entered
+    const trimmedDescription = newDescription.trim()
+    if (trimmedDescription) {
+      // Only copy if tool name is empty to avoid overwriting user input
+      if (!formData.serviceName.trim()) {
+        formData.serviceName = trimmedDescription
+      }
+    }
+  }
+)
 
 // Load parameter requirements from plan template
 const loadParameterRequirements = async () => {
@@ -286,21 +286,23 @@ const loadParameterRequirements = async () => {
     parameterRequirements.value = {
       parameters: [],
       hasParameters: false,
-      requirements: ''
+      requirements: '',
     }
     return
   }
 
   isLoadingParameters.value = true
   try {
-    const requirements = await PlanParameterApiService.getParameterRequirements(props.planTemplateId)
+    const requirements = await PlanParameterApiService.getParameterRequirements(
+      props.planTemplateId
+    )
     parameterRequirements.value = requirements
-    
+
     // Initialize form parameters with extracted parameters
     if (requirements.hasParameters) {
       formData.parameters = requirements.parameters.map(param => ({
         name: param,
-        description: ''
+        description: '',
       }))
     }
   } catch (error) {
@@ -312,13 +314,12 @@ const loadParameterRequirements = async () => {
     parameterRequirements.value = {
       parameters: [],
       hasParameters: false,
-      requirements: ''
+      requirements: '',
     }
   } finally {
     isLoadingParameters.value = false
   }
 }
-
 
 // Show message
 const showMessage = (msg: string, type: 'success' | 'error' | 'info') => {
@@ -342,27 +343,25 @@ const validateForm = (): boolean => {
     showMessage(t('mcpService.toolNameRequiredError'), 'error')
     return false
   }
-  
+
   // Validate tool description
   if (!formData.userRequest.trim()) {
     showMessage(t('mcpService.toolDescriptionRequiredError'), 'error')
     return false
   }
-  
+
   // Validate service group
   if (!formData.serviceGroup.trim()) {
     showMessage(t('mcpService.serviceGroupRequiredError'), 'error')
     return false
   }
-  
-  
-  
+
   // Ensure at least one service is selected
   if (!publishAsInternalToolcall.value && !publishAsHttpService.value) {
     showMessage('Please select at least one service type', 'error')
     return false
   }
-  
+
   // Validate parameter names and descriptions
   for (let i = 0; i < formData.parameters.length; i++) {
     const param = formData.parameters[i]
@@ -371,14 +370,16 @@ const validateForm = (): boolean => {
       return false
     }
     if (param.description && !param.name.trim()) {
-      showMessage(`Parameter description "${param.description}" corresponding name cannot be empty`, 'error')
+      showMessage(
+        `Parameter description "${param.description}" corresponding name cannot be empty`,
+        'error'
+      )
       return false
     }
   }
-  
+
   return true
 }
-
 
 // Handle publishing
 const handlePublish = async () => {
@@ -386,7 +387,7 @@ const handlePublish = async () => {
   console.log('[PublishModal] Form data:', formData)
   console.log('[PublishModal] Current tool:', currentTool.value)
   console.log('[PublishModal] Publish as HTTP service:', publishAsHttpService.value)
-  
+
   if (!validateForm()) {
     console.log('[PublishModal] Form validation failed')
     return
@@ -397,7 +398,9 @@ const handlePublish = async () => {
     // 1. If no current tool data, get or create first
     if (!currentTool.value) {
       console.log('[PublishModal] No current tool data, getting or creating first')
-      currentTool.value = await CoordinatorToolApiService.getOrNewCoordinatorToolsByTemplate(props.planTemplateId)
+      currentTool.value = await CoordinatorToolApiService.getOrNewCoordinatorToolsByTemplate(
+        props.planTemplateId
+      )
     }
 
     // 2. Update tool information
@@ -411,10 +414,9 @@ const handlePublish = async () => {
     currentTool.value.enableInternalToolcall = publishAsInternalToolcall.value
     currentTool.value.enableHttpService = publishAsHttpService.value
     currentTool.value.enableMcpService = false
-    
+
     // Set corresponding endpoint
     currentTool.value.mcpEndpoint = undefined
-    
 
     // 3. Update inputSchema
     const inputSchema = formData.parameters
@@ -422,9 +424,9 @@ const handlePublish = async () => {
       .map(param => ({
         name: param.name.trim(),
         description: param.description.trim(),
-        type: 'string'
+        type: 'string',
       }))
-    
+
     currentTool.value.inputSchema = JSON.stringify(inputSchema)
     console.log('[PublishModal] Updated tool information:', currentTool.value)
 
@@ -442,17 +444,21 @@ const handlePublish = async () => {
     const enabledServices = []
     if (publishAsInternalToolcall.value) enabledServices.push('Internal Method Call')
     if (publishAsHttpService.value) enabledServices.push('HTTP Service')
-    
+
     if (enabledServices.length > 0) {
-      console.log('[PublishModal] Step 5: Publishing service, ID:', currentTool.value.id, 'Enabled services:', enabledServices.join(', '))
-      
+      console.log(
+        '[PublishModal] Step 5: Publishing service, ID:',
+        currentTool.value.id,
+        'Enabled services:',
+        enabledServices.join(', ')
+      )
+
       // Build service URL information
       const serviceUrls = []
       if (publishAsInternalToolcall.value) {
         serviceUrls.push(`Internal Call: ${formData.serviceName}`)
       }
-      
-      
+
       console.log('[PublishModal] Service published successfully')
       showMessage(t('mcpService.publishSuccess'), 'success')
       emit('published', currentTool.value)
@@ -473,31 +479,34 @@ const handlePublish = async () => {
 // Handle delete
 const handleDelete = async () => {
   if (deleting.value) return
-  
+
   // Confirm deletion
   if (!confirm(t('mcpService.deleteConfirmMessage'))) {
     return
   }
-  
+
   if (!currentTool.value?.id) {
-    showMessage(t('mcpService.deleteFailed') + ': ' + t('mcpService.selectPlanTemplateFirst'), 'error')
+    showMessage(
+      t('mcpService.deleteFailed') + ': ' + t('mcpService.selectPlanTemplateFirst'),
+      'error'
+    )
     return
   }
-  
+
   deleting.value = true
   try {
     console.log('[PublishModal] Starting to delete MCP service, ID:', currentTool.value.id)
-    
+
     // Call delete API
     const result = await CoordinatorToolApiService.deleteCoordinatorTool(currentTool.value.id)
-    
+
     if (result.success) {
       console.log('[PublishModal] Deleted successfully')
       showMessage(t('mcpService.deleteSuccess'), 'success')
-      
+
       // Close modal
       showModal.value = false
-      
+
       // Notify parent component of successful deletion
       emit('published', null)
     } else {
@@ -526,18 +535,23 @@ const loadCoordinatorToolData = async () => {
     console.log('[PublishModal] ' + t('mcpService.noPlanTemplateId'))
     return
   }
-  
+
   try {
-    console.log('[PublishModal] Starting to load coordinator tool data, planTemplateId:', props.planTemplateId)
-    const tool = await CoordinatorToolApiService.getOrNewCoordinatorToolsByTemplate(props.planTemplateId)
+    console.log(
+      '[PublishModal] Starting to load coordinator tool data, planTemplateId:',
+      props.planTemplateId
+    )
+    const tool = await CoordinatorToolApiService.getOrNewCoordinatorToolsByTemplate(
+      props.planTemplateId
+    )
     console.log('[PublishModal] Get coordinator tool data result:', tool)
-    
+
     // Save current tool data
     currentTool.value = tool
-    
+
     // Only existing tools (with ID) are set as saved
-    isSaved.value = !!(tool.id)
-    
+    isSaved.value = !!tool.id
+
     // Build service URL information
     const serviceUrls = []
     if (tool.enableMcpService && tool.mcpEndpoint) {
@@ -547,19 +561,17 @@ const loadCoordinatorToolData = async () => {
     if (tool.enableInternalToolcall) {
       serviceUrls.push(`Internal Call: ${tool.toolName}`)
     }
-    
-    
+
     console.log('[PublishModal] Load tool data completed')
     // Fill form data
     formData.serviceName = tool.toolName || ''
     formData.userRequest = tool.toolDescription || props.planDescription || ''
     formData.serviceGroup = tool.serviceGroup ?? ''
-    
+
     // Set form data based on service type
     publishAsHttpService.value = tool.enableHttpService ?? false
     publishAsInternalToolcall.value = tool.enableInternalToolcall ?? false
-    
-    
+
     // Parse inputSchema as parameters
     try {
       if (tool.inputSchema) {
@@ -568,19 +580,25 @@ const loadCoordinatorToolData = async () => {
           // Only override when inputSchema has parameters, otherwise keep parameters loaded from plan template
           formData.parameters = parameters.map(param => ({
             name: param.name || '',
-            description: param.description || ''
+            description: param.description || '',
           }))
           console.log('[PublishModal] Load parameters from inputSchema:', formData.parameters)
         } else {
-          console.log('[PublishModal] inputSchema is empty, keeping existing parameters:', formData.parameters)
+          console.log(
+            '[PublishModal] inputSchema is empty, keeping existing parameters:',
+            formData.parameters
+          )
         }
       }
     } catch (e) {
       console.warn('[PublishModal] ' + t('mcpService.parseInputSchemaFailed') + ':', e)
       // Don't clear parameters when parsing fails, keep existing parameters
-      console.log('[PublishModal] Parsing failed, keeping existing parameters:', formData.parameters)
+      console.log(
+        '[PublishModal] Parsing failed, keeping existing parameters:',
+        formData.parameters
+      )
     }
-    
+
     console.log('[PublishModal] Form data filled:', formData)
   } catch (err: any) {
     console.error('[PublishModal] ' + t('mcpService.loadToolDataFailed') + ':', err)
@@ -591,22 +609,23 @@ const loadCoordinatorToolData = async () => {
 // Watch props changes
 watch(() => props.modelValue, watchModal)
 
-
-
 // Watch for planTemplateId changes
-watch(() => props.planTemplateId, (newId, oldId) => {
-  if (newId && newId !== oldId) {
-    // If this is a new template ID (not from initial load), retry loading parameters
-    if (oldId && newId.startsWith('planTemplate-')) {
-      // Retry loading parameters with a delay for new templates
-      setTimeout(() => {
+watch(
+  () => props.planTemplateId,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      // If this is a new template ID (not from initial load), retry loading parameters
+      if (oldId && newId.startsWith('planTemplate-')) {
+        // Retry loading parameters with a delay for new templates
+        setTimeout(() => {
+          loadParameterRequirements()
+        }, 1000)
+      } else {
         loadParameterRequirements()
-      }, 1000)
-    } else {
-      loadParameterRequirements()
+      }
     }
   }
-})
+)
 
 // Initialize when component mounts
 onMounted(async () => {
@@ -620,7 +639,7 @@ onMounted(async () => {
 
 // Expose methods for parent component
 defineExpose({
-  loadParameterRequirements
+  loadParameterRequirements,
 })
 </script>
 
@@ -786,7 +805,6 @@ defineExpose({
   cursor: not-allowed;
   border-color: rgba(255, 255, 255, 0.05) !important;
 }
-
 
 /* Delete and add button styles removed */
 
@@ -1315,7 +1333,6 @@ defineExpose({
 
 /* HTTP service options now use the same styles as MCP service, no special handling needed */
 
-
 .endpoint-description {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
@@ -1391,7 +1408,6 @@ defineExpose({
   color: rgba(255, 255, 255, 0.8);
 }
 
-
 .backdrop {
   position: fixed;
   top: 0;
@@ -1401,10 +1417,6 @@ defineExpose({
   z-index: 99998;
   background: transparent;
 }
-
-
-
-
 
 .slideDown-enter-active,
 .slideDown-leave-active {
@@ -1418,15 +1430,7 @@ defineExpose({
   transform: translateY(-8px) scale(0.95);
 }
 
-
-
 /* Old save button styles removed */
-
-
-
-
-
-
 
 .loading-icon {
   animation: spin 1s linear infinite;
@@ -1497,6 +1501,4 @@ defineExpose({
     opacity: 1;
   }
 }
-
-
-</style> 
+</style>

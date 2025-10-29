@@ -209,9 +209,12 @@ public class DynamicAgent extends ReActAgent {
 				messages.add(currentStepEnvMessage);
 				String toolcallId = planIdDispatcher.generateToolCallId();
 				// Call the LLM
+				Map<String, Object> toolContextMap = new HashMap<>();
+				toolContextMap.put("toolcallId", toolcallId);
+				toolContextMap.put("planDepth", getPlanDepth());
 				ToolCallingChatOptions chatOptions = ToolCallingChatOptions.builder()
 					.internalToolExecutionEnabled(false)
-					.toolContext(Map.of("toolcallId", toolcallId))
+					.toolContext(toolContextMap)
 					// can't support by toocall options :
 					// .parallelToolCalls(manusProperties.getParallelToolCalls())
 					.build();

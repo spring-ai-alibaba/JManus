@@ -110,7 +110,6 @@
           </div>
         </div>
 
-
         <div class="form-item">
           <label>{{ t('config.modelConfig.baseUrl') }} <span class="required">*</span></label>
           <input
@@ -124,9 +123,9 @@
         <div class="form-item">
           <label>{{ t('config.modelConfig.headers') }} </label>
           <input
-              type="text"
-              v-model="selectedHeadersJson"
-              :placeholder="t('config.modelConfig.headersPlaceholder')"
+            type="text"
+            v-model="selectedHeadersJson"
+            :placeholder="t('config.modelConfig.headersPlaceholder')"
           />
         </div>
 
@@ -136,50 +135,58 @@
             <div class="api-key-input-wrapper">
               <input
                 :type="showSelectedApiKey ? 'text' : 'password'"
-                v-model="selectedModel.apiKey"
-                :placeholder="t('config.modelConfig.apiKeyPlaceholder')"
+                v-model="selectedApiKey"
+                :placeholder="
+                  isSelectedApiKeyMasked
+                    ? t('config.modelConfig.apiKeySecurityNotice')
+                    : t('config.modelConfig.apiKeyPlaceholder')
+                "
                 required
               />
               <button
                 type="button"
                 class="api-key-toggle-btn"
                 @click="showSelectedApiKey = !showSelectedApiKey"
-                :title="showSelectedApiKey ? t('config.modelConfig.hideApiKey') : t('config.modelConfig.showApiKey')"
+                :title="
+                  showSelectedApiKey
+                    ? t('config.modelConfig.hideApiKey')
+                    : t('config.modelConfig.showApiKey')
+                "
               >
                 <Icon :icon="showSelectedApiKey ? 'carbon:view-off' : 'carbon:view'" />
               </button>
             </div>
-            <button
-              class="check-btn"
-              @click="handleValidateConfig"
-              :disabled="validating || !selectedModel.baseUrl || !selectedModel.apiKey"
-              :title="t('config.modelConfig.validateConfig')"
-            >
-              <Icon icon="carbon:checkmark" v-if="!validating" />
-              <Icon icon="carbon:loading" v-else class="loading-icon" />
-            </button>
           </div>
+          <button
+            class="check-btn"
+            @click="handleValidateConfig"
+            :disabled="validating || !selectedModel.baseUrl || !selectedApiKey"
+            :title="t('config.modelConfig.validateConfig')"
+          >
+            <Icon icon="carbon:checkmark" v-if="!validating" />
+            <Icon icon="carbon:loading" v-else class="loading-icon" />
+            <span>{{ t('config.modelConfig.selectDefaultModel') }}</span>
+          </button>
         </div>
 
-                <div class="form-item">
-          <label>Fallback Model <span class="required">*</span></label>
+        <div class="form-item">
+          <label>{{ t('config.modelConfig.defaultModel') }} <span class="required">*</span></label>
           <GroupedSelect
             v-if="getCurrentAvailableModels().length > 0"
             v-model="selectedModel.modelName"
-            :options="getCurrentAvailableModels().map(model => ({
-              id: model.modelName,
-              name: model.modelName,
-              description: getModelDescription(model.modelName),
-              category: getModelCategory(model.modelName)
-            }))"
+            :options="
+              getCurrentAvailableModels().map(model => ({
+                id: model.modelName,
+                name: model.modelName,
+                description: getModelDescription(model.modelName),
+                category: getModelCategory(model.modelName),
+              }))
+            "
             :placeholder="t('config.modelConfig.selectModel')"
             :dropdown-title="t('config.modelConfig.availableModels')"
             @update:modelValue="handleModelSelection"
           />
-          <div
-            v-else
-            class="readonly-field"
-          >
+          <div v-else class="readonly-field">
             {{ selectedModel.modelName || t('config.modelConfig.modelNamePlaceholder') }}
           </div>
         </div>
@@ -221,9 +228,9 @@
         <div class="form-item">
           <label>{{ t('config.modelConfig.completionsPath') }}</label>
           <input
-              type="text"
-              v-model="selectedModel.completionsPath"
-              :placeholder="t('config.modelConfig.completionsPathPlaceholder')"
+            type="text"
+            v-model="selectedModel.completionsPath"
+            :placeholder="t('config.modelConfig.completionsPathPlaceholder')"
           />
         </div>
       </div>
@@ -260,9 +267,9 @@
         <div class="form-item">
           <label>{{ t('config.modelConfig.headers') }} </label>
           <input
-              type="text"
-              v-model="newHeadersJson"
-              :placeholder="t('config.modelConfig.headersPlaceholder')"
+            type="text"
+            v-model="newHeadersJson"
+            :placeholder="t('config.modelConfig.headersPlaceholder')"
           />
         </div>
         <div class="form-item">
@@ -271,49 +278,57 @@
             <div class="api-key-input-wrapper">
               <input
                 :type="showNewApiKey ? 'text' : 'password'"
-                v-model="newModel.apiKey"
-                :placeholder="t('config.modelConfig.apiKeyPlaceholder')"
+                v-model="newModelApiKey"
+                :placeholder="
+                  isNewApiKeyMasked
+                    ? t('config.modelConfig.apiKeySecurityNotice')
+                    : t('config.modelConfig.apiKeyPlaceholder')
+                "
                 required
               />
               <button
                 type="button"
                 class="api-key-toggle-btn"
                 @click="showNewApiKey = !showNewApiKey"
-                :title="showNewApiKey ? t('config.modelConfig.hideApiKey') : t('config.modelConfig.showApiKey')"
+                :title="
+                  showNewApiKey
+                    ? t('config.modelConfig.hideApiKey')
+                    : t('config.modelConfig.showApiKey')
+                "
               >
                 <Icon :icon="showNewApiKey ? 'carbon:view-off' : 'carbon:view'" />
               </button>
             </div>
-            <button
-              class="check-btn"
-              @click="handleNewModelValidateConfig"
-              :disabled="newModelValidating || !newModel.baseUrl || !newModel.apiKey"
-              :title="t('config.modelConfig.validateConfig')"
-            >
-              <Icon icon="carbon:checkmark" v-if="!newModelValidating" />
-              <Icon icon="carbon:loading" v-else class="loading-icon" />
-            </button>
           </div>
+          <button
+            class="check-btn"
+            @click="handleNewModelValidateConfig"
+            :disabled="newModelValidating || !newModel.baseUrl || !newModelApiKey"
+            :title="t('config.modelConfig.validateConfig')"
+          >
+            <Icon icon="carbon:checkmark" v-if="!newModelValidating" />
+            <Icon icon="carbon:loading" v-else class="loading-icon" />
+            <span>{{ t('config.modelConfig.selectDefaultModel') }}</span>
+          </button>
         </div>
         <div class="form-item">
-          <label>Fallback Model <span class="required">*</span></label>
+          <label>{{ t('config.modelConfig.defaultModel') }} <span class="required">*</span></label>
           <GroupedSelect
             v-if="newModelAvailableModels.length > 0"
             v-model="newModel.modelName"
-            :options="newModelAvailableModels.map(model => ({
-              id: model.modelName,
-              name: model.modelName,
-              description: getModelDescription(model.modelName),
-              category: getModelCategory(model.modelName)
-            }))"
+            :options="
+              newModelAvailableModels.map(model => ({
+                id: model.modelName,
+                name: model.modelName,
+                description: getModelDescription(model.modelName),
+                category: getModelCategory(model.modelName),
+              }))
+            "
             :placeholder="t('config.modelConfig.selectModel')"
             :dropdown-title="t('config.modelConfig.availableModels')"
             @update:modelValue="handleNewModelSelection"
           />
-          <div
-            v-else
-            class="readonly-field"
-          >
+          <div v-else class="readonly-field">
             {{ newModel.modelName || t('config.modelConfig.modelNamePlaceholder') }}
           </div>
         </div>
@@ -354,9 +369,9 @@
         <div class="form-item">
           <label>{{ t('config.modelConfig.completionsPath') }}</label>
           <input
-              type="text"
-              v-model="newModel.completionsPath"
-              :placeholder="t('config.modelConfig.completionsPathPlaceholder')"
+            type="text"
+            v-model="newModel.completionsPath"
+            :placeholder="t('config.modelConfig.completionsPathPlaceholder')"
           />
         </div>
       </div>
@@ -380,7 +395,6 @@
       </template>
     </Modal>
 
-
     <!-- Error toast -->
     <div v-if="error" class="error-toast" @click="error = ''">
       <Icon icon="carbon:error" />
@@ -396,15 +410,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted,computed } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 // Rest of the code remains unchanged
+import { ModelApiService, type Model } from '@/api/model-api-service'
+import GroupedSelect from '@/components/GroupedSelect.vue'
+import Modal from '@/components/modal/index.vue'
+import CustomSelect from '@/components/select/index.vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import ConfigPanel from './components/configPanel.vue'
-import Modal from '@/components/modal/index.vue'
-import CustomSelect from '@/components/select/index.vue'
-import GroupedSelect from '@/components/GroupedSelect.vue'
-import { ModelApiService, type Model } from '@/api/model-api-service'
 
 // Internationalization
 const { t } = useI18n()
@@ -430,6 +444,44 @@ const newModelAvailableModels = ref<Model[]>([])
 const showSelectedApiKey = ref(false)
 const showNewApiKey = ref(false)
 
+// Check if API key is masked (contains asterisks and length > 8)
+const isSelectedApiKeyMasked = computed(() => {
+  const key = selectedModel.value?.apiKey
+  return key && key.length > 8 && key.includes('*')
+})
+
+const isNewApiKeyMasked = computed(() => {
+  return newModel.apiKey && newModel.apiKey.length > 8 && newModel.apiKey.includes('*')
+})
+
+// Computed property for selected model API key - clear masked value when editing
+const selectedApiKey = computed({
+  get() {
+    if (!selectedModel.value?.apiKey) return ''
+    const key = selectedModel.value.apiKey
+    // If masked (length > 8 and contains *), return empty string to show placeholder
+    if (key.length > 8 && key.includes('*')) return ''
+    return key
+  },
+  set(val) {
+    if (!selectedModel.value) return
+    selectedModel.value.apiKey = val
+  },
+})
+
+// Computed property for new model API key - clear masked value when editing
+const newModelApiKey = computed({
+  get() {
+    if (!newModel.apiKey) return ''
+    const key = newModel.apiKey
+    // If masked (length > 8 and contains *), return empty string to show placeholder
+    if (key.length > 8 && key.includes('*')) return ''
+    return key
+  },
+  set(val) {
+    newModel.apiKey = val
+  },
+})
 
 const selectedHeadersJson = computed({
   get() {
@@ -437,10 +489,10 @@ const selectedHeadersJson = computed({
     return JSON.stringify(selectedModel.value.headers, null, 2)
   },
   set(val) {
-      if (!selectedModel.value) return
-      // Handle empty values
-      selectedModel.value.headers = val.trim() ? JSON.parse(val) : null
-    }
+    if (!selectedModel.value) return
+    // Handle empty values
+    selectedModel.value.headers = val.trim() ? JSON.parse(val) : null
+  },
 })
 
 const newHeadersJson = computed({
@@ -448,20 +500,18 @@ const newHeadersJson = computed({
     return newModel.headers ? JSON.stringify(newModel.headers, null, 2) : ''
   },
   set(val) {
-      newModel.headers = val.trim() ? JSON.parse(val) : null
-    }
+    newModel.headers = val.trim() ? JSON.parse(val) : null
+  },
 })
-
-
 
 // New Model form data
 const newModel = reactive<Omit<Model, 'id'>>({
-  baseUrl:  '',
-  headers:  null,
-  apiKey:  '',
-  modelName:  '',
-  modelDescription:  '',
-  type:  '',
+  baseUrl: '',
+  headers: null,
+  apiKey: '',
+  modelName: '',
+  modelDescription: '',
+  type: '',
 })
 
 // Message toast
@@ -555,7 +605,7 @@ const showAddModelModal = () => {
 
 // Validate configuration
 const handleValidateConfig = async () => {
-  if (!selectedModel.value?.baseUrl || !selectedModel.value.apiKey) {
+  if (!selectedModel.value?.baseUrl || !selectedApiKey.value) {
     showMessage(t('config.modelConfig.pleaseEnterBaseUrlAndApiKey'), 'error')
     return
   }
@@ -564,11 +614,15 @@ const handleValidateConfig = async () => {
   try {
     const result = await ModelApiService.validateConfig({
       baseUrl: selectedModel.value.baseUrl,
-      apiKey: selectedModel.value.apiKey
+      apiKey: selectedApiKey.value,
     })
 
     if (result.valid) {
-      showMessage(t('config.modelConfig.validationSuccess') + ` - ${t('config.modelConfig.getModelsCount', { count: result.availableModels?.length ?? 0 })}`, 'success')
+      showMessage(
+        t('config.modelConfig.validationSuccess') +
+          ` - ${t('config.modelConfig.getModelsCount', { count: result.availableModels?.length ?? 0 })}`,
+        'success'
+      )
       // Save independent available model list for currently selected model
       if (selectedModel.value.id) {
         modelAvailableModels.value.set(selectedModel.value.id, result.availableModels ?? [])
@@ -576,7 +630,9 @@ const handleValidateConfig = async () => {
       // If available models exist, auto-select first one and fill description
       if (result.availableModels && result.availableModels.length > 0) {
         selectedModel.value.modelName = result.availableModels[0].modelName
-        selectedModel.value.modelDescription =  getModelDescription(result.availableModels[0].modelName)
+        selectedModel.value.modelDescription = getModelDescription(
+          result.availableModels[0].modelName
+        )
       }
     } else {
       showMessage(t('config.modelConfig.validationFailed') + ': ' + result.message, 'error')
@@ -607,9 +663,11 @@ const getModelDescription = (modelName: string): string => {
   if (name.includes('turbo')) return 'Turbo model, fast response'
   if (name.includes('plus')) return 'Plus model, balanced performance'
   if (name.includes('max')) return 'Max model, strongest performance'
-  if (name.includes('coder') || name.includes('code')) return 'Coder model, specialized for code generation'
+  if (name.includes('coder') || name.includes('code'))
+    return 'Coder model, specialized for code generation'
   if (name.includes('math')) return 'Math model, specialized for mathematical calculations'
-  if (name.includes('vision') || name.includes('vl')) return 'Vision model, specialized for visual understanding'
+  if (name.includes('vision') || name.includes('vl'))
+    return 'Vision model, specialized for visual understanding'
   if (name.includes('tts')) return 'TTS model, specialized for text-to-speech'
   return 'Standard model'
 }
@@ -629,14 +687,14 @@ const handleModelSelection = (selectedModelName: string) => {
     const availableModels = getCurrentAvailableModels()
     const selectedModelData = availableModels.find(model => model.modelName === selectedModelName)
     if (selectedModelData) {
-      selectedModel.value.modelDescription =  getModelDescription(selectedModelName)
+      selectedModel.value.modelDescription = getModelDescription(selectedModelName)
     }
   }
 }
 
 // Validate configuration for new Model modal
 const handleNewModelValidateConfig = async () => {
-  if (!newModel.baseUrl || !newModel.apiKey) {
+  if (!newModel.baseUrl || !newModelApiKey.value) {
     showMessage(t('config.modelConfig.pleaseEnterBaseUrlAndApiKey'), 'error')
     return
   }
@@ -645,17 +703,21 @@ const handleNewModelValidateConfig = async () => {
   try {
     const result = await ModelApiService.validateConfig({
       baseUrl: newModel.baseUrl,
-      apiKey: newModel.apiKey
+      apiKey: newModelApiKey.value,
     })
 
     if (result.valid) {
-      showMessage(t('config.modelConfig.validationSuccess') + ` - ${t('config.modelConfig.getModelsCount', { count: result.availableModels?.length ?? 0 })}`, 'success')
+      showMessage(
+        t('config.modelConfig.validationSuccess') +
+          ` - ${t('config.modelConfig.getModelsCount', { count: result.availableModels?.length ?? 0 })}`,
+        'success'
+      )
       // Save available model list
       newModelAvailableModels.value = result.availableModels ?? []
       // If available models exist, auto-select first one and fill description
       if (result.availableModels && result.availableModels.length > 0) {
         newModel.modelName = result.availableModels[0].modelName
-        newModel.modelDescription =  getModelDescription(result.availableModels[0].modelName)
+        newModel.modelDescription = getModelDescription(result.availableModels[0].modelName)
       }
     } else {
       showMessage(t('config.modelConfig.validationFailed') + ': ' + result.message, 'error')
@@ -671,7 +733,9 @@ const handleNewModelValidateConfig = async () => {
 const handleNewModelSelection = (selectedModelName: string) => {
   if (selectedModelName) {
     // Find corresponding model from available model list, use its description
-    const selectedModelData = newModelAvailableModels.value.find(model => model.modelName === selectedModelName)
+    const selectedModelData = newModelAvailableModels.value.find(
+      model => model.modelName === selectedModelName
+    )
     if (selectedModelData) {
       newModel.modelDescription = getModelDescription(selectedModelName)
     }
@@ -686,7 +750,7 @@ const handleAddModel = async () => {
   }
 
   // Force validate API Key availability
-  if (!newModel.baseUrl.trim() || !newModel.apiKey.trim()) {
+  if (!newModel.baseUrl.trim() || !newModelApiKey.value.trim()) {
     showMessage(t('config.modelConfig.pleaseEnterBaseUrlAndApiKey'), 'error')
     return
   }
@@ -697,11 +761,14 @@ const handleAddModel = async () => {
   try {
     const validationResult = await ModelApiService.validateConfig({
       baseUrl: newModel.baseUrl.trim(),
-      apiKey: newModel.apiKey.trim()
+      apiKey: newModelApiKey.value.trim(),
     })
 
     if (!validationResult.valid) {
-      showMessage(t('config.modelConfig.validationFailedCannotSave') + ': ' + validationResult.message, 'error')
+      showMessage(
+        t('config.modelConfig.validationFailedCannotSave') + ': ' + validationResult.message,
+        'error'
+      )
       return
     }
   } catch (err: any) {
@@ -713,13 +780,13 @@ const handleAddModel = async () => {
     const modelData = {
       baseUrl: newModel.baseUrl.trim(),
       headers: newModel.headers,
-      apiKey: newModel.apiKey.trim(),
+      apiKey: newModelApiKey.value.trim(),
       modelName: newModel.modelName.trim(),
       modelDescription: newModel.modelDescription.trim(),
       type: newModel.type.trim(),
       temperature: isNaN(newModel.temperature!) ? null : newModel.temperature,
       topP: isNaN(newModel.topP!) ? null : newModel.topP,
-      completionsPath: newModel.completionsPath?.trim()
+      completionsPath: newModel.completionsPath?.trim(),
     } as Omit<Model, 'id'>
 
     const createdModel = await ModelApiService.createModel(modelData)
@@ -742,13 +809,17 @@ const handleSave = async () => {
   }
 
   // Force validate API Key availability
-  if (!selectedModel.value.baseUrl || !selectedModel.value.apiKey) {
+  if (!selectedModel.value.baseUrl || !selectedApiKey.value) {
     showMessage(t('config.modelConfig.pleaseEnterBaseUrlAndApiKey'), 'error')
     return
   }
 
   // If API Key was modified (doesn't contain *), need to re-validate
-  const needsValidation = !selectedModel.value.apiKey.includes('*') ||
+  // Check original value to see if it was masked
+  const originalApiKey = selectedModel.value.apiKey
+  const needsValidation =
+    !originalApiKey ||
+    !originalApiKey.includes('*') ||
     !modelAvailableModels.value.has(selectedModel.value.id)
 
   if (needsValidation) {
@@ -757,11 +828,14 @@ const handleSave = async () => {
     try {
       const validationResult = await ModelApiService.validateConfig({
         baseUrl: selectedModel.value.baseUrl,
-        apiKey: selectedModel.value.apiKey
+        apiKey: selectedApiKey.value,
       })
 
       if (!validationResult.valid) {
-        showMessage(t('config.modelConfig.validationFailedCannotSave') + ': ' + validationResult.message, 'error')
+        showMessage(
+          t('config.modelConfig.validationFailedCannotSave') + ': ' + validationResult.message,
+          'error'
+        )
         return
       }
 
@@ -848,7 +922,6 @@ const handleDelete = async () => {
     showMessage(t('config.modelConfig.deleteFailed') + ': ' + err.message, 'error')
   }
 }
-
 
 // Import Model
 const handleImport = () => {
@@ -1296,14 +1369,11 @@ onMounted(() => {
 }
 
 .api-key-container {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  margin-bottom: 8px;
 }
 
 .api-key-input-wrapper {
   position: relative;
-  flex: 1;
   display: flex;
   align-items: center;
 }
@@ -1352,7 +1422,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
+  gap: 8px;
 }
 
 .check-btn:hover:not(:disabled) {
@@ -1462,5 +1532,4 @@ onMounted(() => {
 .description-field::placeholder {
   color: rgba(255, 255, 255, 0.4);
 }
-
 </style>

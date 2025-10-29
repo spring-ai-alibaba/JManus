@@ -100,7 +100,8 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 
 		private String action;
 
-		private String functions;
+		@com.fasterxml.jackson.annotation.JsonRawValue
+		private Object functions;
 
 		public RegisterBatchInput() {
 		}
@@ -113,11 +114,11 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 			this.action = action;
 		}
 
-		public String getFunctions() {
+		public Object getFunctions() {
 			return functions;
 		}
 
-		public void setFunctions(String functions) {
+		public void setFunctions(Object functions) {
 			this.functions = functions;
 		}
 
@@ -285,14 +286,49 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 	/**
 	 * Register multiple functions in batch
 	 */
+	@SuppressWarnings("unchecked")
 	private ToolExecuteResult registerFunctionsBatch(RegisterBatchInput input) {
 		try {
-			String functionsString = input.getFunctions();
-			List<FunctionInput> functions = objectMapper.readValue(functionsString,
-					new TypeReference<List<FunctionInput>>() {
-					});
-			if (functions == null || functions.isEmpty()) {
+			Object functionsRaw = input.getFunctions();
+			if (functionsRaw == null) {
 				return new ToolExecuteResult("No functions provided");
+			}
+
+			List<FunctionInput> functions;
+
+			// Try to parse as List first (Spring AI default behavior)
+			if (functionsRaw instanceof List) {
+				// Convert List<Map> to List<FunctionInput>
+				List<?> rawList = (List<?>) functionsRaw;
+				functions = new ArrayList<>();
+				for (Object item : rawList) {
+					if (item instanceof Map) {
+						// Convert Map to FunctionInput
+						Map<String, Object> map = (Map<String, Object>) item;
+						FunctionInput funcInput = objectMapper.convertValue(map, FunctionInput.class);
+						functions.add(funcInput);
+					}
+					else if (item instanceof FunctionInput) {
+						functions.add((FunctionInput) item);
+					}
+				}
+			}
+			// Try to parse as JSON string
+			else if (functionsRaw instanceof String) {
+				String functionsString = (String) functionsRaw;
+				functions = objectMapper.readValue(functionsString, new TypeReference<List<FunctionInput>>() {
+				});
+			}
+			// Try to parse as JSON array string (escaped)
+			else {
+				// Try to serialize and re-parse
+				String jsonString = objectMapper.writeValueAsString(functionsRaw);
+				functions = objectMapper.readValue(jsonString, new TypeReference<List<FunctionInput>>() {
+				});
+			}
+
+			if (functions == null || functions.isEmpty()) {
+				return new ToolExecuteResult("No valid functions provided");
 			}
 
 			List<Map<String, Object>> registeredFunctions = new ArrayList<>();
@@ -387,6 +423,22 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 				// otherwise generate a new one for this call
 				String toolCallId = (parentToolCallId != null) ? parentToolCallId
 						: planIdDispatcher.generateToolCallId();
+				// Propagate planDepth if present in parent ToolContext
+				Integer tmpDepth = null;
+				try {
+					if (parentToolContext != null && parentToolContext.getContext() != null) {
+						Object d = parentToolContext.getContext().get("planDepth");
+						if (d instanceof Number) {
+							tmpDepth = ((Number) d).intValue();
+						}
+						else if (d instanceof String) {
+							tmpDepth = Integer.parseInt((String) d);
+						}
+					}
+				}
+				catch (Exception ignore) {
+				}
+				final Integer propagatedPlanDepth = tmpDepth;
 				executedCount++;
 
 				// Execute the function asynchronously
@@ -398,7 +450,8 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 						// ToolContext
 						@SuppressWarnings("unchecked")
 						ToolExecuteResult result = ((AbstractBaseTool<Map<String, Object>>) functionInstance)
-							.apply(input, new ToolContext(Map.of("toolcallId", toolCallId)));
+							.apply(input, new ToolContext(propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
+									: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth)));
 
 						function.setResult(result);
 						logger.debug("Completed execution for function: {}", toolName);

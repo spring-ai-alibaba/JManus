@@ -325,6 +325,10 @@ const words: I18nType = {
         'If not specified, the default configuration is: /v1/chat/completions',
       headers: 'Headers',
       headersPlaceholder: 'Request headers (JSON format)',
+      selectDefaultModel: 'Select Default Model',
+      defaultModel: 'Default Model',
+      apiKeySecurityNotice:
+        'For security reasons, the API key cannot be sent to the frontend. Please re-enter the API key each time, then click "Select Default Model" to set the model.',
     },
     // MCP configuration page
     mcpConfig: {
@@ -1280,7 +1284,7 @@ const words: I18nType = {
   // MCP Service
   mcpService: {
     title: 'MCP Service',
-    createService: 'Create MCP Service',
+    createService: 'Create Service',
     updateService: 'Update Service',
     endpoint: 'Endpoint',
     endpointRequired: 'Endpoint *',

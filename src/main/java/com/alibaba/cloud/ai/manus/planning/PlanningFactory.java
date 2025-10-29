@@ -74,6 +74,7 @@ import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseMetadataTool;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseReadTool;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseWriteTool;
+import com.alibaba.cloud.ai.manus.tool.database.UuidGenerateTool;
 import com.alibaba.cloud.ai.manus.tool.dirOperator.DirectoryOperator;
 import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
@@ -225,6 +226,7 @@ public class PlanningFactory {
 			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
+			toolDefinitions.add(UuidGenerateTool.getInstance(objectMapper));
 			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo));
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());

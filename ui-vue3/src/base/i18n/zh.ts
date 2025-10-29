@@ -320,6 +320,10 @@ const words: I18nType = {
       completionsPath: 'Completions Path',
       completionsPathPlaceholder:
         '聊天模型端点，各平台路径不同。如未填写默认配置是：/v1/chat/completions',
+      selectDefaultModel: '选择默认模型',
+      defaultModel: '默认模型',
+      apiKeySecurityNotice:
+        '从安全考虑，sk不能传到前端，请每次都重新输入sk，再点选择默认模型来设置model.',
     },
     // MCP配置页面
     mcpConfig: {
@@ -1222,7 +1226,7 @@ const words: I18nType = {
   // MCP服务
   mcpService: {
     title: 'MCP服务',
-    createService: '创建MCP服务',
+    createService: '创建服务',
     updateService: '更新服务',
     endpoint: '端点',
     endpointRequired: '端点 *',

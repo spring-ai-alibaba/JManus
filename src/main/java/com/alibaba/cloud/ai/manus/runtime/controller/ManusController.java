@@ -620,9 +620,9 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				logger.info("Executing plan with upload key: {}", uploadKey);
 			}
 
-			// Execute using the PlanningCoordinator
+			// Execute using the PlanningCoordinator (root plan has depth = 0)
 			CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId, null,
-					currentPlanId, null, isVueRequest, uploadKey);
+					currentPlanId, null, isVueRequest, uploadKey, 0);
 
 			// Return the wrapper containing both the future and rootPlanId
 			return new PlanExecutionWrapper(future, rootPlanId);

@@ -23,11 +23,12 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.alibaba.cloud.ai.manus.tool.database.DatabaseRequest;
-import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
+import com.alibaba.cloud.ai.manus.tool.database.DatabaseRequest;
 
 public class ExecuteSqlAction extends AbstractDatabaseAction {
 
@@ -78,26 +79,73 @@ public class ExecuteSqlAction extends AbstractDatabaseAction {
 	}
 
 	private String formatResultSet(ResultSet rs) throws SQLException {
-		StringBuilder sb = new StringBuilder();
 		int columnCount = rs.getMetaData().getColumnCount();
-		// Column names
+		// Collect column names
+		List<String> columnNames = new ArrayList<>();
 		for (int i = 1; i <= columnCount; i++) {
-			sb.append(rs.getMetaData().getColumnName(i));
-			if (i < columnCount)
-				sb.append(",");
+			columnNames.add(rs.getMetaData().getColumnName(i));
 		}
-		sb.append("\n");
-		// Data
+		// Check if we have data and collect rows
+		boolean hasData = false;
+		List<List<String>> rows = new ArrayList<>();
 		while (rs.next()) {
+			hasData = true;
+			List<String> row = new ArrayList<>();
 			for (int i = 1; i <= columnCount; i++) {
 				Object val = rs.getObject(i);
-				sb.append(val == null ? "NULL" : val.toString());
-				if (i < columnCount)
-					sb.append(",");
+				String cellValue = (val == null) ? "NULL" : val.toString();
+				row.add(escapeMarkdownTableCell(cellValue));
 			}
-			sb.append("\n");
+			rows.add(row);
 		}
-		return sb.toString().trim();
+		// Format output based on whether we have data
+		if (hasData) {
+			// Build markdown table
+			StringBuilder table = new StringBuilder();
+			// Header row
+			table.append("| ");
+			for (int i = 0; i < columnNames.size(); i++) {
+				table.append(escapeMarkdownTableCell(columnNames.get(i)));
+				if (i < columnNames.size() - 1) {
+					table.append(" | ");
+				}
+			}
+			table.append(" |\n");
+			// Separator row
+			table.append("| ");
+			for (int i = 0; i < columnNames.size(); i++) {
+				table.append("---");
+				if (i < columnNames.size() - 1) {
+					table.append(" | ");
+				}
+			}
+			table.append(" |\n");
+			// Data rows
+			for (List<String> row : rows) {
+				table.append("| ");
+				for (int i = 0; i < row.size(); i++) {
+					table.append(row.get(i));
+					if (i < row.size() - 1) {
+						table.append(" | ");
+					}
+				}
+				table.append(" |\n");
+			}
+			return table.toString();
+		}
+		else {
+			// Empty result set: return specific format
+			String columnNamesStr = String.join(",", columnNames);
+			return "returnColumn: " + columnNamesStr + " \nresultSet: No rows found.";
+		}
+	}
+
+	private String escapeMarkdownTableCell(String cell) {
+		if (cell == null) {
+			return "";
+		}
+		// Replace pipe characters and newlines to prevent markdown table breakage
+		return cell.replace("|", "\\|").replace("\n", "\\n").replace("\r", "\\r");
 	}
 
 }
