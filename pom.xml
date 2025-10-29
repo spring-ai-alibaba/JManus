@@ -6,7 +6,7 @@
 
     <groupId>com.jmanus</groupId>
     <name>JManus - AI Agent Management System</name>
-    <artifactId>jmanus</artifactId>
+    <artifactId>jmanus</artifactId> 
     <version>4.2.1</version>
 
     <parent>
