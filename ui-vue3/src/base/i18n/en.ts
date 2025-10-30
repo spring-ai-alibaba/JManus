@@ -325,6 +325,10 @@ const words: I18nType = {
         'If not specified, the default configuration is: /v1/chat/completions',
       headers: 'Headers',
       headersPlaceholder: 'Request headers (JSON format)',
+      selectDefaultModel: 'Select Default Model',
+      defaultModel: 'Default Model',
+      apiKeySecurityNotice:
+        'For security reasons, the API key cannot be sent to the frontend. Please re-enter the API key each time, then click "Select Default Model" to set the model.',
     },
     // MCP configuration page
     mcpConfig: {
@@ -985,6 +989,7 @@ const words: I18nType = {
     modelNameDescription:
       'Specify model name for handling specific tasks (such as image recognition, etc.). If not specified, the default model will be used.',
     noModelSelected: 'Empty',
+    noModelsFound: 'No models found',
     noTools:
       'No tools selected. The model will autonomously select appropriate tools from all registered tools (including MCP tools) to perform tasks. For more precise results, please help the model select specific tools, which will provide better performance.',
     addTool: 'Add Tool',
@@ -1280,7 +1285,7 @@ const words: I18nType = {
   // MCP Service
   mcpService: {
     title: 'MCP Service',
-    createService: 'Create MCP Service',
+    createService: 'Create Service',
     updateService: 'Update Service',
     endpoint: 'Endpoint',
     endpointRequired: 'Endpoint *',
@@ -1301,7 +1306,7 @@ const words: I18nType = {
     copyUrl: 'Double-click to copy',
     toolName: 'Tool Name',
     toolNameRequired: 'Tool Name *',
-    toolNamePlaceholder: 'Please enter tool name',
+    toolNamePlaceholder: 'Please enter tool name, recommended to use English name for HTTP calls',
     toolNameDescription:
       'Tell the model what this tool is called, also for your identification and modification',
     toolDescription: 'Tool Description',

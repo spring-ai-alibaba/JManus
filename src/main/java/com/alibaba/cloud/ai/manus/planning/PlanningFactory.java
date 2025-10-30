@@ -44,9 +44,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import com.alibaba.cloud.ai.manus.agent.ToolCallbackProvider;
+import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.cron.service.CronService;
-import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.mcp.model.vo.McpServiceEntity;
@@ -56,35 +56,35 @@ import com.alibaba.cloud.ai.manus.mcp.service.McpStateHolderService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanFinalizer;
 import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
+import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
+import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
 import com.alibaba.cloud.ai.manus.tool.FormInputTool;
 import com.alibaba.cloud.ai.manus.tool.TerminateTool;
 import com.alibaba.cloud.ai.manus.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.manus.tool.bash.Bash;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.browser.ChromeDriverService;
-import com.alibaba.cloud.ai.manus.tool.dirOperator.DirectoryOperator;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
-import com.alibaba.cloud.ai.manus.tool.database.DatabaseUseTool;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
+import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.ImageOcrProcessor;
+import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.MarkdownConverterTool;
+import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.PdfOcrProcessor;
 import com.alibaba.cloud.ai.manus.tool.cron.CronTool;
+import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
+import com.alibaba.cloud.ai.manus.tool.database.DatabaseMetadataTool;
+import com.alibaba.cloud.ai.manus.tool.database.DatabaseReadTool;
+import com.alibaba.cloud.ai.manus.tool.database.DatabaseWriteTool;
+import com.alibaba.cloud.ai.manus.tool.database.UuidGenerateTool;
+import com.alibaba.cloud.ai.manus.tool.dirOperator.DirectoryOperator;
+import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
+import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
-import com.alibaba.cloud.ai.manus.tool.mapreduce.DataSplitTool;
-import com.alibaba.cloud.ai.manus.tool.mapreduce.FinalizeTool;
-import com.alibaba.cloud.ai.manus.tool.mapreduce.MapOutputTool;
-import com.alibaba.cloud.ai.manus.tool.mapreduce.MapReduceSharedStateManager;
-import com.alibaba.cloud.ai.manus.tool.mapreduce.ReduceOperationTool;
+import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
+import com.alibaba.cloud.ai.manus.tool.mapreduce.ParallelExecutionTool;
+import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
-import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
-import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
-import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
-import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.MarkdownConverterTool;
-import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.PdfOcrProcessor;
-import com.alibaba.cloud.ai.manus.tool.convertToMarkdown.ImageOcrProcessor;
-import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
-import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -127,9 +127,6 @@ public class PlanningFactory {
 	private ToolCallingManager toolCallingManager;
 
 	@Autowired
-	private MapReduceSharedStateManager sharedStateManager;
-
-	@Autowired
 	private PromptService promptService;
 
 	@Autowired
@@ -149,6 +146,9 @@ public class PlanningFactory {
 	@SuppressWarnings("unused")
 	@Autowired
 	private PptGeneratorOperator pptGeneratorOperator;
+
+	@Autowired
+	private PlanIdDispatcher planIdDispatcher;
 
 	@Value("${agent.init}")
 	private Boolean agentInit = true;
@@ -223,7 +223,10 @@ public class PlanningFactory {
 		if (agentInit) {
 			// Add all tool definitions
 			toolDefinitions.add(BrowserUseTool.getInstance(chromeDriverService, innerStorageService, objectMapper));
-			toolDefinitions.add(DatabaseUseTool.getInstance(dataSourceService, objectMapper));
+			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper));
+			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
+			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
+			toolDefinitions.add(UuidGenerateTool.getInstance(objectMapper));
 			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo));
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
@@ -238,15 +241,8 @@ public class PlanningFactory {
 			// toolDefinitions.add(new GoogleSearch());
 			// toolDefinitions.add(new PythonExecute());
 			toolDefinitions.add(new FormInputTool(objectMapper));
+			toolDefinitions.add(new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher));
 			if (infiniteContextEnabled) {
-				toolDefinitions.add(new DataSplitTool(planId, manusProperties, sharedStateManager,
-						unifiedDirectoryManager, objectMapper, tableProcessingService));
-				toolDefinitions.add(new MapOutputTool(planId, manusProperties, sharedStateManager,
-						unifiedDirectoryManager, objectMapper));
-				toolDefinitions
-					.add(new ReduceOperationTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
-				toolDefinitions
-					.add(new FinalizeTool(planId, manusProperties, sharedStateManager, unifiedDirectoryManager));
 
 			}
 			toolDefinitions.add(new CronTool(cronService, objectMapper));

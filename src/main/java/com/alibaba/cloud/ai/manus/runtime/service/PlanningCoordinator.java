@@ -15,6 +15,14 @@
  */
 package com.alibaba.cloud.ai.manus.runtime.service;
 
+import java.util.concurrent.CompletableFuture;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.service.PlanFinalizer;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
@@ -22,14 +30,6 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.executor.PlanExecutorInterface;
 import com.alibaba.cloud.ai.manus.runtime.executor.factory.PlanExecutorFactory;
 import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
-import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
-
-import java.util.concurrent.CompletableFuture;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 /**
  * Enhanced Planning Coordinator that uses PlanExecutorFactory to dynamically select the
@@ -64,12 +64,15 @@ public class PlanningCoordinator {
 	 * @param toolcallId The ID of the tool call that triggered this plan execution
 	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
 	 * @param uploadKey The upload key for file upload context (can be null)
+	 * @param planDepth The depth of the plan in the execution hierarchy (0 for root, 1
+	 * for first level, etc.)
 	 * @return A CompletableFuture that completes with the execution result
 	 */
 	public CompletableFuture<PlanExecutionResult> executeByPlan(PlanInterface plan, String rootPlanId,
-			String parentPlanId, String currentPlanId, String toolcallId, boolean isVueRequest, String uploadKey) {
+			String parentPlanId, String currentPlanId, String toolcallId, boolean isVueRequest, String uploadKey,
+			int planDepth) {
 		try {
-			log.info("Starting direct plan execution for plan: {}", plan.getCurrentPlanId());
+			log.info("Starting direct plan execution for plan: {} at depth: {}", plan.getCurrentPlanId(), planDepth);
 
 			// Create execution context
 			ExecutionContext context = new ExecutionContext();
@@ -81,6 +84,7 @@ public class PlanningCoordinator {
 			context.setCurrentPlanId(currentPlanId);
 			context.setRootPlanId(rootPlanId);
 			context.setPlan(plan);
+			context.setPlanDepth(planDepth); // Set the plan depth
 			if (toolcallId == null && isVueRequest) {
 				context.setNeedSummary(true);
 				log.debug("Setting needSummary=true for planId: {}, toolcallId: {}, isVueRequest: {}", currentPlanId,

@@ -79,6 +79,8 @@ public abstract class BaseAgent {
 
 	private String rootPlanId = null;
 
+	private int planDepth = 0;
+
 	private AgentState state = AgentState.NOT_STARTED;
 
 	protected LlmService llmService;
@@ -336,6 +338,14 @@ public abstract class BaseAgent {
 
 	public String getRootPlanId() {
 		return rootPlanId;
+	}
+
+	public int getPlanDepth() {
+		return planDepth;
+	}
+
+	public void setPlanDepth(int planDepth) {
+		this.planDepth = planDepth;
 	}
 
 	public AgentState getState() {

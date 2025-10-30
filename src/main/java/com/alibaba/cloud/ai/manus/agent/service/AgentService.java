@@ -58,6 +58,6 @@ public interface AgentService {
 	 */
 	BaseAgent createDynamicBaseAgent(String name, String currentPlanId, String rootPlanId,
 			Map<String, Object> initialAgentSetting, String expectedReturnInfo, ExecutionStep step, String modelName,
-			List<String> selectedToolKeys);
+			List<String> selectedToolKeys, int planDepth);
 
 }

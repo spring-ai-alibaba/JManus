@@ -320,6 +320,10 @@ const words: I18nType = {
       completionsPath: 'Completions Path',
       completionsPathPlaceholder:
         '聊天模型端点，各平台路径不同。如未填写默认配置是：/v1/chat/completions',
+      selectDefaultModel: '选择默认模型',
+      defaultModel: '默认模型',
+      apiKeySecurityNotice:
+        '从安全考虑，sk不能传到前端，请每次都重新输入sk，再点选择默认模型来设置model.',
     },
     // MCP配置页面
     mcpConfig: {
@@ -934,6 +938,7 @@ const words: I18nType = {
     modelName: '模型名称',
     modelNameDescription: '指定模型名字用于处理特定任务（如图片识别等），如不指定则使用默认的模型',
     noModelSelected: '空',
+    noModelsFound: '未找到模型',
     noTools:
       '未选择工具，模型将从所有注册的工具（包括mcp工具）自主选择适当工具进行任务，如要更精确请帮助模型选择精准的工具，效果会更好一些',
     addTool: '添加工具',
@@ -1222,7 +1227,7 @@ const words: I18nType = {
   // MCP服务
   mcpService: {
     title: 'MCP服务',
-    createService: '创建MCP服务',
+    createService: '创建服务',
     updateService: '更新服务',
     endpoint: '端点',
     endpointRequired: '端点 *',
@@ -1241,7 +1246,7 @@ const words: I18nType = {
     copyUrl: '双击复制',
     toolName: '工具名称',
     toolNameRequired: '工具名称 *',
-    toolNamePlaceholder: '请输入工具名称',
+    toolNamePlaceholder: '请输入工具名称，推荐是英文调用名，方便http调用使用',
     toolNameDescription: '告知模型这个工具叫什么，也是方便你识别和修改用',
     toolDescription: '工具描述',
     toolDescriptionRequired: '工具描述 *',

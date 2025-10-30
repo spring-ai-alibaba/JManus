@@ -15,22 +15,6 @@
  */
 package com.alibaba.cloud.ai.manus.runtime.executor;
 
-import com.alibaba.cloud.ai.manus.agent.AgentState;
-import com.alibaba.cloud.ai.manus.agent.BaseAgent;
-import com.alibaba.cloud.ai.manus.config.ManusProperties;
-import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
-import com.alibaba.cloud.ai.manus.agent.service.AgentService;
-import com.alibaba.cloud.ai.manus.llm.LlmService;
-import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
-import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.StepResult;
-import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
-import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +25,22 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.alibaba.cloud.ai.manus.agent.AgentState;
+import com.alibaba.cloud.ai.manus.agent.BaseAgent;
+import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
+import com.alibaba.cloud.ai.manus.agent.service.AgentService;
+import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
+import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
+import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.StepResult;
+import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
+import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 
 /**
  * Abstract base class for plan executors. Contains common logic and basic functionality
@@ -201,7 +201,8 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 
 				BaseAgent executor = agentService.createDynamicBaseAgent(agent.getAgentName(),
 						context.getPlan().getCurrentPlanId(), context.getPlan().getRootPlanId(), initSettings,
-						expectedReturnInfo, step, modelEntity.getModelName(), agent.getAvailableToolKeys());
+						expectedReturnInfo, step, modelEntity.getModelName(), agent.getAvailableToolKeys(),
+						context.getPlanDepth());
 				return executor;
 			}
 		}

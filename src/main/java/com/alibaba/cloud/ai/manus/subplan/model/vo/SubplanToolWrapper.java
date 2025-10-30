@@ -15,25 +15,25 @@
  */
 package com.alibaba.cloud.ai.manus.subplan.model.vo;
 
-import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
-import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
-import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
-import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
-import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ToolContext;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
+import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
+import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
+import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
+import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Wrapper class that extends AbstractBaseTool for SubplanToolDef
@@ -107,7 +107,13 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 		if (toolCallId != null) {
 			logger.info("Using provided toolCallId from context: {} for tool: {}", toolCallId,
 					subplanTool.getToolName());
-			return executeSubplanWithToolCallId(input, toolCallId);
+
+			// Extract planDepth from ToolContext and increment by 1 for subplan
+			int parentPlanDepth = extractPlanDepthFromContext(toolContext);
+			int subplanDepth = parentPlanDepth + 1;
+			logger.info("Parent plan depth: {}, subplan will have depth: {}", parentPlanDepth, subplanDepth);
+
+			return executeSubplanWithToolCallId(input, toolCallId, subplanDepth);
 		}
 		else {
 			throw new IllegalArgumentException("ToolCallId is required for subplan tool: " + subplanTool.getToolName());
@@ -153,13 +159,38 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 	}
 
 	/**
+	 * Extract planDepth from ToolContext. This method looks for planDepth in the tool
+	 * context that was set by DynamicAgent.
+	 * @param toolContext The tool context containing planDepth information
+	 * @return planDepth if found, 0 otherwise
+	 */
+	private int extractPlanDepthFromContext(ToolContext toolContext) {
+		try {
+			Object depthObj = toolContext.getContext().get("planDepth");
+			if (depthObj instanceof Number) {
+				return ((Number) depthObj).intValue();
+			}
+			else if (depthObj instanceof String) {
+				return Integer.parseInt((String) depthObj);
+			}
+			return 0;
+		}
+		catch (Exception e) {
+			logger.warn("Error extracting planDepth from context: {}, defaulting to 0", e.getMessage());
+			return 0;
+		}
+	}
+
+	/**
 	 * Execute subplan with the provided toolCallId. This method contains the main subplan
 	 * execution logic using the provided toolCallId.
 	 * @param input The input parameters for the subplan
 	 * @param toolCallId The toolCallId to use for this execution
+	 * @param planDepth The depth of the subplan in the execution hierarchy
 	 * @return ToolExecuteResult containing the execution result
 	 */
-	private ToolExecuteResult executeSubplanWithToolCallId(Map<String, Object> input, String toolCallId) {
+	private ToolExecuteResult executeSubplanWithToolCallId(Map<String, Object> input, String toolCallId,
+			int planDepth) {
 		try {
 			logger.info("Executing subplan tool: {} with template: {} and toolCallId: {}", subplanTool.getToolName(),
 					subplanTool.getPlanTemplateId(), toolCallId);
@@ -206,10 +237,11 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 			PlanInterface plan = objectMapper.readValue(planJson, PlanInterface.class);
 
 			// Use the provided toolCallId instead of generating a new one
-			logger.info("Using provided toolCallId: {} for subplan execution: {}", toolCallId, newPlanId);
+			logger.info("Using provided toolCallId: {} for subplan execution: {} at depth: {}", toolCallId, newPlanId,
+					planDepth);
 
 			CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId,
-					currentPlanId, newPlanId, toolCallId, false, null);
+					currentPlanId, newPlanId, toolCallId, false, null, planDepth);
 
 			PlanExecutionResult result = future.get();
 

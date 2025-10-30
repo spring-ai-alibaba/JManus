@@ -16,15 +16,18 @@
 
 package com.alibaba.cloud.ai.manus.planning.service;
 
-import com.alibaba.cloud.ai.manus.planning.exception.ParameterValidationException;
-import com.alibaba.cloud.ai.manus.planning.model.vo.ParameterValidationResult;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.alibaba.cloud.ai.manus.planning.exception.ParameterValidationException;
+import com.alibaba.cloud.ai.manus.planning.model.vo.ParameterValidationResult;
 
 /**
  * Plan parameter mapping service implementation class providing specific implementation
@@ -35,7 +38,8 @@ public class PlanParameterMappingService implements IPlanParameterMappingService
 
 	private static final Logger logger = LoggerFactory.getLogger(PlanParameterMappingService.class);
 
-	// Parameter placeholder regex pattern: matches <<parameter_name>> format, supports
+	// Parameter placeholder regex pattern: matches <<parameter_name>> format,
+	// supports
 	// all Unicode characters
 	private static final Pattern PARAMETER_PATTERN = Pattern.compile("<<([^<>]+)>>");
 

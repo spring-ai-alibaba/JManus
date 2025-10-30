@@ -225,12 +225,11 @@ public class DatabaseSqlGenerator {
 	// H2 SQL generation methods
 	private static String generateH2TableInfoSql(boolean fuzzy, String fuzzyText) {
 		if (fuzzy) {
-			return "SELECT table_name as TABLE_NAME, remarks as TABLE_COMMENT " + "FROM information_schema.tables "
-					+ "WHERE table_type = 'TABLE' AND remarks LIKE ?";
+			return "SELECT * " + "FROM information_schema.tables "
+					+ "WHERE table_type = 'BASE TABLE' AND table_name LIKE ?";
 		}
 		else {
-			return "SELECT table_name as TABLE_NAME, remarks as TABLE_COMMENT " + "FROM information_schema.tables "
-					+ "WHERE table_type = 'TABLE'";
+			return "SELECT * " + "FROM information_schema.tables " + "WHERE table_type = 'BASE TABLE'";
 		}
 	}
 

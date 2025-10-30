@@ -31,32 +31,31 @@
       </div>
       <div class="header-right">
         <div class="import-export-actions">
-          <button 
-            @click="restoreAllDefaults" 
-            class="action-btn restore-btn" 
+          <button
+            @click="restoreAllDefaults"
+            class="action-btn restore-btn"
             :title="$t('config.basicConfig.restoreAllDefaults')"
             :disabled="loading"
           >
             🔄 {{ $t('config.basicConfig.restoreAllDefaults') }}
           </button>
-          <button @click="exportConfigs" class="action-btn" :title="$t('config.basicConfig.exportConfigs')">
+          <button
+            @click="exportConfigs"
+            class="action-btn"
+            :title="$t('config.basicConfig.exportConfigs')"
+          >
             📤
           </button>
           <label class="action-btn" :title="$t('config.basicConfig.importConfigs')">
             📥
-            <input
-              type="file"
-              accept=".json"
-              @change="importConfigs"
-              style="display: none;"
-            />
+            <input type="file" accept=".json" @change="importConfigs" style="display: none" />
           </label>
         </div>
         <div class="search-box">
           <input
             v-model="searchQuery"
             type="text"
-                            :placeholder="$t('config.search')"
+            :placeholder="$t('config.search')"
             class="search-input"
           />
           <span class="search-icon">🔍</span>
@@ -72,11 +71,7 @@
 
     <!-- Configuration Groups -->
     <div v-else-if="filteredConfigGroups.length > 0" class="config-groups">
-      <div
-        v-for="group in filteredConfigGroups"
-        :key="group.name"
-        class="config-group"
-      >
+      <div v-for="group in filteredConfigGroups" :key="group.name" class="config-group">
         <div class="group-header">
           <div class="group-info">
             <span class="group-icon">{{ GROUP_ICONS[group.name] || '⚙️' }}</span>
@@ -86,15 +81,8 @@
 
         <!-- Sub-groups -->
         <div class="sub-groups">
-          <div
-            v-for="subGroup in group.subGroups"
-            :key="subGroup.name"
-            class="sub-group"
-          >
-            <div
-              class="sub-group-header"
-              @click="toggleSubGroup(group.name, subGroup.name)"
-            >
+          <div v-for="subGroup in group.subGroups" :key="subGroup.name" class="sub-group">
+            <div class="sub-group-header" @click="toggleSubGroup(group.name, subGroup.name)">
               <div class="sub-group-info">
                 <span class="sub-group-icon">📁</span>
                 <h4 class="sub-group-title">{{ $t(subGroup.displayName) }}</h4>
@@ -102,22 +90,19 @@
               </div>
               <span
                 class="collapse-icon"
-                :class="{ 'collapsed': isSubGroupCollapsed(group.name, subGroup.name) }"
+                :class="{ collapsed: isSubGroupCollapsed(group.name, subGroup.name) }"
               >
                 ▼
               </span>
             </div>
 
-            <div
-              class="config-items"
-              v-show="!isSubGroupCollapsed(group.name, subGroup.name)"
-            >
+            <div class="config-items" v-show="!isSubGroupCollapsed(group.name, subGroup.name)">
               <div
                 v-for="item in subGroup.items"
                 :key="item.id"
                 class="config-item"
                 :class="{
-                  'modified': originalConfigValues.get(item.id) !== item.configValue
+                  modified: originalConfigValues.get(item.id) !== item.configValue,
                 }"
               >
                 <!-- Boolean Type Configuration Items (CHECKBOX/BOOLEAN) -->
@@ -127,8 +112,16 @@
                       <div class="config-item-header">
                         <label class="config-label">
                           {{ $t(item.displayName) || item.description }}
-                          <span class="type-badge boolean">{{ item.inputType === 'CHECKBOX' ? $t('config.types.checkbox') : $t('config.types.boolean') }}</span>
-                          <span v-if="originalConfigValues.get(item.id) !== item.configValue" class="modified-badge">{{ $t('config.modified') }}</span>
+                          <span class="type-badge boolean">{{
+                            item.inputType === 'CHECKBOX'
+                              ? $t('config.types.checkbox')
+                              : $t('config.types.boolean')
+                          }}</span>
+                          <span
+                            v-if="originalConfigValues.get(item.id) !== item.configValue"
+                            class="modified-badge"
+                            >{{ $t('config.modified') }}</span
+                          >
                         </label>
                         <span class="config-key" :title="item.configKey">{{ item.configKey }}</span>
                       </div>
@@ -139,7 +132,12 @@
                         <select
                           class="config-input select-input"
                           :value="item.configValue"
-                          @change="updateConfigValue(item, ($event.target as HTMLSelectElement)?.value || '')"
+                          @change="
+                            updateConfigValue(
+                              item,
+                              ($event.target as HTMLSelectElement)?.value || ''
+                            )
+                          "
                         >
                           <option
                             v-for="option in item.options"
@@ -170,7 +168,11 @@
                         <label class="config-label">
                           {{ $t(item.displayName) || item.description }}
                           <span class="type-badge select">{{ $t('config.types.select') }}</span>
-                          <span v-if="originalConfigValues.get(item.id) !== item.configValue" class="modified-badge">{{ $t('config.modified') }}</span>
+                          <span
+                            v-if="originalConfigValues.get(item.id) !== item.configValue"
+                            class="modified-badge"
+                            >{{ $t('config.modified') }}</span
+                          >
                         </label>
                         <span class="config-key" :title="item.configKey">{{ item.configKey }}</span>
                       </div>
@@ -179,7 +181,9 @@
                       <select
                         class="config-input select-input"
                         :value="item.configValue"
-                        @change="updateConfigValue(item, ($event.target as HTMLSelectElement)?.value || '')"
+                        @change="
+                          updateConfigValue(item, ($event.target as HTMLSelectElement)?.value || '')
+                        "
                       >
                         <option
                           v-for="option in item.options || []"
@@ -201,7 +205,11 @@
                         <label class="config-label">
                           {{ $t(item.displayName) || item.description }}
                           <span class="type-badge textarea">{{ $t('config.types.textarea') }}</span>
-                          <span v-if="originalConfigValues.get(item.id) !== item.configValue" class="modified-badge">{{ $t('config.modified') }}</span>
+                          <span
+                            v-if="originalConfigValues.get(item.id) !== item.configValue"
+                            class="modified-badge"
+                            >{{ $t('config.modified') }}</span
+                          >
                         </label>
                         <span class="config-key" :title="item.configKey">{{ item.configKey }}</span>
                       </div>
@@ -210,7 +218,12 @@
                       <textarea
                         class="config-input textarea-input"
                         :value="item.configValue"
-                        @input="updateConfigValue(item, ($event.target as HTMLTextAreaElement)?.value || '')"
+                        @input="
+                          updateConfigValue(
+                            item,
+                            ($event.target as HTMLTextAreaElement)?.value || ''
+                          )
+                        "
                         @blur="debouncedSave"
                         rows="3"
                       />
@@ -226,7 +239,11 @@
                         <label class="config-label">
                           {{ $t(item.displayName) || item.description }}
                           <span class="type-badge number">{{ $t('config.types.number') }}</span>
-                          <span v-if="originalConfigValues.get(item.id) !== item.configValue" class="modified-badge">{{ $t('config.modified') }}</span>
+                          <span
+                            v-if="originalConfigValues.get(item.id) !== item.configValue"
+                            class="modified-badge"
+                            >{{ $t('config.modified') }}</span
+                          >
                         </label>
                         <span class="config-key" :title="item.configKey">{{ item.configKey }}</span>
                         <div class="config-meta" v-if="item.min || item.max">
@@ -241,7 +258,9 @@
                         type="number"
                         class="config-input number-input"
                         :value="getNumberValue(item.configValue)"
-                        @input="updateConfigValue(item, ($event.target as HTMLInputElement)?.value || '')"
+                        @input="
+                          updateConfigValue(item, ($event.target as HTMLInputElement)?.value || '')
+                        "
                         @blur="debouncedSave"
                         :min="item.min || 1"
                         :max="item.max || 10000"
@@ -257,8 +276,16 @@
                       <div class="config-item-header">
                         <label class="config-label">
                           {{ $t(item.displayName) || item.description }}
-                          <span class="type-badge string">{{ item.inputType === 'TEXT' ? $t('config.types.text') : $t('config.types.string') }}</span>
-                          <span v-if="originalConfigValues.get(item.id) !== item.configValue" class="modified-badge">{{ $t('config.modified') }}</span>
+                          <span class="type-badge string">{{
+                            item.inputType === 'TEXT'
+                              ? $t('config.types.text')
+                              : $t('config.types.string')
+                          }}</span>
+                          <span
+                            v-if="originalConfigValues.get(item.id) !== item.configValue"
+                            class="modified-badge"
+                            >{{ $t('config.modified') }}</span
+                          >
                         </label>
                         <span class="config-key" :title="item.configKey">{{ item.configKey }}</span>
                       </div>
@@ -268,7 +295,9 @@
                         type="text"
                         class="config-input text-input"
                         :value="item.configValue"
-                        @input="updateConfigValue(item, ($event.target as HTMLInputElement)?.value || '')"
+                        @input="
+                          updateConfigValue(item, ($event.target as HTMLInputElement)?.value || '')
+                        "
                         @blur="debouncedSave"
                       />
                     </div>
@@ -296,10 +325,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import Switch from '@/components/switch/index.vue'
 import { AdminApiService, type ConfigItem } from '@/api/admin-api-service'
+import Switch from '@/components/switch/index.vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 // Initialize i18n
 const { t } = useI18n()
@@ -338,35 +367,33 @@ const collapsedSubGroups = ref<Set<string>>(new Set())
 const message = reactive({
   show: false,
   text: '',
-  type: 'success' as 'success' | 'error'
+  type: 'success' as 'success' | 'error',
 })
 
 // Search filter state
 const searchQuery = ref('')
 
-
-
 // Configuration item display name mapping
 const CONFIG_DISPLAY_NAMES: Record<string, string> = {
   // Browser Settings
-  'headless': ('config.basicConfig.browserSettings.headless'),
-  'requestTimeout': ('config.basicConfig.browserSettings.requestTimeout'),
+  headless: 'config.basicConfig.browserSettings.headless',
+  requestTimeout: 'config.basicConfig.browserSettings.requestTimeout',
 
   // General Settings
-  'debugDetail': ('config.basicConfig.general.debugDetail'),
-  'baseDir': ('config.basicConfig.general.baseDir'),
+  debugDetail: 'config.basicConfig.general.debugDetail',
+  baseDir: 'config.basicConfig.general.baseDir',
 
   // Interaction Settings
-  'openBrowser': ('config.basicConfig.interactionSettings.openBrowser'),
+  openBrowser: 'config.basicConfig.interactionSettings.openBrowser',
 
   // Agent Settings
-  'maxSteps': ('config.basicConfig.agentSettings.maxSteps'),
-  'userInputTimeout': ('config.basicConfig.agentSettings.userInputTimeout'),
-  'maxMemory': ('config.basicConfig.agentSettings.maxMemory'),
-  'parallelToolCalls': ('config.basicConfig.agentSettings.parallelToolCalls'),
+  maxSteps: 'config.basicConfig.agentSettings.maxSteps',
+  userInputTimeout: 'config.basicConfig.agentSettings.userInputTimeout',
+  maxMemory: 'config.basicConfig.agentSettings.maxMemory',
+  parallelToolCalls: 'config.basicConfig.agentSettings.parallelToolCalls',
 
   // Agents
-  'forceOverrideFromYaml': ('config.basicConfig.agents.forceOverrideFromYaml'),
+  forceOverrideFromYaml: 'config.basicConfig.agents.forceOverrideFromYaml',
 
   // Infinite Context - TEMPORARILY COMMENTED OUT
   // 'enabled': ('config.basicConfig.infiniteContext.enabled'),
@@ -374,12 +401,19 @@ const CONFIG_DISPLAY_NAMES: Record<string, string> = {
   // 'taskContextSize': ('config.basicConfig.infiniteContext.taskContextSize'),
 
   // File System
-  'allowExternalAccess': ('config.basicConfig.fileSystem.allowExternalAccess'),
+  allowExternalAccess: 'config.basicConfig.fileSystem.allowExternalAccess',
 
   // MCP Service Loader
-  'connectionTimeoutSeconds': ('config.basicConfig.mcpServiceLoader.connectionTimeoutSeconds'),
-  'maxRetryCount': ('config.basicConfig.mcpServiceLoader.maxRetryCount'),
-  'maxConcurrentConnections': ('config.basicConfig.mcpServiceLoader.maxConcurrentConnections'),
+  connectionTimeoutSeconds: 'config.basicConfig.mcpServiceLoader.connectionTimeoutSeconds',
+  maxRetryCount: 'config.basicConfig.mcpServiceLoader.maxRetryCount',
+  maxConcurrentConnections: 'config.basicConfig.mcpServiceLoader.maxConcurrentConnections',
+
+  // Image Recognition
+  poolSize: 'config.basicConfig.imageRecognition.poolSize',
+  modelName: 'config.basicConfig.imageRecognition.modelName',
+  dpi: 'config.basicConfig.imageRecognition.dpi',
+  imageType: 'config.basicConfig.imageRecognition.imageType',
+  maxRetryAttempts: 'config.basicConfig.imageRecognition.maxRetryAttempts',
 
   // System Settings (not used)
   // 'systemName': t('config.basicConfig.systemSettings.systemName'),
@@ -391,7 +425,7 @@ const CONFIG_DISPLAY_NAMES: Record<string, string> = {
 // Biggest Group display name mapping,
 // The four configuration groups 'browser', 'interaction', 'system', and 'performance' have no corresponding backend responses and have been temporarily removed.
 const GROUP_DISPLAY_NAMES: Record<string, string> = {
-  'manus': ('config.basicConfig.groupDisplayNames.manus'), // "Manus"
+  manus: 'config.basicConfig.groupDisplayNames.manus', // "Manus"
   // 'browser': t('config.basicConfig.groupDisplayNames.browser'),
   // 'interaction': t('config.basicConfig.groupDisplayNames.interaction'),
   // 'system': t('config.basicConfig.groupDisplayNames.system'),
@@ -400,32 +434,30 @@ const GROUP_DISPLAY_NAMES: Record<string, string> = {
 
 // Group icon mapping
 const GROUP_ICONS: Record<string, string> = {
-  'manus': '🤖',
-  'browser': '🌐',
-  'interaction': '🖥️',
-  'system': '⚙️',
-  'performance': '⚡'
+  manus: '🤖',
+  browser: '🌐',
+  interaction: '🖥️',
+  system: '⚙️',
+  performance: '⚡',
 }
 
 // Sub-group display name mapping
 const SUB_GROUP_DISPLAY_NAMES: Record<string, string> = {
-  'agent': ('config.subGroupDisplayNames.agent'),
-  'browser': ('config.subGroupDisplayNames.browser'),
-  'interaction': ('config.subGroupDisplayNames.interaction'),
-  'agents': ('config.subGroupDisplayNames.agents'),
+  agent: 'config.subGroupDisplayNames.agent',
+  browser: 'config.subGroupDisplayNames.browser',
+  interaction: 'config.subGroupDisplayNames.interaction',
+  agents: 'config.subGroupDisplayNames.agents',
   // 'infiniteContext': ('config.subGroupDisplayNames.infiniteContext'), // TEMPORARILY COMMENTED OUT
-  'general': ('config.subGroupDisplayNames.general'),
-  'filesystem': ('config.subGroupDisplayNames.filesystem'),
-  'mcpServiceLoader': ('config.subGroupDisplayNames.mcpServiceLoader'),
+  general: 'config.subGroupDisplayNames.general',
+  filesystem: 'config.subGroupDisplayNames.filesystem',
+  mcpServiceLoader: 'config.subGroupDisplayNames.mcpServiceLoader',
 }
 
 // Computed property: Whether there are changes
 const hasChanges = computed(() => {
   return configGroups.value.some(group =>
     group.subGroups.some(subGroup =>
-      subGroup.items.some(item =>
-        originalConfigValues.value.get(item.id) !== item.configValue
-      )
+      subGroup.items.some(item => originalConfigValues.value.get(item.id) !== item.configValue)
     )
   )
 })
@@ -443,11 +475,11 @@ const getNumberValue = (value: string): number => {
 // Utility function: Get the minimum value of the configuration item
 const getConfigMin = (configKey: string): number => {
   const minValues: Record<string, number> = {
-    'maxSteps': 1,
-    'browserTimeout': 1,
-    'maxThreads': 1,
-    'timeoutSeconds': 5,
-    'maxMemory': 1
+    maxSteps: 1,
+    browserTimeout: 1,
+    maxThreads: 1,
+    timeoutSeconds: 5,
+    maxMemory: 1,
   }
   return minValues[configKey] || 1
 }
@@ -455,11 +487,11 @@ const getConfigMin = (configKey: string): number => {
 // Utility function: Get the maximum value of the configuration item
 const getConfigMax = (configKey: string): number => {
   const maxValues: Record<string, number> = {
-    'maxSteps': 500,
-    'browserTimeout': 600,
-    'maxThreads': 32,
-    'timeoutSeconds': 300,
-    'maxMemory': 1000
+    maxSteps: 500,
+    browserTimeout: 600,
+    maxThreads: 32,
+    timeoutSeconds: 300,
+    maxMemory: 1000,
   }
   return maxValues[configKey] || 10000
 }
@@ -486,9 +518,10 @@ const handleBooleanUpdate = (item: ExtendedConfigItem, newValue: string | boolea
     // Handle possible option mappings (e.g., "Yes" -> "true", "No" -> "false")
     if (item.options && item.options.length > 0) {
       // Find the matching option
-      const matchedOption = item.options.find(option =>
-        (typeof option === 'string' ? option : option.label) === newValue ||
-        (typeof option === 'string' ? option : option.value) === newValue
+      const matchedOption = item.options.find(
+        option =>
+          (typeof option === 'string' ? option : option.label) === newValue ||
+          (typeof option === 'string' ? option : option.value) === newValue
       )
       if (matchedOption) {
         return typeof matchedOption === 'string' ? matchedOption : matchedOption.value
@@ -517,7 +550,12 @@ const updateConfigValue = (item: ExtendedConfigItem, value: any, autoSave: boole
     item._modified = true
 
     // If it's a non-text input type (e.g., switch, select), save automatically
-    if (autoSave || item.inputType === 'BOOLEAN' || item.inputType === 'CHECKBOX' || item.inputType === 'SELECT') {
+    if (
+      autoSave ||
+      item.inputType === 'BOOLEAN' ||
+      item.inputType === 'CHECKBOX' ||
+      item.inputType === 'SELECT'
+    ) {
       debouncedSave()
     }
   }
@@ -566,9 +604,9 @@ const loadAllConfigs = async () => {
         // Set display name for each configuration item (prioritize description)
         const processedItems: ExtendedConfigItem[] = items.map(item => ({
           ...item,
-          displayName: (CONFIG_DISPLAY_NAMES[item.configKey] || item.configKey),
+          displayName: CONFIG_DISPLAY_NAMES[item.configKey] || item.configKey,
           min: getConfigMin(item.configKey),
-          max: getConfigMax(item.configKey)
+          max: getConfigMax(item.configKey),
         }))
 
         // Cache original values
@@ -588,16 +626,18 @@ const loadAllConfigs = async () => {
         })
 
         // Convert to sub-group array
-        const subGroups: ConfigSubGroup[] = Array.from(subGroupsMap.entries()).map(([name, items]) => ({
-          name,
-          displayName: (SUB_GROUP_DISPLAY_NAMES[name] || name),
-          items
-        }))
+        const subGroups: ConfigSubGroup[] = Array.from(subGroupsMap.entries()).map(
+          ([name, items]) => ({
+            name,
+            displayName: SUB_GROUP_DISPLAY_NAMES[name] || name,
+            items,
+          })
+        )
 
         return {
           name: groupName,
-          displayName: (GROUP_DISPLAY_NAMES[groupName] || groupName),
-          subGroups
+          displayName: GROUP_DISPLAY_NAMES[groupName] || groupName,
+          subGroups,
         }
       } catch (error) {
         console.warn(`Failed to load config group ${groupName}, skipping:`, error)
@@ -663,7 +703,6 @@ const saveAllConfigs = async () => {
   }
 }
 
-
 // Toggle subgroup collapse
 const toggleSubGroup = (groupName: string, subGroupName: string) => {
   const key = `${groupName}-${subGroupName}`
@@ -681,14 +720,25 @@ const isSubGroupCollapsed = (groupName: string, subGroupName: string): boolean =
 
 // Calculate configuration statistics
 const configStats = computed(() => {
-  const total = configGroups.value.reduce((sum, group) =>
-    sum + group.subGroups.reduce((subSum, subGroup) =>
-      subSum + subGroup.items.length, 0), 0)
+  const total = configGroups.value.reduce(
+    (sum, group) =>
+      sum + group.subGroups.reduce((subSum, subGroup) => subSum + subGroup.items.length, 0),
+    0
+  )
 
-  const modified = configGroups.value.reduce((sum, group) =>
-    sum + group.subGroups.reduce((subSum, subGroup) =>
-      subSum + subGroup.items.filter(item =>
-        originalConfigValues.value.get(item.id) !== item.configValue).length, 0), 0)
+  const modified = configGroups.value.reduce(
+    (sum, group) =>
+      sum +
+      group.subGroups.reduce(
+        (subSum, subGroup) =>
+          subSum +
+          subGroup.items.filter(
+            item => originalConfigValues.value.get(item.id) !== item.configValue
+          ).length,
+        0
+      ),
+    0
+  )
 
   return { total, modified }
 })
@@ -701,20 +751,23 @@ const filteredConfigGroups = computed(() => {
 
   const query = searchQuery.value.toLowerCase()
 
-  return configGroups.value.map(group => ({
-    ...group,
-    subGroups: group.subGroups.map(subGroup => ({
-      ...subGroup,
-      items: subGroup.items.filter(item =>
-        item.displayName.toLowerCase().includes(query) ||
-        item.configKey.toLowerCase().includes(query) ||
-        (item.description && item.description.toLowerCase().includes(query))
-      )
-    })).filter(subGroup => subGroup.items.length > 0)
-  })).filter(group => group.subGroups.length > 0)
+  return configGroups.value
+    .map(group => ({
+      ...group,
+      subGroups: group.subGroups
+        .map(subGroup => ({
+          ...subGroup,
+          items: subGroup.items.filter(
+            item =>
+              item.displayName.toLowerCase().includes(query) ||
+              item.configKey.toLowerCase().includes(query) ||
+              (item.description && item.description.toLowerCase().includes(query))
+          ),
+        }))
+        .filter(subGroup => subGroup.items.length > 0),
+    }))
+    .filter(group => group.subGroups.length > 0)
 })
-
-
 
 // Export configurations
 const exportConfigs = () => {
@@ -722,14 +775,17 @@ const exportConfigs = () => {
     const exportData = {
       timestamp: new Date().toISOString(),
       version: '1.0',
-      configs: configGroups.value.reduce((acc, group) => {
-        group.subGroups.forEach(subGroup => {
-          subGroup.items.forEach(item => {
-            acc[item.configKey] = item.configValue
+      configs: configGroups.value.reduce(
+        (acc, group) => {
+          group.subGroups.forEach(subGroup => {
+            subGroup.items.forEach(item => {
+              acc[item.configKey] = item.configValue
+            })
           })
-        })
-        return acc
-      }, {} as Record<string, string>)
+          return acc
+        },
+        {} as Record<string, string>
+      ),
     }
 
     const dataStr = JSON.stringify(exportData, null, 2)
@@ -755,7 +811,7 @@ const importConfigs = (event: Event) => {
   if (!file) return
 
   const reader = new FileReader()
-  reader.onload = async (e) => {
+  reader.onload = async e => {
     try {
       const importData = JSON.parse(e.target?.result as string)
 
@@ -777,7 +833,7 @@ const importConfigs = (event: Event) => {
             if (Object.prototype.hasOwnProperty.call(importData.configs, item.configKey)) {
               configsToUpdate.push({
                 ...item,
-                configValue: importData.configs[item.configKey]
+                configValue: importData.configs[item.configKey],
               })
             }
           })
@@ -885,8 +941,12 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .config-groups {

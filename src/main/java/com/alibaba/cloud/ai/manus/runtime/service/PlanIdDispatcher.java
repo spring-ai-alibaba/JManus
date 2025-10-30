@@ -264,4 +264,28 @@ public class PlanIdDispatcher implements IPlanIdDispatcher {
 		return thinkActId;
 	}
 
+	/**
+	 * Generate a unique parallel execution ID for tracking parallel execution batches
+	 * @return unique parallel execution ID
+	 */
+	public String generateParallelExecutionId() {
+		// Use a specific prefix for parallel execution IDs
+		String parallelPrefix = "parallel-";
+
+		// Generate unique parallel execution ID with multiple uniqueness factors:
+		// 1. Specific prefix for parallel executions
+		// 2. Current timestamp in milliseconds
+		// 3. Random component for additional uniqueness
+		// 4. Thread ID to handle concurrent parallel executions
+		long timestamp = System.currentTimeMillis();
+		int randomComponent = (int) (Math.random() * 10000);
+		long threadId = Thread.currentThread().getId();
+
+		String parallelId = String.format("%s%d_%d_%d", parallelPrefix, timestamp, randomComponent, threadId);
+
+		logger.debug("Generated unique parallel execution ID: {}", parallelId);
+
+		return parallelId;
+	}
+
 }

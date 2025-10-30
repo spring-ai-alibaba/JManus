@@ -32,27 +32,27 @@ import org.springframework.stereotype.Service;
 import com.alibaba.cloud.ai.manus.agent.BaseAgent;
 import com.alibaba.cloud.ai.manus.agent.ConfigurableDynaAgent;
 import com.alibaba.cloud.ai.manus.agent.DynamicAgent;
-import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
 import com.alibaba.cloud.ai.manus.agent.ToolCallbackProvider;
 import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.agent.model.Tool;
 import com.alibaba.cloud.ai.manus.agent.repository.DynamicAgentRepository;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
-import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
-import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
-import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
-import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
-import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
-import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
-import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
+import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
+import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.mcp.service.IMcpService;
 import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
 import com.alibaba.cloud.ai.manus.model.model.vo.ModelConfig;
 import com.alibaba.cloud.ai.manus.namespace.namespace.vo.NamespaceConfig;
 import com.alibaba.cloud.ai.manus.namespace.service.NamespaceService;
+import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
+import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
+import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
+import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
+import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
 
 @Service
 public class AgentServiceImpl implements AgentService {
@@ -349,7 +349,7 @@ public class AgentServiceImpl implements AgentService {
 	@Override
 	public BaseAgent createDynamicBaseAgent(String name, String planId, String rootPlanId,
 			Map<String, Object> initialAgentSetting, String expectedReturnInfo, ExecutionStep step, String modelName,
-			List<String> selectedToolKeys) {
+			List<String> selectedToolKeys, int planDepth) {
 
 		log.info("Create new BaseAgent: {}, planId: {}", name, planId);
 
@@ -357,9 +357,10 @@ public class AgentServiceImpl implements AgentService {
 			// Load existing Agent through local loadAgent method
 			DynamicAgent agent = loadAgent(name, initialAgentSetting, step, selectedToolKeys, modelName);
 
-			// Set planId
+			// Set planId and depth
 			agent.setCurrentPlanId(planId);
 			agent.setRootPlanId(rootPlanId);
+			agent.setPlanDepth(planDepth);
 			// Set tool callback mapping
 			Map<String, ToolCallBackContext> toolCallbackMap = planningFactory.toolCallbackMap(planId, rootPlanId,
 					expectedReturnInfo);

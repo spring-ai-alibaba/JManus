@@ -15,21 +15,21 @@
  */
 package com.alibaba.cloud.ai.manus.runtime.executor;
 
-import com.alibaba.cloud.ai.manus.agent.BaseAgent;
-import com.alibaba.cloud.ai.manus.config.ManusProperties;
-import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
-import com.alibaba.cloud.ai.manus.agent.service.AgentService;
-import com.alibaba.cloud.ai.manus.llm.LlmService;
-import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
-import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
-import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
-import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.alibaba.cloud.ai.manus.agent.BaseAgent;
+import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
+import com.alibaba.cloud.ai.manus.agent.service.AgentService;
+import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
+import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
+import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
+import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
+import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 
 /**
  * Dynamic Agent Plan Executor - Specialized executor for DynamicAgentExecutionPlan with
@@ -86,7 +86,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 
 			BaseAgent executor = agentService.createDynamicBaseAgent("ConfigurableDynaAgent",
 					context.getPlan().getCurrentPlanId(), context.getPlan().getRootPlanId(), initSettings,
-					expectedReturnInfo, step, modelName, selectedToolKeys);
+					expectedReturnInfo, step, modelName, selectedToolKeys, context.getPlanDepth());
 			return executor;
 		}
 		else {

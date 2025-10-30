@@ -15,6 +15,22 @@
  */
 package com.alibaba.cloud.ai.manus.cron.scheduler;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.support.CronTrigger;
+import org.springframework.stereotype.Component;
+
 import com.alibaba.cloud.ai.manus.cron.entity.CronEntity;
 import com.alibaba.cloud.ai.manus.cron.enums.TaskStatus;
 import com.alibaba.cloud.ai.manus.cron.repository.CronRepository;
@@ -26,21 +42,6 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.concurrent.CompletableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.support.CronTrigger;
-import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
 
 /**
  * Dynamic task scheduler responsible for managing the lifecycle of all dynamic scheduled
@@ -274,8 +275,10 @@ public class DynamicCronTaskScheduler {
 				return CompletableFuture.completedFuture(errorResult);
 			}
 
-			// Execute using the PlanningCoordinator's common execution logic
-			return planningCoordinator.executeByPlan(plan, rootPlanId, parentPlanId, currentPlanId, null, false, null);
+			// Execute using the PlanningCoordinator's common execution logic (cron plans
+			// start at depth 0)
+			return planningCoordinator.executeByPlan(plan, rootPlanId, parentPlanId, currentPlanId, null, false, null,
+					0);
 
 		}
 		catch (Exception e) {
