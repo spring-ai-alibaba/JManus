@@ -15,25 +15,27 @@
  */
 package com.alibaba.cloud.ai.manus.runtime.executor.factory;
 
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
-import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
+import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
+import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
+import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
-import com.alibaba.cloud.ai.manus.runtime.executor.DirectResponseExecutor;
 import com.alibaba.cloud.ai.manus.runtime.executor.DynamicToolPlanExecutor;
 import com.alibaba.cloud.ai.manus.runtime.executor.LevelBasedExecutorPool;
 import com.alibaba.cloud.ai.manus.runtime.executor.PlanExecutorInterface;
 import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
 import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
+import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -47,8 +49,6 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 	private static final Logger log = LoggerFactory.getLogger(PlanExecutorFactory.class);
 
 	private final LlmService llmService;
-
-	private final AgentService agentService;
 
 	private final PlanExecutionRecorder recorder;
 
@@ -65,12 +65,22 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final AgentInterruptionHelper agentInterruptionHelper;
 
-	public PlanExecutorFactory(LlmService llmService, AgentService agentService, PlanExecutionRecorder recorder,
-			ManusProperties manusProperties, ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
-			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
-			AgentInterruptionHelper agentInterruptionHelper) {
+    private final PlanningFactory planningFactory;
+    private final ToolCallingManager toolCallingManager;
+    private final UserInputService userInputService;
+    private final PromptService promptService;
+    private final StreamingResponseHandler streamingResponseHandler;
+    private final PlanIdDispatcher planIdDispatcher;
+    private final JmanusEventPublisher jmanusEventPublisher;
+
+    public PlanExecutorFactory(LlmService llmService, PlanExecutionRecorder recorder,
+            ManusProperties manusProperties, ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
+            DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
+            AgentInterruptionHelper agentInterruptionHelper, PlanningFactory planningFactory,
+            ToolCallingManager toolCallingManager, UserInputService userInputService, PromptService promptService,
+            StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
+            JmanusEventPublisher jmanusEventPublisher) {
 		this.llmService = llmService;
-		this.agentService = agentService;
 		this.recorder = recorder;
 		this.manusProperties = manusProperties;
 		this.objectMapper = objectMapper;
@@ -78,18 +88,15 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		this.dynamicModelRepository = dynamicModelRepository;
 		this.fileUploadService = fileUploadService;
 		this.agentInterruptionHelper = agentInterruptionHelper;
+        this.planningFactory = planningFactory;
+        this.toolCallingManager = toolCallingManager;
+        this.userInputService = userInputService;
+        this.promptService = promptService;
+        this.streamingResponseHandler = streamingResponseHandler;
+        this.planIdDispatcher = planIdDispatcher;
+        this.jmanusEventPublisher = jmanusEventPublisher;
 	}
 
-	/**
-	 * Create a direct response executor for handling direct response plans
-	 * @return DirectResponseExecutor instance for direct response plans
-	 */
-	private PlanExecutorInterface createDirectResponseExecutor() {
-		log.debug("Creating direct response executor");
-		List<DynamicAgentEntity> agents = agentService.getAllAgents();
-		return new DirectResponseExecutor(agents, recorder, agentService, llmService, manusProperties,
-				levelBasedExecutorPool, fileUploadService, agentInterruptionHelper);
-	}
 
 	/**
 	 * Create a dynamic agent plan executor for DynamicToolsAgent execution
@@ -97,9 +104,10 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 	 */
 	private PlanExecutorInterface createDynamicToolExecutor() {
 		log.debug("Creating dynamic agent plan executor");
-		List<DynamicAgentEntity> agents = agentService.getAllAgents();
-		return new DynamicToolPlanExecutor(agents, recorder, agentService, llmService, manusProperties,
-				levelBasedExecutorPool, dynamicModelRepository, fileUploadService, agentInterruptionHelper);
+        return new DynamicToolPlanExecutor(null, recorder, llmService, manusProperties,
+                levelBasedExecutorPool, dynamicModelRepository, fileUploadService, agentInterruptionHelper,
+                planningFactory, toolCallingManager, userInputService, promptService, streamingResponseHandler,
+                planIdDispatcher, jmanusEventPublisher);
 	}
 
 	/**
@@ -107,7 +115,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 	 * @return Array of supported plan type strings
 	 */
 	public String[] getSupportedPlanTypes() {
-		return new String[] { "simple", "direct", "dynamic_agent" };
+		return new String[] { "dynamic_agent" };
 	}
 
 	/**
@@ -133,12 +141,6 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 	public PlanExecutorInterface createExecutor(PlanInterface plan) {
 		if (plan == null) {
 			throw new IllegalArgumentException("Plan cannot be null");
-		}
-
-		// Check if this is a direct response plan first
-		if (plan.isDirectResponse()) {
-			log.info("Creating direct response executor for plan: {}", plan.getCurrentPlanId());
-			return createDirectResponseExecutor();
 		}
 
 		String planType = plan.getPlanType();

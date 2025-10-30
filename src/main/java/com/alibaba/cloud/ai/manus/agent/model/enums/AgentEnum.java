@@ -20,18 +20,7 @@ package com.alibaba.cloud.ai.manus.agent.model.enums;
  */
 public enum AgentEnum {
 
-	DEFAULT_AGENT("DEFAULT_AGENT", "default_agent"), BROWSER_AGENT("BROWSER_AGENT", "browser_agent"),
-	DATABASE_AGENT("DATABASE_AGENT", "database_agent"), TEXT_FILE_AGENT("TEXT_FILE_AGENT", "text_file_agent"),
-	CRON_AGENT("CRON_AGENT", "cron_agent"),
-	MAPREDUCE_DATA_PREPARE_AGENT("MAPREDUCE_DATA_PREPARE_AGENT", "mapreduce_data_prepare_agent"),
-	MAPREDUCE_FIN_AGENT("MAPREDUCE_FIN_AGENT", "mapreduce_fin_agent"),
-	MAPREDUCE_MAP_TASK_AGENT("MAPREDUCE_MAP_TASK_AGENT", "mapreduce_map_task_agent"),
-	MAPREDUCE_REDUCE_TASK_AGENT("MAPREDUCE_REDUCE_TASK_AGENT", "mapreduce_reduce_task_agent"),
-	PPT_GENERATOR_AGENT("PPT_GENERATOR_AGENT", "ppt_generator_agent"),
-	JSX_GENERATOR_AGENT("JSX_GENERATOR_AGENT", "jsx_generator_agent"),
-	INTELLIGENT_FORM_AGENT("INTELLIGENT_FORM_AGENT", "intelligent_form_agent"),
-	FILE_MANAGER_AGENT("FILE_MANAGER_AGENT", "file_manager_agent");
-
+	DEFAULT_AGENT("DEFAULT_AGENT", "default_agent"), BROWSER_AGENT("BROWSER_AGENT", "browser_agent");
 	private String agentName;
 
 	private String agentPath;

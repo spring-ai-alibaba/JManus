@@ -44,7 +44,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import com.alibaba.cloud.ai.manus.agent.ToolCallbackProvider;
-import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.cron.service.CronService;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
@@ -139,9 +138,6 @@ public class PlanningFactory {
 	@Autowired
 	private SubplanToolService subplanToolService;
 
-	@SuppressWarnings("unused")
-	@Autowired
-	private AgentService agentService;
 
 	@SuppressWarnings("unused")
 	@Autowired

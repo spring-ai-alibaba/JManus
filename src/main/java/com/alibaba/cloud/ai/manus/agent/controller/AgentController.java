@@ -17,7 +17,6 @@ package com.alibaba.cloud.ai.manus.agent.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -32,60 +31,51 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.cloud.ai.manus.agent.model.Tool;
 import com.alibaba.cloud.ai.manus.agent.service.AgentConfig;
-import com.alibaba.cloud.ai.manus.agent.service.AgentService;
 
 @RestController
 @RequestMapping("/api/agents")
 @CrossOrigin(origins = "*") // Add cross-origin support
 public class AgentController {
 
-	@Autowired
-	private AgentService agentService;
+    // AgentService was removed
 
 	@Value("${namespace.value}")
 	private String namespace;
 
 	@GetMapping
 	public ResponseEntity<List<AgentConfig>> getAllAgents() {
-		return ResponseEntity.ok(agentService.getAllAgentsByNamespace(namespace));
+        throw new UnsupportedOperationException("Not implemented yet");
 	}
 
 	@GetMapping("/namespace/{namespace}")
 	public ResponseEntity<List<AgentConfig>> getAgentsByNamespace(@PathVariable("namespace") String namespace) {
-		return ResponseEntity.ok(agentService.getAllAgentsByNamespace(namespace));
+        throw new UnsupportedOperationException("Not implemented yet");
 	}
 
 	@GetMapping("/{id}")
 	public ResponseEntity<AgentConfig> getAgentById(@PathVariable("id") String id) {
-		return ResponseEntity.ok(agentService.getAgentById(id));
+        throw new UnsupportedOperationException("Not implemented yet");
 	}
 
 	@PostMapping
 	public ResponseEntity<AgentConfig> createAgent(@RequestBody AgentConfig agentConfig) {
-		return ResponseEntity.ok(agentService.createAgent(agentConfig));
+        throw new UnsupportedOperationException("Not implemented yet");
 	}
 
 	@PutMapping("/{id}")
 	public ResponseEntity<AgentConfig> updateAgent(@PathVariable("id") String id,
 			@RequestBody AgentConfig agentConfig) {
-		agentConfig.setId(id);
-		return ResponseEntity.ok(agentService.updateAgent(agentConfig));
+        throw new UnsupportedOperationException("Not implemented yet");
 	}
 
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> deleteAgent(@PathVariable("id") String id) {
-		try {
-			agentService.deleteAgent(id);
-			return ResponseEntity.ok().build();
-		}
-		catch (IllegalArgumentException e) {
-			return ResponseEntity.badRequest().build();
-		}
+        throw new UnsupportedOperationException("Not implemented yet");
 	}
 
 	@GetMapping("/tools")
 	public ResponseEntity<List<Tool>> getAvailableTools() {
-		return ResponseEntity.ok(agentService.getAvailableTools());
+        throw new UnsupportedOperationException("Not implemented yet");
 	}
 
 }

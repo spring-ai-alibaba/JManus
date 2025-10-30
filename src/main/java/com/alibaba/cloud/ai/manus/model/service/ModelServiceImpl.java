@@ -15,22 +15,14 @@
  */
 package com.alibaba.cloud.ai.manus.model.service;
 
-import cn.hutool.core.util.StrUtil;
-import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
-import com.alibaba.cloud.ai.manus.agent.repository.DynamicAgentRepository;
-import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
-import com.alibaba.cloud.ai.manus.event.ModelChangeEvent;
-import com.alibaba.cloud.ai.manus.llm.LlmService;
-import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
-import com.alibaba.cloud.ai.manus.model.exception.AuthenticationException;
-import com.alibaba.cloud.ai.manus.model.exception.NetworkException;
-import com.alibaba.cloud.ai.manus.model.exception.RateLimitException;
-import com.alibaba.cloud.ai.manus.model.model.vo.AvailableModel;
-import com.alibaba.cloud.ai.manus.model.model.vo.ModelConfig;
-import com.alibaba.cloud.ai.manus.model.model.vo.ValidationResult;
-import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
-
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,13 +36,19 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.manus.event.ModelChangeEvent;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
+import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
+import com.alibaba.cloud.ai.manus.model.exception.AuthenticationException;
+import com.alibaba.cloud.ai.manus.model.exception.NetworkException;
+import com.alibaba.cloud.ai.manus.model.exception.RateLimitException;
+import com.alibaba.cloud.ai.manus.model.model.vo.AvailableModel;
+import com.alibaba.cloud.ai.manus.model.model.vo.ModelConfig;
+import com.alibaba.cloud.ai.manus.model.model.vo.ValidationResult;
+import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
+
+import cn.hutool.core.util.StrUtil;
 
 @Service
 public class ModelServiceImpl implements ModelService {
@@ -59,7 +57,6 @@ public class ModelServiceImpl implements ModelService {
 
 	private final DynamicModelRepository repository;
 
-	private final DynamicAgentRepository agentRepository;
 
 	@Autowired
 	private JmanusEventPublisher publisher;
@@ -73,9 +70,8 @@ public class ModelServiceImpl implements ModelService {
 	private static final long CACHE_EXPIRY_MS = 2000; // 2 seconds
 
 	@Autowired
-	public ModelServiceImpl(DynamicModelRepository repository, DynamicAgentRepository agentRepository) {
+	public ModelServiceImpl(DynamicModelRepository repository) {
 		this.repository = repository;
-		this.agentRepository = agentRepository;
 	}
 
 	// Cache entry class
@@ -186,15 +182,6 @@ public class ModelServiceImpl implements ModelService {
 
 	@Override
 	public void deleteModel(String id) {
-		if (agentRepository.count() == 1) {
-			throw new IllegalArgumentException("Cannot clear all models");
-		}
-		List<DynamicAgentEntity> allByModel = agentRepository
-			.findAllByModel(new DynamicModelEntity(Long.parseLong(id)));
-		if (allByModel != null && !allByModel.isEmpty()) {
-			allByModel.forEach(dynamicAgentEntity -> dynamicAgentEntity.setModel(null));
-			agentRepository.saveAll(allByModel);
-		}
 		repository.deleteById(Long.parseLong(id));
 
 		// Always refresh cache after deletion to ensure consistency

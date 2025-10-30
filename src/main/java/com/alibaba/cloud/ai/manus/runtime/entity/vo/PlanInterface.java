@@ -17,7 +17,6 @@ package com.alibaba.cloud.ai.manus.runtime.entity.vo;
 
 import java.util.List;
 
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.mapreduce.MapReduceExecutionPlan;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -26,10 +25,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  * types.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "planType",
-		defaultImpl = ExecutionPlan.class // Default implementation is ExecutionPlan
+		defaultImpl = DynamicAgentExecutionPlan.class // Default implementation is DynamicAgentExecutionPlan
 )
-@JsonSubTypes({ @JsonSubTypes.Type(value = ExecutionPlan.class, name = "simple"),
-		@JsonSubTypes.Type(value = MapReduceExecutionPlan.class, name = "advanced"),
+@JsonSubTypes({ @JsonSubTypes.Type(value = DynamicAgentExecutionPlan.class, name = "dynamic_agent"),
 		@JsonSubTypes.Type(value = DynamicAgentExecutionPlan.class, name = "dynamic_agent") })
 public interface PlanInterface {
 
