@@ -2,7 +2,7 @@
   "title": "Default User Input Processing(don't delete this plan)",
   "steps": [
     {
-      "stepRequirement": "<<User Input Requirements>>",
+      "stepRequirement": "<<userRequirement>>",
       "agentName": "ConfigurableDynaAgent",
       "modelName": "",
       "terminateColumns": ""

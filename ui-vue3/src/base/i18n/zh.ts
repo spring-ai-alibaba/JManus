@@ -415,9 +415,6 @@ const words: I18nType = {
         maxMemory: '能记住的最大消息数',
         parallelToolCalls: '并行工具调用',
       },
-      agents: {
-        forceOverrideFromYaml: '强制使用YAML配置文件覆盖同名Agent',
-      },
       // infiniteContext: { // 临时注释掉
       //   enabled: '是否开启无限上下文',
       //   parallelThreads: '并行处理线程数',

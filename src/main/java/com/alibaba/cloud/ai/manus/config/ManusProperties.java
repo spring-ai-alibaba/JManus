@@ -140,25 +140,6 @@ public class ManusProperties implements IManusProperties {
 		this.maxSteps = maxSteps;
 	}
 
-	@ConfigProperty(group = "manus", subGroup = "agents", key = "forceOverrideFromYaml",
-			path = "manus.agents.forceOverrideFromYaml", description = "manus.agent.forceOverrideFromYaml.description",
-			defaultValue = "true", inputType = ConfigInputType.CHECKBOX,
-			options = { @ConfigOption(value = "true", label = "manus.agent.forceOverrideFromYaml.option.true"),
-					@ConfigOption(value = "false", label = "manus.agent.forceOverrideFromYaml.option.false") })
-	private volatile Boolean forceOverrideFromYaml;
-
-	public Boolean getForceOverrideFromYaml() {
-		String configPath = "manus.agents.forceOverrideFromYaml";
-		String value = configService.getConfigValue(configPath);
-		if (value != null) {
-			forceOverrideFromYaml = Boolean.valueOf(value);
-		}
-		return forceOverrideFromYaml;
-	}
-
-	public void setForceOverrideFromYaml(Boolean forceOverrideFromYaml) {
-		this.forceOverrideFromYaml = forceOverrideFromYaml;
-	}
 
 	@ConfigProperty(group = "manus", subGroup = "agent", key = "userInputTimeout",
 			path = "manus.agent.userInputTimeout", description = "manus.agent.userInputTimeout.description",

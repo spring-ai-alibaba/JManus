@@ -392,8 +392,6 @@ const CONFIG_DISPLAY_NAMES: Record<string, string> = {
   maxMemory: 'config.basicConfig.agentSettings.maxMemory',
   parallelToolCalls: 'config.basicConfig.agentSettings.parallelToolCalls',
 
-  // Agents
-  forceOverrideFromYaml: 'config.basicConfig.agents.forceOverrideFromYaml',
 
   // Infinite Context - TEMPORARILY COMMENTED OUT
   // 'enabled': ('config.basicConfig.infiniteContext.enabled'),

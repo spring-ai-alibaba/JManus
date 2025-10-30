@@ -70,15 +70,6 @@ public interface IManusProperties {
 	 */
 	void setMaxSteps(Integer maxSteps);
 
-	/**
-	 * Get force override from yaml setting
-	 */
-	Boolean getForceOverrideFromYaml();
-
-	/**
-	 * Set force override from yaml setting
-	 */
-	void setForceOverrideFromYaml(Boolean forceOverrideFromYaml);
 
 	/**
 	 * Get user input timeout

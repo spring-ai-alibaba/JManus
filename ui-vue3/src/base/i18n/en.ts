@@ -430,10 +430,6 @@ const words: I18nType = {
         maxMemory: 'Maximum number of messages that can be remembered',
         parallelToolCalls: 'Parallel tool calls',
       },
-      agents: {
-        forceOverrideFromYaml:
-          'Force override of agents with the same name using the YAML configuration file',
-      },
       // infiniteContext: { // TEMPORARILY COMMENTED OUT
       //   enabled: 'Whether to enable infinite context',
       //   parallelThreads: 'Number of parallel processing threads',
