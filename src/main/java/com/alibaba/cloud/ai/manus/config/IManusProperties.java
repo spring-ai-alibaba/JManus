@@ -70,7 +70,6 @@ public interface IManusProperties {
 	 */
 	void setMaxSteps(Integer maxSteps);
 
-
 	/**
 	 * Get user input timeout
 	 */

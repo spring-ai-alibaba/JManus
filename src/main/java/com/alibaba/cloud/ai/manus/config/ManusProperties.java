@@ -140,7 +140,6 @@ public class ManusProperties implements IManusProperties {
 		this.maxSteps = maxSteps;
 	}
 
-
 	@ConfigProperty(group = "manus", subGroup = "agent", key = "userInputTimeout",
 			path = "manus.agent.userInputTimeout", description = "manus.agent.userInputTimeout.description",
 			defaultValue = "300", inputType = ConfigInputType.NUMBER)
