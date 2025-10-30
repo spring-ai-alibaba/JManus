@@ -134,7 +134,6 @@ public class PlanningFactory {
 	@Autowired
 	private SubplanToolService subplanToolService;
 
-
 	@SuppressWarnings("unused")
 	@Autowired
 	private PptGeneratorOperator pptGeneratorOperator;

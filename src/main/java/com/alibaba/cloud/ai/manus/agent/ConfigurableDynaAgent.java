@@ -68,13 +68,12 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 	public ConfigurableDynaAgent(LlmService llmService, PlanExecutionRecorder planExecutionRecorder,
 			ManusProperties manusProperties, String name, String description, String nextStepPrompt,
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
-			Map<String, Object> initialAgentSetting, UserInputService userInputService,
-			String modelName, StreamingResponseHandler streamingResponseHandler, ExecutionStep step,
-			PlanIdDispatcher planIdDispatcher, JmanusEventPublisher jmanusEventPublisher,
-			AgentInterruptionHelper agentInterruptionHelper) {
+			Map<String, Object> initialAgentSetting, UserInputService userInputService, String modelName,
+			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
+			JmanusEventPublisher jmanusEventPublisher, AgentInterruptionHelper agentInterruptionHelper) {
 		super(llmService, planExecutionRecorder, manusProperties, name, description, nextStepPrompt, availableToolKeys,
-					toolCallingManager, initialAgentSetting, userInputService, modelName,
-				streamingResponseHandler, step, planIdDispatcher, jmanusEventPublisher, agentInterruptionHelper);
+				toolCallingManager, initialAgentSetting, userInputService, modelName, streamingResponseHandler, step,
+				planIdDispatcher, jmanusEventPublisher, agentInterruptionHelper);
 	}
 
 	/**

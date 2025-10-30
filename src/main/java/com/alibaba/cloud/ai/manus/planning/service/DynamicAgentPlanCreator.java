@@ -32,7 +32,6 @@ public class DynamicAgentPlanCreator implements IPlanCreator {
 
 	private static final Logger log = LoggerFactory.getLogger(DynamicAgentPlanCreator.class);
 
-
 	public DynamicAgentPlanCreator(LlmService llmService, PlanningToolInterface planningTool,
 			PlanExecutionRecorder recorder, ManusProperties manusProperties,
 			StreamingResponseHandler streamingResponseHandler) {

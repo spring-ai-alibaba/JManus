@@ -57,7 +57,6 @@ public class ModelServiceImpl implements ModelService {
 
 	private final DynamicModelRepository repository;
 
-
 	@Autowired
 	private JmanusEventPublisher publisher;
 

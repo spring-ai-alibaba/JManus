@@ -25,7 +25,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  * types.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "planType",
-		defaultImpl = DynamicAgentExecutionPlan.class // Default implementation is DynamicAgentExecutionPlan
+		defaultImpl = DynamicAgentExecutionPlan.class // Default implementation is
+														// DynamicAgentExecutionPlan
 )
 @JsonSubTypes({ @JsonSubTypes.Type(value = DynamicAgentExecutionPlan.class, name = "dynamic_agent"),
 		@JsonSubTypes.Type(value = DynamicAgentExecutionPlan.class, name = "dynamic_agent") })

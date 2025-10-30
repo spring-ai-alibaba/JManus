@@ -38,6 +38,7 @@ public class NamespaceServiceImpl implements NamespaceService {
 	public NamespaceServiceImpl(NamespaceRepository repository) {
 		this.repository = repository;
 	}
+
 	@Override
 	public List<NamespaceConfig> getAllNamespaces() {
 		return repository.findAll().stream().map(NamespaceEntity::mapToNamespaceConfig).collect(Collectors.toList());
@@ -72,8 +73,6 @@ public class NamespaceServiceImpl implements NamespaceService {
 			NamespaceEntity entity = new NamespaceEntity();
 			updateEntityFromConfig(entity, config);
 			entity = repository.save(entity);
-
-		
 
 			log.info("Successfully created new Namespace: {}", config.getName());
 			return entity.mapToNamespaceConfig();

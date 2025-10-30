@@ -38,10 +38,9 @@ public abstract class ReActAgent extends BaseAgent {
 	 */
 
 	public ReActAgent(LlmService llmService, PlanExecutionRecorder planExecutionRecorder,
-			ManusProperties manusProperties, Map<String, Object> initialAgentSetting,
-			ExecutionStep step, PlanIdDispatcher planIdDispatcher) {
-		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, step,
-				planIdDispatcher);
+			ManusProperties manusProperties, Map<String, Object> initialAgentSetting, ExecutionStep step,
+			PlanIdDispatcher planIdDispatcher) {
+		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, step, planIdDispatcher);
 	}
 
 	/**

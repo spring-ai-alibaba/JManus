@@ -122,12 +122,10 @@ public class DynamicAgent extends ReActAgent {
 	public DynamicAgent(LlmService llmService, PlanExecutionRecorder planExecutionRecorder,
 			ManusProperties manusProperties, String name, String description, String nextStepPrompt,
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
-			Map<String, Object> initialAgentSetting, UserInputService userInputService,
-			String modelName, StreamingResponseHandler streamingResponseHandler, ExecutionStep step,
-			PlanIdDispatcher planIdDispatcher, JmanusEventPublisher jmanusEventPublisher,
-			AgentInterruptionHelper agentInterruptionHelper) {
-		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, step,
-				planIdDispatcher);
+			Map<String, Object> initialAgentSetting, UserInputService userInputService, String modelName,
+			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
+			JmanusEventPublisher jmanusEventPublisher, AgentInterruptionHelper agentInterruptionHelper) {
+		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, step, planIdDispatcher);
 		this.agentName = name;
 		this.agentDescription = description;
 		this.nextStepPrompt = nextStepPrompt;
@@ -592,7 +590,7 @@ public class DynamicAgent extends ReActAgent {
 	 * @return User message for current step environment data
 	 */
 	private Message currentStepEnvMessage() {
-		String currentStepEnv ="""
+		String currentStepEnv = """
 				- Current step environment information:
 				{current_step_env_data}
 				""";

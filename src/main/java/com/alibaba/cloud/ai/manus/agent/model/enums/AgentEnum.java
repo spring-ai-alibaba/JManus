@@ -21,6 +21,7 @@ package com.alibaba.cloud.ai.manus.agent.model.enums;
 public enum AgentEnum {
 
 	DEFAULT_AGENT("DEFAULT_AGENT", "default_agent"), BROWSER_AGENT("BROWSER_AGENT", "browser_agent");
+
 	private String agentName;
 
 	private String agentPath;

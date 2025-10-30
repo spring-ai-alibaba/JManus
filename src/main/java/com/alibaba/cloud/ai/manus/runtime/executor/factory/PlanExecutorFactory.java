@@ -64,20 +64,25 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final AgentInterruptionHelper agentInterruptionHelper;
 
-    private final PlanningFactory planningFactory;
-    private final ToolCallingManager toolCallingManager;
-    private final UserInputService userInputService;
-    private final StreamingResponseHandler streamingResponseHandler;
-    private final PlanIdDispatcher planIdDispatcher;
-    private final JmanusEventPublisher jmanusEventPublisher;
+	private final PlanningFactory planningFactory;
 
-    public PlanExecutorFactory(LlmService llmService, PlanExecutionRecorder recorder,
-            ManusProperties manusProperties, ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
-            DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
-            AgentInterruptionHelper agentInterruptionHelper, PlanningFactory planningFactory,
-            ToolCallingManager toolCallingManager, UserInputService userInputService,
-            StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
-            JmanusEventPublisher jmanusEventPublisher) {
+	private final ToolCallingManager toolCallingManager;
+
+	private final UserInputService userInputService;
+
+	private final StreamingResponseHandler streamingResponseHandler;
+
+	private final PlanIdDispatcher planIdDispatcher;
+
+	private final JmanusEventPublisher jmanusEventPublisher;
+
+	public PlanExecutorFactory(LlmService llmService, PlanExecutionRecorder recorder, ManusProperties manusProperties,
+			ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
+			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
+			AgentInterruptionHelper agentInterruptionHelper, PlanningFactory planningFactory,
+			ToolCallingManager toolCallingManager, UserInputService userInputService,
+			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
+			JmanusEventPublisher jmanusEventPublisher) {
 		this.llmService = llmService;
 		this.recorder = recorder;
 		this.manusProperties = manusProperties;
@@ -86,14 +91,13 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		this.dynamicModelRepository = dynamicModelRepository;
 		this.fileUploadService = fileUploadService;
 		this.agentInterruptionHelper = agentInterruptionHelper;
-        this.planningFactory = planningFactory;
-        this.toolCallingManager = toolCallingManager;
-        this.userInputService = userInputService;
-        this.streamingResponseHandler = streamingResponseHandler;
-        this.planIdDispatcher = planIdDispatcher;
-        this.jmanusEventPublisher = jmanusEventPublisher;
+		this.planningFactory = planningFactory;
+		this.toolCallingManager = toolCallingManager;
+		this.userInputService = userInputService;
+		this.streamingResponseHandler = streamingResponseHandler;
+		this.planIdDispatcher = planIdDispatcher;
+		this.jmanusEventPublisher = jmanusEventPublisher;
 	}
-
 
 	/**
 	 * Create a dynamic agent plan executor for DynamicToolsAgent execution
@@ -101,10 +105,9 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 	 */
 	private PlanExecutorInterface createDynamicToolExecutor() {
 		log.debug("Creating dynamic agent plan executor");
-        return new DynamicToolPlanExecutor(null, recorder, llmService, manusProperties,
-                levelBasedExecutorPool, dynamicModelRepository, fileUploadService, agentInterruptionHelper,
-                planningFactory, toolCallingManager, userInputService, streamingResponseHandler,
-                planIdDispatcher, jmanusEventPublisher);
+		return new DynamicToolPlanExecutor(null, recorder, llmService, manusProperties, levelBasedExecutorPool,
+				dynamicModelRepository, fileUploadService, agentInterruptionHelper, planningFactory, toolCallingManager,
+				userInputService, streamingResponseHandler, planIdDispatcher, jmanusEventPublisher);
 	}
 
 	/**

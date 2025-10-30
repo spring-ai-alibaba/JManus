@@ -67,7 +67,8 @@ public class ToolController {
 			List<Tool> tools = toolCallbackContext.entrySet().stream().map(entry -> {
 				Tool tool = new Tool();
 				tool.setKey(entry.getKey());
-				tool.setName(entry.getKey()); // You might want to provide a more friendly name
+				tool.setName(entry.getKey()); // You might want to provide a more friendly
+												// name
 				tool.setDescription(entry.getValue().getFunctionInstance().getDescription());
 				tool.setEnabled(true);
 				tool.setServiceGroup(entry.getValue().getFunctionInstance().getServiceGroup());
@@ -78,16 +79,20 @@ public class ToolController {
 			log.info("Retrieved {} available tools", tools.size());
 			return ResponseEntity.ok(tools);
 
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			log.error("Error getting available tools: {}", e.getMessage(), e);
 			return ResponseEntity.internalServerError().build();
-		} finally {
+		}
+		finally {
 			// Clean up MCP connections
 			try {
 				mcpService.close(uuid);
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				log.warn("Error closing MCP service for UUID {}: {}", uuid, e.getMessage());
 			}
 		}
 	}
+
 }

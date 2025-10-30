@@ -55,8 +55,8 @@ public class PlanFinalizer {
 
 	private final StreamingResponseHandler streamingResponseHandler;
 
-	public PlanFinalizer(LlmService llmService, PlanExecutionRecorder recorder,
-			ManusProperties manusProperties, StreamingResponseHandler streamingResponseHandler) {
+	public PlanFinalizer(LlmService llmService, PlanExecutionRecorder recorder, ManusProperties manusProperties,
+			StreamingResponseHandler streamingResponseHandler) {
 		this.llmService = llmService;
 		this.recorder = recorder;
 		this.manusProperties = manusProperties;
@@ -73,18 +73,17 @@ public class PlanFinalizer {
 				context.getPlan().getPlanExecutionStateStringFormat(false), "userRequest", context.getUserRequest());
 
 		String summaryPrompt = """
-		You are jmanus, an AI assistant capable of responding to user requests. You need to respond to the user's request based on the execution results of this step-by-step execution plan.
+				You are jmanus, an AI assistant capable of responding to user requests. You need to respond to the user's request based on the execution results of this step-by-step execution plan.
 
-		The current user request is:
-		{userRequest}
+				The current user request is:
+				{userRequest}
 
-		Step-by-step plan execution details:
-		{executionDetail}
+				Step-by-step plan execution details:
+				{executionDetail}
 
-		Please respond to the user's request based on the information in the execution details.
-		""";
-		generateWithLlm(context, result, summaryPrompt, promptVariables, "summary",
-				"Generated summary: {}");
+				Please respond to the user's request based on the information in the execution details.
+				""";
+		generateWithLlm(context, result, summaryPrompt, promptVariables, "summary", "Generated summary: {}");
 	}
 
 	/**
@@ -99,12 +98,12 @@ public class PlanFinalizer {
 		Map<String, Object> promptVariables = Map.of("userRequest", userRequest);
 
 		String directResponsePrompt = """
-		You are jmanus, an AI assistant capable of responding to user requests. Currently in direct feedback mode, you need to directly respond to the user's simple requests without complex planning and decomposition.
+				You are jmanus, an AI assistant capable of responding to user requests. Currently in direct feedback mode, you need to directly respond to the user's simple requests without complex planning and decomposition.
 
-		The current user request is:
+				The current user request is:
 
-		{userRequest}
-		""";
+				{userRequest}
+				""";
 		generateWithLlm(context, result, directResponsePrompt, promptVariables, "direct response",
 				"Generated direct response: {}");
 	}
@@ -115,11 +114,10 @@ public class PlanFinalizer {
 	private String generateLlmResponse(ExecutionContext context, String promptName, Map<String, Object> variables,
 			String operationName) {
 
-
 		PromptTemplate template = new PromptTemplate(promptName);
-		
-		Message message =  template.createMessage(variables != null ? variables : Map.of());
-		
+
+		Message message = template.createMessage(variables != null ? variables : Map.of());
+
 		Prompt prompt = new Prompt(List.of(message));
 
 		ChatClient.ChatClientRequestSpec requestSpec = llmService.getDiaChatClient().prompt(prompt);

@@ -57,7 +57,6 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 
 	protected final LevelBasedExecutorPool levelBasedExecutorPool;
 
-
 	protected AgentInterruptionHelper agentInterruptionHelper;
 
 	protected LlmService llmService;
@@ -77,10 +76,9 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 
 	public static final String EXECUTION_ENV_STRING_KEY = "current_step_env_data";
 
-	public AbstractPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
-			LlmService llmService, ManusProperties manusProperties,
-			LevelBasedExecutorPool levelBasedExecutorPool, FileUploadService fileUploadService,
-			AgentInterruptionHelper agentInterruptionHelper) {
+	public AbstractPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder, LlmService llmService,
+			ManusProperties manusProperties, LevelBasedExecutorPool levelBasedExecutorPool,
+			FileUploadService fileUploadService, AgentInterruptionHelper agentInterruptionHelper) {
 		this.agents = agents;
 		this.recorder = recorder;
 		this.llmService = llmService;
@@ -174,7 +172,6 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 	 * Get the executor for the step.
 	 */
 	protected abstract BaseAgent getExecutorForStep(ExecutionContext context, ExecutionStep step);
-	
 
 	protected PlanExecutionRecorder getRecorder() {
 		return recorder;
