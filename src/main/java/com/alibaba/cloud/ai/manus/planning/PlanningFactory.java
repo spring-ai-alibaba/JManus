@@ -53,7 +53,6 @@ import com.alibaba.cloud.ai.manus.mcp.model.vo.McpTool;
 import com.alibaba.cloud.ai.manus.mcp.service.McpService;
 import com.alibaba.cloud.ai.manus.mcp.service.McpStateHolderService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanFinalizer;
-import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
@@ -126,9 +125,6 @@ public class PlanningFactory {
 	private ToolCallingManager toolCallingManager;
 
 	@Autowired
-	private PromptService promptService;
-
-	@Autowired
 	private StreamingResponseHandler streamingResponseHandler;
 
 	@Autowired
@@ -178,7 +174,7 @@ public class PlanningFactory {
 	 * @return configured PlanFinalizer instance
 	 */
 	public PlanFinalizer createPlanFinalizer() {
-		return new PlanFinalizer(llmService, recorder, promptService, manusProperties, streamingResponseHandler);
+		return new PlanFinalizer(llmService, recorder, manusProperties, streamingResponseHandler);
 	}
 
 	public static class ToolCallBackContext {

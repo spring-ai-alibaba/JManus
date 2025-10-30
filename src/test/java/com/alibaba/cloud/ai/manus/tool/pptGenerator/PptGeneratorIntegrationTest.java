@@ -15,29 +15,29 @@
  */
 package com.alibaba.cloud.ai.manus.tool.pptGenerator;
 
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
-import com.alibaba.cloud.ai.manus.tool.ToolPromptManager;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.JsonNode;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
 
 import java.lang.reflect.Field;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Simplified PPT generator integration test
@@ -49,8 +49,6 @@ public class PptGeneratorIntegrationTest {
 	private PptGeneratorService pptGeneratorService;
 
 	private ObjectMapper objectMapper;
-
-	private ToolPromptManager toolPromptManager;
 
 	private UnifiedDirectoryManager unifiedDirectoryManager;
 
@@ -66,8 +64,6 @@ public class PptGeneratorIntegrationTest {
 		log.info("Initializing PptGeneratorService complete");
 		objectMapper = new ObjectMapper();
 		log.info("Initializing ObjectMapper complete");
-		toolPromptManager = mock(ToolPromptManager.class);
-		log.info("Initializing ToolPromptManager mock complete");
 		unifiedDirectoryManager = mock(UnifiedDirectoryManager.class);
 		log.info("Initializing UnifiedDirectoryManager mock complete");
 
@@ -90,23 +86,7 @@ public class PptGeneratorIntegrationTest {
 		tempDir = Path.of("./");
 		log.info("Setting test output directory: {}", tempDir);
 
-		// Setup mock behavior
-		when(toolPromptManager.getToolDescription("pptGenerator")).thenReturn("PPT Generator Tool");
-		when(toolPromptManager.getToolParameters("pptGenerator")).thenReturn("PPT parameters");
-		log.info("Setting ToolPromptManager mock behavior complete");
-
 		// Simplify path validation for testing
-		try {
-			when(unifiedDirectoryManager.getSpecifiedDirectory(anyString())).thenAnswer(invocation -> {
-				String path = invocation.getArgument(0);
-				return tempDir.resolve(path).toAbsolutePath();
-			});
-			log.info("Setting UnifiedDirectoryManager mock behavior complete");
-		}
-		catch (Exception e) {
-			log.error("Error setting up UnifiedDirectoryManager mock", e);
-			throw new RuntimeException(e);
-		}
 		log.info("===== Test preparation complete =====");
 	}
 

@@ -15,13 +15,14 @@
  */
 package com.alibaba.cloud.ai.manus.tool;
 
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class TerminateTool extends AbstractBaseTool<Map<String, Object>> implements TerminableTool {
 

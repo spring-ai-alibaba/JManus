@@ -32,7 +32,6 @@ import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
-import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
@@ -60,7 +59,6 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
     private final PlanningFactory planningFactory;
     private final ToolCallingManager toolCallingManager;
     private final UserInputService userInputService;
-    private final PromptService promptService;
     private final StreamingResponseHandler streamingResponseHandler;
     private final PlanIdDispatcher planIdDispatcher;
     private final JmanusEventPublisher jmanusEventPublisher;
@@ -70,7 +68,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
             LevelBasedExecutorPool levelBasedExecutorPool, DynamicModelRepository dynamicModelRepository,
             FileUploadService fileUploadService, AgentInterruptionHelper agentInterruptionHelper,
             PlanningFactory planningFactory, ToolCallingManager toolCallingManager,
-            UserInputService userInputService, PromptService promptService,
+            UserInputService userInputService,
             StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
             JmanusEventPublisher jmanusEventPublisher) {
         super(agents, recorder, llmService, manusProperties, levelBasedExecutorPool, fileUploadService,
@@ -78,7 +76,6 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
         this.planningFactory = planningFactory;
         this.toolCallingManager = toolCallingManager;
         this.userInputService = userInputService;
-        this.promptService = promptService;
         this.streamingResponseHandler = streamingResponseHandler;
         this.planIdDispatcher = planIdDispatcher;
         this.jmanusEventPublisher = jmanusEventPublisher;
@@ -148,7 +145,6 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
                 toolCallingManager,
                 initialAgentSetting,
                 userInputService,
-                promptService,
                 modelName,
                 streamingResponseHandler,
                 step,

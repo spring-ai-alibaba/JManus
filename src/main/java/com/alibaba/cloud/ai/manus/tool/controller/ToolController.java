@@ -15,9 +15,10 @@
  */
 package com.alibaba.cloud.ai.manus.tool.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,115 +29,65 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.alibaba.cloud.ai.manus.agent.model.Tool;
+import com.alibaba.cloud.ai.manus.mcp.service.McpService;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
-import com.alibaba.cloud.ai.manus.tool.model.ToolInfo;
 
 /**
- * Tool REST API controller
- * Provides endpoints for getting available tool information
+ * Tool Controller - Provides API endpoints for tool management
  */
 @RestController
 @RequestMapping("/api/tools")
 @CrossOrigin(origins = "*")
 public class ToolController {
 
-	private static final Logger logger = LoggerFactory.getLogger(ToolController.class);
+	private static final Logger log = LoggerFactory.getLogger(ToolController.class);
 
 	@Autowired
 	private PlanningFactory planningFactory;
 
+	@Autowired
+	private McpService mcpService;
+
 	/**
 	 * Get all available tools
-	 * @return List of available tools with their information
+	 * @return List of available tools
 	 */
 	@GetMapping
-	public ResponseEntity<List<ToolInfo>> getAllAvailableTools() {
+	public ResponseEntity<List<Tool>> getAvailableTools() {
+		String uuid = UUID.randomUUID().toString();
+		String expectedReturnInfo = null;
+
 		try {
-			logger.info("Getting all available tools");
-			
-			// Use a dummy planId and rootPlanId to get tool information
-			// This is safe since we're only extracting metadata, not executing tools
-			String dummyPlanId = "tool-info-request";
-			String dummyRootPlanId = "tool-info-request";
-			String dummyExpectedReturnInfo = "";
-			
-			Map<String, ToolCallBackContext> toolCallbackMap = planningFactory.toolCallbackMap(
-				dummyPlanId, dummyRootPlanId, dummyExpectedReturnInfo);
-			
-			List<ToolInfo> tools = new ArrayList<>();
-			
-			for (Map.Entry<String, ToolCallBackContext> entry : toolCallbackMap.entrySet()) {
-				String toolKey = entry.getKey();
-				ToolCallBackContext context = entry.getValue();
-				
-				if (context != null && context.getFunctionInstance() != null) {
-					try {
-						ToolInfo toolInfo = new ToolInfo();
-						toolInfo.setKey(toolKey);
-						toolInfo.setName(context.getFunctionInstance().getName());
-						toolInfo.setDescription(context.getFunctionInstance().getDescription());
-						toolInfo.setEnabled(true);
-						toolInfo.setSelectable(true);
-						
-						// Try to determine service group from tool name or type
-						String serviceGroup = determineServiceGroup(toolKey, context);
-						toolInfo.setServiceGroup(serviceGroup);
-						
-						tools.add(toolInfo);
-						
-					} catch (Exception e) {
-						logger.warn("Failed to extract info for tool: {}, error: {}", toolKey, e.getMessage());
-					}
-				}
-			}
-			
-			logger.info("Found {} available tools", tools.size());
+			log.debug("Getting available tools using PlanningFactory");
+			Map<String, ToolCallBackContext> toolCallbackContext = planningFactory.toolCallbackMap(uuid, uuid,
+					expectedReturnInfo);
+
+			List<Tool> tools = toolCallbackContext.entrySet().stream().map(entry -> {
+				Tool tool = new Tool();
+				tool.setKey(entry.getKey());
+				tool.setName(entry.getKey()); // You might want to provide a more friendly name
+				tool.setDescription(entry.getValue().getFunctionInstance().getDescription());
+				tool.setEnabled(true);
+				tool.setServiceGroup(entry.getValue().getFunctionInstance().getServiceGroup());
+				tool.setSelectable(entry.getValue().getFunctionInstance().isSelectable());
+				return tool;
+			}).collect(Collectors.toList());
+
+			log.info("Retrieved {} available tools", tools.size());
 			return ResponseEntity.ok(tools);
-			
+
 		} catch (Exception e) {
-			logger.error("Error getting available tools", e);
+			log.error("Error getting available tools: {}", e.getMessage(), e);
 			return ResponseEntity.internalServerError().build();
+		} finally {
+			// Clean up MCP connections
+			try {
+				mcpService.close(uuid);
+			} catch (Exception e) {
+				log.warn("Error closing MCP service for UUID {}: {}", uuid, e.getMessage());
+			}
 		}
-	}
-	
-	/**
-	 * Determine service group based on tool key and context
-	 */
-	private String determineServiceGroup(String toolKey, ToolCallBackContext context) {
-		// Built-in tool mappings
-		if (toolKey.contains("browser") || toolKey.contains("Browser")) {
-			return "browser";
-		}
-		if (toolKey.contains("database") || toolKey.contains("Database") || toolKey.contains("sql")) {
-			return "database";
-		}
-		if (toolKey.contains("file") || toolKey.contains("File") || toolKey.contains("directory") || toolKey.contains("Directory")) {
-			return "filesystem";
-		}
-		if (toolKey.contains("text") || toolKey.contains("Text")) {
-			return "text";
-		}
-		if (toolKey.contains("bash") || toolKey.contains("Bash") || toolKey.contains("terminal")) {
-			return "system";
-		}
-		if (toolKey.contains("cron") || toolKey.contains("Cron")) {
-			return "scheduler";
-		}
-		if (toolKey.contains("markdown") || toolKey.contains("Markdown") || toolKey.contains("pdf") || toolKey.contains("image")) {
-			return "converter";
-		}
-		if (toolKey.contains("form") || toolKey.contains("Form") || toolKey.contains("input")) {
-			return "interaction";
-		}
-		if (toolKey.contains("parallel") || toolKey.contains("Parallel")) {
-			return "execution";
-		}
-		if (toolKey.contains("terminate") || toolKey.contains("Terminate")) {
-			return "control";
-		}
-		
-		// For MCP tools or subplan tools, try to extract from description or use default
-		return "general";
 	}
 }

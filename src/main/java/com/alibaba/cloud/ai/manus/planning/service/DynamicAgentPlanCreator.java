@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
-import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.tool.PlanningToolInterface;
@@ -35,7 +34,7 @@ public class DynamicAgentPlanCreator implements IPlanCreator {
 
 
 	public DynamicAgentPlanCreator(LlmService llmService, PlanningToolInterface planningTool,
-			PlanExecutionRecorder recorder, PromptService promptService, ManusProperties manusProperties,
+			PlanExecutionRecorder recorder, ManusProperties manusProperties,
 			StreamingResponseHandler streamingResponseHandler) {
 	}
 

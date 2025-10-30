@@ -15,15 +15,10 @@
  */
 package com.alibaba.cloud.ai.manus.planning.service;
 
-import com.alibaba.cloud.ai.manus.config.ManusProperties;
-import com.alibaba.cloud.ai.manus.llm.LlmService;
-import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
-import com.alibaba.cloud.ai.manus.prompt.model.enums.PromptEnum;
-import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
-import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
-import com.alibaba.cloud.ai.manus.workspace.conversation.advisor.CustomMessageChatMemoryAdvisor;
+import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
+
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,13 +26,18 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.stereotype.Service;
+
+import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
+import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
+import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
+import com.alibaba.cloud.ai.manus.workspace.conversation.advisor.CustomMessageChatMemoryAdvisor;
+
 import reactor.core.publisher.Flux;
-
-import java.util.List;
-import java.util.Map;
-
-import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
 
 /**
  * Refactored PlanFinalizer with improved code organization and reduced duplication
@@ -51,17 +51,14 @@ public class PlanFinalizer {
 
 	private final PlanExecutionRecorder recorder;
 
-	private final PromptService promptService;
-
 	private final ManusProperties manusProperties;
 
 	private final StreamingResponseHandler streamingResponseHandler;
 
-	public PlanFinalizer(LlmService llmService, PlanExecutionRecorder recorder, PromptService promptService,
+	public PlanFinalizer(LlmService llmService, PlanExecutionRecorder recorder,
 			ManusProperties manusProperties, StreamingResponseHandler streamingResponseHandler) {
 		this.llmService = llmService;
 		this.recorder = recorder;
-		this.promptService = promptService;
 		this.manusProperties = manusProperties;
 		this.streamingResponseHandler = streamingResponseHandler;
 	}
@@ -75,7 +72,18 @@ public class PlanFinalizer {
 		Map<String, Object> promptVariables = Map.of("executionDetail",
 				context.getPlan().getPlanExecutionStateStringFormat(false), "userRequest", context.getUserRequest());
 
-		generateWithLlm(context, result, PromptEnum.PLANNING_PLAN_FINALIZER.getPromptName(), promptVariables, "summary",
+		String summaryPrompt = """
+		You are jmanus, an AI assistant capable of responding to user requests. You need to respond to the user's request based on the execution results of this step-by-step execution plan.
+
+		The current user request is:
+		{userRequest}
+
+		Step-by-step plan execution details:
+		{executionDetail}
+
+		Please respond to the user's request based on the information in the execution details.
+		""";
+		generateWithLlm(context, result, summaryPrompt, promptVariables, "summary",
 				"Generated summary: {}");
 	}
 
@@ -90,7 +98,14 @@ public class PlanFinalizer {
 
 		Map<String, Object> promptVariables = Map.of("userRequest", userRequest);
 
-		generateWithLlm(context, result, PromptEnum.DIRECT_RESPONSE.getPromptName(), promptVariables, "direct response",
+		String directResponsePrompt = """
+		You are jmanus, an AI assistant capable of responding to user requests. Currently in direct feedback mode, you need to directly respond to the user's simple requests without complex planning and decomposition.
+
+		The current user request is:
+
+		{userRequest}
+		""";
+		generateWithLlm(context, result, directResponsePrompt, promptVariables, "direct response",
 				"Generated direct response: {}");
 	}
 
@@ -99,7 +114,12 @@ public class PlanFinalizer {
 	 */
 	private String generateLlmResponse(ExecutionContext context, String promptName, Map<String, Object> variables,
 			String operationName) {
-		Message message = promptService.createUserMessage(promptName, variables);
+
+
+		PromptTemplate template = new PromptTemplate(promptName);
+		
+		Message message =  template.createMessage(variables != null ? variables : Map.of());
+		
 		Prompt prompt = new Prompt(List.of(message));
 
 		ChatClient.ChatClientRequestSpec requestSpec = llmService.getDiaChatClient().prompt(prompt);

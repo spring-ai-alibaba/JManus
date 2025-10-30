@@ -26,7 +26,6 @@ import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
-import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.executor.DynamicToolPlanExecutor;
@@ -68,7 +67,6 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
     private final PlanningFactory planningFactory;
     private final ToolCallingManager toolCallingManager;
     private final UserInputService userInputService;
-    private final PromptService promptService;
     private final StreamingResponseHandler streamingResponseHandler;
     private final PlanIdDispatcher planIdDispatcher;
     private final JmanusEventPublisher jmanusEventPublisher;
@@ -77,7 +75,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
             ManusProperties manusProperties, ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
             DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
             AgentInterruptionHelper agentInterruptionHelper, PlanningFactory planningFactory,
-            ToolCallingManager toolCallingManager, UserInputService userInputService, PromptService promptService,
+            ToolCallingManager toolCallingManager, UserInputService userInputService,
             StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
             JmanusEventPublisher jmanusEventPublisher) {
 		this.llmService = llmService;
@@ -91,7 +89,6 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
         this.planningFactory = planningFactory;
         this.toolCallingManager = toolCallingManager;
         this.userInputService = userInputService;
-        this.promptService = promptService;
         this.streamingResponseHandler = streamingResponseHandler;
         this.planIdDispatcher = planIdDispatcher;
         this.jmanusEventPublisher = jmanusEventPublisher;
@@ -106,7 +103,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		log.debug("Creating dynamic agent plan executor");
         return new DynamicToolPlanExecutor(null, recorder, llmService, manusProperties,
                 levelBasedExecutorPool, dynamicModelRepository, fileUploadService, agentInterruptionHelper,
-                planningFactory, toolCallingManager, userInputService, promptService, streamingResponseHandler,
+                planningFactory, toolCallingManager, userInputService, streamingResponseHandler,
                 planIdDispatcher, jmanusEventPublisher);
 	}
 

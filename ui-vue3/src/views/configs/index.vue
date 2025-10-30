@@ -66,7 +66,6 @@ import { useI18n } from 'vue-i18n'
 import BasicConfig from './basicConfig.vue'
 import ModelConfig from './modelConfig.vue'
 import McpConfig from './mcpConfig.vue'
-import DynamicPromptConfig from './dynamicPromptConfig.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
 import NamespaceConfig from './namespaceConfig.vue'
 import NamespaceSwitch from './components/namespaceSwitch.vue'
@@ -76,7 +75,6 @@ interface CategoryMap {
   basic: typeof BasicConfig
   model: typeof ModelConfig
   mcp: typeof McpConfig
-  prompt: typeof DynamicPromptConfig
   namespace: typeof NamespaceConfig
 }
 
@@ -91,7 +89,6 @@ const categoryMap: CategoryMap = {
   basic: BasicConfig,
   model: ModelConfig,
   mcp: McpConfig,
-  prompt: DynamicPromptConfig,
   namespace: NamespaceConfig,
 }
 
@@ -104,7 +101,6 @@ const categories = computed(() => [
   { key: 'basic', label: t('config.categories.basic'), icon: 'carbon:settings' },
   { key: 'model', label: t('config.categories.model'), icon: 'carbon:build-image' },
   { key: 'mcp', label: t('config.categories.mcp'), icon: 'carbon:tool-box' },
-  { key: 'prompt', label: t('config.categories.prompt'), icon: 'carbon:repo-artifact' },
   {
     key: 'namespace',
     label: t('config.categories.namespace'),

@@ -48,8 +48,6 @@ import com.alibaba.cloud.ai.manus.event.PlanExceptionClearedEvent;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
-import com.alibaba.cloud.ai.manus.prompt.model.enums.PromptEnum;
-import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder.ActToolParam;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder.ThinkActRecordParams;
@@ -124,11 +122,11 @@ public class DynamicAgent extends ReActAgent {
 	public DynamicAgent(LlmService llmService, PlanExecutionRecorder planExecutionRecorder,
 			ManusProperties manusProperties, String name, String description, String nextStepPrompt,
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
-			Map<String, Object> initialAgentSetting, UserInputService userInputService, PromptService promptService,
+			Map<String, Object> initialAgentSetting, UserInputService userInputService,
 			String modelName, StreamingResponseHandler streamingResponseHandler, ExecutionStep step,
 			PlanIdDispatcher planIdDispatcher, JmanusEventPublisher jmanusEventPublisher,
 			AgentInterruptionHelper agentInterruptionHelper) {
-		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, promptService, step,
+		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, step,
 				planIdDispatcher);
 		this.agentName = name;
 		this.agentDescription = description;
@@ -594,8 +592,12 @@ public class DynamicAgent extends ReActAgent {
 	 * @return User message for current step environment data
 	 */
 	private Message currentStepEnvMessage() {
-		Message stepEnvMessage = promptService.createUserMessage(PromptEnum.AGENT_CURRENT_STEP_ENV.getPromptName(),
-				getMergedData());
+		String currentStepEnv ="""
+				- Current step environment information:
+				{current_step_env_data}
+				""";
+		PromptTemplate template = new PromptTemplate(currentStepEnv);
+		Message stepEnvMessage = template.createMessage(getMergedData());
 		// mark as current step env data
 		stepEnvMessage.getMetadata().put(CURRENT_STEP_ENV_DATA_KEY, Boolean.TRUE);
 		return stepEnvMessage;

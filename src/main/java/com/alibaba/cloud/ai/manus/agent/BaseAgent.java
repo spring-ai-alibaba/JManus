@@ -29,13 +29,12 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.tool.ToolCallback;
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
-import com.alibaba.cloud.ai.manus.prompt.model.enums.PromptEnum;
-import com.alibaba.cloud.ai.manus.prompt.service.PromptService;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
@@ -87,7 +86,6 @@ public abstract class BaseAgent {
 
 	protected final ManusProperties manusProperties;
 
-	protected final PromptService promptService;
 
 	protected final ExecutionStep step;
 
@@ -157,15 +155,28 @@ public abstract class BaseAgent {
 		boolean isDebugModel = manusProperties.getDebugDetail();
 		String detailOutput = "";
 		if (isDebugModel) {
-			detailOutput = promptService.getPromptByName("AGENT_DEBUG_DETAIL_OUTPUT").getPromptContent();
+			detailOutput = 
+			"""
+			1. When using tool calls, you must provide explanations describing the reason for using this tool and the thinking behind it
+			2. Briefly describe what all previous steps have accomplished""";
+			
 		}
 		else {
-			detailOutput = promptService.getPromptByName("AGENT_NORMAL_OUTPUT").getPromptContent();
+			detailOutput = 
+			"""
+			1. When using tool calls, no additional explanations are needed!
+			2. Do not provide reasoning or descriptions before tool calls!""";
 		}
 		String parallelToolCallsResponse = "";
 		if (manusProperties.getParallelToolCalls()) {
-			parallelToolCallsResponse = promptService.getPromptByName("AGENT_PARALLEL_TOOL_CALLS_RESPONSE")
-				.getPromptContent();
+			parallelToolCallsResponse = """
+			# Response Rules:
+			- You must select and call from the provided tools. You can make repeated calls to a single tool, call multiple tools simultaneously, or use a mixed calling approach to improve problem-solving efficiency and accuracy.
+			- In your response, you must call at least one tool, which is an indispensable operation step.
+			- To maximize the advantages of tools, when you have the ability to call tools multiple times simultaneously, you should actively do so, avoiding single calls that waste time and resources. Pay special attention to the inherent relationships between multiple tool calls, ensuring these calls can cooperate and work together to achieve optimal problem-solving solutions.
+			- Ignore the response rules provided in subsequent <AgentInfo>, and only respond using the response rules in <SystemInfo>.
+			""";
+			
 		}
 		Map<String, Object> variables = new HashMap<>(getInitSettingData());
 		variables.put("osName", osName);
@@ -175,7 +186,33 @@ public abstract class BaseAgent {
 		variables.put("detailOutput", detailOutput);
 		variables.put("parallelToolCallsResponse", parallelToolCallsResponse);
 
-		return promptService.createSystemMessage(PromptEnum.AGENT_STEP_EXECUTION.getPromptName(), variables);
+		String stepExecutionPrompt = """
+		- SYSTEM INFORMATION:
+		OS: {osName} {osVersion} ({osArch})
+
+		- Current Date:
+		{currentDateTime}
+
+		{planStatus}
+
+		- Current step requirements (this step needs to be completed by you! Required by the user's original request, but if not required in the current step, no need to complete in this step):
+		STEP {currentStepIndex}: {stepText}
+
+		- Operation step instructions:
+		{extraParams}
+
+		Important Notes:
+		{detailOutput}
+		3. Do only and exactly what is required in the current step requirements
+		4. If the current step requirements have been completed, call the terminate tool to finish the current step.
+		5. The user's original request is for having a global understanding, do not complete this user's original request in the current step.
+
+		{parallelToolCallsResponse}
+
+		""";
+
+		PromptTemplate template = new PromptTemplate(stepExecutionPrompt);
+		return template.createMessage(variables != null ? variables : Map.of());
 	}
 
 	/**
@@ -197,12 +234,11 @@ public abstract class BaseAgent {
 	public abstract ToolCallBackContext getToolCallBackContext(String toolKey);
 
 	public BaseAgent(LlmService llmService, PlanExecutionRecorder planExecutionRecorder,
-			ManusProperties manusProperties, Map<String, Object> initialAgentSetting, PromptService promptService,
+			ManusProperties manusProperties, Map<String, Object> initialAgentSetting,
 			ExecutionStep step, PlanIdDispatcher planIdDispatcher) {
 		this.llmService = llmService;
 		this.planExecutionRecorder = planExecutionRecorder;
 		this.manusProperties = manusProperties;
-		this.promptService = promptService;
 		this.maxSteps = manusProperties.getMaxSteps();
 		this.step = step;
 		this.planIdDispatcher = planIdDispatcher;
