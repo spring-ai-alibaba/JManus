@@ -38,7 +38,7 @@
         </button>
         <button class="action-btn" @click="handleExport">
           <Icon icon="carbon:download" />
-          {{ t('config.agentConfig.export') }}
+          {{ t('common.export') }}
         </button>
       </div>
     </template>
@@ -103,7 +103,7 @@
           <div class="detail-actions">
             <button class="action-btn" @click="handleExport">
               <Icon icon="carbon:download" />
-              {{ t('config.agentConfig.export') }}
+              {{ t('common.export') }}
             </button>
             <div v-if="selectedPrompt.builtIn" class="import-language-dropdown">
               <button class="action-btn info" @click="showImportLanguageModal = true">
@@ -489,9 +489,9 @@ const handleExport = () => {
       prompt,
       `prompt-${prompt.promptName}-${new Date().toISOString().split('T')[0]}.json`
     )
-    success(t('config.agentConfig.exportSuccess'))
+    success(t('config.promptConfig.exportSuccess'))
   } catch (err: any) {
-    error(t('config.agentConfig.exportFailed') + ': ' + err.message)
+    error(t('config.promptConfig.exportFailed') + ': ' + err.message)
   }
 }
 

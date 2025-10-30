@@ -451,6 +451,7 @@ const SUB_GROUP_DISPLAY_NAMES: Record<string, string> = {
   general: 'config.subGroupDisplayNames.general',
   filesystem: 'config.subGroupDisplayNames.filesystem',
   mcpServiceLoader: 'config.subGroupDisplayNames.mcpServiceLoader',
+  imageRecognition: 'config.subGroupDisplayNames.imageRecognition',
 }
 
 // Computed property: Whether there are changes

@@ -124,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Tool } from '@/api/agent-api-service'
+import type { Tool } from '@/types/tool'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import Modal from '../modal/index.vue'

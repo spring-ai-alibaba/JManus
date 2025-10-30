@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import { Tool } from '@/api/agent-api-service'
+import type { Tool } from '@/types/tool'
+import { ToolApiService } from '@/api/tool-api-service'
 import { PlanActApiService } from '@/api/plan-act-api-service'
 import { i18n } from '@/base/i18n'
 import type { PlanTemplate } from '@/types/plan-template'
@@ -350,25 +351,17 @@ export class SidebarStore {
 
     try {
       console.log('[SidebarStore] Loading available tools...')
-      const response = await fetch('/api/agents/tools')
-
-      if (response.ok) {
-        const tools = await response.json()
-        console.log('[SidebarStore] Loaded available tools:', tools)
-        // Transform tools to ensure they have all required fields
-        this.availableTools = tools.map((tool: Tool) => ({
-          key: tool.key || '',
-          name: tool.name || '',
-          description: tool.description || '',
-          enabled: tool.enabled || false,
-          serviceGroup: tool.serviceGroup || 'default',
-          selectable: tool.selectable,
-        }))
-      } else {
-        console.error('[SidebarStore] Failed to load tools:', response.statusText)
-        this.toolsLoadError = `Failed to load tools: ${response.statusText}`
-        this.availableTools = []
-      }
+      const tools = await ToolApiService.getAvailableTools()
+      console.log('[SidebarStore] Loaded available tools:', tools)
+      // Transform tools to ensure they have all required fields
+      this.availableTools = tools.map((tool: Tool) => ({
+        key: tool.key || '',
+        name: tool.name || '',
+        description: tool.description || '',
+        enabled: tool.enabled || false,
+        serviceGroup: tool.serviceGroup || 'default',
+        selectable: tool.selectable,
+      }))
     } catch (error) {
       console.error('[SidebarStore] Error loading tools:', error)
       this.toolsLoadError = error instanceof Error ? error.message : 'Unknown error'

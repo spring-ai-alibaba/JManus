@@ -192,7 +192,7 @@
 </template>
 
 <script setup lang="ts">
-import { AgentApiService } from '@/api/agent-api-service'
+import { ToolApiService } from '@/api/tool-api-service'
 import {
   CoordinatorToolApiService,
   type CoordinatorToolVO,
@@ -324,7 +324,7 @@ const loadAvailableServiceGroups = async () => {
 
   isLoadingGroups.value = true
   try {
-    const tools = await AgentApiService.getAvailableTools()
+    const tools = await ToolApiService.getAvailableTools()
     // Extract unique service groups (same pattern as groupedTools in ToolSelectionModal)
     const groupsSet = new Set<string>()
     tools.forEach(tool => {
