@@ -276,10 +276,14 @@ const words: I18nType = {
       completionsPath: 'Completions Path',
       completionsPathPlaceholder:
         '聊天模型端点，各平台路径不同。如未填写默认配置是：/v1/chat/completions',
-      selectDefaultModel: '选择默认模型',
+      selectDefaultModel: '验证SK并拉取模型列表',
       defaultModel: '默认模型',
       apiKeySecurityNotice:
-        '从安全考虑，sk不能传到前端，请每次都重新输入sk，再点选择默认模型来设置model.',
+        '从安全考虑，sk不能传到前端，请每次都重新输入sk，再点击按钮确认并拉取模型列表.',
+      apiKeyInstructions: '从安全的角度考虑，sk不能传到前端，因此如您想修改默认模型请按如下操作：',
+      apiKeyStep1: '1）重新输入API密匙(SK)',
+      apiKeyStep2: '2）点击验证sk并拉取模型列表',
+      apiKeyStep3: '3）选择模型',
     },
     // MCP配置页面
     mcpConfig: {

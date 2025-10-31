@@ -129,32 +129,29 @@
           />
         </div>
 
+        <!-- API Key Instructions -->
+        <div class="instruction-box">
+          <div class="instruction-header">
+            <Icon icon="carbon:information" class="instruction-icon" />
+            <span class="instruction-title">{{ t('config.modelConfig.apiKeyInstructions') }}</span>
+          </div>
+          <div class="instruction-steps">
+            <div class="instruction-step">{{ t('config.modelConfig.apiKeyStep1') }}</div>
+            <div class="instruction-step">{{ t('config.modelConfig.apiKeyStep2') }}</div>
+            <div class="instruction-step">{{ t('config.modelConfig.apiKeyStep3') }}</div>
+          </div>
+        </div>
+
         <div class="form-item">
           <label>{{ t('config.modelConfig.apiKey') }} <span class="required">*</span></label>
           <div class="api-key-container">
             <div class="api-key-input-wrapper">
               <input
-                :type="showSelectedApiKey ? 'text' : 'password'"
+                type="password"
                 v-model="selectedApiKey"
-                :placeholder="
-                  isSelectedApiKeyMasked
-                    ? t('config.modelConfig.apiKeySecurityNotice')
-                    : t('config.modelConfig.apiKeyPlaceholder')
-                "
+                :placeholder="t('config.modelConfig.apiKeyPlaceholder')"
                 required
               />
-              <button
-                type="button"
-                class="api-key-toggle-btn"
-                @click="showSelectedApiKey = !showSelectedApiKey"
-                :title="
-                  showSelectedApiKey
-                    ? t('config.modelConfig.hideApiKey')
-                    : t('config.modelConfig.showApiKey')
-                "
-              >
-                <Icon :icon="showSelectedApiKey ? 'carbon:view-off' : 'carbon:view'" />
-              </button>
             </div>
           </div>
           <button
@@ -277,27 +274,11 @@
           <div class="api-key-container">
             <div class="api-key-input-wrapper">
               <input
-                :type="showNewApiKey ? 'text' : 'password'"
+                type="password"
                 v-model="newModelApiKey"
-                :placeholder="
-                  isNewApiKeyMasked
-                    ? t('config.modelConfig.apiKeySecurityNotice')
-                    : t('config.modelConfig.apiKeyPlaceholder')
-                "
+                :placeholder="t('config.modelConfig.apiKeyPlaceholder')"
                 required
               />
-              <button
-                type="button"
-                class="api-key-toggle-btn"
-                @click="showNewApiKey = !showNewApiKey"
-                :title="
-                  showNewApiKey
-                    ? t('config.modelConfig.hideApiKey')
-                    : t('config.modelConfig.showApiKey')
-                "
-              >
-                <Icon :icon="showNewApiKey ? 'carbon:view-off' : 'carbon:view'" />
-              </button>
             </div>
           </div>
           <button
@@ -440,28 +421,10 @@ const modelAvailableModels = ref<Map<string, Model[]>>(new Map())
 const newModelValidating = ref(false)
 const newModelAvailableModels = ref<Model[]>([])
 
-// API key visibility state
-const showSelectedApiKey = ref(false)
-const showNewApiKey = ref(false)
-
-// Check if API key is masked (contains asterisks and length > 8)
-const isSelectedApiKeyMasked = computed(() => {
-  const key = selectedModel.value?.apiKey
-  return key && key.length > 8 && key.includes('*')
-})
-
-const isNewApiKeyMasked = computed(() => {
-  return newModel.apiKey && newModel.apiKey.length > 8 && newModel.apiKey.includes('*')
-})
-
-// Computed property for selected model API key - clear masked value when editing
+// Computed property for selected model API key - always empty to require user input
 const selectedApiKey = computed({
   get() {
-    if (!selectedModel.value?.apiKey) return ''
-    const key = selectedModel.value.apiKey
-    // If masked (length > 8 and contains *), return empty string to show placeholder
-    if (key.length > 8 && key.includes('*')) return ''
-    return key
+    return ''
   },
   set(val) {
     if (!selectedModel.value) return
@@ -469,14 +432,10 @@ const selectedApiKey = computed({
   },
 })
 
-// Computed property for new model API key - clear masked value when editing
+// Computed property for new model API key - always empty to require user input
 const newModelApiKey = computed({
   get() {
-    if (!newModel.apiKey) return ''
-    const key = newModel.apiKey
-    // If masked (length > 8 and contains *), return empty string to show placeholder
-    if (key.length > 8 && key.includes('*')) return ''
-    return key
+    return ''
   },
   set(val) {
     newModel.apiKey = val
@@ -573,8 +532,6 @@ const selectModel = async (model: Model) => {
     }
     // When switching models, clear validation state but keep available model list for that model
     validating.value = false
-    // Reset API key visibility when switching models
-    showSelectedApiKey.value = false
   } catch (err: any) {
     console.error('Failed to load Model details:', err)
     showMessage(t('config.modelConfig.loadDetailsFailed') + ': ' + err.message, 'error')
@@ -598,8 +555,6 @@ const showAddModelModal = () => {
   // Clear new Model modal state
   newModelValidating.value = false
   newModelAvailableModels.value = []
-  // Reset API key visibility
-  showNewApiKey.value = false
   showModal.value = true
 }
 
@@ -1380,35 +1335,6 @@ onMounted(() => {
 
 .api-key-input-wrapper input {
   width: 100%;
-  padding-right: 40px;
-}
-
-.api-key-toggle-btn {
-  position: absolute;
-  right: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.api-key-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.api-key-toggle-btn:focus {
-  outline: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 1);
 }
 
 .check-btn {
@@ -1531,5 +1457,44 @@ onMounted(() => {
 
 .description-field::placeholder {
   color: rgba(255, 255, 255, 0.4);
+}
+
+/* Instruction box styles */
+.instruction-box {
+  background: rgba(168, 179, 255, 0.1);
+  border: 1px solid rgba(168, 179, 255, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.instruction-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.instruction-icon {
+  color: rgba(168, 179, 255, 0.8);
+  font-size: 18px;
+}
+
+.instruction-title {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.instruction-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.instruction-step {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  padding-left: 12px;
 }
 </style>

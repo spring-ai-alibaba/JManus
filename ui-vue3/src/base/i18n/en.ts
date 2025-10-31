@@ -280,10 +280,14 @@ const words: I18nType = {
         'If not specified, the default configuration is: /v1/chat/completions',
       headers: 'Headers',
       headersPlaceholder: 'Request headers (JSON format)',
-      selectDefaultModel: 'Select Default Model',
+      selectDefaultModel: 'Verify SK and Fetch Models',
       defaultModel: 'Default Model',
       apiKeySecurityNotice:
-        'For security reasons, the API key cannot be sent to the frontend. Please re-enter the API key each time, then click "Select Default Model" to set the model.',
+        'For security reasons, the API key cannot be sent to the frontend. Please re-enter the API key each time, then click the button to confirm and fetch models.',
+      apiKeyInstructions: 'For security reasons, the SK cannot be sent to the frontend. If you want to modify the default model, please follow these steps:',
+      apiKeyStep1: '1) Re-enter the API Key (SK)',
+      apiKeyStep2: '2) Click to verify SK and fetch model list',
+      apiKeyStep3: '3) Select model',
     },
     // MCP configuration page
     mcpConfig: {
