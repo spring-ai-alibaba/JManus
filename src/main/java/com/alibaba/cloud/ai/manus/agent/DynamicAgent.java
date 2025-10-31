@@ -60,6 +60,7 @@ import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
 import com.alibaba.cloud.ai.manus.tool.FormInputTool;
 import com.alibaba.cloud.ai.manus.tool.TerminableTool;
 import com.alibaba.cloud.ai.manus.tool.ToolCallBiFunctionDef;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.micrometer.common.util.StringUtils;
 import reactor.core.publisher.Flux;
@@ -69,6 +70,8 @@ public class DynamicAgent extends ReActAgent {
 	private static final String CURRENT_STEP_ENV_DATA_KEY = "current_step_env_data";
 
 	private static final Logger log = LoggerFactory.getLogger(DynamicAgent.class);
+
+	private final ObjectMapper objectMapper;
 
 	private final String agentName;
 
@@ -124,8 +127,10 @@ public class DynamicAgent extends ReActAgent {
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
 			Map<String, Object> initialAgentSetting, UserInputService userInputService, String modelName,
 			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
-			JmanusEventPublisher jmanusEventPublisher, AgentInterruptionHelper agentInterruptionHelper) {
+			JmanusEventPublisher jmanusEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
+			ObjectMapper objectMapper) {
 		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, step, planIdDispatcher);
+		this.objectMapper = objectMapper;
 		this.agentName = name;
 		this.agentDescription = description;
 		this.nextStepPrompt = nextStepPrompt;
@@ -375,8 +380,9 @@ public class DynamicAgent extends ReActAgent {
 					}
 					else if (toolInstance instanceof TerminableTool) {
 						TerminableTool terminableTool = (TerminableTool) toolInstance;
-						param.setResult(toolCallResponse.responseData());
-						resultList.add(param.getResult());
+						String processedResult = processToolResult(toolCallResponse.responseData());
+						param.setResult(processedResult);
+						resultList.add(processedResult);
 
 						if (terminableTool.canTerminate()) {
 							log.info("TerminableTool can terminate for planId: {}", getCurrentPlanId());
@@ -394,8 +400,9 @@ public class DynamicAgent extends ReActAgent {
 						}
 					}
 					else {
-						param.setResult(toolCallResponse.responseData());
-						resultList.add(toolCallResponse.responseData());
+						String processedResult = processToolResult(toolCallResponse.responseData());
+						param.setResult(processedResult);
+						resultList.add(processedResult);
 						log.info("Tool {} executed successfully for planId: {}", toolName, getCurrentPlanId());
 					}
 					executedToolCount++;
@@ -492,6 +499,80 @@ public class DynamicAgent extends ReActAgent {
 		}
 		else {
 			throw new RuntimeException("FormInputTool is not in the correct state");
+		}
+	}
+
+	/**
+	 * Process tool result to remove escaped JSON if it's a valid JSON string. This fixes
+	 * the issue where DefaultToolCallingManager returns escaped JSON strings.
+	 * @param result The raw tool result string
+	 * @return Processed result with unescaped JSON if applicable
+	 */
+	private String processToolResult(String result) {
+		if (result == null || result.trim().isEmpty()) {
+			return result;
+		}
+
+		// Try to parse and re-serialize if it's a valid JSON string
+		// This removes escaping that might have been added by DefaultToolCallingManager
+		try {
+			// First, try to parse as JSON object
+			Object jsonObject = objectMapper.readValue(result, Object.class);
+
+			// Check if it's a Map with "output" field (from DefaultToolCallingManager
+			// format)
+			if (jsonObject instanceof Map<?, ?> map) {
+				Object outputValue = map.get("output");
+				if (outputValue instanceof String outputString) {
+					// The output field contains an escaped JSON string, parse it
+					try {
+						Object innerJsonObject = objectMapper.readValue(outputString, Object.class);
+						// Create a new map with the parsed inner JSON object, preserving
+						// the "output" field
+						Map<String, Object> resultMap = new HashMap<>();
+						// Copy all entries from the original map
+						for (Map.Entry<?, ?> entry : map.entrySet()) {
+							if (entry.getKey() instanceof String key) {
+								resultMap.put(key, entry.getValue());
+							}
+						}
+						resultMap.put("output", innerJsonObject);
+						// Return the unescaped JSON string with output field preserved
+						return objectMapper.writeValueAsString(resultMap);
+					}
+					catch (Exception innerException) {
+						// If inner parsing fails, return the original map as-is
+						return objectMapper.writeValueAsString(jsonObject);
+					}
+				}
+				else {
+					// It's a Map but no "output" field or output is not a string,
+					// re-serialize as-is
+					return objectMapper.writeValueAsString(jsonObject);
+				}
+			}
+			// If the parsed object is a String, it means the input was a JSON string
+			// (e.g., "\"{\\\"message\\\":[...]}\""), so we need to parse it again
+			else if (jsonObject instanceof String jsonString) {
+				// Try to parse the inner JSON string
+				try {
+					Object innerJsonObject = objectMapper.readValue(jsonString, Object.class);
+					// Re-serialize the inner JSON object
+					return objectMapper.writeValueAsString(innerJsonObject);
+				}
+				catch (Exception innerException) {
+					// If inner parsing fails, return the parsed string as-is
+					return jsonString;
+				}
+			}
+			else {
+				// It's already a JSON object, re-serialize it
+				return objectMapper.writeValueAsString(jsonObject);
+			}
+		}
+		catch (Exception e) {
+			// If it's not valid JSON, return as-is
+			return result;
 		}
 	}
 

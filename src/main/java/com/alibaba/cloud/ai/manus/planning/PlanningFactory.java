@@ -107,7 +107,8 @@ public class PlanningFactory {
 
 	private final DataSourceService dataSourceService;
 
-	// private final TableProcessingService tableProcessingService; // Currently unused - commented out for future use
+	// private final TableProcessingService tableProcessingService; // Currently unused -
+	// commented out for future use
 
 	private final static Logger log = LoggerFactory.getLogger(PlanningFactory.class);
 

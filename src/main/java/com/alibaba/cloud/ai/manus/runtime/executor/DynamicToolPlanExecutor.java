@@ -40,6 +40,8 @@ import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * Dynamic Agent Plan Executor - Specialized executor for DynamicAgentExecutionPlan with
  * user-selected tools support
@@ -68,13 +70,15 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 
 	private final JmanusEventPublisher jmanusEventPublisher;
 
+	private final ObjectMapper objectMapper;
+
 	public DynamicToolPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			LlmService llmService, ManusProperties manusProperties, LevelBasedExecutorPool levelBasedExecutorPool,
 			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
 			AgentInterruptionHelper agentInterruptionHelper, PlanningFactory planningFactory,
 			ToolCallingManager toolCallingManager, UserInputService userInputService,
 			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
-			JmanusEventPublisher jmanusEventPublisher) {
+			JmanusEventPublisher jmanusEventPublisher, ObjectMapper objectMapper) {
 		super(agents, recorder, llmService, manusProperties, levelBasedExecutorPool, fileUploadService,
 				agentInterruptionHelper);
 		this.planningFactory = planningFactory;
@@ -83,6 +87,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 		this.streamingResponseHandler = streamingResponseHandler;
 		this.planIdDispatcher = planIdDispatcher;
 		this.jmanusEventPublisher = jmanusEventPublisher;
+		this.objectMapper = objectMapper;
 	}
 
 	protected String getStepFromStepReq(String stepRequirement) {
@@ -135,7 +140,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 		ConfigurableDynaAgent agent = new ConfigurableDynaAgent(llmService, getRecorder(), manusProperties, name,
 				description, nextStepPrompt, selectedToolKeys, toolCallingManager, initialAgentSetting,
 				userInputService, modelName, streamingResponseHandler, step, planIdDispatcher, jmanusEventPublisher,
-				agentInterruptionHelper);
+				agentInterruptionHelper, objectMapper);
 
 		agent.setCurrentPlanId(planId);
 		agent.setRootPlanId(rootPlanId);

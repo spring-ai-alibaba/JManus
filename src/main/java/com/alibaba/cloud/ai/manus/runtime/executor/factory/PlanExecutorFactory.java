@@ -107,7 +107,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		log.debug("Creating dynamic agent plan executor");
 		return new DynamicToolPlanExecutor(null, recorder, llmService, manusProperties, levelBasedExecutorPool,
 				dynamicModelRepository, fileUploadService, agentInterruptionHelper, planningFactory, toolCallingManager,
-				userInputService, streamingResponseHandler, planIdDispatcher, jmanusEventPublisher);
+				userInputService, streamingResponseHandler, planIdDispatcher, jmanusEventPublisher, objectMapper);
 	}
 
 	/**

@@ -208,12 +208,19 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 	}
 
 	private String formatStructuredData(Map<String, Object> input) {
-		// Convert input to JSON format
+		// Convert input to JSON format without double escaping
+		// Return the JSON string directly - it will be stored as-is and serialized
+		// properly
+		// by Jackson when included in other JSON objects
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
 			objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-			objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-			return objectMapper.writeValueAsString(input);
+			// Note: NON_EMPTY is set by default, so we don't need to set it twice
+			String jsonString = objectMapper.writeValueAsString(input);
+			// Return the JSON string - when this is later serialized as a field value,
+			// Jackson will properly escape it, but we want it to be stored as JSON object
+			// not as escaped string, so we return it directly
+			return jsonString;
 		}
 		catch (Exception e) {
 			log.error("Failed to convert input to JSON format", e);

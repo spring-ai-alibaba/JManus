@@ -47,8 +47,10 @@ import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
 import com.alibaba.cloud.ai.manus.exception.PlanException;
 import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
+import com.alibaba.cloud.ai.manus.recorder.entity.vo.ActToolInfo;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
+import com.alibaba.cloud.ai.manus.recorder.entity.vo.ThinkActRecord;
 import com.alibaba.cloud.ai.manus.recorder.service.NewRepoPlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
 import com.alibaba.cloud.ai.manus.runtime.entity.po.RootTaskManagerEntity;
@@ -399,6 +401,16 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			logger.info("Set rootPlanId to currentPlanId for plan: {}", planId);
 		}
 
+		// Extract the last tool call result when planRecord is not null and completed is
+		// true
+		if (planRecord != null && planRecord.isCompleted()) {
+			String lastToolCallResult = extractLastToolCallResult(planRecord);
+			if (lastToolCallResult != null) {
+				planRecord.setStructureResult(lastToolCallResult);
+				logger.info("Extracted last tool call result and set structureResult for completed plan: {}", planId);
+			}
+		}
+
 		try {
 			// Use Jackson ObjectMapper to convert object to JSON string
 			String jsonResponse = objectMapper.writeValueAsString(planRecord);
@@ -658,6 +670,92 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		catch (Exception e) {
 			logger.error("Error fetching agent execution detail for stepId: {}", stepId, e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+
+	/**
+	 * Extract the last tool call result from the plan execution record. This method
+	 * traverses through the execution hierarchy: PlanExecutionRecord ->
+	 * AgentExecutionRecord -> ThinkActRecord -> ActToolInfo to get the result from the
+	 * last tool call.
+	 * @param planRecord The plan execution record
+	 * @return The last tool call result, or null if not found
+	 */
+	private String extractLastToolCallResult(PlanExecutionRecord planRecord) {
+		if (planRecord == null || !planRecord.isCompleted()) {
+			return null;
+		}
+
+		// Get the agent execution sequence
+		List<AgentExecutionRecord> agentExecutionSequence = planRecord.getAgentExecutionSequence();
+		if (agentExecutionSequence == null || agentExecutionSequence.isEmpty()) {
+			return null;
+		}
+
+		// Get the last agent execution record
+		AgentExecutionRecord lastAgentRecord = agentExecutionSequence.get(agentExecutionSequence.size() - 1);
+		if (lastAgentRecord == null) {
+			return null;
+		}
+
+		// Get stepId from the last agent execution record
+		String stepId = lastAgentRecord.getStepId();
+		if (stepId == null || stepId.trim().isEmpty()) {
+			logger.warn("StepId is null or empty in the last agent execution record");
+			return null;
+		}
+
+		// Use stepId to get the real AgentExecutionRecord with actual thinkActSteps
+		// The thinkActSteps in agentExecutionSequence is dummy data
+		AgentExecutionRecord realAgentRecord = planExecutionRecorder.getAgentExecutionDetail(stepId);
+		if (realAgentRecord == null) {
+			logger.warn("Failed to get real agent execution detail for stepId: {}", stepId);
+			return null;
+		}
+
+		// Get the think-act steps from the real agent execution record
+		List<ThinkActRecord> thinkActSteps = realAgentRecord.getThinkActSteps();
+		if (thinkActSteps == null || thinkActSteps.isEmpty()) {
+			return null;
+		}
+
+		// Get the last think-act record
+		ThinkActRecord lastThinkActRecord = thinkActSteps.get(thinkActSteps.size() - 1);
+		if (lastThinkActRecord == null) {
+			return null;
+		}
+
+		// Get the act tool info list from the last think-act record
+		List<ActToolInfo> actToolInfoList = lastThinkActRecord.getActToolInfoList();
+		if (actToolInfoList == null || actToolInfoList.isEmpty()) {
+			return null;
+		}
+
+		// Get the last act tool info
+		ActToolInfo lastActToolInfo = actToolInfoList.get(actToolInfoList.size() - 1);
+		if (lastActToolInfo == null) {
+			return null;
+		}
+
+		// Get the result from the last tool call
+		String result = lastActToolInfo.getResult();
+		if (result == null) {
+			return null;
+		}
+
+		// If the result is a JSON string, parse and re-serialize it to avoid double
+		// escaping
+		// This happens when TerminateTool returns a JSON string that gets stored as a
+		// string field
+		try {
+			// Try to parse as JSON
+			Object jsonObject = objectMapper.readValue(result, Object.class);
+			// Re-serialize without escaping
+			return objectMapper.writeValueAsString(jsonObject);
+		}
+		catch (Exception e) {
+			// If it's not valid JSON, return as-is
+			return result;
 		}
 	}
 

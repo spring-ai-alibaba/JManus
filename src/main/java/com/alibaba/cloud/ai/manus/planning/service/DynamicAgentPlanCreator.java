@@ -30,7 +30,8 @@ import com.alibaba.cloud.ai.manus.tool.PlanningToolInterface;
  */
 public class DynamicAgentPlanCreator implements IPlanCreator {
 
-	// private static final Logger log = LoggerFactory.getLogger(DynamicAgentPlanCreator.class); // Currently unused
+	// private static final Logger log =
+	// LoggerFactory.getLogger(DynamicAgentPlanCreator.class); // Currently unused
 
 	public DynamicAgentPlanCreator(LlmService llmService, PlanningToolInterface planningTool,
 			PlanExecutionRecorder recorder, ManusProperties manusProperties,
