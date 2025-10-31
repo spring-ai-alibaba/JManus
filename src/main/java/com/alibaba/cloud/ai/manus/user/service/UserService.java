@@ -15,18 +15,21 @@
  */
 package com.alibaba.cloud.ai.manus.user.service;
 
-import com.alibaba.cloud.ai.manus.user.model.po.UserEntity;
-import com.alibaba.cloud.ai.manus.user.repository.UserRepository;
-import com.alibaba.cloud.ai.manus.user.model.vo.User;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.alibaba.cloud.ai.manus.user.model.po.UserEntity;
+import com.alibaba.cloud.ai.manus.user.model.vo.User;
+import com.alibaba.cloud.ai.manus.user.repository.UserRepository;
 
 /**
  * User Service for simple user operations Provides basic query functionality without
@@ -39,7 +42,6 @@ public class UserService {
 
 	private final UserRepository userRepository;
 
-	@Autowired
 	public UserService(UserRepository userRepository) {
 		this.userRepository = userRepository;
 	}

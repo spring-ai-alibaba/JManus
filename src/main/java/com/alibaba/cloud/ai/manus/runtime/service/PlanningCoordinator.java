@@ -19,7 +19,6 @@ import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
@@ -46,7 +45,6 @@ public class PlanningCoordinator {
 
 	private final MemoryService memoryService;
 
-	@Autowired
 	public PlanningCoordinator(PlanningFactory planningFactory, PlanExecutorFactory planExecutorFactory,
 			PlanFinalizer planFinalizer, MemoryService memoryService) {
 		this.planExecutorFactory = planExecutorFactory;

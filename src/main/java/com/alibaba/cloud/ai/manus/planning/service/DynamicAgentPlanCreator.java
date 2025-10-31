@@ -15,8 +15,8 @@
  */
 package com.alibaba.cloud.ai.manus.planning.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+// import org.slf4j.Logger; // Currently unused
+// import org.slf4j.LoggerFactory; // Currently unused
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
@@ -30,7 +30,7 @@ import com.alibaba.cloud.ai.manus.tool.PlanningToolInterface;
  */
 public class DynamicAgentPlanCreator implements IPlanCreator {
 
-	private static final Logger log = LoggerFactory.getLogger(DynamicAgentPlanCreator.class);
+	// private static final Logger log = LoggerFactory.getLogger(DynamicAgentPlanCreator.class); // Currently unused
 
 	public DynamicAgentPlanCreator(LlmService llmService, PlanningToolInterface planningTool,
 			PlanExecutionRecorder recorder, ManusProperties manusProperties,

@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.cloud.ai.manus.namespace.entity.NamespaceEntity;
@@ -34,7 +33,6 @@ public class NamespaceServiceImpl implements NamespaceService {
 
 	private final NamespaceRepository repository;
 
-	@Autowired
 	public NamespaceServiceImpl(NamespaceRepository repository) {
 		this.repository = repository;
 	}

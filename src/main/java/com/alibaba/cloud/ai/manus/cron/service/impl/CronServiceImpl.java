@@ -15,9 +15,12 @@
  */
 package com.alibaba.cloud.ai.manus.cron.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 
@@ -26,10 +29,6 @@ import com.alibaba.cloud.ai.manus.cron.repository.CronRepository;
 import com.alibaba.cloud.ai.manus.cron.scheduler.DynamicCronTaskScheduler;
 import com.alibaba.cloud.ai.manus.cron.service.CronService;
 import com.alibaba.cloud.ai.manus.cron.vo.CronConfig;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class CronServiceImpl implements CronService {
@@ -40,7 +39,6 @@ public class CronServiceImpl implements CronService {
 
 	private final DynamicCronTaskScheduler taskScheduler;
 
-	@Autowired
 	public CronServiceImpl(CronRepository repository, DynamicCronTaskScheduler taskScheduler) {
 		this.repository = repository;
 		this.taskScheduler = taskScheduler;

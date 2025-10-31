@@ -107,7 +107,7 @@ public class PlanningFactory {
 
 	private final DataSourceService dataSourceService;
 
-	private final TableProcessingService tableProcessingService;
+	// private final TableProcessingService tableProcessingService; // Currently unused - commented out for future use
 
 	private final static Logger log = LoggerFactory.getLogger(PlanningFactory.class);
 
@@ -165,7 +165,7 @@ public class PlanningFactory {
 		this.innerStorageService = innerStorageService;
 		this.unifiedDirectoryManager = unifiedDirectoryManager;
 		this.dataSourceService = dataSourceService;
-		this.tableProcessingService = tableProcessingService;
+		// this.tableProcessingService = tableProcessingService; // Currently unused
 	}
 
 	/**

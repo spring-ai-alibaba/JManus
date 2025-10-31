@@ -75,7 +75,6 @@ public class DynamicCronTaskScheduler {
 	// Store running tasks
 	private final Map<Long, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 
-	@Autowired
 	public DynamicCronTaskScheduler(TaskScheduler taskScheduler, CronRepository cronRepository) {
 		this.taskScheduler = taskScheduler;
 		this.cronRepository = cronRepository;

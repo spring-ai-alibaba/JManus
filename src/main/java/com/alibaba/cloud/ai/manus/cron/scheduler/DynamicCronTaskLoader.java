@@ -16,9 +16,12 @@
 
 package com.alibaba.cloud.ai.manus.cron.scheduler;
 
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -26,10 +29,6 @@ import org.springframework.stereotype.Component;
 import com.alibaba.cloud.ai.manus.cron.entity.CronEntity;
 import com.alibaba.cloud.ai.manus.cron.enums.TaskStatus;
 import com.alibaba.cloud.ai.manus.cron.repository.CronRepository;
-
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Component
 public class DynamicCronTaskLoader implements CommandLineRunner {
@@ -40,7 +39,6 @@ public class DynamicCronTaskLoader implements CommandLineRunner {
 
 	private final DynamicCronTaskScheduler taskScheduler;
 
-	@Autowired
 	public DynamicCronTaskLoader(CronRepository cronRepository, DynamicCronTaskScheduler taskScheduler) {
 		this.cronRepository = cronRepository;
 		this.taskScheduler = taskScheduler;
