@@ -275,16 +275,12 @@ public class PlanHierarchyReaderService {
 			return ExecutionStatus.IDLE;
 		}
 
-		switch (status) {
-			case IDLE:
-				return ExecutionStatus.IDLE;
-			case RUNNING:
-				return ExecutionStatus.RUNNING;
-			case FINISHED:
-				return ExecutionStatus.FINISHED;
-			default:
-				return ExecutionStatus.IDLE;
-		}
+		return switch (status) {
+			case IDLE -> ExecutionStatus.IDLE;
+			case RUNNING -> ExecutionStatus.RUNNING;
+			case FINISHED -> ExecutionStatus.FINISHED;
+			default -> ExecutionStatus.IDLE;
+		};
 	}
 
 	/**

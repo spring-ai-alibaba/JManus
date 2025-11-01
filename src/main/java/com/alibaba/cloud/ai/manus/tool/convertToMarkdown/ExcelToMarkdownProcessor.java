@@ -88,8 +88,12 @@ public class ExcelToMarkdownProcessor {
 			}
 
 			// Step 5: Return success result
-			String result = String.format(
-					"Successfully converted Excel file to Markdown\n\n" + "**Output File**: %s\n\n", markdownFilename);
+			String result = String.format("""
+					Successfully converted Excel file to Markdown
+
+					**Output File**: %s
+
+					""", markdownFilename);
 
 			// Add content if less than 1000 characters
 			if (markdownContent.length() < 1000) {
@@ -339,8 +343,7 @@ public class ExcelToMarkdownProcessor {
 			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
 			Path outputFile = currentPlanDir.resolve(filename);
 
-			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
-					StandardOpenOption.TRUNCATE_EXISTING);
+			Files.writeString(outputFile, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
 			log.info("Markdown file saved: {}", outputFile);
 			return outputFile;

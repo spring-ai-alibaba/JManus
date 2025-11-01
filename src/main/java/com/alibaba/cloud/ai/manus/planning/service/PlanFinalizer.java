@@ -273,11 +273,7 @@ public class PlanFinalizer {
 
 		// Check if errorMessage indicates interruption
 		String errorMessage = result.getErrorMessage();
-		if (errorMessage != null && (errorMessage.contains("interrupted") || errorMessage.contains("interruption"))) {
-			return true;
-		}
-
-		return false;
+		return errorMessage != null && (errorMessage.contains("interrupted") || errorMessage.contains("interruption"));
 	}
 
 	/**

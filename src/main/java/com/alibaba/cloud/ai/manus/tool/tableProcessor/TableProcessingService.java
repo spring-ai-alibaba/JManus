@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -443,7 +444,7 @@ public class TableProcessingService implements ITableProcessingService {
 				boolean updated = false;
 				for (int i = 0; i < existingData.size(); i++) {
 					List<String> row = existingData.get(i);
-					if (row.size() > 0 && idToUpdate.equals(row.get(0))) {
+					if (!row.isEmpty() && idToUpdate.equals(row.get(0))) {
 						existingData.set(i, updatedData);
 						updated = true;
 						break;
@@ -459,7 +460,7 @@ public class TableProcessingService implements ITableProcessingService {
 			}
 			else {
 				// Auto-generate ID as the first column
-				String nextId = String.valueOf(existingData.size() > 0 ? existingData.size() - 1 : 0);
+				String nextId = String.valueOf(!existingData.isEmpty() ? existingData.size() - 1 : 0);
 				dataToWrite = new ArrayList<>();
 				dataToWrite.add(nextId);
 				dataToWrite.addAll(data);
@@ -552,7 +553,7 @@ public class TableProcessingService implements ITableProcessingService {
 					boolean updated = false;
 					for (int i = 0; i < existingData.size(); i++) {
 						List<String> existingRow = existingData.get(i);
-						if (existingRow.size() > 0 && idToUpdate.equals(existingRow.get(0))) {
+						if (!existingRow.isEmpty() && idToUpdate.equals(existingRow.get(0))) {
 							existingData.set(i, updatedData);
 							updated = true;
 							break;
@@ -566,7 +567,7 @@ public class TableProcessingService implements ITableProcessingService {
 				}
 				else {
 					// No ID specified, generate one
-					String nextId = String.valueOf(existingData.size() > 0 ? existingData.size() - 1 : 0);
+					String nextId = String.valueOf(!existingData.isEmpty() ? existingData.size() - 1 : 0);
 					List<String> dataToWrite = new ArrayList<>();
 					dataToWrite.add(nextId);
 					dataToWrite.addAll(row);
@@ -654,8 +655,8 @@ public class TableProcessingService implements ITableProcessingService {
 		// Sort indices in descending order to avoid index shifting issues
 		List<Integer> sortedIndices = rowIndices.stream()
 			.distinct() // Remove duplicates
-			.sorted((a, b) -> b.compareTo(a))
-			.collect(Collectors.toList());
+			.sorted(Comparator.reverseOrder())
+			.toList();
 
 		// Remove rows (adjusting for header row)
 		for (Integer index : sortedIndices) {

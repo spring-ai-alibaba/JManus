@@ -23,7 +23,6 @@ import org.springframework.ai.model.tool.ToolCallingManager;
 
 import com.alibaba.cloud.ai.manus.agent.BaseAgent;
 import com.alibaba.cloud.ai.manus.agent.ConfigurableDynaAgent;
-import com.alibaba.cloud.ai.manus.agent.ToolCallbackProvider;
 import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
@@ -114,10 +113,8 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 			String modelName = step.getModelName();
 			List<String> selectedToolKeys = step.getSelectedToolKeys();
 
-			BaseAgent executor = createConfigurableDynaAgent(context.getPlan().getCurrentPlanId(),
-					context.getPlan().getRootPlanId(), initSettings, expectedReturnInfo, step, modelName,
-					selectedToolKeys, context.getPlanDepth());
-			return executor;
+			return createConfigurableDynaAgent(context.getPlan().getCurrentPlanId(), context.getPlan().getRootPlanId(),
+					initSettings, expectedReturnInfo, step, modelName, selectedToolKeys, context.getPlanDepth());
 		}
 		else {
 			throw new IllegalArgumentException("No executor found for step type: " + stepType);
@@ -143,12 +140,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 
 		Map<String, ToolCallBackContext> toolCallbackMap = planningFactory.toolCallbackMap(planId, rootPlanId,
 				expectedReturnInfo);
-		agent.setToolCallbackProvider(new ToolCallbackProvider() {
-			@Override
-			public Map<String, ToolCallBackContext> getToolCallBackContext() {
-				return toolCallbackMap;
-			}
-		});
+		agent.setToolCallbackProvider(() -> toolCallbackMap);
 		return agent;
 	}
 

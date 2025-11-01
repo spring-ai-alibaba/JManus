@@ -225,9 +225,10 @@ public class UserInputService implements IUserInputService {
 			// getInputState
 			// and
 			// InputState
-			List<FormInputTool.InputItem> inputItems = inputs.entrySet().stream().map(entry -> {
-				return new FormInputTool.InputItem(entry.getKey(), entry.getValue());
-			}).collect(Collectors.toList());
+			List<FormInputTool.InputItem> inputItems = inputs.entrySet()
+				.stream()
+				.map(entry -> new FormInputTool.InputItem(entry.getKey(), entry.getValue()))
+				.collect(Collectors.toList());
 
 			formInputTool.setUserFormInputValues(inputItems);
 			formInputTool.markUserInputReceived();

@@ -15,6 +15,7 @@
  */
 package com.alibaba.cloud.ai.manus.workspace.conversation.service;
 
+import java.util.Comparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -94,7 +95,7 @@ public class MemoryServiceImpl implements MemoryService {
 		// Convert to Memory VO and sort by create time
 		return memoryEntities.stream()
 			.map(this::convertToMemory)
-			.sorted((m1, m2) -> m1.getCreateTime().compareTo(m2.getCreateTime()))
+			.sorted(Comparator.comparing(Memory::getCreateTime))
 			.collect(Collectors.toList());
 	}
 

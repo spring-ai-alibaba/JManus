@@ -47,7 +47,7 @@ public class SpringBootPlaywrightInitializer {
 			try {
 				// Use this class's classloader (LaunchedClassLoader in Spring Boot)
 				ClassLoader newCL = this.getClass().getClassLoader();
-				log.info("Switching to ClassLoader: {} [{}]", newCL.getClass().getSimpleName(), newCL.toString());
+				log.info("Switching to ClassLoader: {} [{}]", newCL.getClass().getSimpleName(), newCL);
 				Thread.currentThread().setContextClassLoader(newCL);
 
 				log.info("About to call Playwright.create()...");
@@ -105,9 +105,8 @@ public class SpringBootPlaywrightInitializer {
 		ClassLoader thisCL = this.getClass().getClassLoader();
 
 		log.info("=== Playwright Class Loader Analysis ===");
-		log.info("Current thread context ClassLoader: {} [{}]", currentCL.getClass().getSimpleName(),
-				currentCL.toString());
-		log.info("This class ClassLoader: {} [{}]", thisCL.getClass().getSimpleName(), thisCL.toString());
+		log.info("Current thread context ClassLoader: {} [{}]", currentCL.getClass().getSimpleName(), currentCL);
+		log.info("This class ClassLoader: {} [{}]", thisCL.getClass().getSimpleName(), thisCL);
 
 		// Print classpath information
 		String classPath = System.getProperty("java.class.path");

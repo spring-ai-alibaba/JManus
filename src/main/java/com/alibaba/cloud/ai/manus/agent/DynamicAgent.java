@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -129,12 +130,7 @@ public class DynamicAgent extends ReActAgent {
 		this.agentName = name;
 		this.agentDescription = description;
 		this.nextStepPrompt = nextStepPrompt;
-		if (availableToolKeys == null) {
-			this.availableToolKeys = new ArrayList<>();
-		}
-		else {
-			this.availableToolKeys = availableToolKeys;
-		}
+		this.availableToolKeys = Objects.requireNonNullElseGet(availableToolKeys, ArrayList::new);
 		this.toolCallingManager = toolCallingManager;
 		this.userInputService = userInputService;
 		this.modelName = modelName;
@@ -321,8 +317,7 @@ public class DynamicAgent extends ReActAgent {
 	 */
 	private long calculateBackoffDelay(int attempt) {
 		// Exponential backoff: 2^attempt * 1000ms, max 30 seconds
-		long delay = Math.min(1000L * (1L << (attempt - 1)), 30000L);
-		return delay;
+		return Math.min(1000L * (1L << (attempt - 1)), 30000L);
 	}
 
 	@Override
@@ -373,8 +368,7 @@ public class DynamicAgent extends ReActAgent {
 						param.setResult(formResult.getResult());
 						resultList.add(param.getResult());
 					}
-					else if (toolInstance instanceof TerminableTool) {
-						TerminableTool terminableTool = (TerminableTool) toolInstance;
+					else if (toolInstance instanceof TerminableTool terminableTool) {
 						param.setResult(toolCallResponse.responseData());
 						resultList.add(param.getResult());
 
@@ -558,8 +552,7 @@ public class DynamicAgent extends ReActAgent {
 			return new UserMessage("");
 		}
 		PromptTemplate promptTemplate = new SystemPromptTemplate(this.nextStepPrompt);
-		Message userMessage = promptTemplate.createMessage(getMergedData());
-		return userMessage;
+		return promptTemplate.createMessage(getMergedData());
 	}
 
 	private Map<String, Object> getMergedData() {
@@ -573,7 +566,7 @@ public class DynamicAgent extends ReActAgent {
 	protected Message getThinkMessage() {
 		Message baseThinkPrompt = super.getThinkMessage();
 		Message nextStepWithEnvMessage = getNextStepWithEnvMessage();
-		SystemMessage thinkMessage = new SystemMessage("""
+		return new SystemMessage("""
 				<SystemInfo>
 				%s
 				</SystemInfo>
@@ -582,7 +575,6 @@ public class DynamicAgent extends ReActAgent {
 				%s
 				</AgentInfo>
 				""".formatted(baseThinkPrompt.getText(), nextStepWithEnvMessage.getText()));
-		return thinkMessage;
 	}
 
 	/**
@@ -646,8 +638,7 @@ public class DynamicAgent extends ReActAgent {
 		log.info("🔍 collectEnvData called for tool: {}", toolCallName);
 		ToolCallBackContext context = toolCallbackProvider.getToolCallBackContext().get(toolCallName);
 		if (context != null) {
-			String envData = context.getFunctionInstance().getCurrentToolStateString();
-			return envData;
+			return context.getFunctionInstance().getCurrentToolStateString();
 		}
 		// If corresponding tool callback context is not found, return empty string
 		log.warn("⚠️ No context found for tool: {}", toolCallName);
@@ -680,7 +671,7 @@ public class DynamicAgent extends ReActAgent {
 				continue; // Skip tools with no data
 			}
 			envDataStringBuilder.append(toolKey).append(" context information:\n");
-			envDataStringBuilder.append("    ").append(value.toString()).append("\n");
+			envDataStringBuilder.append("    ").append(value).append("\n");
 		}
 
 		return envDataStringBuilder.toString();

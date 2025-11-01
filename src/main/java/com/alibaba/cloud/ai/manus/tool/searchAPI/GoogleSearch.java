@@ -65,8 +65,7 @@ public class GoogleSearch extends AbstractBaseTool<GoogleSearch.GoogleSearchInpu
 
 	public static OpenAiApi.FunctionTool getToolDefinition() {
 		OpenAiApi.FunctionTool.Function function = new OpenAiApi.FunctionTool.Function(description, name, PARAMETERS);
-		OpenAiApi.FunctionTool functionTool = new OpenAiApi.FunctionTool(function);
-		return functionTool;
+		return new OpenAiApi.FunctionTool(function);
 	}
 
 	private static final String SERP_API_KEY = System.getenv("SERP_API_KEY");

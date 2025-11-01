@@ -135,9 +135,7 @@ public class McpServerConfig {
 			String path = parsedUrl.getPath();
 
 			// Check if path contains sse
-			boolean pathContainsSse = path != null && path.toLowerCase().contains("sse");
-
-			return pathContainsSse;
+			return path != null && path.toLowerCase().contains("sse");
 		}
 		catch (java.net.MalformedURLException e) {
 			// Return false if URL format is invalid

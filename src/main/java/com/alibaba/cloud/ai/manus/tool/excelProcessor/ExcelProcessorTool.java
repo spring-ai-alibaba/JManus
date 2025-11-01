@@ -37,15 +37,19 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 	private static final String TOOL_NAME = "excel_processor";
 
-	private static final String TOOL_DESCRIPTION = "Comprehensive Excel processing tool with support for large datasets. Supports creating structured tables with column headers, reading/writing data, searching, formatting, and batch operations. \n\n"
-			+ "NEW FEATURES:\n"
-			+ "- Smart Import (smart_import): Automatically detects file formats, infers data types, and applies intelligent column mapping from multiple source files\n"
-			+ "- Enhanced Batch Processing (batch_process): Improved performance with progress tracking and better error handling\n"
-			+ "- CSV File Reading (read_csv): Read CSV files and optionally convert them to Excel format with proper header detection\n\n"
-			+ "USAGE GUIDELINES:\n" + "- Use 'headers' parameter with 'write_data' action to set column names\n"
-			+ "- For creating new files, use 'worksheets' parameter to define sheet structure with column headers\n"
-			+ "- For smart import, use 'source_files' to specify input files, 'auto_detect_format' for format detection, 'column_mapping' for field mapping, and 'data_type_inference' for automatic type conversion\n"
-			+ "- For CSV reading, use 'read_csv' action with 'file_path' pointing to .csv file. Optionally specify 'output_path' to convert to Excel format";
+	private static final String TOOL_DESCRIPTION = """
+			Comprehensive Excel processing tool with support for large datasets. Supports creating structured tables with column headers, reading/writing data, searching, formatting, and batch operations.\s
+
+			NEW FEATURES:
+			- Smart Import (smart_import): Automatically detects file formats, infers data types, and applies intelligent column mapping from multiple source files
+			- Enhanced Batch Processing (batch_process): Improved performance with progress tracking and better error handling
+			- CSV File Reading (read_csv): Read CSV files and optionally convert them to Excel format with proper header detection
+
+			USAGE GUIDELINES:
+			- Use 'headers' parameter with 'write_data' action to set column names
+			- For creating new files, use 'worksheets' parameter to define sheet structure with column headers
+			- For smart import, use 'source_files' to specify input files, 'auto_detect_format' for format detection, 'column_mapping' for field mapping, and 'data_type_inference' for automatic type conversion
+			- For CSV reading, use 'read_csv' action with 'file_path' pointing to .csv file. Optionally specify 'output_path' to convert to Excel format""";
 
 	// Supported actions
 	private static final Set<String> SUPPORTED_ACTIONS = Set.of("create_file", "create_table", "get_structure",
@@ -455,48 +459,28 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 			}
 
 			// Execute action
-			switch (action) {
-				case "create_file":
-					return handleCreateFile(input);
-				case "create_table":
-					return handleCreateTable(input);
-				case "get_structure":
-					return handleGetStructure(input);
-				case "read_data":
-					return handleReadData(input);
-				case "write_data":
-					return handleWriteData(input);
-				case "update_cells":
-					return handleUpdateCells(input);
-				case "search_data":
-					return handleSearchData(input);
-				case "delete_rows":
-					return handleDeleteRows(input);
-				case "format_cells":
-					return handleFormatCells(input);
-				case "add_formulas":
-					return handleAddFormulas(input);
-				case "batch_process":
-					return handleBatchProcess(input);
-				case "smart_import":
-					return handleSmartImport(input);
-				case "read_csv":
-					return handleReadCsv(input);
-				case "parallel_batch_process":
-					return handleParallelBatchProcess(input);
-				case "transform_aggregate":
-					return handleTransformAggregate(input);
-				case "stream_process":
-					return handleStreamProcess(input);
-				case "validate_clean":
-					return handleValidateClean(input);
-				case "export_data":
-					return handleExportData(input);
-				case "get_performance_metrics":
-					return handleGetPerformanceMetrics(input);
-				default:
-					return failure("Unknown action: " + action);
-			}
+			return switch (action) {
+				case "create_file" -> handleCreateFile(input);
+				case "create_table" -> handleCreateTable(input);
+				case "get_structure" -> handleGetStructure(input);
+				case "read_data" -> handleReadData(input);
+				case "write_data" -> handleWriteData(input);
+				case "update_cells" -> handleUpdateCells(input);
+				case "search_data" -> handleSearchData(input);
+				case "delete_rows" -> handleDeleteRows(input);
+				case "format_cells" -> handleFormatCells(input);
+				case "add_formulas" -> handleAddFormulas(input);
+				case "batch_process" -> handleBatchProcess(input);
+				case "smart_import" -> handleSmartImport(input);
+				case "read_csv" -> handleReadCsv(input);
+				case "parallel_batch_process" -> handleParallelBatchProcess(input);
+				case "transform_aggregate" -> handleTransformAggregate(input);
+				case "stream_process" -> handleStreamProcess(input);
+				case "validate_clean" -> handleValidateClean(input);
+				case "export_data" -> handleExportData(input);
+				case "get_performance_metrics" -> handleGetPerformanceMetrics(input);
+				default -> failure("Unknown action: " + action);
+			};
 
 		}
 		catch (Exception e) {
@@ -788,7 +772,7 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 						"Sheet1", null, null, null);
 				if (sourceData != null && !sourceData.isEmpty()) {
 					// Extract headers from first row if not already detected
-					if (detectedHeaders.isEmpty() && !sourceData.isEmpty()) {
+					if (detectedHeaders.isEmpty()) {
 						detectedHeaders = new ArrayList<>(sourceData.get(0));
 						sourceData = sourceData.subList(1, sourceData.size()); // Remove
 																				// header
@@ -1166,7 +1150,7 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 				},
 					"required": ["action", "file_path"]
 				}
-					""";
+				""";
 
 	}
 
@@ -1198,13 +1182,9 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 		int parallelism = input.parallelism > 0 ? input.parallelism : Runtime.getRuntime().availableProcessors();
 
 		// Create a simple batch processor for demonstration
-		IExcelProcessingService.BatchProcessor processor = new IExcelProcessingService.BatchProcessor() {
-			@Override
-			public boolean processBatch(List<List<String>> batchData, int batchNumber, int totalBatches) {
-				log.info("Processing batch {}/{} with {} rows in parallel", batchNumber, totalBatches,
-						batchData.size());
-				return true;
-			}
+		IExcelProcessingService.BatchProcessor processor = (batchData, batchNumber, totalBatches) -> {
+			log.info("Processing batch {}/{} with {} rows in parallel", batchNumber, totalBatches, batchData.size());
+			return true;
 		};
 
 		excelProcessingService.processExcelInBatches(currentPlanId, input.getFilePath(), worksheetName, batchSize,

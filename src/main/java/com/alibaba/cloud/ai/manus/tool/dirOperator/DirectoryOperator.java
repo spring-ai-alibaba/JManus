@@ -126,17 +126,12 @@ public class DirectoryOperator extends AbstractBaseTool<DirectoryOperator.Direct
 
 			String action = input.getAction().toLowerCase();
 
-			switch (action) {
-				case "ls":
-				case "list":
-					return listFiles(input);
-				case "cp":
-				case "copy":
-					return copyFiles(input);
-				default:
-					return new ToolExecuteResult(
-							"Unsupported action: " + action + ". Supported actions: ls, list, cp, copy");
-			}
+			return switch (action) {
+				case "ls", "list" -> listFiles(input);
+				case "cp", "copy" -> copyFiles(input);
+				default ->
+					new ToolExecuteResult("Unsupported action: " + action + ". Supported actions: ls, list, cp, copy");
+			};
 		}
 		catch (Exception e) {
 			log.error("Error executing directory operation", e);
@@ -252,7 +247,7 @@ public class DirectoryOperator extends AbstractBaseTool<DirectoryOperator.Direct
 						Path relativePath = sourcePath.relativize(dir);
 						Path targetDir = targetPath.resolve(relativePath);
 						Files.createDirectories(targetDir);
-						copiedFiles.add("DIR: " + relativePath.toString());
+						copiedFiles.add("DIR: " + relativePath);
 						return FileVisitResult.CONTINUE;
 					}
 
@@ -262,7 +257,7 @@ public class DirectoryOperator extends AbstractBaseTool<DirectoryOperator.Direct
 							Path relativePath = sourcePath.relativize(file);
 							Path targetFile = targetPath.resolve(relativePath);
 							Files.copy(file, targetFile, StandardCopyOption.REPLACE_EXISTING);
-							copiedFiles.add("FILE: " + relativePath.toString());
+							copiedFiles.add("FILE: " + relativePath);
 						}
 						catch (IOException e) {
 							errors.add("Failed to copy file " + file + ": " + e.getMessage());
@@ -309,9 +304,7 @@ public class DirectoryOperator extends AbstractBaseTool<DirectoryOperator.Direct
 		// Check file pattern
 		if (input.getFilePattern() != null && !input.getFilePattern().trim().isEmpty()) {
 			String fileName = file.getFileName().toString();
-			if (!fileName.matches(input.getFilePattern())) {
-				return false;
-			}
+			return fileName.matches(input.getFilePattern());
 		}
 
 		return true;
@@ -359,7 +352,7 @@ public class DirectoryOperator extends AbstractBaseTool<DirectoryOperator.Direct
 				// (parts[1])
 				StringBuilder subplanPath = new StringBuilder();
 				for (int i = 1; i < parts.length; i++) {
-					if (subplanPath.length() > 0) {
+					if (!subplanPath.isEmpty()) {
 						subplanPath.append("/");
 					}
 					subplanPath.append(parts[i]);

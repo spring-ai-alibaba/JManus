@@ -97,7 +97,7 @@ public class CoordinatorToolController {
 		try {
 			log.info("Getting coordinator tool for plan template: {}", planTemplateId);
 			return coordinatorToolService.getCoordinatorToolByPlanTemplateId(planTemplateId)
-				.map(tool -> ResponseEntity.ok(tool))
+				.map(ResponseEntity::ok)
 				.orElse(ResponseEntity.notFound().build());
 		}
 		catch (Exception e) {

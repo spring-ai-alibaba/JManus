@@ -289,15 +289,11 @@ public class ChromeDriverService implements IChromeDriverService {
 			browserName = "chromium";
 		}
 
-		switch (browserName.toLowerCase()) {
-			case "webkit":
-				return playwright.webkit();
-			case "firefox":
-				return playwright.firefox();
-			case "chromium":
-			default:
-				return playwright.chromium();
-		}
+		return switch (browserName.toLowerCase()) {
+			case "webkit" -> playwright.webkit();
+			case "firefox" -> playwright.firefox();
+			default -> playwright.chromium();
+		};
 	}
 
 	private String getRandomUserAgent() {

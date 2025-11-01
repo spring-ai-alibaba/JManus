@@ -406,21 +406,23 @@ public class McpCacheManager {
 		}
 
 		// Output detailed execution log
-		logger.info("\n"
-				+ "╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗\n"
-				+ "║                                    MCP Service Loader Execution Report                                ║\n"
-				+ "╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣\n"
-				+ "║  Main Thread: Started at {}, Completed at {}, Total Time: {}ms                                      ║\n"
-				+ "║  Configuration: Timeout={}s, MaxRetry={}, MaxConcurrent={}                                           ║\n"
-				+ "║  Summary: {}/{} servers loaded successfully                                                         ║\n"
-				+ "╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣\n"
-				+ "║  Individual Server Results:                                                                          ║\n"
-				+ "{}"
-				+ "╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝",
-				formatTime(mainStartTime), formatTime(mainEndTime), mainTotalTime,
-				manusProperties.getMcpConnectionTimeoutSeconds(), manusProperties.getMcpMaxRetryCount(),
-				manusProperties.getMcpMaxConcurrentConnections(), toolCallbackMap.size(), mcpConfigEntities.size(),
-				formatIndividualResults(allResults));
+		logger
+			.info("""
+
+					╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
+					║                                    MCP Service Loader Execution Report                                ║
+					╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣
+					║  Main Thread: Started at {}, Completed at {}, Total Time: {}ms                                      ║
+					║  Configuration: Timeout={}s, MaxRetry={}, MaxConcurrent={}                                           ║
+					║  Summary: {}/{} servers loaded successfully                                                         ║
+					╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣
+					║  Individual Server Results:                                                                          ║
+					{}\
+					╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝""",
+					formatTime(mainStartTime), formatTime(mainEndTime), mainTotalTime,
+					manusProperties.getMcpConnectionTimeoutSeconds(), manusProperties.getMcpMaxRetryCount(),
+					manusProperties.getMcpMaxConcurrentConnections(), toolCallbackMap.size(), mcpConfigEntities.size(),
+					formatIndividualResults(allResults));
 
 		return toolCallbackMap;
 	}

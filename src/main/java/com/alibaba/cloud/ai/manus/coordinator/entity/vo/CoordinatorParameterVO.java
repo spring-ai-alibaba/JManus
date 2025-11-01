@@ -16,6 +16,8 @@
 
 package com.alibaba.cloud.ai.manus.coordinator.entity.vo;
 
+import java.util.Objects;
+
 /**
  * CoordinatorParameterVO Parameter Object
  */
@@ -95,7 +97,7 @@ public class CoordinatorParameterVO {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		CoordinatorParameterVO that = (CoordinatorParameterVO) o;
-		return name != null ? name.equals(that.name) : that.name == null;
+		return Objects.equals(name, that.name);
 	}
 
 	@Override

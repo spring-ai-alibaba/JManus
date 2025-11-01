@@ -60,7 +60,7 @@ public class IpUtils {
 				}
 			}
 		}
-		catch (Throwable var4) {
+		catch (Throwable ignored) {
 		}
 	}
 

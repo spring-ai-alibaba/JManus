@@ -258,18 +258,13 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 
 			logger.debug("Executing action: {} with context: {}", action, toolContext);
 
-			switch (action) {
-				case "registerBatch":
-					return registerFunctionsBatch(input);
-				case "start":
-					return startExecution(toolContext);
-				case "getPending":
-					return getPendingFunctions();
-				case "clearPending":
-					return clearPendingFunctions();
-				default:
-					return new ToolExecuteResult("Unknown action: " + action);
-			}
+			return switch (action) {
+				case "registerBatch" -> registerFunctionsBatch(input);
+				case "start" -> startExecution(toolContext);
+				case "getPending" -> getPendingFunctions();
+				case "clearPending" -> clearPendingFunctions();
+				default -> new ToolExecuteResult("Unknown action: " + action);
+			};
 		}
 		catch (Exception e) {
 			logger.error("Error in ParallelExecutionManager: {}", e.getMessage(), e);
@@ -297,9 +292,8 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 			List<FunctionInput> functions;
 
 			// Try to parse as List first (Spring AI default behavior)
-			if (functionsRaw instanceof List) {
+			if (functionsRaw instanceof List<?> rawList) {
 				// Convert List<Map> to List<FunctionInput>
-				List<?> rawList = (List<?>) functionsRaw;
 				functions = new ArrayList<>();
 				for (Object item : rawList) {
 					if (item instanceof Map) {
@@ -314,8 +308,7 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 				}
 			}
 			// Try to parse as JSON string
-			else if (functionsRaw instanceof String) {
-				String functionsString = (String) functionsRaw;
+			else if (functionsRaw instanceof String functionsString) {
 				functions = objectMapper.readValue(functionsString, new TypeReference<List<FunctionInput>>() {
 				});
 			}

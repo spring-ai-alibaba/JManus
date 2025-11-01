@@ -16,6 +16,7 @@
 
 package com.alibaba.cloud.ai.manus.tool.database;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -23,7 +24,11 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.EnumerablePropertySource;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.PropertySource;
 
 /**
  * Database configuration parsing utility class
@@ -75,18 +80,13 @@ public class DatabaseConfigParser {
 		Set<String> keys = new HashSet<>();
 
 		try {
-			if (environment instanceof org.springframework.core.env.ConfigurableEnvironment) {
-				org.springframework.core.env.ConfigurableEnvironment configEnv = (org.springframework.core.env.ConfigurableEnvironment) environment;
-				for (org.springframework.core.env.PropertySource<?> propertySource : configEnv.getPropertySources()) {
-					if (propertySource instanceof org.springframework.core.env.MapPropertySource) {
-						org.springframework.core.env.MapPropertySource mapSource = (org.springframework.core.env.MapPropertySource) propertySource;
+			if (environment instanceof ConfigurableEnvironment configEnv) {
+				for (PropertySource<?> propertySource : configEnv.getPropertySources()) {
+					if (propertySource instanceof MapPropertySource mapSource) {
 						keys.addAll(mapSource.getSource().keySet());
 					}
-					else if (propertySource instanceof org.springframework.core.env.EnumerablePropertySource) {
-						org.springframework.core.env.EnumerablePropertySource<?> enumSource = (org.springframework.core.env.EnumerablePropertySource<?>) propertySource;
-						for (String key : enumSource.getPropertyNames()) {
-							keys.add(key);
-						}
+					else if (propertySource instanceof EnumerablePropertySource<?> enumSource) {
+						Collections.addAll(keys, enumSource.getPropertyNames());
 					}
 				}
 			}

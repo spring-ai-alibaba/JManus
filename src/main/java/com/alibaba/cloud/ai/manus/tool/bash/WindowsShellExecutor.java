@@ -153,7 +153,7 @@ public class WindowsShellExecutor implements ShellCommandExecutor {
 		}
 		else {
 			return "Error (Exit Code " + exitCode + "): "
-					+ (errorBuilder.length() > 0 ? errorBuilder.toString() : outputBuilder.toString());
+					+ (!errorBuilder.isEmpty() ? errorBuilder.toString() : outputBuilder.toString());
 		}
 	}
 

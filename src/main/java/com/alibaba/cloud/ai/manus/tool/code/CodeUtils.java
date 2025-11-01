@@ -120,7 +120,7 @@ public class CodeUtils {
 			Files.createDirectories(Paths.get(file_dir));
 		}
 		catch (IOException e) {
-			e.printStackTrace();
+			log.error("create work dir error", e);
 		}
 
 		if (code != null) {
@@ -130,7 +130,7 @@ public class CodeUtils {
 				fout.close();
 			}
 			catch (IOException e) {
-				e.printStackTrace();
+				log.error("write code to file error", e);
 			}
 		}
 
@@ -201,11 +201,11 @@ public class CodeUtils {
 		String response = EMPTY;
 		while (true) {
 			try {
-				if (!((response = reader.readLine()) != null)) {
+				if ((response = reader.readLine()) == null) {
 					break;
 				}
 			}
-			catch (IOException e) {
+			catch (IOException ignored) {
 			}
 			resultList.add(response);
 		}

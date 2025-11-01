@@ -376,7 +376,7 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 		Map<String, String> headers = dynamicModelEntity.getHeaders();
 		MultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap<>();
 		if (headers != null) {
-			headers.forEach((key, value) -> multiValueMap.add(key, value));
+			headers.forEach(multiValueMap::add);
 		}
 
 		// Use enhanced WebClient builder

@@ -15,6 +15,8 @@
  */
 package com.alibaba.cloud.ai.manus.recorder.entity.vo;
 
+import java.util.Objects;
+
 /**
  * Standalone class for storing action tool information. Records details about tools used
  * during action execution phases.
@@ -116,13 +118,13 @@ public class ActToolInfo {
 
 		ActToolInfo that = (ActToolInfo) o;
 
-		if (name != null ? !name.equals(that.name) : that.name != null)
+		if (!Objects.equals(name, that.name))
 			return false;
-		if (parameters != null ? !parameters.equals(that.parameters) : that.parameters != null)
+		if (!Objects.equals(parameters, that.parameters))
 			return false;
-		if (result != null ? !result.equals(that.result) : that.result != null)
+		if (!Objects.equals(result, that.result))
 			return false;
-		return id != null ? id.equals(that.id) : that.id == null;
+		return Objects.equals(id, that.id);
 	}
 
 	@Override

@@ -93,8 +93,7 @@ public class ExcelProcessingService implements IExcelProcessingService {
 		}
 		// Always treat input as a file path and extract extension
 		String extension = getFileExtension(filePath).toLowerCase();
-		boolean result = SUPPORTED_EXTENSIONS.contains(extension);
-		return result;
+		return SUPPORTED_EXTENSIONS.contains(extension);
 	}
 
 	@Override
@@ -122,8 +121,7 @@ public class ExcelProcessingService implements IExcelProcessingService {
 
 	private String getFileExtension(String filePath) {
 		int lastDotIndex = filePath.lastIndexOf('.');
-		String extension = lastDotIndex >= 0 ? filePath.substring(lastDotIndex) : "";
-		return extension;
+		return lastDotIndex >= 0 ? filePath.substring(lastDotIndex) : "";
 	}
 
 	@Override

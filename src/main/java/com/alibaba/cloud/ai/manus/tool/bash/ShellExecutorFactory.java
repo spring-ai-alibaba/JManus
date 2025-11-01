@@ -44,16 +44,12 @@ public class ShellExecutorFactory {
 	 * @return ShellCommandExecutor implementation
 	 */
 	public static ShellCommandExecutor createExecutor(String osType) {
-		switch (osType.toLowerCase()) {
-			case "windows":
-				return new WindowsShellExecutor();
-			case "mac":
-				return new MacShellExecutor();
-			case "linux":
-				return new LinuxShellExecutor();
-			default:
-				throw new IllegalArgumentException("Unsupported OS type: " + osType);
-		}
+		return switch (osType.toLowerCase()) {
+			case "windows" -> new WindowsShellExecutor();
+			case "mac" -> new MacShellExecutor();
+			case "linux" -> new LinuxShellExecutor();
+			default -> throw new IllegalArgumentException("Unsupported OS type: " + osType);
+		};
 	}
 
 }

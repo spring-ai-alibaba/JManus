@@ -88,9 +88,12 @@ public class WordToMarkdownProcessor {
 			}
 
 			// Step 5: Return success result
-			String result = String.format(
-					"Successfully converted Word document to Markdown\n\n" + "**Output File**: %s\n\n",
-					markdownFilename);
+			String result = String.format("""
+					Successfully converted Word document to Markdown
+
+					**Output File**: %s
+
+					""", markdownFilename);
 
 			// Add content if less than 1000 characters
 			if (markdownContent.length() < 1000) {
@@ -236,22 +239,15 @@ public class WordToMarkdownProcessor {
 	 * Get image extension based on picture type
 	 */
 	private String getImageExtension(int pictureType) {
-		switch (pictureType) {
-			case 1:
-				return ".png";
-			case 2:
-				return ".jpg";
-			case 3:
-				return ".gif";
-			case 4:
-				return ".bmp";
-			case 5:
-				return ".emf";
-			case 6:
-				return ".wmf";
-			default:
-				return ".png";
-		}
+		return switch (pictureType) {
+			case 1 -> ".png";
+			case 2 -> ".jpg";
+			case 3 -> ".gif";
+			case 4 -> ".bmp";
+			case 5 -> ".emf";
+			case 6 -> ".wmf";
+			default -> ".png";
+		};
 	}
 
 	/**
@@ -372,8 +368,7 @@ public class WordToMarkdownProcessor {
 			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
 			Path outputFile = currentPlanDir.resolve(filename);
 
-			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
-					StandardOpenOption.TRUNCATE_EXISTING);
+			Files.writeString(outputFile, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
 			log.info("Markdown file saved: {}", outputFile);
 			return outputFile;

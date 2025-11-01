@@ -31,66 +31,51 @@ public class DatabaseSqlGenerator {
 	 * Generate SQL for getting table information
 	 */
 	public static String generateTableInfoSql(String databaseType, boolean fuzzy, String fuzzyText) {
-		switch (normalizeDatabaseType(databaseType)) {
-			case "mysql":
-			case "mariadb":
-				return generateMysqlTableInfoSql(fuzzy, fuzzyText);
-			case "postgresql":
-				return generatePostgresqlTableInfoSql(fuzzy, fuzzyText);
-			case "oracle":
-				return generateOracleTableInfoSql(fuzzy, fuzzyText);
-			case "sqlserver":
-				return generateSqlServerTableInfoSql(fuzzy, fuzzyText);
-			case "h2":
-				return generateH2TableInfoSql(fuzzy, fuzzyText);
-			default:
+		return switch (normalizeDatabaseType(databaseType)) {
+			case "mysql", "mariadb" -> generateMysqlTableInfoSql(fuzzy, fuzzyText);
+			case "postgresql" -> generatePostgresqlTableInfoSql(fuzzy, fuzzyText);
+			case "oracle" -> generateOracleTableInfoSql(fuzzy, fuzzyText);
+			case "sqlserver" -> generateSqlServerTableInfoSql(fuzzy, fuzzyText);
+			case "h2" -> generateH2TableInfoSql(fuzzy, fuzzyText);
+			default -> {
 				log.warn("Unknown database type: {}, using MySQL SQL as fallback", databaseType);
-				return generateMysqlTableInfoSql(fuzzy, fuzzyText);
-		}
+				yield generateMysqlTableInfoSql(fuzzy, fuzzyText);
+			}
+		};
 	}
 
 	/**
 	 * Generate SQL for getting table field information
 	 */
 	public static String generateColumnInfoSql(String databaseType, String inClause) {
-		switch (normalizeDatabaseType(databaseType)) {
-			case "mysql":
-			case "mariadb":
-				return generateMysqlColumnInfoSql(inClause);
-			case "postgresql":
-				return generatePostgresqlColumnInfoSql(inClause);
-			case "oracle":
-				return generateOracleColumnInfoSql(inClause);
-			case "sqlserver":
-				return generateSqlServerColumnInfoSql(inClause);
-			case "h2":
-				return generateH2ColumnInfoSql(inClause);
-			default:
+		return switch (normalizeDatabaseType(databaseType)) {
+			case "mysql", "mariadb" -> generateMysqlColumnInfoSql(inClause);
+			case "postgresql" -> generatePostgresqlColumnInfoSql(inClause);
+			case "oracle" -> generateOracleColumnInfoSql(inClause);
+			case "sqlserver" -> generateSqlServerColumnInfoSql(inClause);
+			case "h2" -> generateH2ColumnInfoSql(inClause);
+			default -> {
 				log.warn("Unknown database type: {}, using MySQL SQL as fallback", databaseType);
-				return generateMysqlColumnInfoSql(inClause);
-		}
+				yield generateMysqlColumnInfoSql(inClause);
+			}
+		};
 	}
 
 	/**
 	 * Generate SQL for getting table index information
 	 */
 	public static String generateIndexInfoSql(String databaseType, String inClause) {
-		switch (normalizeDatabaseType(databaseType)) {
-			case "mysql":
-			case "mariadb":
-				return generateMysqlIndexInfoSql(inClause);
-			case "postgresql":
-				return generatePostgresqlIndexInfoSql(inClause);
-			case "oracle":
-				return generateOracleIndexInfoSql(inClause);
-			case "sqlserver":
-				return generateSqlServerIndexInfoSql(inClause);
-			case "h2":
-				return generateH2IndexInfoSql(inClause);
-			default:
+		return switch (normalizeDatabaseType(databaseType)) {
+			case "mysql", "mariadb" -> generateMysqlIndexInfoSql(inClause);
+			case "postgresql" -> generatePostgresqlIndexInfoSql(inClause);
+			case "oracle" -> generateOracleIndexInfoSql(inClause);
+			case "sqlserver" -> generateSqlServerIndexInfoSql(inClause);
+			case "h2" -> generateH2IndexInfoSql(inClause);
+			default -> {
 				log.warn("Unknown database type: {}, using MySQL SQL as fallback", databaseType);
-				return generateMysqlIndexInfoSql(inClause);
-		}
+				yield generateMysqlIndexInfoSql(inClause);
+			}
+		};
 	}
 
 	/**

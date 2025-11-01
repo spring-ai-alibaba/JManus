@@ -15,6 +15,7 @@
  */
 package com.alibaba.cloud.ai.manus.tool.bash;
 
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -185,7 +186,8 @@ public class MacShellExecutor implements ShellCommandExecutor {
 		StringBuilder errorBuilder = new StringBuilder();
 
 		// Read standard output
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"))) {
+		try (BufferedReader reader = new BufferedReader(
+				new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				log.info(line);
@@ -195,7 +197,7 @@ public class MacShellExecutor implements ShellCommandExecutor {
 
 		// Read error output
 		try (BufferedReader errorReader = new BufferedReader(
-				new InputStreamReader(process.getErrorStream(), "UTF-8"))) {
+				new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
 			String line;
 			while ((line = errorReader.readLine()) != null) {
 				log.error(line);
@@ -212,7 +214,7 @@ public class MacShellExecutor implements ShellCommandExecutor {
 		}
 		else {
 			return "Error (Exit Code " + exitCode + "): "
-					+ (errorBuilder.length() > 0 ? errorBuilder.toString() : outputBuilder.toString());
+					+ (!errorBuilder.isEmpty() ? errorBuilder.toString() : outputBuilder.toString());
 		}
 	}
 

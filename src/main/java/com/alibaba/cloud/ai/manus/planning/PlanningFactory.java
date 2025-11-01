@@ -325,7 +325,7 @@ public class PlanningFactory {
 	@ConditionalOnMissingBean
 	@ConditionalOnProperty(name = "spring.ai.mcp.client.enabled", havingValue = "false")
 	public ToolCallbackProvider emptyToolCallbackProvider() {
-		return () -> new HashMap<String, PlanningFactory.ToolCallBackContext>();
+		return HashMap::new;
 	}
 
 }

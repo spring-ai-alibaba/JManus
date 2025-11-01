@@ -54,7 +54,7 @@ public class InitController {
 
 		try {
 			// Based on LlmService mode: check if configured models exist
-			boolean hasConfiguredModels = modelService.getAllModels().size() > 0;
+			boolean hasConfiguredModels = !modelService.getAllModels().isEmpty();
 
 			// System initialization status based on configured models or environment
 			// variables

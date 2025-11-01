@@ -158,7 +158,7 @@ public class PythonExecute extends AbstractBaseTool<PythonExecute.PythonInput> {
 			}
 		}
 
-		return errorMsg.length() > 0 ? errorMsg.toString().trim() : "Unknown error occurred";
+		return !errorMsg.isEmpty() ? errorMsg.toString().trim() : "Unknown error occurred";
 	}
 
 	@Override

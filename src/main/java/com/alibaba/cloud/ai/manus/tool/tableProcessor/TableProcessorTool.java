@@ -258,8 +258,7 @@ public class TableProcessorTool extends AbstractBaseTool<TableProcessorTool.Tabl
 	public OpenAiApi.FunctionTool getToolDefinition() {
 		OpenAiApi.FunctionTool.Function function = new OpenAiApi.FunctionTool.Function(TOOL_DESCRIPTION, TOOL_NAME,
 				PARAMETERS);
-		OpenAiApi.FunctionTool functionTool = new OpenAiApi.FunctionTool(function);
-		return functionTool;
+		return new OpenAiApi.FunctionTool(function);
 	}
 
 	/**

@@ -82,6 +82,6 @@ public enum ModelType {
 	/**
 	 * Translation model: Used for cross-language translation
 	 */
-	TRANSLATION;
+	TRANSLATION
 
 }

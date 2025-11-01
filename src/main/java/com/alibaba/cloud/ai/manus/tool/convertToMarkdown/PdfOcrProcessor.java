@@ -179,13 +179,24 @@ public class PdfOcrProcessor {
 			// Step 5: Return success result
 			String result;
 			if (targetFilename != null && targetFilename.endsWith(".md")) {
-				result = String.format("Successfully converted PDF file to Markdown using OCR\n\n"
-						+ "**Output File**: %s\n\n" + "**Processing Method**: OCR with OpenAI Image Model\n\n",
-						ocrFilename);
+				result = String.format("""
+						Successfully converted PDF file to Markdown using OCR
+
+						**Output File**: %s
+
+						**Processing Method**: OCR with OpenAI Image Model
+
+						""", ocrFilename);
 			}
 			else {
-				result = String.format("Successfully processed PDF with OCR\n\n" + "**Output File**: %s\n\n"
-						+ "**Pages Processed**: %d of %d\n\n", ocrFilename, processedPages, pageImages.size());
+				result = String.format("""
+						Successfully processed PDF with OCR
+
+						**Output File**: %s
+
+						**Pages Processed**: %d of %d
+
+						""", ocrFilename, processedPages, pageImages.size());
 			}
 
 			// Add content preview if less than 1000 characters
@@ -502,8 +513,7 @@ public class PdfOcrProcessor {
 			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
 			Path outputFile = currentPlanDir.resolve(filename);
 
-			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
-					StandardOpenOption.TRUNCATE_EXISTING);
+			Files.writeString(outputFile, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
 			log.info("OCR result file saved: {}", outputFile);
 			return outputFile;

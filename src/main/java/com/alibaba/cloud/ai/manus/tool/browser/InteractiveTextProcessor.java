@@ -80,7 +80,7 @@ public class InteractiveTextProcessor {
 	public boolean clickElement(int index) {
 		return elementRegistry.performAction(index, element -> {
 			element.getLocator().click();
-			log.info("Clicked element at index {}: {}", index, element.toString());
+			log.info("Clicked element at index {}: {}", index, element);
 		});
 	}
 

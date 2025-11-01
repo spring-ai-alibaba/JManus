@@ -299,13 +299,11 @@ public class OpenAIRequest {
 				return (String) content;
 			}
 
-			if (content instanceof List<?>) {
-				List<?> contentArray = (List<?>) content;
+			if (content instanceof List<?> contentArray) {
 				StringBuilder textBuilder = new StringBuilder();
 
 				for (Object item : contentArray) {
-					if (item instanceof Map<?, ?>) {
-						Map<?, ?> contentItem = (Map<?, ?>) item;
+					if (item instanceof Map<?, ?> contentItem) {
 						String type = (String) contentItem.get("type");
 
 						if ("text".equals(type)) {

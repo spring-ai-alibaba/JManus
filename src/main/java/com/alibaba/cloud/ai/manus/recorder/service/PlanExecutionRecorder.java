@@ -31,7 +31,7 @@ public interface PlanExecutionRecorder {
 	 * information
 	 * @return Plan execution record ID
 	 */
-	public Long recordPlanExecutionStart(String currentPlanId, String title, String userRequset,
+	Long recordPlanExecutionStart(String currentPlanId, String title, String userRequset,
 			List<ExecutionStep> executionSteps, String parentPlanId, String rootPlanId, String toolcallId);
 
 	/**
@@ -110,7 +110,7 @@ public interface PlanExecutionRecorder {
 	 * Parameter class for recordThinkingAndAction method Based on ThinkActRecordEntity
 	 * structure
 	 */
-	public static class ThinkActRecordParams {
+	class ThinkActRecordParams {
 
 		private final String thinkActId;
 
@@ -165,7 +165,7 @@ public interface PlanExecutionRecorder {
 	 * Parameter class for action tool information Based on ActToolInfoEntity structure
 	 * but without JPA annotations
 	 */
-	public static class ActToolParam {
+	class ActToolParam {
 
 		private final String name;
 

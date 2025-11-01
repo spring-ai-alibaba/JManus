@@ -291,8 +291,8 @@ public class StreamingResponseHandler {
 		// Log only to streaming progress log file
 		String progressMessage = String.format(
 				"🔄 %s - Progress[%dms]: %d responses received, %d characters (%.1f chars/sec), %d tool calls. %s. Last 100 chars: '%s'",
-				contextName, elapsedTime, responseCount, textLength, charsPerSecond, toolCallCount,
-				toolCallDetails.toString(), preview);
+				contextName, elapsedTime, responseCount, textLength, charsPerSecond, toolCallCount, toolCallDetails,
+				preview);
 
 		streamingProgressLogger.info(progressMessage);
 	}

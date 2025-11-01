@@ -338,8 +338,7 @@ public class JsxGeneratorService implements ApplicationRunner, IJsxGeneratorServ
 				Object methodImpl = entry.getValue();
 
 				script.append("    ").append(methodName).append(": ");
-				if (methodImpl instanceof String) {
-					String methodStr = (String) methodImpl;
+				if (methodImpl instanceof String methodStr) {
 					// Remove 'function' keyword if present and add it properly
 					if (methodStr.startsWith("function")) {
 						methodStr = methodStr.substring(8).trim(); // Remove 'function'

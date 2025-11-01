@@ -243,8 +243,7 @@ public class PptGeneratorService implements IPptGeneratorService {
 						XSLFSlide slide = slides.get(i);
 
 						for (XSLFShape shape : slide.getShapes()) {
-							if (shape instanceof XSLFTextShape) {
-								XSLFTextShape textShape = (XSLFTextShape) shape;
+							if (shape instanceof XSLFTextShape textShape) {
 								String shapeName = textShape.getShapeName();
 
 								// Find matching content in template
@@ -440,11 +439,10 @@ public class PptGeneratorService implements IPptGeneratorService {
 			StringBuilder descriptionBuilder = new StringBuilder();
 
 			for (XSLFShape shape : firstSlide.getShapes()) {
-				if (shape instanceof XSLFTextShape) {
-					XSLFTextShape textShape = (XSLFTextShape) shape;
+				if (shape instanceof XSLFTextShape textShape) {
 					String text = textShape.getText();
 					if (text != null && !text.isEmpty()) {
-						if (descriptionBuilder.length() > 0) {
+						if (!descriptionBuilder.isEmpty()) {
 							// Add a space between text elements
 							descriptionBuilder.append(" ");
 						}
@@ -503,8 +501,7 @@ public class PptGeneratorService implements IPptGeneratorService {
 
 				ArrayNode contentArray = factory.arrayNode();
 				for (XSLFShape shape : slide.getShapes()) {
-					if (shape instanceof XSLFTextShape) {
-						XSLFTextShape textShape = (XSLFTextShape) shape;
+					if (shape instanceof XSLFTextShape textShape) {
 						String text = textShape.getText();
 						if (text != null && !text.isEmpty()) {
 							// Create an object node for each text shape with its unique

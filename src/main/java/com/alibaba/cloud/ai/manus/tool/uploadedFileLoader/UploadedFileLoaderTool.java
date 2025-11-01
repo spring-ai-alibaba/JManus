@@ -275,7 +275,7 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 			analysis.append("=".repeat(50)).append("\n\n");
 			analysis.append(String.format("📂 Analysis scope: %d files\n", files.size()));
 			analysis.append(String.format("📁 Storage location: %s\n", uploadsDir));
-			analysis.append(String.format("🕰️ Analysis time: %s\n\n", java.time.LocalDateTime.now().toString()));
+			analysis.append(String.format("🕰️ Analysis time: %s\n\n", java.time.LocalDateTime.now()));
 
 			// Group files by type for analysis
 			Map<String, List<Path>> filesByType = files.stream()
@@ -541,7 +541,7 @@ public class UploadedFileLoaderTool extends AbstractBaseTool<UploadedFileLoaderT
 					preview.append(line);
 				}
 
-				if (i < previewLines - 1 && preview.length() > 0) {
+				if (i < previewLines - 1 && !preview.isEmpty()) {
 					preview.append(" | ");
 				}
 			}

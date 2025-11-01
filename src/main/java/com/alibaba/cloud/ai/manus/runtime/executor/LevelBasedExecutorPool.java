@@ -134,8 +134,7 @@ public class LevelBasedExecutorPool {
 			int level = entry.getKey();
 			ExecutorService executor = entry.getValue();
 
-			if (executor instanceof ThreadPoolExecutor) {
-				ThreadPoolExecutor tpe = (ThreadPoolExecutor) executor;
+			if (executor instanceof ThreadPoolExecutor tpe) {
 				Map<String, Object> levelStats = new ConcurrentHashMap<>();
 				levelStats.put("corePoolSize", tpe.getCorePoolSize());
 				levelStats.put("maximumPoolSize", tpe.getMaximumPoolSize());

@@ -260,15 +260,11 @@ public class CoordinatorToolServiceImpl {
 		try {
 			// Try to get existing tool
 			Optional<CoordinatorToolVO> existingTool = getCoordinatorToolByPlanTemplateId(planTemplateId);
-			if (existingTool.isPresent()) {
-				return existingTool.get();
-			}
-
-			// Create default tool VO (not saved to database)
-			return createDefaultToolVO(planTemplateId);
+			return existingTool.orElseGet(() -> createDefaultToolVO(planTemplateId));
 		}
 		catch (Exception e) {
 			log.error("Error getting or creating coordinator tool: {}", e.getMessage(), e);
+			// Create default tool VO (not saved to database)
 			return createDefaultToolVO(planTemplateId);
 		}
 	}
@@ -397,7 +393,7 @@ public class CoordinatorToolServiceImpl {
 					String paramName = param.get("name").asText();
 					String paramType = param.get("type").asText();
 					String paramDescription = param.get("description").asText();
-					boolean required = param.has("required") ? param.get("required").asBoolean() : true;
+					boolean required = !param.has("required") || param.get("required").asBoolean();
 
 					SubplanParamDef paramDef = new SubplanParamDef(paramName, paramType, paramDescription, required);
 					parameters.add(paramDef);

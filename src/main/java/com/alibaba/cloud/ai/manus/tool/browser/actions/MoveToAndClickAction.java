@@ -51,18 +51,26 @@ public class MoveToAndClickAction extends BrowserAction {
 				String markerId = "__move_click_marker__";
 				if (isDebug) {
 					// 2. Inject a large red dot (only in debug mode)
-					result = page.evaluate(
-							"(args) => {\n" + "  const [x, y, id] = args;\n"
-									+ "  let dot = document.getElementById(id);\n" + "  if (!dot) {\n"
-									+ "    dot = document.createElement('div');\n" + "    dot.id = id;\n"
-									+ "    dot.style.position = 'absolute';\n" + "    dot.style.left = (x) + 'px';\n"
-									+ "    dot.style.top = (y) + 'px';\n" + "    dot.style.width = '24px';\n"
-									+ "    dot.style.height = '24px';\n" + "    dot.style.background = 'red';\n"
-									+ "    dot.style.borderRadius = '50%';\n" + "    dot.style.zIndex = 99999;\n"
-									+ "    dot.style.boxShadow = '0 0 8px 4px #f00';\n"
-									+ "    dot.style.pointerEvents = 'none';\n"
-									+ "    document.body.appendChild(dot);\n" + "  }\n" + "}",
-							new Object[] { x, y, markerId });
+					result = page.evaluate("""
+							(args) => {
+							  const [x, y, id] = args;
+							  let dot = document.getElementById(id);
+							  if (!dot) {
+							    dot = document.createElement('div');
+							    dot.id = id;
+							    dot.style.position = 'absolute';
+							    dot.style.left = (x) + 'px';
+							    dot.style.top = (y) + 'px';
+							    dot.style.width = '24px';
+							    dot.style.height = '24px';
+							    dot.style.background = 'red';
+							    dot.style.borderRadius = '50%';
+							    dot.style.zIndex = 99999;
+							    dot.style.boxShadow = '0 0 8px 4px #f00';
+							    dot.style.pointerEvents = 'none';
+							    document.body.appendChild(dot);
+							  }
+							}""", new Object[] { x, y, markerId });
 					if (result != null) {
 						log.info("Debug: Created red dot at position ({}, {}) , result <{}>", x, y, result);
 					}

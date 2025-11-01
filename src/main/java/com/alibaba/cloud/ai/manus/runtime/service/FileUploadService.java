@@ -160,7 +160,6 @@ public class FileUploadService {
 
 		// Copy file to target location
 		Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-		;
 
 		// Create file information
 		FileUploadResult.FileInfo fileInfo = new FileUploadResult.FileInfo();

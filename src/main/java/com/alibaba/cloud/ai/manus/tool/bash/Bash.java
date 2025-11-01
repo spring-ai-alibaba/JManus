@@ -156,7 +156,7 @@ public class Bash extends AbstractBaseTool<Bash.BashInput> {
 				            - Last Operation Result:
 				%s
 
-				            """, unifiedDirectoryManager.getWorkingDirectoryPath(),
+				""", unifiedDirectoryManager.getWorkingDirectoryPath(),
 				lastCommand.isEmpty() ? "No command executed yet" : lastCommand,
 				lastResult.isEmpty() ? "No result yet" : lastResult);
 	}

@@ -67,19 +67,19 @@ public interface ToolCallBiFunctionDef<I> extends BiFunction<I, ToolContext, Too
 	 * Determine whether the tool is selectable
 	 * @return Returns true if the tool is selectable, otherwise false
 	 */
-	public boolean isSelectable();
+	boolean isSelectable();
 
 	/**
 	 * Set the associated Agent instance
 	 * @param planId The plan ID to associate
 	 */
-	public void setCurrentPlanId(String planId);
+	void setCurrentPlanId(String planId);
 
 	/**
 	 * root plan id is the global parent of the whole execution plan id .
 	 * @param rootPlanId
 	 */
-	public void setRootPlanId(String rootPlanId);
+	void setRootPlanId(String rootPlanId);
 
 	/**
 	 * Get the current status string of the tool

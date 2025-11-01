@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.manus.tool.filesystem;
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import java.util.Comparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -255,8 +256,8 @@ public class UnifiedDirectoryManager {
 	 */
 	private void deleteDirectoryRecursively(Path directory) throws IOException {
 		Files.walk(directory)
-			.sorted((path1, path2) -> path2.compareTo(path1)) // Delete files before
-																// directories
+			.sorted(Comparator.reverseOrder()) // Delete files before
+												// directories
 			.forEach(path -> {
 				try {
 					Files.delete(path);

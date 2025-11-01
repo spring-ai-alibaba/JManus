@@ -83,8 +83,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	public static synchronized BrowserUseTool getInstance(ChromeDriverService chromeDriverService,
 			SmartContentSavingService innerStorageService, ObjectMapper objectMapper) {
-		BrowserUseTool instance = new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper);
-		return instance;
+		return new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper);
 	}
 
 	public ToolExecuteResult run(BrowserRequestVO requestVO) {
@@ -560,7 +559,8 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 		String elementsInfo = (String) state.get("interactive_elements");
 
 		// Build final status string
-		String retString = String.format("""
+
+		return String.format("""
 
 				- Current URL and page title:
 				%s
@@ -576,9 +576,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				- Any action results or errors:
 				%s
 				""", urlInfo, tabsInfo, elementsInfo != null ? elementsInfo : "", contentAbove, contentBelow,
-				state.containsKey("error") ? state.get("error") : "");
-
-		return retString;
+				state.getOrDefault("error", ""));
 	}
 
 	// cleanup method already exists, just ensure it conforms to interface specification

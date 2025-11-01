@@ -36,7 +36,7 @@ public class ExecutionStep {
 	 * Default constructor that generates a unique step ID
 	 */
 	public ExecutionStep() {
-		this.stepId = "step-" + UUID.randomUUID().toString();
+		this.stepId = "step-" + UUID.randomUUID();
 	}
 
 	public ExecutionStep(String stepId) {

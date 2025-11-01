@@ -123,7 +123,7 @@ public interface PlanInterface {
 	 * Get the user request.
 	 * @return The user request
 	 */
-	public String getUserRequest();
+	String getUserRequest();
 
 	/**
 	 * Set the user request.
@@ -162,9 +162,9 @@ public interface PlanInterface {
 	 */
 	String getPlanExecutionStateStringFormat(boolean onlyCompletedAndFirstInProgress);
 
-	public void setPlanTemplateId(String planTemplateId);
+	void setPlanTemplateId(String planTemplateId);
 
-	public String getPlanTemplateId();
+	String getPlanTemplateId();
 
 	/**
 	 * Whether it's direct feedback mode. When true, skip complex plan execution and use
@@ -189,6 +189,6 @@ public interface PlanInterface {
 		}
 	}
 
-	public String getResult();
+	String getResult();
 
 }

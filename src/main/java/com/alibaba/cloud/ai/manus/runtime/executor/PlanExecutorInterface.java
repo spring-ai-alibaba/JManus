@@ -30,6 +30,6 @@ public interface PlanExecutorInterface {
 	 * @param context Execution context containing user request and execution process
 	 * information
 	 */
-	public CompletableFuture<PlanExecutionResult> executeAllStepsAsync(ExecutionContext context);
+	CompletableFuture<PlanExecutionResult> executeAllStepsAsync(ExecutionContext context);
 
 }

@@ -208,22 +208,16 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 
 				// Update fields if they have changed
 				agentRecord.setAgentName(extractedAgentName);
-				// Set agent request if extracted
-				if (agentRequest != null) {
-					agentRecord.setAgentRequest(agentRequest);
-				}
-
 			}
 			else {
 				// 2. Create new record
 				agentRecord = new AgentExecutionRecordEntity(step.getStepId(), extractedAgentName,
 						"No description available");
 				logger.debug("Created new AgentExecutionRecordEntity for step ID: {}", step.getStepId());
-
-				// Set agent request for new records
-				if (agentRequest != null) {
-					agentRecord.setAgentRequest(agentRequest);
-				}
+			}
+			// Set agent request for new records
+			if (agentRequest != null) {
+				agentRecord.setAgentRequest(agentRequest);
 			}
 
 			// Set additional fields
@@ -256,20 +250,15 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 			return ExecutionStatusEntity.IDLE;
 		}
 
-		switch (agentState) {
-			case NOT_STARTED:
-				return ExecutionStatusEntity.IDLE;
-			case IN_PROGRESS:
-				return ExecutionStatusEntity.RUNNING;
-			case COMPLETED:
-				return ExecutionStatusEntity.FINISHED;
-			case BLOCKED:
-			case FAILED:
-				return ExecutionStatusEntity.FINISHED; // Both blocked and failed are
-														// considered finished states
-			default:
-				throw new IllegalArgumentException("Invalid agent state: " + agentState);
-		}
+		return switch (agentState) {
+			case NOT_STARTED -> ExecutionStatusEntity.IDLE;
+			case IN_PROGRESS -> ExecutionStatusEntity.RUNNING;
+			case COMPLETED -> ExecutionStatusEntity.FINISHED;
+			case BLOCKED, FAILED -> ExecutionStatusEntity.FINISHED; // Both blocked and
+																	// failed are
+			// considered finished states
+			default -> throw new IllegalArgumentException("Invalid agent state: " + agentState);
+		};
 	}
 
 	/**
@@ -731,16 +720,12 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 			return ExecutionStatus.IDLE;
 		}
 
-		switch (statusEntity) {
-			case IDLE:
-				return ExecutionStatus.IDLE;
-			case RUNNING:
-				return ExecutionStatus.RUNNING;
-			case FINISHED:
-				return ExecutionStatus.FINISHED;
-			default:
-				return ExecutionStatus.IDLE;
-		}
+		return switch (statusEntity) {
+			case IDLE -> ExecutionStatus.IDLE;
+			case RUNNING -> ExecutionStatus.RUNNING;
+			case FINISHED -> ExecutionStatus.FINISHED;
+			default -> ExecutionStatus.IDLE;
+		};
 	}
 
 	/**

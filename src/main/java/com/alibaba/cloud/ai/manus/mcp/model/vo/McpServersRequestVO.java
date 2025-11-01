@@ -92,11 +92,7 @@ public class McpServersRequestVO {
 			}
 
 			// Check if has at least one server configuration
-			if (mcpServersNode.size() == 0) {
-				return false;
-			}
-
-			return true;
+			return !mcpServersNode.isEmpty();
 		}
 		catch (Exception e) {
 			return false;

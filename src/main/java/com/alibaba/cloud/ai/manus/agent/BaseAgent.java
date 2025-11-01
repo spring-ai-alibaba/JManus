@@ -16,7 +16,6 @@
 package com.alibaba.cloud.ai.manus.agent;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -239,7 +238,7 @@ public abstract class BaseAgent {
 		this.maxSteps = manusProperties.getMaxSteps();
 		this.step = step;
 		this.planIdDispatcher = planIdDispatcher;
-		this.initSettingData = Collections.unmodifiableMap(new HashMap<>(initialAgentSetting));
+		this.initSettingData = Map.copyOf(initialAgentSetting);
 	}
 
 	public String run() {
@@ -343,8 +342,7 @@ public abstract class BaseAgent {
 		List<Message> memoryEntries = llmService.getAgentMemory(manusProperties.getMaxMemory()).get(getCurrentPlanId());
 		int zeroToolCallCount = 0;
 		for (Message msg : memoryEntries) {
-			if (msg instanceof AssistantMessage) {
-				AssistantMessage assistantMsg = (AssistantMessage) msg;
+			if (msg instanceof AssistantMessage assistantMsg) {
 				if (assistantMsg.getToolCalls() == null || assistantMsg.getToolCalls().isEmpty()) {
 					zeroToolCallCount++;
 				}
@@ -431,7 +429,7 @@ public abstract class BaseAgent {
 	}
 
 	public void setEnvData(Map<String, Object> envData) {
-		this.envData = Collections.unmodifiableMap(new HashMap<>(envData));
+		this.envData = Map.copyOf(envData);
 	}
 
 	/**
