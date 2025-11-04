@@ -15,12 +15,11 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
+import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Page.WaitForLoadStateOptions;
 import com.microsoft.playwright.options.LoadState;
-
-import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
 public class NavigateAction extends BrowserAction {
 
@@ -30,6 +29,7 @@ public class NavigateAction extends BrowserAction {
 
 	@Override
 	public ToolExecuteResult execute(BrowserRequestVO request) throws Exception {
+		
 		String url = request.getUrl();
 		Integer timeoutMs = getBrowserTimeoutMs();
 

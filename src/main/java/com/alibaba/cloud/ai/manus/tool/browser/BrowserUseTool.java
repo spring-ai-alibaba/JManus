@@ -15,17 +15,23 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
-
 import com.alibaba.cloud.ai.manus.tool.browser.actions.BrowserRequestVO;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.ClickByElementAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.CloseTabAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.ExecuteJsAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.GetElementPositionByNameAction;
+import com.alibaba.cloud.ai.manus.tool.browser.actions.GetMarkdownAction;
 //import com.alibaba.cloud.ai.manus.tool.browser.actions.GetHtmlAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.GetTextAction;
-import com.alibaba.cloud.ai.manus.tool.browser.actions.GetMarkdownAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.InputTextAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.KeyEnterAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.MoveToAndClickAction;
@@ -39,12 +45,6 @@ import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Page;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
@@ -230,9 +230,11 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 			List<Map<String, Object>> tabs = getTabsInfo(page);
 			state.put("tabs", tabs);
 
-			String interactiveElements = chromeDriverService.getDriver(currentPlanId)
-				.getInteractiveElementRegistry()
-				.generateElementsInfoText(page);
+			// Generate ARIA snapshot using the new AriaSnapshot utility
+			AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions()
+				.setSelector("body")
+				.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
+			String interactiveElements = AriaSnapshot.ariaSnapshot(page, snapshotOptions);
 			state.put("interactive_elements", interactiveElements);
 
 			return state;
@@ -311,7 +313,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                },
 				                "index": {
 				                    "type": "integer",
-				                    "description": "Element index to click"
+				                    "description": "Element index to click. This corresponds to the idx value (e.g., idx=39) shown in the ARIA snapshot for each interactive element."
 				                }
 				            },
 				            "required": ["action", "index"],
@@ -326,7 +328,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                },
 				                "index": {
 				                    "type": "integer",
-				                    "description": "Element index to input text"
+				                    "description": "Element index to input text. This corresponds to the idx value (e.g., idx=39) shown in the ARIA snapshot for each interactive element."
 				                },
 				                "text": {
 				                    "type": "string",
@@ -345,7 +347,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                },
 				                "index": {
 				                    "type": "integer",
-				                    "description": "Element index to press enter"
+				                    "description": "Element index to press enter. This corresponds to the idx value (e.g., idx=39) shown in the ARIA snapshot for each interactive element."
 				                }
 				            },
 				            "required": ["action", "index"],

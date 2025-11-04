@@ -15,16 +15,16 @@
  */
 package com.alibaba.cloud.ai.manus.mcp.model.vo;
 
-import com.alibaba.cloud.ai.manus.mcp.service.McpStateHolderService;
+import java.util.Map;
+
+import org.springframework.ai.tool.ToolCallback;
+
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.ISmartContentSavingService;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.ai.tool.ToolCallback;
-
-import java.util.Map;
 
 public class McpTool extends AbstractBaseTool<Map<String, Object>> {
 
@@ -34,18 +34,15 @@ public class McpTool extends AbstractBaseTool<Map<String, Object>> {
 
 	private String serviceNameString;
 
-	private McpStateHolderService mcpStateHolderService;
-
 	private ISmartContentSavingService smartContentSavingService;
 
 	public McpTool(ToolCallback toolCallback, String serviceNameString, String planId,
-			McpStateHolderService mcpStateHolderService, ISmartContentSavingService smartContentSavingService,
+			 ISmartContentSavingService smartContentSavingService,
 			ObjectMapper objectMapper) {
 		this.toolCallback = toolCallback;
 		this.objectMapper = objectMapper;
 		this.serviceNameString = serviceNameString;
 		this.currentPlanId = planId;
-		this.mcpStateHolderService = mcpStateHolderService;
 		this.smartContentSavingService = smartContentSavingService;
 	}
 
@@ -72,10 +69,6 @@ public class McpTool extends AbstractBaseTool<Map<String, Object>> {
 
 	@Override
 	public String getCurrentToolStateString() {
-		McpState mcpState = mcpStateHolderService.getMcpState(currentPlanId);
-		if (mcpState != null) {
-			return mcpState.getState();
-		}
 		return "";
 	}
 
@@ -98,20 +91,13 @@ public class McpTool extends AbstractBaseTool<Map<String, Object>> {
 		SmartContentSavingService.SmartProcessResult smartProcessResult = smartContentSavingService
 			.processContent(currentPlanId, result, getName());
 		result = smartProcessResult.getSummary();
-		// Here we can store the result to McpStateHolderService
-		McpState mcpState = mcpStateHolderService.getMcpState(currentPlanId);
-		if (mcpState == null) {
-			mcpState = new McpState();
-			mcpStateHolderService.setMcpState(currentPlanId, mcpState);
-		}
-		mcpState.setState(result);
 
 		return new ToolExecuteResult(result);
 	}
 
 	@Override
 	public void cleanup(String planId) {
-		mcpStateHolderService.removeMcpState(planId);
+		
 	}
 
 	@Override
