@@ -28,38 +28,45 @@
     />
     
     <div class="input-container">
-      <textarea
-        v-model="currentInput"
-        ref="inputRef"
-        class="chat-input"
-        :placeholder="currentPlaceholder"
-        :disabled="isDisabled"
-        @keydown="handleKeydown"
-        @input="adjustInputHeight"
-      ></textarea>
-      <button class="plan-mode-btn" :title="$t('input.planMode')" @click="handlePlanModeClick">
-        <Icon icon="carbon:document" />
-        {{ $t('input.planMode') }}
-      </button>
-      <button
-        v-if="!isTaskRunning"
-        class="send-button"
-        :disabled="!currentInput.trim() || isDisabled"
-        @click="handleSend"
-        :title="$t('input.send')"
-      >
-        <Icon icon="carbon:send-alt" />
-        {{ $t('input.send') }}
-      </button>
-      <button
-        v-else
-        class="send-button stop-button"
-        @click="handleStop"
-        :title="$t('input.stop')"
-      >
-        <Icon icon="carbon:stop-filled" />
-        {{ $t('input.stop') }}
-      </button>
+      <!-- First line: User input form -->
+      <div class="input-row-first">
+        <textarea
+          v-model="currentInput"
+          ref="inputRef"
+          class="chat-input"
+          :placeholder="currentPlaceholder"
+          :disabled="isDisabled"
+          @keydown="handleKeydown"
+          @input="adjustInputHeight"
+        ></textarea>
+      </div>
+      
+      <!-- Second line: Func-Agent mode and send button -->
+      <div class="input-row-second">
+        <button class="plan-mode-btn" :title="$t('input.planMode')" @click="handlePlanModeClick">
+          <Icon icon="carbon:document" />
+          {{ $t('input.planMode') }}
+        </button>
+        <button
+          v-if="!isTaskRunning"
+          class="send-button"
+          :disabled="!currentInput.trim() || isDisabled"
+          @click="handleSend"
+          :title="$t('input.send')"
+        >
+          <Icon icon="carbon:send-alt" />
+          {{ $t('input.send') }}
+        </button>
+        <button
+          v-else
+          class="send-button stop-button"
+          @click="handleStop"
+          :title="$t('input.stop')"
+        >
+          <Icon icon="carbon:stop-filled" />
+          {{ $t('input.stop') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -315,7 +322,7 @@ onUnmounted(() => {
 
 .input-container {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -325,6 +332,19 @@ onUnmounted(() => {
   &:focus-within {
     border-color: #667eea;
   }
+}
+
+.input-row-first {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-row-second {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 
