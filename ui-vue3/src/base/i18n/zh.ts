@@ -735,6 +735,7 @@ const words: I18nType = {
       '您已将此计划-行动发布为内部方法。您可以在代理配置的添加工具部分找到此工具的方法并添加和使用它。',
     internalMethodCall: '内部方法调用',
     toolName: '工具名称',
+    publishedTool: '已发布工具',
     serviceGroup: '服务组',
     internalCallUsage: '在代理配置中添加此工具后，您可以直接在代理中调用此方法',
     internalCallExample: '在代理配置的"添加工具"部分中，搜索并添加此工具，然后在代理中直接调用它',

@@ -77,19 +77,25 @@ public class McpServerConfig {
 	}
 
 	public List<String> getArgs() {
+		if (args == null) {
+			this.args = new java.util.ArrayList<>();
+		}
 		return args;
 	}
 
 	public void setArgs(List<String> args) {
-		this.args = args;
+		this.args = args != null ? args : new java.util.ArrayList<>();
 	}
 
 	public Map<String, String> getEnv() {
+		if (env == null) {
+			this.env = new HashMap<>();
+		}
 		return env;
 	}
 
 	public void setEnv(Map<String, String> env) {
-		this.env = env;
+		this.env = env != null ? env : new HashMap<>();
 	}
 
 	public McpConfigStatus getStatus() {

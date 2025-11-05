@@ -783,6 +783,7 @@ const words: I18nType = {
       "You have published this Func-Agent as an internal method. You can find this tool's method in the agent configuration's add tools section and add and use it.",
     internalMethodCall: 'Internal Method Call',
     toolName: 'Tool Name',
+    publishedTool: 'Published Tool',
     serviceGroup: 'Service Group',
     internalCallUsage:
       'After adding this tool in agent configuration, you can directly call this method in the agent',

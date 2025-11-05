@@ -16,7 +16,6 @@
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
-import com.alibaba.cloud.ai.manus.tool.browser.InteractiveElement;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.microsoft.playwright.Locator;
 
@@ -32,20 +31,21 @@ public class KeyEnterAction extends BrowserAction {
 		if (index == null) {
 			return new ToolExecuteResult("Index is required for 'key_enter' action");
 		}
-		InteractiveElement enterElement = getInteractiveElement(index);
-		if (enterElement == null) {
-			return new ToolExecuteResult("Element with index " + index + " not found");
+
+		Locator locator = getLocatorByIdx(index);
+		if (locator == null) {
+			return new ToolExecuteResult("Element with index " + index + " not found in ARIA snapshot");
 		}
 
 		// Execute the enter operation with timeout handling
 		try {
 			// Check if element is visible and enabled
-			if (!enterElement.getLocator().isVisible()) {
+			if (!locator.isVisible()) {
 				return new ToolExecuteResult("Element at index " + index + " is not visible");
 			}
 
 			// Press Enter with explicit timeout
-			enterElement.getLocator().press("Enter", new Locator.PressOptions().setTimeout(getBrowserTimeoutMs()));
+			locator.press("Enter", new Locator.PressOptions().setTimeout(getBrowserTimeoutMs()));
 
 			// Add small delay to ensure the action is processed
 			Thread.sleep(500);

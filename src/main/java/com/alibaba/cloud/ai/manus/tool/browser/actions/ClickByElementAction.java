@@ -15,10 +15,10 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
-import com.microsoft.playwright.Page;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
-import com.alibaba.cloud.ai.manus.tool.browser.InteractiveElement;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 
 public class ClickByElementAction extends BrowserAction {
 
@@ -34,53 +34,60 @@ public class ClickByElementAction extends BrowserAction {
 		if (index == null) {
 			return new ToolExecuteResult("Index is required for 'click' action");
 		}
-		InteractiveElement element = getInteractiveElement(index);
-		if (element == null) {
-			return new ToolExecuteResult("Element with index " + index + " not found");
+
+		// Check if element exists
+		if (!elementExistsByIdx(index)) {
+			return new ToolExecuteResult("Element with index " + index + " not found in ARIA snapshot");
 		}
-		log.info("Clicking element: {}", element.getText());
+
+		// Get element name for logging
+		String elementName = getElementNameByIdx(index);
+
+		log.info("Clicking element with idx {}: {}", index, elementName);
 		Page page = getCurrentPage();
+		Locator locator = getLocatorByIdx(index);
+		if (locator == null) {
+			return new ToolExecuteResult("Failed to create locator for element with index " + index);
+		}
+
 		String clickResultMessage = clickAndSwitchToNewTabIfOpened(page, () -> {
 			try {
-				log.info("Executing click action on: {}", element.getText());
+				log.info("Executing click action on element with idx {}: {}", index, elementName);
+
+				// Use a reasonable timeout for element operations (max 10 seconds)
+				int elementTimeout = getElementTimeoutMs();
+				log.debug("Using element timeout: {}ms for click operations", elementTimeout);
 
 				// Wait for element to be visible and enabled before clicking
-				element.getLocator()
-					.waitFor(new com.microsoft.playwright.Locator.WaitForOptions().setTimeout(getBrowserTimeoutMs()));
+				locator.waitFor(new Locator.WaitForOptions().setTimeout(elementTimeout));
 
 				// Check if element is visible and enabled
-				if (!element.getLocator().isVisible()) {
+				if (!locator.isVisible()) {
 					throw new RuntimeException("Element is not visible");
 				}
 
 				// Click with explicit timeout
-				element.getLocator()
-					.click(new com.microsoft.playwright.Locator.ClickOptions().setTimeout(getBrowserTimeoutMs()));
+				locator.click(new Locator.ClickOptions().setTimeout(elementTimeout));
 
 				// Add small delay to ensure the action is processed
 				Thread.sleep(500);
 
-				log.info("Click action completed for element: {}", element.getText());
+				log.info("Click action completed for element with idx {}: {}", index, elementName);
 			}
 			catch (com.microsoft.playwright.TimeoutError e) {
-				log.error("Timeout waiting for element {} to be ready for click: {}", element.getText(),
-						e.getMessage());
+				log.error("Timeout waiting for element with idx {} to be ready for click: {}", index, e.getMessage());
 				throw new RuntimeException("Timeout waiting for element to be ready for click: " + e.getMessage(), e);
 			}
 			catch (Exception e) {
-				log.error("Error during click on element {}: {}", element.getText(), e.getMessage());
-				// It's important to rethrow or handle appropriately.
-				// The clickAndSwitchToNewTabIfOpened method expects a Runnable that might
-				// throw.
-				// If it's a checked exception not declared by Runnable.run(), wrap it.
+				log.error("Error during click on element with idx {}: {}", index, e.getMessage());
 				if (e instanceof RuntimeException) {
 					throw (RuntimeException) e;
 				}
-				throw new RuntimeException("Error clicking element: " + element.getText(), e);
+				throw new RuntimeException("Error clicking element: " + e.getMessage(), e);
 			}
 		});
-		return new ToolExecuteResult("Successfully clicked element at index " + index + " element text: "
-				+ element.getText() + " " + clickResultMessage);
+		return new ToolExecuteResult("Successfully clicked element at index " + index + " element name: " + elementName
+				+ " " + clickResultMessage);
 	}
 
 }

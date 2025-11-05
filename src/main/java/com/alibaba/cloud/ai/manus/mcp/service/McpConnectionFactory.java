@@ -79,12 +79,8 @@ public class McpConnectionFactory {
 		// Parse server configuration
 		McpServerConfig serverConfig = parseServerConfig(mcpConfigEntity.getConnectionConfig(), serverName);
 
-		// Build transport
-		McpClientTransport transport = transportBuilder.buildTransport(mcpConfigEntity.getConnectionType(),
-				serverConfig, serverName);
-
-		// Configure MCP transport
-		return configureMcpTransport(serverName, transport);
+		// Configure MCP transport with retry mechanism
+		return configureMcpTransportWithRetry(serverName, mcpConfigEntity.getConnectionType(), serverConfig);
 	}
 
 	/**
@@ -105,29 +101,37 @@ public class McpConnectionFactory {
 	}
 
 	/**
-	 * Configure MCP transport
+	 * Configure MCP transport with retry mechanism that creates fresh transport for each
+	 * attempt
 	 * @param mcpServerName MCP server name
-	 * @param transport MCP client transport
+	 * @param connectionType Connection type
+	 * @param serverConfig Server configuration
 	 * @return MCP service entity
 	 * @throws IOException Thrown when configuration fails
 	 */
-	private McpServiceEntity configureMcpTransport(String mcpServerName, McpClientTransport transport)
+	private McpServiceEntity configureMcpTransportWithRetry(String mcpServerName,
+			com.alibaba.cloud.ai.manus.mcp.model.po.McpConfigType connectionType, McpServerConfig serverConfig)
 			throws IOException {
-		if (transport == null) {
-			return null;
-		}
 
-		McpAsyncClient mcpAsyncClient = McpClient.async(transport)
-			.requestTimeout(mcpProperties.getTimeout())
-			.clientInfo(new McpSchema.Implementation(mcpServerName, "1.0.0"))
-			.build();
-
-		// Retry mechanism
 		int maxRetries = mcpProperties.getMaxRetries();
 		Exception lastException = null;
 
 		for (int attempt = 1; attempt <= maxRetries; attempt++) {
+			McpAsyncClient mcpAsyncClient = null;
+			McpClientTransport transport = null;
 			try {
+				// Create fresh transport for each attempt to avoid unicast sink reuse
+				transport = transportBuilder.buildTransport(connectionType, serverConfig, mcpServerName);
+				if (transport == null) {
+					throw new IOException("Failed to build transport for server: " + mcpServerName);
+				}
+
+				// Create new client with fresh transport
+				mcpAsyncClient = McpClient.async(transport)
+					.requestTimeout(mcpProperties.getTimeout())
+					.clientInfo(new McpSchema.Implementation(mcpServerName, "1.0.0"))
+					.build();
+
 				logger.debug("Attempting to initialize MCP transport for: {} (attempt {}/{})", mcpServerName, attempt,
 						maxRetries);
 
@@ -145,8 +149,23 @@ public class McpConnectionFactory {
 			}
 			catch (Exception e) {
 				lastException = e;
+
+				// Check if this is a DNS-related error that shouldn't be retried
+				if (isDnsRelatedError(e)) {
+					logger.error("DNS resolution failed for MCP server '{}'. Skipping retries. Error: {}",
+							mcpServerName, e.getMessage());
+					cleanupClient(mcpAsyncClient, mcpServerName);
+					cleanupTransport(transport, mcpServerName);
+					throw new IOException(
+							"DNS resolution failed for MCP server '" + mcpServerName + "': " + e.getMessage(), e);
+				}
+
 				logger.warn("Failed to initialize MCP transport for {} on attempt {}/{}: {}", mcpServerName, attempt,
 						maxRetries, e.getMessage());
+
+				// Clean up the failed client and transport
+				cleanupClient(mcpAsyncClient, mcpServerName);
+				cleanupTransport(transport, mcpServerName);
 
 				if (attempt < maxRetries) {
 					try {
@@ -165,6 +184,60 @@ public class McpConnectionFactory {
 		logger.error("Failed to initialize MCP transport for {} after {} attempts", mcpServerName, maxRetries,
 				lastException);
 		return null;
+	}
+
+	/**
+	 * Check if the exception is DNS-related and shouldn't be retried
+	 * @param e Exception to check
+	 * @return true if DNS-related, false otherwise
+	 */
+	private boolean isDnsRelatedError(Exception e) {
+		if (e == null)
+			return false;
+
+		String message = e.getMessage();
+		if (message == null)
+			return false;
+
+		return message.contains("Failed to resolve") || message.contains("DnsNameResolverTimeoutException")
+				|| message.contains("SearchDomainUnknownHostException") || message.contains("UnknownHostException")
+				|| message.toLowerCase().contains("dns");
+	}
+
+	/**
+	 * Clean up MCP client resources
+	 * @param mcpAsyncClient Client to clean up
+	 * @param mcpServerName Server name for logging
+	 */
+	private void cleanupClient(McpAsyncClient mcpAsyncClient, String mcpServerName) {
+		if (mcpAsyncClient != null) {
+			try {
+				logger.debug("Cleaning up MCP client for server: {}", mcpServerName);
+				mcpAsyncClient.close();
+			}
+			catch (Exception closeEx) {
+				logger.debug("Failed to close MCP client during cleanup for server: {}: {}", mcpServerName,
+						closeEx.getMessage());
+			}
+		}
+	}
+
+	/**
+	 * Clean up MCP transport resources
+	 * @param transport Transport to clean up
+	 * @param mcpServerName Server name for logging
+	 */
+	private void cleanupTransport(McpClientTransport transport, String mcpServerName) {
+		if (transport != null) {
+			try {
+				logger.debug("Cleaning up MCP transport for server: {}", mcpServerName);
+				transport.close();
+			}
+			catch (Exception closeEx) {
+				logger.debug("Failed to close MCP transport during cleanup for server: {}: {}", mcpServerName,
+						closeEx.getMessage());
+			}
+		}
 	}
 
 }
