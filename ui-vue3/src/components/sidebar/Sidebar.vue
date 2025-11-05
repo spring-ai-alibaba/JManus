@@ -645,7 +645,7 @@ const loadToolInfo = async (planTemplateId: string | null) => {
   }
 
   try {
-    const toolData = await CoordinatorToolApiService.getCoordinatorToolsByTemplate(planTemplateId)
+    const toolData = await CoordinatorToolApiService.getCoordinatorToolByTemplate(planTemplateId)
     if (toolData) {
       currentToolInfo.value = {
         ...toolData,
@@ -715,7 +715,7 @@ const getTaskPreviewText = (template: PlanTemplate): string => {
 const loadAllTemplateToolInfo = async () => {
   for (const template of sidebarStore.planTemplateList) {
     try {
-      const toolData = await CoordinatorToolApiService.getCoordinatorToolsByTemplate(template.id)
+      const toolData = await CoordinatorToolApiService.getCoordinatorToolByTemplate(template.id)
       if (toolData?.toolName) {
         templateToolInfo.value[template.id] = toolData
       }

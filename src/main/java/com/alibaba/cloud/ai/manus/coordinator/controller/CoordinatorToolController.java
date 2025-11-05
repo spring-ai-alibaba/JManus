@@ -15,22 +15,32 @@
 */
 package com.alibaba.cloud.ai.manus.coordinator.controller;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.alibaba.cloud.ai.manus.coordinator.entity.vo.CoordinatorToolVO;
 import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
 import com.alibaba.cloud.ai.manus.coordinator.service.CoordinatorToolServiceImpl;
 import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
 import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/coordinator-tools")
@@ -89,36 +99,28 @@ public class CoordinatorToolController {
 	}
 
 	/**
-	 * Get coordinator tool by plan template ID (only if exists)
+	 * Get coordinator tool by plan template ID
+	 * @param planTemplateId Plan template ID
+	 * @return Coordinator tool if exists, null in response body if not found (200 OK)
 	 */
-	@GetMapping("/get-by-template/{planTemplateId}")
-	public ResponseEntity<CoordinatorToolVO> getCoordinatorToolsByTemplate(
+	@GetMapping("/by-template/{planTemplateId}")
+	public ResponseEntity<CoordinatorToolVO> getCoordinatorToolByTemplate(
 			@PathVariable("planTemplateId") String planTemplateId) {
 		try {
 			log.info("Getting coordinator tool for plan template: {}", planTemplateId);
-			return coordinatorToolService.getCoordinatorToolByPlanTemplateId(planTemplateId)
-				.map(tool -> ResponseEntity.ok(tool))
-				.orElse(ResponseEntity.notFound().build());
+			Optional<CoordinatorToolVO> toolOpt = coordinatorToolService
+					.getCoordinatorToolByPlanTemplateId(planTemplateId);
+			if (toolOpt.isPresent()) {
+				return ResponseEntity.ok(toolOpt.get());
+			}
+			else {
+				// Return 200 OK with null JSON response instead of 404
+				log.debug("Coordinator tool not found for plan template: {}", planTemplateId);
+				return ResponseEntity.ok().body((CoordinatorToolVO) null);
+			}
 		}
 		catch (Exception e) {
 			log.error("Error getting coordinator tool: {}", e.getMessage(), e);
-			return ResponseEntity.status(500).build();
-		}
-	}
-
-	/**
-	 * Get or create coordinator tool by plan template ID
-	 */
-	@GetMapping("/get-or-new-by-template/{planTemplateId}")
-	public ResponseEntity<CoordinatorToolVO> getOrNewCoordinatorToolsByTemplate(
-			@PathVariable("planTemplateId") String planTemplateId) {
-		try {
-			log.info("Getting or creating coordinator tool for plan template: {}", planTemplateId);
-			CoordinatorToolVO tool = coordinatorToolService.getOrCreateCoordinatorToolByPlanTemplateId(planTemplateId);
-			return ResponseEntity.ok(tool);
-		}
-		catch (Exception e) {
-			log.error("Error getting or creating coordinator tool: {}", e.getMessage(), e);
 			return ResponseEntity.status(500).build();
 		}
 	}

@@ -47,8 +47,8 @@ export class CoordinatorToolApiService {
       const response = await fetch(`${this.BASE_URL}/config`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       })
 
       if (!response.ok) {
@@ -57,12 +57,12 @@ export class CoordinatorToolApiService {
 
       return await response.json()
     } catch (error: any) {
-          console.error('Failed to get CoordinatorTool configuration:', error)
-          // Return default configuration
+      console.error('Failed to get CoordinatorTool configuration:', error)
+      // Return default configuration
       return {
         enabled: true,
         success: false,
-        message: error.message
+        message: error.message,
       }
     }
   }
@@ -75,8 +75,8 @@ export class CoordinatorToolApiService {
       const response = await fetch(`${this.BASE_URL}/endpoints`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       })
 
       if (!response.ok) {
@@ -91,36 +91,69 @@ export class CoordinatorToolApiService {
   }
 
   /**
-   * Get coordinator tool by plan template ID (only get existing ones)
+   * Get coordinator tool by plan template ID
+   * @param planTemplateId Plan template ID
+   * @returns Coordinator tool if exists, null if not found
    */
-  public static async getCoordinatorToolsByTemplate(planTemplateId: string): Promise<CoordinatorToolVO | null> {
-        console.log('[CoordinatorToolApiService] Starting to get coordinator tool, planTemplateId:', planTemplateId)
-    console.log('[CoordinatorToolApiService] Request URL:', `${this.BASE_URL}/get-get-or-new-by-template/${planTemplateId}`)
-    
+  public static async getCoordinatorToolByTemplate(
+    planTemplateId: string
+  ): Promise<CoordinatorToolVO | null> {
+    console.log(
+      '[CoordinatorToolApiService] Getting coordinator tool, planTemplateId:',
+      planTemplateId
+    )
+    console.log(
+      '[CoordinatorToolApiService] Request URL:',
+      `${this.BASE_URL}/by-template/${planTemplateId}`
+    )
+
     try {
-      const response = await fetch(`${this.BASE_URL}/get-or-new-by-template/${planTemplateId}`, {
+      const response = await fetch(`${this.BASE_URL}/by-template/${planTemplateId}`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       })
 
       console.log('[CoordinatorToolApiService] Response status:', response.status)
-      console.log('[CoordinatorToolApiService] Response status text:', response.statusText)
-
-      if (response.status === 404) {
-        console.log('[CoordinatorToolApiService] 404')
-        return null
-      }
 
       if (!response.ok) {
         const errorText = await response.text()
         console.error('[CoordinatorToolApiService] Response error content:', errorText)
-        throw new Error(`Failed to get coordinator tools: ${response.status} - ${errorText}`)
+        throw new Error(`Failed to get coordinator tool: ${response.status} - ${errorText}`)
       }
 
-      const result = await response.json()
-      console.log('[CoordinatorToolApiService] Successfully got coordinator tool, result:', result)
+      // Get response text first to check if empty
+      const text = await response.text()
+
+      // If response body is empty, treat as not found
+      if (!text || text.trim() === '') {
+        console.log(
+          '[CoordinatorToolApiService] Tool not found for planTemplateId (empty response):',
+          planTemplateId
+        )
+        return null
+      }
+
+      // Parse JSON response
+      let result: CoordinatorToolVO | null
+      try {
+        result = JSON.parse(text)
+      } catch (parseError) {
+        console.error('[CoordinatorToolApiService] Failed to parse JSON response:', parseError)
+        return null
+      }
+
+      // If result is null or empty object, treat as not found
+      if (result === null || (typeof result === 'object' && Object.keys(result).length === 0)) {
+        console.log(
+          '[CoordinatorToolApiService] Tool not found for planTemplateId:',
+          planTemplateId
+        )
+        return null
+      }
+
+      console.log('[CoordinatorToolApiService] Successfully got coordinator tool:', result)
       return result
     } catch (error: any) {
       console.error('[CoordinatorToolApiService] Failed to get coordinator tool:', error)
@@ -129,35 +162,27 @@ export class CoordinatorToolApiService {
   }
 
   /**
-   * Get or create coordinator tool by plan template ID
+   * Create a default coordinator tool VO for a plan template
+   * This creates a VO object but does not save it to the database
+   * @param planTemplateId Plan template ID
+   * @param planTitle Optional plan template title
+   * @param planDescription Optional plan template description
+   * @returns Default coordinator tool VO
    */
-  public static async getOrNewCoordinatorToolsByTemplate(planTemplateId: string): Promise<CoordinatorToolVO> {
-    console.log('[CoordinatorToolApiService] Starting to get or create coordinator tool, planTemplateId:', planTemplateId)
-    console.log('[CoordinatorToolApiService] Request URL:', `${this.BASE_URL}/get-or-new-by-template/${planTemplateId}`)
-    
-    try {
-      const response = await fetch(`${this.BASE_URL}/get-or-new-by-template/${planTemplateId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-
-      console.log('[CoordinatorToolApiService] Response status:', response.status)
-      console.log('[CoordinatorToolApiService] Response status text:', response.statusText)
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('[CoordinatorToolApiService] Response error content:', errorText)
-        throw new Error(`Failed to get coordinator tools: ${response.status} - ${errorText}`)
-      }
-
-      const result = await response.json()
-      console.log('[CoordinatorToolApiService] Successfully got coordinator tool, result:', result)
-      return result
-    } catch (error: any) {
-      console.error('[CoordinatorToolApiService] Failed to get coordinator tool:', error)
-      throw new Error('Failed to get coordinator tool: ' + error.message)
+  public static createDefaultCoordinatorTool(
+    planTemplateId: string,
+    planTitle?: string,
+    planDescription?: string
+  ): CoordinatorToolVO {
+    return {
+      toolName: planTitle ? `tool_${planTitle}` : '',
+      toolDescription: planDescription ?? '',
+      planTemplateId: planTemplateId,
+      inputSchema: '[]',
+      serviceGroup: '',
+      enableInternalToolcall: false,
+      enableHttpService: false,
+      enableMcpService: false,
     }
   }
 
@@ -168,7 +193,7 @@ export class CoordinatorToolApiService {
     console.log('[CoordinatorToolApiService] Starting to create coordinator tool')
     console.log('[CoordinatorToolApiService] Original data:', JSON.stringify(tool, null, 2))
     console.log('[CoordinatorToolApiService] Request URL:', `${this.BASE_URL}`)
-    
+
     // Only send necessary fields, excluding createTime and updateTime
     const requestData = {
       id: tool.id,
@@ -183,16 +208,19 @@ export class CoordinatorToolApiService {
       enableHttpService: tool.enableHttpService,
       enableMcpService: tool.enableMcpService,
     }
-    
-    console.log('[CoordinatorToolApiService] Cleaned sending data:', JSON.stringify(requestData, null, 2))
-    
+
+    console.log(
+      '[CoordinatorToolApiService] Cleaned sending data:',
+      JSON.stringify(requestData, null, 2)
+    )
+
     try {
       const response = await fetch(`${this.BASE_URL}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(requestData),
       })
 
       console.log('[CoordinatorToolApiService] Response status:', response.status)
@@ -224,11 +252,14 @@ export class CoordinatorToolApiService {
   /**
    * Update coordinator tool
    */
-  public static async updateCoordinatorTool(id: number, tool: CoordinatorToolVO): Promise<CoordinatorToolVO> {
+  public static async updateCoordinatorTool(
+    id: number,
+    tool: CoordinatorToolVO
+  ): Promise<CoordinatorToolVO> {
     console.log('[CoordinatorToolApiService] Starting to update coordinator tool, ID:', id)
     console.log('[CoordinatorToolApiService] Sending data:', tool)
     console.log('[CoordinatorToolApiService] Request URL:', `${this.BASE_URL}/${id}`)
-    
+
     // Only send necessary fields, excluding createTime and updateTime
     const requestData = {
       id: tool.id,
@@ -243,16 +274,16 @@ export class CoordinatorToolApiService {
       enableHttpService: tool.enableHttpService,
       enableMcpService: tool.enableMcpService,
     }
-    
+
     console.log('[CoordinatorToolApiService] Cleaned sending data:', requestData)
-    
+
     try {
       const response = await fetch(`${this.BASE_URL}/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(requestData),
       })
 
       console.log('[CoordinatorToolApiService] Response status:', response.status)
@@ -281,20 +312,21 @@ export class CoordinatorToolApiService {
     }
   }
 
-
   /**
    * Delete coordinator tool
    */
-  public static async deleteCoordinatorTool(id: number): Promise<{ success: boolean; message: string }> {
+  public static async deleteCoordinatorTool(
+    id: number
+  ): Promise<{ success: boolean; message: string }> {
     console.log('[CoordinatorToolApiService] Starting to delete coordinator tool, ID:', id)
     console.log('[CoordinatorToolApiService] Request URL:', `${this.BASE_URL}/${id}`)
-    
+
     try {
       const response = await fetch(`${this.BASE_URL}/${id}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       })
 
       console.log('[CoordinatorToolApiService] Response status:', response.status)
@@ -314,4 +346,4 @@ export class CoordinatorToolApiService {
       throw new Error('Failed to delete coordinator tool: ' + error.message)
     }
   }
-} 
+}
