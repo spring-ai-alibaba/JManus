@@ -76,12 +76,10 @@ const emit = defineEmits<{
 
 // Computed property to filter out tools that are not in availableTools
 const filteredSelectedToolIds = computed(() => {
-  if (!props.selectedToolIds || !Array.isArray(props.selectedToolIds)) {
+  if (!Array.isArray(props.selectedToolIds)) {
     return []
   }
-  return props.selectedToolIds.filter(
-    toolId => props.availableTools?.some(tool => tool.key === toolId) ?? false
-  )
+  return props.selectedToolIds.filter(toolId => props.availableTools.some(tool => tool.key === toolId))
 })
 
 // Watch for changes in filtered tools and emit event
@@ -89,7 +87,7 @@ watch(
   filteredSelectedToolIds,
   newFilteredTools => {
     // Only emit if there's a difference (some tools were filtered out)
-    const selectedLength = props.selectedToolIds?.length ?? 0
+    const selectedLength = props.selectedToolIds.length
     if (newFilteredTools.length !== selectedLength) {
       emit('tools-filtered', newFilteredTools)
     }

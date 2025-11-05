@@ -40,6 +40,31 @@ export class CoordinatorToolApiService {
   private static readonly BASE_URL = '/api/coordinator-tools'
 
   /**
+   * Get all coordinator tools
+   * @returns List of all coordinator tools
+   */
+  public static async getAllCoordinatorTools(): Promise<CoordinatorToolVO[]> {
+    try {
+      const response = await fetch(`${this.BASE_URL}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to get coordinator tools: ${response.status}`)
+      }
+
+      const result = await response.json()
+      return result || []
+    } catch (error: any) {
+      console.error('Failed to get coordinator tools:', error)
+      throw new Error('Failed to get coordinator tools: ' + error.message)
+    }
+  }
+
+  /**
    * Get CoordinatorTool configuration information
    */
   public static async getCoordinatorToolConfig(): Promise<CoordinatorToolConfig> {

@@ -126,6 +126,23 @@ public class CoordinatorToolController {
 	}
 
 	/**
+	 * Get all coordinator tools
+	 * @return List of all coordinator tools
+	 */
+	@GetMapping
+	public ResponseEntity<List<CoordinatorToolVO>> getAllCoordinatorTools() {
+		try {
+			log.info("Getting all coordinator tools");
+			List<CoordinatorToolVO> tools = coordinatorToolService.getAllCoordinatorTools();
+			return ResponseEntity.ok(tools);
+		}
+		catch (Exception e) {
+			log.error("Error getting all coordinator tools: {}", e.getMessage(), e);
+			return ResponseEntity.status(500).build();
+		}
+	}
+
+	/**
 	 * Get CoordinatorTool configuration information
 	 */
 	@GetMapping("/config")
