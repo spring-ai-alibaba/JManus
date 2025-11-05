@@ -29,7 +29,7 @@ public class NavigateAction extends BrowserAction {
 
 	@Override
 	public ToolExecuteResult execute(BrowserRequestVO request) throws Exception {
-		
+
 		String url = request.getUrl();
 		Integer timeoutMs = getBrowserTimeoutMs();
 

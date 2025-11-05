@@ -219,8 +219,16 @@ public class McpTransportBuilder {
 			.defaultHeader("Accept", "text/event-stream")
 			.defaultHeader("Content-Type", "application/json")
 			.defaultHeader("User-Agent", mcpProperties.getUserAgent())
-			.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024 * 10));
-
+			.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024 * 10))
+			// Add timeout to prevent hanging connections
+			.filter((request,
+					next) -> next.exchange(request).timeout(java.time.Duration.ofSeconds(30)).onErrorMap(ex -> {
+						if (ex.getMessage() != null && ex.getMessage().contains("Failed to resolve")) {
+							return new IOException("DNS resolution failed for URL: " + baseUrl + ". "
+									+ "Please verify the hostname is correct and accessible.", ex);
+						}
+						return ex;
+					}));
 	}
 
 }

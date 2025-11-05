@@ -22,10 +22,12 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 
 /**
- * Utility class for generating ARIA snapshots of pages, using Playwright's native ariaSnapshot
- * functionality similar to Playwright's internal implementation.
+ * Utility class for generating ARIA snapshots of pages, using Playwright's native
+ * ariaSnapshot functionality similar to Playwright's internal implementation.
  *
- * <p>Usage:</p>
+ * <p>
+ * Usage:
+ * </p>
  * <pre>{@code
  * // Get ARIA snapshot of a page
  * String snapshot = AriaSnapshot.ariaSnapshot(page);
@@ -51,10 +53,9 @@ public class AriaSnapshot {
 	}
 
 	/**
-	 * Generate ARIA snapshot of a page using Playwright's native ariaSnapshot method
-	 * This follows the same pattern as Playwright's internal implementation using
+	 * Generate ARIA snapshot of a page using Playwright's native ariaSnapshot method This
+	 * follows the same pattern as Playwright's internal implementation using
 	 * frame.sendMessage("ariaSnapshot", params, frame.timeout(options.timeout))
-	 *
 	 * @param page The page to snapshot
 	 * @param options Snapshot options
 	 * @return ARIA snapshot as string
@@ -72,7 +73,8 @@ public class AriaSnapshot {
 			log.debug("Generating ARIA snapshot with selector: {}, timeout: {}", options.getSelector(),
 					options.getTimeout());
 
-			// Wait for selector if timeout is specified (similar to frame.timeout in Playwright)
+			// Wait for selector if timeout is specified (similar to frame.timeout in
+			// Playwright)
 			if (options.getTimeout() != null && options.getTimeout() > 0) {
 				try {
 					page.waitForSelector(options.getSelector(),
@@ -84,30 +86,16 @@ public class AriaSnapshot {
 			}
 
 			// Use Playwright's native locator.ariaSnapshot() method
-			// This internally uses frame.sendMessage("ariaSnapshot", params, frame.timeout(options.timeout))
+			// This internally uses frame.sendMessage("ariaSnapshot", params,
+			// frame.timeout(options.timeout))
 			Locator locator = page.locator(options.getSelector());
 
 			// Call Playwright's native ariaSnapshot method
-			// The method internally uses frame.sendMessage("ariaSnapshot", params) with timeout
-			// Note: If ariaSnapshot() accepts options, it would be Locator.AriaSnapshotOptions
+			// The method internally uses frame.sendMessage("ariaSnapshot", params) with
+			// timeout
+			// Note: If ariaSnapshot() accepts options, it would be
+			// Locator.AriaSnapshotOptions
 			String snapshot = locator.ariaSnapshot();
-
-			// Parse snapshot, add refs to nodes without refs, and regenerate snapshot
-			if (snapshot != null && !snapshot.isEmpty()) {
-				try {
-					AriaElementHolder parser = AriaElementHolder.parse(snapshot);
-					int refsAdded = parser.addRefsToNodesWithoutRefs();
-					if (refsAdded > 0) {
-						log.debug("Added {} refs to nodes without refs", refsAdded);
-						snapshot = parser.toYaml();
-					}
-				}
-				catch (Exception e) {
-					log.warn("Failed to add refs to snapshot: {}, using original snapshot", e.getMessage());
-				}
-			}
-
-			log.debug("ARIA snapshot generated successfully, length: {}, refs indexed", snapshot != null ? snapshot.length() : 0);
 			return snapshot != null ? snapshot : "";
 		}
 		catch (Exception e) {
@@ -116,6 +104,4 @@ public class AriaSnapshot {
 		}
 	}
 
-
 }
-

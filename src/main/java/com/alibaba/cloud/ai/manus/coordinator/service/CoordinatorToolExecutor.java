@@ -93,8 +93,8 @@ public class CoordinatorToolExecutor {
 				inputSchema = objectMapper.convertValue(jsonNode, JsonSchema.class);
 			}
 			catch (Exception e) {
-				log.warn("{} Failed to parse tool schema JSON for tool: {}, error: {}", LOG_PREFIX,
-						tool.getToolName(), e.getMessage());
+				log.warn("{} Failed to parse tool schema JSON for tool: {}, error: {}", LOG_PREFIX, tool.getToolName(),
+						e.getMessage());
 				// Try to create empty schema from empty JSON object
 				try {
 					JsonNode emptyNode = objectMapper.readTree("{}");
