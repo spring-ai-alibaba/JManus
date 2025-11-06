@@ -45,7 +45,6 @@ public class CoordinatorToolExecutor {
 	// Constant definitions
 	private static final String LOG_PREFIX = "[CoordinatorToolExecutor]";
 
-	
 	private static final String DEFAULT_RESULT_MESSAGE = "Plan execution completed, but no specific result obtained";
 
 	private static final String PLAN_NOT_FOUND_ERROR = "Plan not found: %s";
@@ -66,7 +65,6 @@ public class CoordinatorToolExecutor {
 		// Register JSR310 module to support LocalDateTime and other Java 8 time types
 		this.objectMapper.registerModule(new JavaTimeModule());
 	}
-
 
 	/**
 	 * Execute plan and get results using async execution

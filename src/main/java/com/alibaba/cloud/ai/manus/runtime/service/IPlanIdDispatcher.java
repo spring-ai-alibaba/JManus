@@ -20,7 +20,6 @@ package com.alibaba.cloud.ai.manus.runtime.service;
  */
 public interface IPlanIdDispatcher {
 
-
 	/**
 	 * Check if ID is a plan template ID
 	 */

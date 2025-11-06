@@ -475,7 +475,8 @@ public class ExcelProcessingService implements IExcelProcessingService {
 			try (FileOutputStream fos = new FileOutputStream(absolutePath.toFile())) {
 				workbook.write(fos);
 			}
-			// Temporary files are automatically disposed when workbook is closed via try-with-resources
+			// Temporary files are automatically disposed when workbook is closed via
+			// try-with-resources
 		}
 
 		if (existingWorkbook != null) {
