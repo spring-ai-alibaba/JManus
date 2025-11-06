@@ -17,7 +17,7 @@
         type="text"
         class="config-input"
         :placeholder="$t('config.databaseConfig.namePlaceholder')"
-        :disabled="isEditMode"
+        :disabled="props.isEditMode ?? false"
       />
     </div>
 

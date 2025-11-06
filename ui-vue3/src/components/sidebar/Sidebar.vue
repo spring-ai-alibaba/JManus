@@ -49,7 +49,9 @@
       <div v-if="sidebarStore.currentTab === 'list'" class="tab-content">
         <div class="organization-section">
           <div class="organization-selector">
-            <label class="organization-label">{{ $t('sidebar.organizationMethod') }}:</label>
+            <div class="organization-label-row">
+              <label class="organization-label">{{ $t('sidebar.organizationMethod') }}:</label>
+            </div>
             <select
               :value="sidebarStore.organizationMethod"
               @change="handleOrganizationChange"
@@ -65,7 +67,7 @@
             class="new-task-btn"
             @click="() => sidebarStore.createNewTemplate(sidebarStore.planType)"
           >
-            <Icon icon="carbon:add" width="14" />
+            <Icon icon="carbon:add" width="16" />
             {{ $t('sidebar.newPlan') }}
           </button>
         </div>
@@ -1097,23 +1099,33 @@ defineExpose({
   margin-bottom: 16px;
   padding-right: 12px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 12px;
 
   .organization-selector {
     flex: 0 0 auto;
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 4px;
 
-    .organization-label {
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.7);
-      white-space: nowrap;
+    .organization-label-row {
+      margin: 0;
+      padding: 0;
+      height: 16px;
+      display: flex;
+      align-items: center;
+
+      .organization-label {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.7);
+        white-space: nowrap;
+        margin: 0;
+        padding: 0;
+        line-height: 1;
+      }
     }
 
     .organization-select {
-      flex: 0 0 auto;
       width: 25ch;
       max-width: 25ch;
       padding: 6px 10px;
@@ -1149,18 +1161,18 @@ defineExpose({
 
   .new-task-btn {
     flex: 1;
-    padding: 8px 12px;
+    padding: 15px 16px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     border-radius: 6px;
     color: white;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
     transition: all 0.2s ease;
     white-space: nowrap;
 
