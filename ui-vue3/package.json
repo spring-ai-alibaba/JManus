@@ -30,7 +30,7 @@
     "@antv/g2": "^5.1.19",
     "@iconify/vue": "^4.1.1",
     "ant-design-vue": "^4.0.8",
-    "axios": "^1.6.2",
+    "axios": "^1.12.0",
     "dayjs": "^1.11.10",
     "dompurify": "^3.2.6",
     "highlight.js": "^11.11.1",
@@ -40,7 +40,7 @@
     "nprogress": "^0.2.0",
     "pinia": "^2.3.1",
     "vue": "^3.3.8",
-    "vue-i18n": "^9.8.0",
+    "vue-i18n": "^9.14.5",
     "vue-router": "^4.2.5",
     "vue3-colorpicker": "^2.3.0"
   },
@@ -67,12 +67,11 @@
     "eslint-plugin-vue": "^10.3.0",
     "jsdom": "^23.0.1",
     "less": "^4.3.0",
-    "mockjs": "^1.1.0",
     "npm-run-all2": "^6.1.1",
     "prettier": "^3.1.0",
     "start-server-and-test": "^2.0.3",
     "typescript": "~5.3.3",
-    "vite": "^5.0.10",
+    "vite": "^5.4.21",
     "vite-plugin-checker": "^0.9.3",
     "vitest": "^1.0.0",
     "vue-eslint-parser": "^10.2.0",
@@ -84,7 +83,14 @@
   },
   "pnpm": {
     "overrides": {
-      "@csstools/css-color-parser": "3.1.0"
+      "@csstools/css-color-parser": "3.1.0",
+      "form-data": ">=4.0.4",
+      "axios": ">=1.12.0",
+      "vite": ">=5.4.21",
+      "brace-expansion": ">=2.0.2",
+      "tmp": ">=0.2.4",
+      "esbuild": ">=0.25.0",
+      "@intlify/core-base": ">=9.14.5"
     }
   }
 }

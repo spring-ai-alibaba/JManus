@@ -16,9 +16,7 @@
 
 package com.alibaba.cloud.ai.manus.coordinator.service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,21 +24,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.cloud.ai.manus.config.CoordinatorProperties;
-import com.alibaba.cloud.ai.manus.coordinator.tool.CoordinatorTool;
 import com.alibaba.cloud.ai.manus.recorder.entity.po.ThinkActRecordEntity;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.repository.ThinkActRecordRepository;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-import io.modelcontextprotocol.server.McpServerFeatures;
-import io.modelcontextprotocol.spec.McpSchema;
-import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
-import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
-import io.modelcontextprotocol.spec.McpSchema.JsonSchema;
 
 /**
  * Coordinator Tool Execution Engine
@@ -55,8 +45,7 @@ public class CoordinatorToolExecutor {
 	// Constant definitions
 	private static final String LOG_PREFIX = "[CoordinatorToolExecutor]";
 
-	private static final String PLAN_ID_KEY = "planId";
-
+	
 	private static final String DEFAULT_RESULT_MESSAGE = "Plan execution completed, but no specific result obtained";
 
 	private static final String PLAN_NOT_FOUND_ERROR = "Plan not found: %s";
@@ -78,161 +67,6 @@ public class CoordinatorToolExecutor {
 		this.objectMapper.registerModule(new JavaTimeModule());
 	}
 
-	/**
-	 * Create tool specification
-	 * @param tool Coordinator tool
-	 * @return Tool specification
-	 */
-	public McpServerFeatures.SyncToolSpecification createSpec(CoordinatorTool tool) {
-		String schemaJson = tool.getToolSchema();
-		JsonSchema inputSchema = null;
-		if (schemaJson != null && !schemaJson.trim().isEmpty()) {
-			try {
-				// Parse JSON string to JsonNode first, then convert to JsonSchema
-				JsonNode jsonNode = objectMapper.readTree(schemaJson);
-				inputSchema = objectMapper.convertValue(jsonNode, JsonSchema.class);
-			}
-			catch (Exception e) {
-				log.warn("{} Failed to parse tool schema JSON for tool: {}, error: {}", LOG_PREFIX, tool.getToolName(),
-						e.getMessage());
-				// Try to create empty schema from empty JSON object
-				try {
-					JsonNode emptyNode = objectMapper.readTree("{}");
-					inputSchema = objectMapper.convertValue(emptyNode, JsonSchema.class);
-				}
-				catch (Exception ex) {
-					log.error("{} Failed to create empty JsonSchema: {}", LOG_PREFIX, ex.getMessage());
-					// inputSchema remains null
-				}
-			}
-		}
-		// If schemaJson is null or empty, inputSchema remains null which is acceptable
-
-		return McpServerFeatures.SyncToolSpecification.builder()
-			.tool(io.modelcontextprotocol.spec.McpSchema.Tool.builder()
-				.name(tool.getToolName())
-				.description(tool.getToolDescription())
-				.inputSchema(inputSchema)
-				.build())
-			.callHandler((exchange, request) -> execute(request))
-			.build();
-	}
-
-	/**
-	 * Execute tool call
-	 * @param request Tool call request
-	 * @return Tool call result
-	 */
-	public CallToolResult execute(CallToolRequest request) {
-		String toolName = request.name();
-		log.debug("{} Starting tool call execution: {}", LOG_PREFIX, toolName);
-
-		try {
-			// 1. Validate and extract parameters
-			Map<String, Object> arguments = request.arguments();
-			String planId = validateAndExtractPlanId(arguments);
-
-			// Use IPlanParameterMappingService to process parameters
-			Map<String, Object> processedParams = processParameters(arguments);
-
-			// 2. Execute plan template
-			executePlanTemplate(toolName, processedParams, planId);
-
-			// 3. Poll for results
-			String resultString = pollPlanResult(planId);
-
-			// 4. Return success result
-			log.info("{} Tool call execution completed: {}", LOG_PREFIX, toolName);
-			return CallToolResult.builder()
-				.content(List.of(new McpSchema.TextContent(resultString)))
-				.isError(false)
-				.build();
-
-		}
-		catch (Exception e) {
-			log.error("{} Tool call failed: {} - {}", LOG_PREFIX, toolName, e.getMessage(), e);
-			return CallToolResult.builder()
-				.content(List.of(new McpSchema.TextContent(
-						String.format("Tool call failed: %s - %s", e.getClass().getSimpleName(), e.getMessage()))))
-				.isError(true)
-				.build();
-		}
-	}
-
-	/**
-	 * Validate and extract planId
-	 * @param arguments Request parameters
-	 * @return planId
-	 */
-	private String validateAndExtractPlanId(Map<String, Object> arguments) {
-		if (arguments == null) {
-			throw new IllegalArgumentException("Request parameters cannot be empty");
-		}
-
-		Object planIdObject = arguments.get(PLAN_ID_KEY);
-		if (planIdObject == null) {
-			throw new IllegalArgumentException("Missing required planId parameter");
-		}
-
-		String planId = planIdObject.toString().trim();
-		if (planId.isEmpty()) {
-			throw new IllegalArgumentException("planId cannot be empty");
-		}
-
-		log.debug("{} Successfully extracted planId: {}", LOG_PREFIX, planId);
-		return planId;
-	}
-
-	/**
-	 * Process request parameters using IPlanParameterMappingService
-	 * @param arguments Request parameters
-	 * @return Processed parameters map
-	 */
-	private Map<String, Object> processParameters(Map<String, Object> arguments) {
-		if (arguments == null || arguments.isEmpty()) {
-			return new HashMap<>();
-		}
-
-		// Create parameter copy to avoid modifying original parameters
-		Map<String, Object> paramsCopy = new HashMap<>(arguments);
-		paramsCopy.remove(PLAN_ID_KEY);
-
-		try {
-			// Use IPlanParameterMappingService to process parameters
-			// For now, we'll return the processed parameters directly
-			// In a real implementation, you might want to apply parameter mapping logic
-			log.debug("{} Parameter processing completed: {}", LOG_PREFIX, paramsCopy);
-			return paramsCopy;
-		}
-		catch (Exception e) {
-			log.warn("{} Parameter processing failed, using original parameters: {}", LOG_PREFIX, e.getMessage());
-			return paramsCopy;
-		}
-	}
-
-	/**
-	 * Execute plan template
-	 * @param toolName Tool name
-	 * @param rawParam Raw parameters
-	 * @param planId Plan ID
-	 */
-	private void executePlanTemplate(String toolName, Map<String, Object> rawParam, String planId) {
-		log.info("{} Executing plan template: {}, parameters: {}, planId: {}", LOG_PREFIX, toolName, rawParam, planId);
-
-		try {
-			// For now, we'll just log the execution attempt
-			// In a real implementation, you would integrate with the planning system
-			log.info("{} Plan template execution started for: {}", LOG_PREFIX, toolName);
-
-			// TODO: Integrate with PlanningCoordinator or other execution services
-			// This is a placeholder implementation
-
-		}
-		catch (Exception e) {
-			log.error("{} Plan template execution failed: {}", LOG_PREFIX, toolName, e);
-			throw new RuntimeException("Plan template execution failed: " + e.getMessage(), e);
-		}
-	}
 
 	/**
 	 * Execute plan and get results using async execution

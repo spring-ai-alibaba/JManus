@@ -275,7 +275,7 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>8.0.33</version>
+            <version>8.2.0</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -325,12 +325,12 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.2.3</version>
+            <version>5.4.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.xmlbeans</groupId>
             <artifactId>xmlbeans</artifactId>
-            <version>5.1.1</version> <!-- Compatible with POI 5.2.3 -->
+            <version>5.1.1</version> <!-- Compatible with POI 5.4.0 -->
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -409,6 +409,7 @@
                 </configuration>
                 <executions>
                     <execution>
+                        <id>validate-format</id>
                         <phase>validate</phase>
                         <inherited>true</inherited>
                         <goals>
@@ -416,6 +417,30 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.eclipse.m2e</groupId>
+                <artifactId>lifecycle-mapping</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <lifecycleMappingMetadata>
+                        <pluginExecutions>
+                            <pluginExecution>
+                                <pluginExecutionFilter>
+                                    <groupId>io.spring.javaformat</groupId>
+                                    <artifactId>spring-javaformat-maven-plugin</artifactId>
+                                    <versionRange>[0.0.39,)</versionRange>
+                                    <goals>
+                                        <goal>validate</goal>
+                                    </goals>
+                                </pluginExecutionFilter>
+                                <action>
+                                    <ignore />
+                                </action>
+                            </pluginExecution>
+                        </pluginExecutions>
+                    </lifecycleMappingMetadata>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
