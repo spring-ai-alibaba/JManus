@@ -186,4 +186,29 @@ public class DataSourceService {
 		return new ConcurrentHashMap<>(dataSourceTypeMap);
 	}
 
+	/**
+	 * Test database connection with provided parameters
+	 */
+	public boolean testConnection(String url, String username, String password, String driverClassName) {
+		try {
+			DriverManagerDataSource testDataSource = new DriverManagerDataSource();
+			testDataSource.setUrl(url);
+			testDataSource.setUsername(username);
+			testDataSource.setPassword(password);
+			testDataSource.setDriverClassName(driverClassName);
+
+			try (Connection connection = testDataSource.getConnection()) {
+				// Test if connection is valid
+				if (connection != null && !connection.isClosed()) {
+					log.info("Test connection successful for URL: {}", url);
+					return true;
+				}
+			}
+		}
+		catch (Exception e) {
+			log.error("Test connection failed for URL: {}", url, e);
+		}
+		return false;
+	}
+
 }

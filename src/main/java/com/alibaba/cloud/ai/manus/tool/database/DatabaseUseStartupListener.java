@@ -16,16 +16,17 @@
 
 package com.alibaba.cloud.ai.manus.tool.database;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+
+import com.alibaba.cloud.ai.manus.tool.database.model.po.DatasourceConfigEntity;
+import com.alibaba.cloud.ai.manus.tool.database.service.DatasourceConfigService;
 
 @Component
 public class DatabaseUseStartupListener implements ApplicationListener<ApplicationStartedEvent> {
@@ -33,10 +34,10 @@ public class DatabaseUseStartupListener implements ApplicationListener<Applicati
 	private static final Logger log = LoggerFactory.getLogger(DatabaseUseStartupListener.class);
 
 	@Autowired
-	private Environment environment;
+	private DataSourceService dataSourceService;
 
 	@Autowired
-	private DataSourceService dataSourceService;
+	private DatasourceConfigService datasourceConfigService;
 
 	@Override
 	public void onApplicationEvent(ApplicationStartedEvent event) {
@@ -45,30 +46,26 @@ public class DatabaseUseStartupListener implements ApplicationListener<Applicati
 
 	private void initializeDatabaseConfigs() {
 		try {
-			log.info("Starting to initialize database configurations...");
+			log.info("Starting to initialize database configurations from database...");
 
-			// Use configuration parser utility class
-			DatabaseConfigParser configParser = new DatabaseConfigParser(environment);
-			Map<String, Map<String, String>> datasourceConfigs = configParser.parseDatasourceConfigs();
+			// Get all enabled datasource configurations from database
+			List<DatasourceConfigEntity> configs = datasourceConfigService.getEnabledEntities();
 
-			if (datasourceConfigs.isEmpty()) {
-				log.warn("No database configurations found. This is normal if no datasources are configured.");
-				// Output empty summary information
-				printDatasourceSummary(new HashMap<>());
+			if (configs.isEmpty()) {
+				log.warn("No enabled database configurations found. This is normal if no datasources are configured.");
+				printDatasourceSummary(configs);
 				return;
 			}
 
 			// Iterate and initialize each data source
-			for (Map.Entry<String, Map<String, String>> entry : datasourceConfigs.entrySet()) {
-				String datasourceName = entry.getKey();
-				Map<String, String> config = entry.getValue();
-				initializeDatasource(datasourceName, config);
+			for (DatasourceConfigEntity config : configs) {
+				initializeDatasource(config);
 			}
 
 			log.info("Database configurations initialized with {} datasources", dataSourceService.getDataSourceCount());
 
 			// Output data source list
-			printDatasourceSummary(datasourceConfigs);
+			printDatasourceSummary(configs);
 
 		}
 		catch (Exception e) {
@@ -76,22 +73,23 @@ public class DatabaseUseStartupListener implements ApplicationListener<Applicati
 		}
 	}
 
-	private void initializeDatasource(String datasourceName, Map<String, String> config) {
+	private void initializeDatasource(DatasourceConfigEntity config) {
 		try {
-			String type = config.get(DatabaseConfigConstants.PROP_TYPE);
-			String enable = config.get(DatabaseConfigConstants.PROP_ENABLE);
-			String url = config.get(DatabaseConfigConstants.PROP_URL);
-			String driverClassName = config.get(DatabaseConfigConstants.PROP_DRIVER_CLASS_NAME);
-			String username = config.get(DatabaseConfigConstants.PROP_USERNAME);
-			String password = config.get(DatabaseConfigConstants.PROP_PASSWORD);
+			String datasourceName = config.getName();
+			String type = config.getType();
+			Boolean enable = config.getEnable();
+			String url = config.getUrl();
+			String driverClassName = config.getDriverClassName();
+			String username = config.getUsername();
+			String password = config.getPassword();
 
 			if (type == null || url == null || driverClassName == null) {
 				log.warn("Incomplete configuration for datasource '{}'", datasourceName);
 				return;
 			}
 
-			if (!DatabaseConfigConstants.ENABLE_TRUE.equals(enable)) {
-				log.info("Datasource '{}' is disabled (enable: {})", datasourceName, enable);
+			if (enable == null || !enable) {
+				log.info("Datasource '{}' is disabled", datasourceName);
 				return;
 			}
 
@@ -101,30 +99,28 @@ public class DatabaseUseStartupListener implements ApplicationListener<Applicati
 
 		}
 		catch (Exception e) {
-			log.error("Failed to initialize datasource '{}'", datasourceName, e);
+			log.error("Failed to initialize datasource '{}'", config.getName(), e);
 		}
 	}
 
-	private void printDatasourceSummary(Map<String, Map<String, String>> datasourceConfigs) {
+	private void printDatasourceSummary(List<DatasourceConfigEntity> configs) {
 		StringBuilder summary = new StringBuilder();
 		summary.append("\n");
 		summary.append("=".repeat(100)).append("\n");
 		summary.append("DATABASE DATASOURCE SUMMARY").append("\n");
 		summary.append("=".repeat(100)).append("\n");
 
-		int totalConfigs = datasourceConfigs.size();
+		int totalConfigs = configs.size();
 		int initializedCount = 0;
 		int disabledCount = 0;
 
-		for (Map.Entry<String, Map<String, String>> entry : datasourceConfigs.entrySet()) {
-			String datasourceName = entry.getKey();
-			Map<String, String> config = entry.getValue();
+		for (DatasourceConfigEntity config : configs) {
+			String datasourceName = config.getName();
+			String type = config.getType();
+			Boolean enable = config.getEnable();
+			String url = config.getUrl();
 
-			String type = config.get(DatabaseConfigConstants.PROP_TYPE);
-			String enable = config.get(DatabaseConfigConstants.PROP_ENABLE);
-			String url = config.get(DatabaseConfigConstants.PROP_URL);
-
-			boolean isEnabled = DatabaseConfigConstants.ENABLE_TRUE.equals(enable);
+			boolean isEnabled = enable != null && enable;
 			boolean isInitialized = dataSourceService.hasDataSource(datasourceName);
 
 			String status = isEnabled && isInitialized ? "✓ INSTANTIATED"
