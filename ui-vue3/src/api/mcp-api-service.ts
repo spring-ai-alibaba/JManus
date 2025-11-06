@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 /**
  * MCP API Service
  * Responsible for handling all API interactions related to MCP configuration
@@ -76,23 +75,23 @@ export class McpApiService {
       const response = await fetch(`${this.BASE_URL}/add`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(mcpConfig)
+        body: JSON.stringify(mcpConfig),
       })
-      
+
       if (!response.ok) {
         // Read detailed error information from the response body
         const errorText = await response.text()
         throw new Error(`Failed to add MCP server: ${response.status} - ${errorText}`)
       }
-      
+
       return { success: true, message: 'Successfully added MCP server' }
     } catch (error) {
       console.error('Failed to add MCP server:', error)
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to add, please retry'
+        message: error instanceof Error ? error.message : 'Failed to add, please retry',
       }
     }
   }
@@ -105,31 +104,29 @@ export class McpApiService {
       const response = await fetch(`${this.BASE_URL}/batch-import`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           configJson: JSON.stringify(jsonData),
-          overwrite: false
-        })
+          overwrite: false,
+        }),
       })
-      
+
       if (!response.ok) {
         // Read detailed error information from the response body
         const errorText = await response.text()
         throw new Error(`Failed to import MCP servers: ${response.status} - ${errorText}`)
       }
-      
+
       return { success: true, message: 'Successfully imported MCP servers' }
     } catch (error) {
       console.error('Failed to import MCP servers:', error)
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to import, please retry'
+        message: error instanceof Error ? error.message : 'Failed to import, please retry',
       }
     }
   }
-
-
 
   /**
    * Save MCP server configuration (add or update based on whether id is provided)
@@ -139,25 +136,25 @@ export class McpApiService {
       const response = await fetch(`${this.BASE_URL}/server`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(mcpConfig)
+        body: JSON.stringify(mcpConfig),
       })
-      
+
       if (!response.ok) {
         // Read detailed error information from the response body
         const errorText = await response.text()
         const action = mcpConfig.id !== undefined ? 'update' : 'add'
         throw new Error(`Failed to ${action} MCP server: ${response.status} - ${errorText}`)
       }
-      
+
       const action = mcpConfig.id !== undefined ? 'updated' : 'added'
       return { success: true, message: `Successfully ${action} MCP server` }
     } catch (error) {
       console.error('Failed to save MCP server:', error)
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to save, please retry'
+        message: error instanceof Error ? error.message : 'Failed to save, please retry',
       }
     }
   }
@@ -165,7 +162,10 @@ export class McpApiService {
   /**
    * Update MCP server configuration using field-based data (deprecated, use saveMcpServer instead)
    */
-  public static async updateMcpServer(id: number, mcpConfig: McpServerFieldRequest): Promise<ApiResponse> {
+  public static async updateMcpServer(
+    id: number,
+    mcpConfig: McpServerFieldRequest
+  ): Promise<ApiResponse> {
     return this.saveMcpServer({ ...mcpConfig, id })
   }
 
@@ -183,7 +183,7 @@ export class McpApiService {
       console.error(`Failed to delete MCP server[${id}]:`, error)
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to delete, please retry'
+        message: error instanceof Error ? error.message : 'Failed to delete, please retry',
       }
     }
   }
@@ -194,7 +194,7 @@ export class McpApiService {
   public static async enableMcpServer(id: number): Promise<ApiResponse> {
     try {
       const response = await fetch(`${this.BASE_URL}/enable/${id}`, {
-        method: 'POST'
+        method: 'POST',
       })
       if (!response.ok) {
         const errorText = await response.text()
@@ -205,7 +205,7 @@ export class McpApiService {
       console.error(`Failed to enable MCP server[${id}]:`, error)
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to enable, please retry'
+        message: error instanceof Error ? error.message : 'Failed to enable, please retry',
       }
     }
   }
@@ -216,7 +216,7 @@ export class McpApiService {
   public static async disableMcpServer(id: number): Promise<ApiResponse> {
     try {
       const response = await fetch(`${this.BASE_URL}/disable/${id}`, {
-        method: 'POST'
+        method: 'POST',
       })
       if (!response.ok) {
         const errorText = await response.text()
@@ -227,7 +227,7 @@ export class McpApiService {
       console.error(`Failed to disable MCP server[${id}]:`, error)
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to disable, please retry'
+        message: error instanceof Error ? error.message : 'Failed to disable, please retry',
       }
     }
   }

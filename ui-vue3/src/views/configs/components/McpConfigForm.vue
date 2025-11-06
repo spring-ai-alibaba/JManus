@@ -35,7 +35,10 @@
     </div>
 
     <!-- URL field - only show when SSE or STREAMING is selected -->
-    <div class="form-item" v-if="formData.connectionType === 'SSE' || formData.connectionType === 'STREAMING'">
+    <div
+      class="form-item"
+      v-if="formData.connectionType === 'SSE' || formData.connectionType === 'STREAMING'"
+    >
       <label>{{ t('config.mcpConfig.url') }} <span class="required">*</span></label>
       <input
         :value="formData.url || ''"
@@ -138,7 +141,7 @@ const emit = defineEmits<{
 const connectionTypes = [
   { id: 'STUDIO', name: 'STUDIO' },
   { id: 'SSE', name: 'SSE' },
-  { id: 'STREAMING', name: 'STREAMING' }
+  { id: 'STREAMING', name: 'STREAMING' },
 ]
 
 // Handle input events

@@ -35,7 +35,7 @@ export const routes: Readonly<RouteRecordType[]> = [
       if (!hasInitialized) {
         return '/init'
       }
-      
+
       // Check if user has visited the homepage before
       const hasVisited = localStorage.getItem('hasVisitedHome') === 'true'
       return hasVisited ? '/direct' : '/home'

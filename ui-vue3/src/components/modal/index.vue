@@ -22,10 +22,14 @@
             <div class="header-content">
               <h3>{{ title }}</h3>
               <!-- Status Icon -->
-              <div v-if="statusIcon" class="status-icon" :class="statusIconClass" :title="statusIconTitle">
+              <div
+                v-if="statusIcon"
+                class="status-icon"
+                :class="statusIconClass"
+                :title="statusIconTitle"
+              >
                 <Icon :icon="statusIcon" width="16" />
               </div>
-
             </div>
             <button class="close-btn" @click="$emit('update:modelValue', false)">
               <Icon icon="carbon:close" />
@@ -36,8 +40,12 @@
           </div>
           <div class="modal-footer">
             <slot name="footer">
-              <button class="cancel-btn" @click="$emit('update:modelValue', false)">{{ $t('common.cancel') }}</button>
-              <button class="confirm-btn" @click="$emit('confirm')">{{ $t('common.confirm') }}</button>
+              <button class="cancel-btn" @click="$emit('update:modelValue', false)">
+                {{ $t('common.cancel') }}
+              </button>
+              <button class="confirm-btn" @click="$emit('confirm')">
+                {{ $t('common.confirm') }}
+              </button>
             </slot>
           </div>
         </div>
@@ -71,7 +79,6 @@ const props = defineProps({
     type: String,
     default: '',
   },
-
 })
 
 const emit = defineEmits(['update:modelValue', 'confirm'])
@@ -96,8 +103,6 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('keydown', handleEscKey)
 })
-
-
 </script>
 
 <style scoped>
@@ -167,8 +172,6 @@ onUnmounted(() => {
   color: #fbbf24;
   background: rgba(251, 191, 36, 0.1);
 }
-
-
 
 .close-btn {
   background: none;

@@ -19,20 +19,20 @@
       <div class="preview-tabs">
         <!-- Step Execution Details tab -->
         <div
-            class="tab-item"
-            :class="{ active: activeTab === 'details' }"
-            @click="activeTab = 'details'"
+          class="tab-item"
+          :class="{ active: activeTab === 'details' }"
+          @click="activeTab = 'details'"
         >
-          <Icon icon="carbon:events"/>
+          <Icon icon="carbon:events" />
           <span>{{ t('rightPanel.stepExecutionDetails') }}</span>
         </div>
         <!-- File Browser tab -->
         <div
-            class="tab-item"
-            :class="{ active: activeTab === 'files' }"
-            @click="activeTab = 'files'"
+          class="tab-item"
+          :class="{ active: activeTab === 'files' }"
+          @click="activeTab = 'files'"
         >
-          <Icon icon="carbon:folder"/>
+          <Icon icon="carbon:folder" />
           <span>{{ t('fileBrowser.title') }}</span>
         </div>
       </div>
@@ -63,8 +63,8 @@
             <div class="info-item">
               <span class="label">{{ t('rightPanel.executionResult') }}:</span>
               <span
-                  class="value"
-                  :class="{ success: selectedStep.agentExecution.status === 'FINISHED' }"
+                class="value"
+                :class="{ success: selectedStep.agentExecution.status === 'FINISHED' }"
               >
                 {{ selectedStep.agentExecution.status || t('rightPanel.executing') }}
               </span>
@@ -74,16 +74,16 @@
           <div class="execution-status">
             <div class="status-item">
               <Icon
-                  icon="carbon:checkmark-filled"
-                  v-if="selectedStep.completed"
-                  class="status-icon success"
+                icon="carbon:checkmark-filled"
+                v-if="selectedStep.completed"
+                class="status-icon success"
               />
               <Icon
-                  icon="carbon:in-progress"
-                  v-else-if="selectedStep.current"
-                  class="status-icon progress"
+                icon="carbon:in-progress"
+                v-else-if="selectedStep.current"
+                class="status-icon progress"
               />
-              <Icon icon="carbon:time" v-else class="status-icon pending"/>
+              <Icon icon="carbon:time" v-else class="status-icon pending" />
               <span class="status-text">
                 {{ stepStatusText }}
               </span>
@@ -92,35 +92,34 @@
         </div>
 
         <!-- Scrollable detailed content area -->
-        <div
-            ref="scrollContainer"
-            class="step-details-scroll-container"
-            @scroll="checkScrollState"
-        >
+        <div ref="scrollContainer" class="step-details-scroll-container" @scroll="checkScrollState">
           <div v-if="selectedStep">
             <!-- Think and action steps -->
             <div
-                class="think-act-steps"
-                v-if="selectedStep.agentExecution?.thinkActSteps && selectedStep.agentExecution.thinkActSteps.length > 0"
+              class="think-act-steps"
+              v-if="
+                selectedStep.agentExecution?.thinkActSteps &&
+                selectedStep.agentExecution.thinkActSteps.length > 0
+              "
             >
               <h4>{{ t('rightPanel.thinkAndActionSteps') }}</h4>
               <div class="steps-container">
                 <div
-                    v-for="(tas, index) in selectedStep.agentExecution.thinkActSteps"
-                    :key="index"
-                    class="think-act-step"
+                  v-for="(tas, index) in selectedStep.agentExecution.thinkActSteps"
+                  :key="index"
+                  class="think-act-step"
                 >
                   <div class="step-header">
                     <span class="step-number">#{{ index + 1 }}</span>
                     <span class="step-status" :class="tas.status">{{
-                        tas.status || t('rightPanel.executing')
-                      }}</span>
+                      tas.status || t('rightPanel.executing')
+                    }}</span>
                   </div>
 
                   <!-- Think section - strictly follow right-sidebar.js logic -->
                   <div class="think-section">
                     <h5>
-                      <Icon icon="carbon:thinking"/>
+                      <Icon icon="carbon:thinking" />
                       {{ t('rightPanel.thinking') }}
                     </h5>
                     <div class="think-content">
@@ -138,7 +137,7 @@
                   <!-- Action section - strictly follow right-sidebar.js logic -->
                   <div v-if="tas.actionNeeded" class="action-section">
                     <h5>
-                      <Icon icon="carbon:play"/>
+                      <Icon icon="carbon:play" />
                       {{ t('rightPanel.action') }}
                     </h5>
                     <div class="action-content">
@@ -161,14 +160,16 @@
                     <!-- Sub execution plan section - new feature -->
                     <div v-if="tas.subPlanExecutionRecord" class="sub-plan-section">
                       <h5>
-                        <Icon icon="carbon:tree-view"/>
+                        <Icon icon="carbon:tree-view" />
                         {{ t('rightPanel.subPlan') }}
                       </h5>
                       <div class="sub-plan-content">
                         <div class="sub-plan-header">
                           <div class="sub-plan-info">
                             <span class="label">{{ $t('rightPanel.subPlanId') }}:</span>
-                            <span class="value">{{ tas.subPlanExecutionRecord.currentPlanId }}</span>
+                            <span class="value">{{
+                              tas.subPlanExecutionRecord.currentPlanId
+                            }}</span>
                           </div>
                           <div class="sub-plan-info" v-if="tas.subPlanExecutionRecord.title">
                             <span class="label">{{ $t('rightPanel.title') }}:</span>
@@ -176,14 +177,18 @@
                           </div>
                           <div class="sub-plan-status">
                             <Icon
-                                icon="carbon:checkmark-filled"
-                                v-if="tas.subPlanExecutionRecord.completed"
-                                class="status-icon success"
+                              icon="carbon:checkmark-filled"
+                              v-if="tas.subPlanExecutionRecord.completed"
+                              class="status-icon success"
                             />
-                            <Icon icon="carbon:in-progress" v-else class="status-icon progress"/>
+                            <Icon icon="carbon:in-progress" v-else class="status-icon progress" />
                             <span class="status-text">
-                            {{ tas.subPlanExecutionRecord.completed ? $t('rightPanel.status.completed') : $t('rightPanel.status.executing') }}
-                          </span>
+                              {{
+                                tas.subPlanExecutionRecord.completed
+                                  ? $t('rightPanel.status.completed')
+                                  : $t('rightPanel.status.executing')
+                              }}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -193,30 +198,24 @@
               </div>
 
               <div
-                  v-if="
-                selectedStep.agentExecution &&
-                !selectedStep.agentExecution.thinkActSteps?.length
-              "
-                  class="no-steps-message"
+                v-if="
+                  selectedStep.agentExecution && !selectedStep.agentExecution.thinkActSteps?.length
+                "
+                class="no-steps-message"
               >
                 <p>{{ t('rightPanel.noStepDetails') }}</p>
               </div>
 
               <!-- Handle no agentExecution case -->
-              <div
-                  v-else-if="!selectedStep.agentExecution"
-                  class="no-execution-message"
-              >
-                <Icon icon="carbon:information" class="info-icon"/>
+              <div v-else-if="!selectedStep.agentExecution" class="no-execution-message">
+                <Icon icon="carbon:information" class="info-icon" />
                 <h4>{{ t('rightPanel.stepInfo') }}</h4>
                 <div class="step-basic-info">
                   <div class="info-item">
                     <span class="label">{{ t('rightPanel.stepName') }}:</span>
                     <span class="value">{{
-                        selectedStep.title ||
-                        selectedStep.description ||
-                        selectedStep.stepId
-                      }}</span>
+                      selectedStep.title || selectedStep.description || selectedStep.stepId
+                    }}</span>
                   </div>
                   <div class="info-item" v-if="selectedStep.description">
                     <span class="label">{{ $t('rightPanel.description') }}:</span>
@@ -224,16 +223,22 @@
                   </div>
                   <div class="info-item">
                     <span class="label">{{ $t('rightPanel.status.label') }}:</span>
-                    <span class="value" :class="{
-                    'status-completed': selectedStep.completed,
-                    'status-current': selectedStep.current,
-                    'status-pending': !selectedStep.completed && !selectedStep.current
-                  }">
-                    {{
-                        selectedStep.completed ? $t('rightPanel.status.completed') :
-                            selectedStep.current ? $t('rightPanel.status.executing') : $t('rightPanel.status.pending')
+                    <span
+                      class="value"
+                      :class="{
+                        'status-completed': selectedStep.completed,
+                        'status-current': selectedStep.current,
+                        'status-pending': !selectedStep.completed && !selectedStep.current,
+                      }"
+                    >
+                      {{
+                        selectedStep.completed
+                          ? $t('rightPanel.status.completed')
+                          : selectedStep.current
+                            ? $t('rightPanel.status.executing')
+                            : $t('rightPanel.status.pending')
                       }}
-                  </span>
+                    </span>
                   </div>
                 </div>
                 <p class="no-execution-hint">{{ t('rightPanel.noExecutionInfo') }}</p>
@@ -241,8 +246,8 @@
 
               <!-- Dynamic effect during execution -->
               <div
-                  v-if="selectedStep.current && !selectedStep.completed"
-                  class="execution-indicator"
+                v-if="selectedStep.current && !selectedStep.completed"
+                class="execution-indicator"
               >
                 <div class="execution-waves">
                   <div class="wave wave-1"></div>
@@ -250,14 +255,14 @@
                   <div class="wave wave-3"></div>
                 </div>
                 <p class="execution-text">
-                  <Icon icon="carbon:in-progress" class="rotating-icon"/>
+                  <Icon icon="carbon:in-progress" class="rotating-icon" />
                   {{ t('rightPanel.stepExecuting') }}
                 </p>
               </div>
             </div>
 
             <div v-else class="no-selection">
-              <Icon icon="carbon:events" class="empty-icon"/>
+              <Icon icon="carbon:events" class="empty-icon" />
               <h3>{{ t('rightPanel.noStepSelected') }}</h3>
               <p>{{ t('rightPanel.selectStepHint') }}</p>
             </div>
@@ -266,12 +271,12 @@
           <!-- Scroll to bottom button -->
           <Transition name="scroll-button">
             <button
-                v-if="showScrollToBottomButton"
-                @click="scrollToBottom"
-                class="scroll-to-bottom-btn"
-                :title="t('rightPanel.scrollToBottom')"
+              v-if="showScrollToBottomButton"
+              @click="scrollToBottom"
+              class="scroll-to-bottom-btn"
+              :title="t('rightPanel.scrollToBottom')"
             >
-              <Icon icon="carbon:chevron-down"/>
+              <Icon icon="carbon:chevron-down" />
             </button>
           </Transition>
         </div>
@@ -279,10 +284,7 @@
 
       <!-- File Browser -->
       <div v-if="activeTab === 'files'" class="file-browser-container">
-        <FileBrowser 
-          v-if="fileBrowserPlanId" 
-          :plan-id="fileBrowserPlanId"
-        />
+        <FileBrowser v-if="fileBrowserPlanId" :plan-id="fileBrowserPlanId" />
         <div v-else-if="shouldShowNoTaskMessage" class="no-plan-message">
           <Icon icon="carbon:folder-off" />
           <div class="message-content">
@@ -343,7 +345,6 @@ const showScrollToBottomButton = ref(false)
 const isNearBottom = ref(true)
 const shouldAutoScrollToBottom = ref(true)
 
-
 const stepStatusText = computed(() => {
   if (!selectedStep.value) return ''
   if (selectedStep.value.completed) return t('rightPanel.status.completed')
@@ -384,7 +385,7 @@ const handleStepSelected = async (stepId: string) => {
   try {
     // Fetch agent execution detail from API
     const agentExecutionDetail = await fetchAgentExecutionDetail(stepId)
-    
+
     if (!agentExecutionDetail) {
       console.warn('[RightPanel] Agent execution detail not found for stepId:', stepId)
       selectedStep.value = null
@@ -398,7 +399,7 @@ const handleStepSelected = async (stepId: string) => {
       description: agentExecutionDetail.agentDescription ?? '',
       agentExecution: agentExecutionDetail,
       completed: agentExecutionDetail.status === 'FINISHED',
-      current: agentExecutionDetail.status === 'RUNNING'
+      current: agentExecutionDetail.status === 'RUNNING',
     }
 
     selectedStep.value = stepData
@@ -407,7 +408,10 @@ const handleStepSelected = async (stepId: string) => {
     console.log('[RightPanel] selectedStep.value:', selectedStep.value)
     console.log('[RightPanel] agentExecution:', selectedStep.value.agentExecution)
     console.log('[RightPanel] thinkActSteps:', selectedStep.value.agentExecution?.thinkActSteps)
-    console.log('[RightPanel] thinkActSteps length:', selectedStep.value.agentExecution?.thinkActSteps?.length)
+    console.log(
+      '[RightPanel] thinkActSteps length:',
+      selectedStep.value.agentExecution?.thinkActSteps?.length
+    )
 
     // Force reactivity update
     await nextTick()
@@ -436,18 +440,18 @@ const refreshCurrentStep = async () => {
   }
 
   console.log('[RightPanel] Refreshing current step:', selectedStep.value.stepId)
-  
+
   try {
     const agentExecutionDetail = await refreshAgentExecutionDetail(selectedStep.value.stepId)
-    
+
     if (agentExecutionDetail) {
       // Update the existing step data
       selectedStep.value.agentExecution = agentExecutionDetail
       selectedStep.value.completed = agentExecutionDetail.status === 'FINISHED'
       selectedStep.value.current = agentExecutionDetail.status === 'RUNNING'
-      
+
       console.log('[RightPanel] Step refreshed successfully')
-      
+
       // Auto-scroll to latest content if previously at bottom
       autoScrollToBottomIfNeeded()
     }
@@ -457,15 +461,17 @@ const refreshCurrentStep = async () => {
 }
 
 // Watch for selectedStepId prop changes
-watch(() => props.selectedStepId, async (newStepId) => {
-  if (newStepId) {
-    await handleStepSelected(newStepId)
-  } else {
-    selectedStep.value = null
-  }
-}, { immediate: true })
-
-
+watch(
+  () => props.selectedStepId,
+  async newStepId => {
+    if (newStepId) {
+      await handleStepSelected(newStepId)
+    } else {
+      selectedStep.value = null
+    }
+  },
+  { immediate: true }
+)
 
 // Actions - Scroll management
 const setScrollContainer = (element: HTMLElement | null) => {
@@ -528,7 +534,6 @@ const autoScrollToBottomIfNeeded = () => {
   })
 }
 
-
 // Actions - Utility functions
 const formatJson = (jsonData: any): string => {
   if (jsonData === null || typeof jsonData === 'undefined' || jsonData === '') {
@@ -585,22 +590,29 @@ const initScrollListener = () => {
 }
 
 // Watch for currentRootPlanId changes to track execution history
-watch(() => props.currentRootPlanId, (newPlanId, oldPlanId) => {
-  if (newPlanId && newPlanId !== oldPlanId) {
-    // A new plan has started executing
-    lastExecutedPlanId.value = newPlanId
-    hasExecutedAnyPlan.value = true
-    
-    // Persist to localStorage
-    localStorage.setItem('jmanus-last-plan-id', newPlanId)
-    localStorage.setItem('jmanus-has-executed-plan', 'true')
-    
-    console.log('[RightPanel] New plan started:', newPlanId)
-  } else if (!newPlanId && oldPlanId) {
-    // Plan execution finished, but keep the lastExecutedPlanId for file browser
-    console.log('[RightPanel] Plan execution finished, keeping last plan:', lastExecutedPlanId.value)
-  }
-}, { immediate: true })
+watch(
+  () => props.currentRootPlanId,
+  (newPlanId, oldPlanId) => {
+    if (newPlanId && newPlanId !== oldPlanId) {
+      // A new plan has started executing
+      lastExecutedPlanId.value = newPlanId
+      hasExecutedAnyPlan.value = true
+
+      // Persist to localStorage
+      localStorage.setItem('jmanus-last-plan-id', newPlanId)
+      localStorage.setItem('jmanus-has-executed-plan', 'true')
+
+      console.log('[RightPanel] New plan started:', newPlanId)
+    } else if (!newPlanId && oldPlanId) {
+      // Plan execution finished, but keep the lastExecutedPlanId for file browser
+      console.log(
+        '[RightPanel] Plan execution finished, keeping last plan:',
+        lastExecutedPlanId.value
+      )
+    }
+  },
+  { immediate: true }
+)
 
 // Lifecycle - initialization on mount
 onMounted(() => {
@@ -624,16 +636,16 @@ onUnmounted(() => {
  */
 const updateDisplayedPlanProgress = (rootPlanId: string) => {
   console.log('[RightPanel] updateDisplayedPlanProgress called with rootPlanId:', rootPlanId)
-  
+
   // Update the last executed plan ID for file browser
   if (rootPlanId) {
     lastExecutedPlanId.value = rootPlanId
     hasExecutedAnyPlan.value = true
-    
+
     // Persist to localStorage
     localStorage.setItem('jmanus-last-plan-id', rootPlanId)
     localStorage.setItem('jmanus-has-executed-plan', 'true')
-    
+
     console.log('[RightPanel] Plan progress updated:', rootPlanId)
   }
 }
@@ -674,7 +686,6 @@ defineExpose({
     font-size: 14px;
   }
 }
-
 
 .preview-content {
   flex: 1;

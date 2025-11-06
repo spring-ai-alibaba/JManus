@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2025 the original author or authors.
  *
@@ -75,9 +74,9 @@ export class AdminApiService {
       const response = await fetch(`${this.BASE_URL}/batch-update`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(configs)
+        body: JSON.stringify(configs),
       })
 
       if (!response.ok) {
@@ -87,9 +86,9 @@ export class AdminApiService {
       return { success: true, message: 'Configuration saved successfully' }
     } catch (error) {
       console.error('Batch update configuration failed:', error)
-      return { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Update failed, please try again' 
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Update failed, please try again',
       }
     }
   }
@@ -118,9 +117,9 @@ export class AdminApiService {
       const response = await fetch(`${this.BASE_URL}/${config.id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(config)
+        body: JSON.stringify(config),
       })
 
       if (!response.ok) {
@@ -130,9 +129,9 @@ export class AdminApiService {
       return { success: true, message: 'Configuration updated successfully' }
     } catch (error) {
       console.error('Failed to update configuration item:', error)
-      return { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Update failed, please try again' 
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Update failed, please try again',
       }
     }
   }
@@ -145,8 +144,8 @@ export class AdminApiService {
       const response = await fetch(`${this.BASE_URL}/reset-all-defaults`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       })
 
       if (!response.ok) {
@@ -156,11 +155,10 @@ export class AdminApiService {
       return { success: true, message: 'All configurations reset to defaults successfully' }
     } catch (error) {
       console.error('Failed to reset configurations to defaults:', error)
-      return { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Reset failed, please try again' 
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Reset failed, please try again',
       }
     }
   }
-
 }

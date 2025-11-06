@@ -93,7 +93,9 @@ const handleResponse = async (response: Response) => {
 /**
  * Initialize and register plan templates as inner toolcalls
  */
-export const initAndRegisterPlanTemplates = async (data: PlanTemplateInitRequest): Promise<PlanTemplateInitResponse> => {
+export const initAndRegisterPlanTemplates = async (
+  data: PlanTemplateInitRequest
+): Promise<PlanTemplateInitResponse> => {
   const response = await fetch('/api/plan-template-publish/init-and-register', {
     method: 'POST',
     headers: {
@@ -107,7 +109,9 @@ export const initAndRegisterPlanTemplates = async (data: PlanTemplateInitRequest
 /**
  * Register specific plan templates as inner toolcalls
  */
-export const registerPlanTemplates = async (data: PlanTemplateRegisterRequest): Promise<PlanTemplateRegisterResponse> => {
+export const registerPlanTemplates = async (
+  data: PlanTemplateRegisterRequest
+): Promise<PlanTemplateRegisterResponse> => {
   const response = await fetch('/api/plan-template-publish/register', {
     method: 'POST',
     headers: {
@@ -121,7 +125,9 @@ export const registerPlanTemplates = async (data: PlanTemplateRegisterRequest): 
 /**
  * Unregister plan templates from inner toolcalls
  */
-export const unregisterPlanTemplates = async (data: PlanTemplateRegisterRequest): Promise<PlanTemplateRegisterResponse> => {
+export const unregisterPlanTemplates = async (
+  data: PlanTemplateRegisterRequest
+): Promise<PlanTemplateRegisterResponse> => {
   const response = await fetch('/api/plan-template-publish/unregister', {
     method: 'POST',
     headers: {

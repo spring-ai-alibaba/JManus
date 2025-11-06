@@ -16,11 +16,8 @@
 <template>
   <div class="chat-message" :class="messageClasses">
     <!-- User message -->
-    <UserMessage
-      v-if="message.type === 'user'"
-      :message="message"
-    />
-    
+    <UserMessage v-if="message.type === 'user'" :message="message" />
+
     <!-- Assistant message -->
     <AssistantMessage
       v-else-if="message.type === 'assistant'"
@@ -84,10 +81,10 @@ const handleStepSelected = (stepId: string) => {
 <style lang="less" scoped>
 .chat-message {
   width: 100%;
-  
+
   &.streaming {
     position: relative;
-    
+
     &::after {
       content: '';
       position: absolute;

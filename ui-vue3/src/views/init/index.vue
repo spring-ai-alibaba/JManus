@@ -22,7 +22,9 @@
           <h1><Icon icon="carbon:bot" class="logo-icon" /> JManus</h1>
         </div>
         <h2>{{ currentStep === 1 ? $t('init.welcomeStep') : $t('init.welcome') }}</h2>
-        <p class="description">{{ currentStep === 1 ? $t('init.languageStepDescription') : $t('init.description') }}</p>
+        <p class="description">
+          {{ currentStep === 1 ? $t('init.languageStepDescription') : $t('init.description') }}
+        </p>
       </div>
 
       <!-- Step Indicator -->
@@ -44,11 +46,7 @@
           <label class="form-label">{{ $t('init.selectLanguageLabel') }}</label>
           <div class="language-options">
             <label class="language-option" :class="{ active: selectedLanguage === 'zh' }">
-              <input
-                type="radio"
-                v-model="selectedLanguage"
-                value="zh"
-              />
+              <input type="radio" v-model="selectedLanguage" value="zh" />
               <span class="language-content">
                 <span class="language-flag">
                   <Icon icon="circle-flags:cn" />
@@ -60,11 +58,7 @@
               </span>
             </label>
             <label class="language-option" :class="{ active: selectedLanguage === 'en' }">
-              <input
-                type="radio"
-                v-model="selectedLanguage"
-                value="en"
-              />
+              <input type="radio" v-model="selectedLanguage" value="en" />
               <span class="language-content">
                 <span class="language-flag">
                   <Icon icon="circle-flags:us" />
@@ -226,7 +220,9 @@
             </div>
 
             <div class="form-group">
-              <label for="modelDisplayName" class="form-label">{{ $t('init.modelDisplayNameLabel') }}</label>
+              <label for="modelDisplayName" class="form-label">{{
+                $t('init.modelDisplayNameLabel')
+              }}</label>
               <input
                 id="modelDisplayName"
                 v-model="form.modelDisplayName"
@@ -238,32 +234,25 @@
             </div>
 
             <div class="form-group">
-              <label for="completionsPath" class="form-label">{{ $t('init.completionsPath') }}</label>
+              <label for="completionsPath" class="form-label">{{
+                $t('init.completionsPath')
+              }}</label>
               <input
-                  id="modelDisplayName"
-                  v-model="form.completionsPath"
-                  type="text"
-                  class="form-input"
-                  :placeholder="$t('init.completionsPathPlaceholder')"
-                  :disabled="loading"
+                id="modelDisplayName"
+                v-model="form.completionsPath"
+                type="text"
+                class="form-input"
+                :placeholder="$t('init.completionsPathPlaceholder')"
+                :disabled="loading"
               />
             </div>
           </div>
 
           <div class="form-actions">
-            <button
-              type="button"
-              class="back-btn"
-              @click="goToPreviousStep"
-              :disabled="loading"
-            >
+            <button type="button" class="back-btn" @click="goToPreviousStep" :disabled="loading">
               {{ $t('init.back') }}
             </button>
-            <button
-              type="submit"
-              class="submit-btn"
-              :disabled="loading || !isFormValid"
-            >
+            <button type="submit" class="submit-btn" :disabled="loading || !isFormValid">
               <span v-if="loading" class="loading-spinner"></span>
               {{ loading ? $t('init.saving') : $t('init.saveAndContinue') }}
             </button>
@@ -306,7 +295,11 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 import { LlmCheckService } from '@/utils/llm-check'
-import { changeLanguageWithAgentReset, initializePlanTemplates, LOCAL_STORAGE_LOCALE } from '@/base/i18n'
+import {
+  changeLanguageWithAgentReset,
+  initializePlanTemplates,
+  LOCAL_STORAGE_LOCALE,
+} from '@/base/i18n'
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -322,7 +315,7 @@ const form = ref({
   baseUrl: '',
   modelName: '',
   modelDisplayName: '',
-  completionsPath: ''
+  completionsPath: '',
 })
 
 const loading = ref(false)
@@ -424,22 +417,23 @@ const handleSubmit = async () => {
 
     const requestBody: any = {
       configMode: form.value.configMode,
-      apiKey: form.value.apiKey.trim()
+      apiKey: form.value.apiKey.trim(),
     }
 
     if (form.value.configMode === 'custom') {
       requestBody.baseUrl = form.value.baseUrl.trim()
       requestBody.modelName = form.value.modelName.trim()
-      requestBody.modelDisplayName = form.value.modelDisplayName.trim() || form.value.modelName.trim()
+      requestBody.modelDisplayName =
+        form.value.modelDisplayName.trim() || form.value.modelName.trim()
       requestBody.completionsPath = form.value.completionsPath.trim()
     }
 
     const response = await fetch('/api/init/save', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
     })
 
     const result = await response.json()
@@ -688,7 +682,7 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
-.language-option input[type="radio"] {
+.language-option input[type='radio'] {
   margin: 0 16px 0 0;
   width: 20px;
   height: 20px;
@@ -848,7 +842,7 @@ onMounted(() => {
   background: rgba(102, 126, 234, 0.1);
 }
 
-.radio-option input[type="radio"] {
+.radio-option input[type='radio'] {
   margin: 4px 12px 0 0;
   width: 16px;
   height: 16px;
@@ -973,8 +967,12 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {

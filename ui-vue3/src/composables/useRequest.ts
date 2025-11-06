@@ -34,6 +34,6 @@ export function useRequest() {
 
   return {
     loading,
-    executeRequest
+    executeRequest,
   }
 }

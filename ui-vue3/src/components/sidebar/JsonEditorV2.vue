@@ -379,7 +379,6 @@ const { t } = useI18n()
 
 // Define props interface specific to JsonEditorV2
 interface JsonEditorV2Props {
-  // eslint-disable-next-line vue/no-unused-properties
   jsonContent: string
   canRollback: boolean
   canRestore: boolean

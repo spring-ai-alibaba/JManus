@@ -89,7 +89,10 @@ export class DatasourceConfigApiService {
   /**
    * Update existing datasource configuration
    */
-  public static async updateConfig(id: number, config: DatasourceConfig): Promise<DatasourceConfig> {
+  public static async updateConfig(
+    id: number,
+    config: DatasourceConfig
+  ): Promise<DatasourceConfig> {
     const response = await fetch(`${this.BASE_URL}/${id}`, {
       method: 'PUT',
       headers: {
@@ -129,7 +132,9 @@ export class DatasourceConfigApiService {
   /**
    * Test database connection
    */
-  public static async testConnection(config: DatasourceConfig): Promise<{ success: boolean; message: string }> {
+  public static async testConnection(
+    config: DatasourceConfig
+  ): Promise<{ success: boolean; message: string }> {
     const response = await fetch(`${this.BASE_URL}/test-connection`, {
       method: 'POST',
       headers: {
@@ -143,4 +148,3 @@ export class DatasourceConfigApiService {
     return await response.json()
   }
 }
-

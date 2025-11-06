@@ -430,7 +430,8 @@ const words: I18nType = {
       usernamePlaceholder: '输入数据库用户名',
       password: '密码',
       passwordPlaceholder: '输入数据库密码',
-      passwordSetHint: '密码已经设置，但从安全考虑，密码只保存在后端，如果你要更新链接请重新输入密码',
+      passwordSetHint:
+        '密码已经设置，但从安全考虑，密码只保存在后端，如果你要更新链接请重新输入密码',
       passwordNotSetHint: '密码还未设置，请设置密码',
       deleteConfirm: '删除确认',
       deleteMessage: '确定要删除配置 "{name}" 吗？此操作不可恢复。',

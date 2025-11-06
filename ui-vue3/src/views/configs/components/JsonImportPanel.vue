@@ -1,11 +1,7 @@
 <template>
   <div class="json-import-panel">
     <div class="form-item">
-      <TabPanel
-        :tabs="tabs"
-        v-model="activeTabIndex"
-        class="json-tab-panel"
-      >
+      <TabPanel :tabs="tabs" v-model="activeTabIndex" class="json-tab-panel">
         <template #json-config>
           <div class="json-config-container">
             <MonacoEditor
@@ -92,13 +88,13 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
-  onValidationChange: () => {}
+  onValidationChange: () => {},
 })
 
 // Emits
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  'validationChange': [result: JsonValidationResult]
+  validationChange: [result: JsonValidationResult]
 }>()
 
 // Internationalization
@@ -114,21 +110,24 @@ const activeTabIndex = ref(0)
 const tabs = computed<TabConfig[]>(() => [
   {
     name: 'json-config',
-    label: 'JSON Configuration'
+    label: 'JSON Configuration',
   },
   {
     name: 'config-example',
-    label: 'Configuration Example'
-  }
+    label: 'Configuration Example',
+  },
 ])
 
 // Watch modelValue changes
-watch(() => props.modelValue, (newValue) => {
-  jsonContent.value = newValue
-})
+watch(
+  () => props.modelValue,
+  newValue => {
+    jsonContent.value = newValue
+  }
+)
 
 // Watch jsonContent changes
-watch(jsonContent, (newValue) => {
+watch(jsonContent, newValue => {
   emit('update:modelValue', newValue)
 })
 
@@ -172,7 +171,8 @@ const validateJson = () => {
     if (error instanceof SyntaxError) {
       const message = error.message
       if (message.includes('Unexpected token')) {
-        errorMessage = '❌ JSON syntax error - Please check if brackets, commas, quotes and other symbols are correct'
+        errorMessage =
+          '❌ JSON syntax error - Please check if brackets, commas, quotes and other symbols are correct'
       } else if (message.includes('Unexpected end')) {
         errorMessage = '❌ JSON incomplete - Please check if closing brackets or quotes are missing'
       } else if (message.includes('Unexpected number')) {
@@ -193,7 +193,7 @@ const validateJson = () => {
 const emitValidationResult = () => {
   const result: JsonValidationResult = {
     isValid: isJsonValid.value,
-    errors: validationErrors.value
+    errors: validationErrors.value,
   }
   emit('validationChange', result)
   props.onValidationChange(result)
@@ -206,7 +206,9 @@ const validateMcpConfig = (config: any): JsonValidationResult => {
   // Check if config has mcpServers property
   if (!config.mcpServers || typeof config.mcpServers !== 'object') {
     errors.push(t('config.mcpConfig.missingMcpServers'))
-    errors.push('💡 Correct format example: {"mcpServers": {"server-id": {"name": "Server Name", "url": "Server URL"}}}')
+    errors.push(
+      '💡 Correct format example: {"mcpServers": {"server-id": {"name": "Server Name", "url": "Server URL"}}}'
+    )
     return { isValid: false, errors }
   }
 
@@ -329,7 +331,7 @@ const normalizeMcpConfig = (config: any): any => {
 defineExpose({
   validateJson,
   isJsonValid: computed(() => isJsonValid.value),
-  validationErrors: computed(() => validationErrors.value)
+  validationErrors: computed(() => validationErrors.value),
 })
 </script>
 
@@ -390,11 +392,21 @@ defineExpose({
 }
 
 /* JSON syntax highlighting */
-.example-json .string { color: #a78bfa; }
-.example-json .number { color: #fbbf24; }
-.example-json .boolean { color: #f87171; }
-.example-json .null { color: rgba(255, 255, 255, 0.6); }
-.example-json .key { color: #34d399; }
+.example-json .string {
+  color: #a78bfa;
+}
+.example-json .number {
+  color: #fbbf24;
+}
+.example-json .boolean {
+  color: #f87171;
+}
+.example-json .null {
+  color: rgba(255, 255, 255, 0.6);
+}
+.example-json .key {
+  color: #34d399;
+}
 
 /* JSON configuration container */
 .json-config-container {

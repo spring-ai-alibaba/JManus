@@ -87,7 +87,11 @@ export function importFile(fileType: 'json' | 'text' = 'json'): Promise<any> {
               resolve(content)
             }
           } catch (error) {
-           reject(new Error(`Failed to parse file: ${error instanceof Error ? error.message : 'Unknown error'}`));
+            reject(
+              new Error(
+                `Failed to parse file: ${error instanceof Error ? error.message : 'Unknown error'}`
+              )
+            )
           }
         }
 

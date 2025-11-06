@@ -12,11 +12,10 @@
               </div>
 
               <div
-                  id="title-edit-container"
-                  class="title-edit-container"
-                  v-if="showTitleEdit"
-              >
-              </div>
+                id="title-edit-container"
+                class="title-edit-container"
+                v-if="showTitleEdit"
+              ></div>
             </div>
             <button class="close-btn" @click="memoryStore.toggleSidebar()">
               <Icon icon="carbon:close" />
@@ -27,56 +26,56 @@
             <div class="search-container">
               <Icon class="search-container-icon" icon="carbon:search" />
               <input
-                  type="text"
-                  :placeholder="$t('memory.searchPlaceholder')"
-                  class="search-input"
-                  v-model="searchQuery"
-                  @input="handleSearch"
-              >
+                type="text"
+                :placeholder="$t('memory.searchPlaceholder')"
+                class="search-input"
+                v-model="searchQuery"
+                @input="handleSearch"
+              />
             </div>
           </div>
 
           <div class="message-list" id="message-list">
             <div>
               <div
-                  class="message-item"
-                  v-for="message in filteredMessages"
-                  :key="message.conversation_id"
-                  :class="{ 'expanded': message.expanded }"
+                class="message-item"
+                v-for="message in filteredMessages"
+                :key="message.conversation_id"
+                :class="{ expanded: message.expanded }"
               >
                 <div class="message-header">
                   <div class="message-content">
                     <div class="sender-info">
                       <div class="sender-div" @click.stop="selectMemory(message.conversation_id)">
-                        <h3
-                            class="sender-name"
-                        >
+                        <h3 class="sender-name">
                           {{ message.memory_name }}
                         </h3>
                       </div>
 
-                      <div class="toggle-container" @click.stop="showNameEditModal(message.conversation_id, message.memory_name)">
-                        <Icon
-                            icon="carbon:edit"
-                            class="edit-btn"
-                        >
-                        </Icon>
+                      <div
+                        class="toggle-container"
+                        @click.stop="
+                          showNameEditModal(message.conversation_id, message.memory_name)
+                        "
+                      >
+                        <Icon icon="carbon:edit" class="edit-btn"> </Icon>
                       </div>
                       <div class="action-buttons">
                         <button
-                            class="delete-btn"
-                            @click.stop="toggleMessage(message.conversation_id)"
+                          class="delete-btn"
+                          @click.stop="toggleMessage(message.conversation_id)"
                         >
-                          <Icon :id="'toggle-' + message.conversation_id"
-                                icon="carbon:chevron-down"
-                                class="down-btn"
+                          <Icon
+                            :id="'toggle-' + message.conversation_id"
+                            icon="carbon:chevron-down"
+                            class="down-btn"
                           ></Icon>
                         </button>
                       </div>
                       <div class="action-buttons">
                         <button
-                            class="delete-btn"
-                            @click.stop="showDeleteConfirm(message.conversation_id)"
+                          class="delete-btn"
+                          @click.stop="showDeleteConfirm(message.conversation_id)"
                         >
                           <Icon icon="carbon:delete"></Icon>
                         </button>
@@ -85,12 +84,16 @@
 
                     <div class="message-preview">
                       <p class="preview-line">
-                        {{ message.messages && message.messages.length > 0 ? message.messages[0].text : 'none message' }}
+                        {{
+                          message.messages && message.messages.length > 0
+                            ? message.messages[0].text
+                            : 'none message'
+                        }}
                       </p>
                       <p
-                          class="preview-line"
-                          style="opacity: 0.8;"
-                          v-if="message.messages && message.messages.length > 1"
+                        class="preview-line"
+                        style="opacity: 0.8"
+                        v-if="message.messages && message.messages.length > 1"
                       >
                         {{ message.messages[1].text }}
                       </p>
@@ -99,9 +102,12 @@
                     <div class="message-meta">
                       <span class="message-id">ID: {{ message.conversation_id }}</span>
                       <div class="meta-right">
-                      <span class="unread-count" v-if="message.messages && message.messages.length > 0">
-                        {{ message.messages.length }} {{$t('memory.size')}}
-                      </span>
+                        <span
+                          class="unread-count"
+                          v-if="message.messages && message.messages.length > 0"
+                        >
+                          {{ message.messages.length }} {{ $t('memory.size') }}
+                        </span>
                         <span class="message-time">{{ formatTimestamp(message.create_time) }}</span>
                       </div>
                     </div>
@@ -109,12 +115,16 @@
                 </div>
 
                 <div
-                    :id="'content-' + message.conversation_id"
-                    class="expanded-content"
-                    v-if="message.expanded"
+                  :id="'content-' + message.conversation_id"
+                  class="expanded-content"
+                  v-if="message.expanded"
                 >
-                  <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    <div class="message-bubble" v-for="(bubble, idx) in message.messages" :key="idx">
+                  <div style="display: flex; flex-direction: column; gap: 0.75rem">
+                    <div
+                      class="message-bubble"
+                      v-for="(bubble, idx) in message.messages"
+                      :key="idx"
+                    >
                       <div class="bubble-avatar">
                         {{ bubble.messageType }}
                       </div>
@@ -133,72 +143,65 @@
           </div>
 
           <div
-              id="name-edit-modal"
-              class="modal-overlay"
-              v-if="showNameModal"
-              @click.self="closeNameModal"
+            id="name-edit-modal"
+            class="modal-overlay"
+            v-if="showNameModal"
+            @click.self="closeNameModal"
           >
             <div class="modal-content">
               <div class="modal-header">
-                <h3 class="modal-title">{{$t('memory.changeName')}}</h3>
+                <h3 class="modal-title">{{ $t('memory.changeName') }}</h3>
                 <input
-                    type="text"
-                    v-model="nameInput"
-                    class="edit-input"
-                    :placeholder="$t('memory.newNamePlaceholder')"
+                  type="text"
+                  v-model="nameInput"
+                  class="edit-input"
+                  :placeholder="$t('memory.newNamePlaceholder')"
+                />
+                <span
+                  id="name-char-count"
+                  class="char-count"
+                  style="text-align: right; display: block; margin-top: 0.25rem"
                 >
-                <span id="name-char-count" class="char-count" style="text-align: right; display: block; margin-top: 0.25rem;">
-                {{ nameInput.length }}
-              </span>
+                  {{ nameInput.length }}
+                </span>
               </div>
 
               <div class="modal-footer">
-                <button
-                    id="cancel-name"
-                    class="modal-btn cancel-btn"
-                    @click="closeNameModal"
-                >
-                  {{$t('memory.cancel')}}
+                <button id="cancel-name" class="modal-btn cancel-btn" @click="closeNameModal">
+                  {{ $t('memory.cancel') }}
                 </button>
-                <button
-                    id="save-name"
-                    class="modal-btn confirm-btn"
-                    @click="saveName"
-                >
-                  {{$t('memory.save')}}
+                <button id="save-name" class="modal-btn confirm-btn" @click="saveName">
+                  {{ $t('memory.save') }}
                 </button>
               </div>
             </div>
           </div>
 
           <div
-              id="delete-modal"
-              class="modal-overlay"
-              v-if="showDeleteModal"
-              @click.self="closeDeleteModal"
+            id="delete-modal"
+            class="modal-overlay"
+            v-if="showDeleteModal"
+            @click.self="closeDeleteModal"
           >
             <div class="modal-content">
               <div class="modal-header">
-                <h3 class="modal-title">{{$t('memory.deleteHint')}}</h3>
+                <h3 class="modal-title">{{ $t('memory.deleteHint') }}</h3>
                 <p class="state-text" id="delete-message">
-                  {{$t('memory.deleteHintPrefix')}} {{ currentDeleteId }} {{$t('memory.deleteHintSuffix')}}
+                  {{ $t('memory.deleteHintPrefix') }} {{ currentDeleteId }}
+                  {{ $t('memory.deleteHintSuffix') }}
                 </p>
               </div>
 
               <div class="modal-footer">
-                <button
-                    id="cancel-delete"
-                    class="modal-btn cancel-btn"
-                    @click="closeDeleteModal"
-                >
-                  {{$t('memory.cancel')}}
+                <button id="cancel-delete" class="modal-btn cancel-btn" @click="closeDeleteModal">
+                  {{ $t('memory.cancel') }}
                 </button>
                 <button
-                    id="confirm-delete"
-                    class="modal-btn delete-btn-confirm"
-                    @click="confirmDelete"
+                  id="confirm-delete"
+                  class="modal-btn delete-btn-confirm"
+                  @click="confirmDelete"
                 >
-                  {{$t('memory.delete')}}
+                  {{ $t('memory.delete') }}
                 </button>
               </div>
             </div>
@@ -210,29 +213,29 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, onUnmounted, ref} from 'vue';
-import {MemoryApiService} from '@/api/memory-api-service'
-import type { Memory} from '@/api/memory-api-service'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { MemoryApiService } from '@/api/memory-api-service'
+import type { Memory } from '@/api/memory-api-service'
 
 // Extended interface for UI state
 interface MemoryWithExpanded extends Memory {
-  expanded: boolean;
+  expanded: boolean
 }
-import {Icon} from '@iconify/vue'
-import {memoryStore} from "@/stores/memory";
-import type {MemoryEmits} from "@/stores/memory";
+import { Icon } from '@iconify/vue'
+import { memoryStore } from '@/stores/memory'
+import type { MemoryEmits } from '@/stores/memory'
 
-const showTitleEdit = ref(false);
-const searchQuery = ref('');
-const messages = ref<MemoryWithExpanded[]>([]);
-const filteredMessages = ref<MemoryWithExpanded[]>([]);
+const showTitleEdit = ref(false)
+const searchQuery = ref('')
+const messages = ref<MemoryWithExpanded[]>([])
+const filteredMessages = ref<MemoryWithExpanded[]>([])
 
-const showNameModal = ref(false);
-const currentEditMessageId = ref<string | null>(null);
-const nameInput = ref('');
+const showNameModal = ref(false)
+const currentEditMessageId = ref<string | null>(null)
+const nameInput = ref('')
 
-const showDeleteModal = ref(false);
-const currentDeleteId = ref<string | null>(null);
+const showDeleteModal = ref(false)
+const currentDeleteId = ref<string | null>(null)
 const expandedMap = new Map()
 const emit = defineEmits<MemoryEmits>()
 
@@ -250,147 +253,152 @@ const handleEscKey = (e: KeyboardEvent) => {
 onMounted(() => {
   memoryStore.setLoadMessages(loadMessages)
   document.addEventListener('keydown', handleEscKey)
-});
+})
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleEscKey)
-});
+})
 
 const loadMessages = async () => {
   try {
     const mes = await MemoryApiService.getMemories()
-    messages.value = mes.map((mesMsg: Memory): MemoryWithExpanded => ({
-      ...mesMsg,
-      expanded: expandedMap.has(mesMsg.conversation_id)
+    messages.value = mes.map(
+      (mesMsg: Memory): MemoryWithExpanded => ({
+        ...mesMsg,
+        expanded: expandedMap.has(mesMsg.conversation_id)
           ? expandedMap.get(mesMsg.conversation_id)
-          : false
-    }));
-    filteredMessages.value = [...messages.value];
+          : false,
+      })
+    )
+    filteredMessages.value = [...messages.value]
     handleSearch()
   } catch (e) {
-    console.error('error:', e);
-    messages.value = [];
+    console.error('error:', e)
+    messages.value = []
 
-    filteredMessages.value = [];
+    filteredMessages.value = []
   }
-};
+}
 
 const selectMemory = (conversationId: string) => {
-  memoryStore.selectMemory(conversationId);
+  memoryStore.selectMemory(conversationId)
   emit('memory-selected')
-};
+}
 
 const formatTimestamp = (timestamp: number | string): string => {
-  const timestampNum = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
+  const timestampNum = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp
   if (isNaN(timestampNum) || timestampNum <= 0) {
-    return 'unknow time';
+    return 'unknow time'
   }
-  const date = new Date(
-      timestampNum.toString().length === 13
-          ? timestampNum
-          : timestampNum * 1000
-  );
+  const date = new Date(timestampNum.toString().length === 13 ? timestampNum : timestampNum * 1000)
 
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  }).replace(',', ' ');
-};
+  return date
+    .toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+    .replace(',', ' ')
+}
 
 const handleSearch = () => {
-  const query = searchQuery.value.toLowerCase().trim();
+  const query = searchQuery.value.toLowerCase().trim()
 
   if (!query) {
-    filteredMessages.value = [...messages.value];
-    return;
+    filteredMessages.value = [...messages.value]
+    return
   }
 
   filteredMessages.value = messages.value.filter(message => {
-    const matchesName = message.memory_name.toLowerCase().includes(query);
-    const matchesId = message.conversation_id.toLowerCase().includes(query);
-    const matchesContent = message.messages?.some(bubble =>
-        bubble.text.toLowerCase().includes(query)
-    ) ?? false;
-    return matchesName || matchesId || matchesContent;
-  });
-};
+    const matchesName = message.memory_name.toLowerCase().includes(query)
+    const matchesId = message.conversation_id.toLowerCase().includes(query)
+    const matchesContent =
+      message.messages?.some(bubble => bubble.text.toLowerCase().includes(query)) ?? false
+    return matchesName || matchesId || matchesContent
+  })
+}
 
 const showNameEditModal = (messageId: string, currentName: string) => {
-  currentEditMessageId.value = messageId;
-  nameInput.value = currentName;
-  showNameModal.value = true;
-};
+  currentEditMessageId.value = messageId
+  nameInput.value = currentName
+  showNameModal.value = true
+}
 
 const closeNameModal = () => {
-  showNameModal.value = false;
-  currentEditMessageId.value = null;
-};
+  showNameModal.value = false
+  currentEditMessageId.value = null
+}
 
 const saveName = async () => {
-  if (!currentEditMessageId.value) return;
-  const newName = nameInput.value.trim() || 'unknow name';
+  if (!currentEditMessageId.value) return
+  const newName = nameInput.value.trim() || 'unknow name'
   const messageIndex = messages.value.findIndex(
-      msg => msg.conversation_id === currentEditMessageId.value
-  );
+    msg => msg.conversation_id === currentEditMessageId.value
+  )
   if (messageIndex !== -1) {
     const currentMessage = messages.value[messageIndex]
     try {
-      const returnMemory = await MemoryApiService.updateMemory(currentMessage.conversation_id, newName)
+      const returnMemory = await MemoryApiService.updateMemory(
+        currentMessage.conversation_id,
+        newName
+      )
       if (!returnMemory.messages) {
-        returnMemory.messages = [];
+        returnMemory.messages = []
       }
-      messages.value[messageIndex] = {...returnMemory, expanded: currentMessage.expanded} as MemoryWithExpanded;
-      handleSearch();
-      showNameModal.value = false;
+      messages.value[messageIndex] = {
+        ...returnMemory,
+        expanded: currentMessage.expanded,
+      } as MemoryWithExpanded
+      handleSearch()
+      showNameModal.value = false
     } catch (error) {
-      console.error('error:', error);
+      console.error('error:', error)
     }
   }
-};
+}
 
 const toggleMessage = (id: string) => {
-  const message = messages.value.find(msg => msg.conversation_id === id);
+  const message = messages.value.find(msg => msg.conversation_id === id)
   if (message) {
-    message.expanded = !message.expanded;
+    message.expanded = !message.expanded
     expandedMap.set(id, message.expanded)
-    const filteredIndex = filteredMessages.value.findIndex(msg => msg.conversation_id === id);
+    const filteredIndex = filteredMessages.value.findIndex(msg => msg.conversation_id === id)
     if (filteredIndex !== -1) {
-      filteredMessages.value[filteredIndex] = {...message};
+      filteredMessages.value[filteredIndex] = { ...message }
     }
   }
-};
+}
 
 const showDeleteConfirm = (id: string) => {
-  currentDeleteId.value = id;
-  showDeleteModal.value = true;
-};
+  currentDeleteId.value = id
+  showDeleteModal.value = true
+}
 
 const closeDeleteModal = () => {
-  showDeleteModal.value = false;
-  currentDeleteId.value = null;
-};
+  showDeleteModal.value = false
+  currentDeleteId.value = null
+}
 
 const confirmDelete = async () => {
-  if (!currentDeleteId.value) return;
+  if (!currentDeleteId.value) return
 
   try {
-    await MemoryApiService.deleteMemory(currentDeleteId.value);
-    messages.value = messages.value.filter(msg => msg.conversation_id !== currentDeleteId.value);
-    handleSearch();
-    if(messages.value.length === 0){
+    await MemoryApiService.deleteMemory(currentDeleteId.value)
+    messages.value = messages.value.filter(msg => msg.conversation_id !== currentDeleteId.value)
+    handleSearch()
+    if (messages.value.length === 0) {
       memoryStore.clearMemoryId()
     }
-    showDeleteModal.value = false;
-    currentDeleteId.value = null;
+    showDeleteModal.value = false
+    currentDeleteId.value = null
   } catch (error) {
-    console.error('error:', error);
+    console.error('error:', error)
   }
-};
+}
 </script>
 
 <style scoped>
@@ -398,7 +406,7 @@ const confirmDelete = async () => {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 .app-container {

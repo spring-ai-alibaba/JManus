@@ -24,12 +24,23 @@ export class PlanActApiService {
   private static readonly PLAN_TEMPLATE_URL = '/api/plan-template'
   private static readonly CRON_TASK_URL = '/api/cron-tasks'
 
-
   // Execute generated plan using ManusController.executeByToolNameAsync
-  public static async executePlan(planTemplateId: string, rawParam?: string, uploadedFiles?: string[], replacementParams?: Record<string, string>, uploadKey?: string): Promise<any> {
+  public static async executePlan(
+    planTemplateId: string,
+    rawParam?: string,
+    uploadedFiles?: string[],
+    replacementParams?: Record<string, string>,
+    uploadKey?: string
+  ): Promise<any> {
     return LlmCheckService.withLlmCheck(async () => {
-      console.log('[PlanActApiService] executePlan called with:', { planTemplateId, rawParam, uploadedFiles, replacementParams, uploadKey})
-      
+      console.log('[PlanActApiService] executePlan called with:', {
+        planTemplateId,
+        rawParam,
+        uploadedFiles,
+        replacementParams,
+        uploadKey,
+      })
+
       // Add rawParam to replacementParams if provided (backend expects it in replacementParams)
       if (rawParam) {
         if (!replacementParams) {
@@ -38,9 +49,14 @@ export class PlanActApiService {
         replacementParams['userRequirement'] = rawParam
         console.log('[PlanActApiService] Added rawParam to replacementParams:', rawParam)
       }
-      
+
       // Use the unified DirectApiService method
-      return await DirectApiService.executeByToolName(planTemplateId, replacementParams, uploadedFiles, uploadKey)
+      return await DirectApiService.executeByToolName(
+        planTemplateId,
+        replacementParams,
+        uploadedFiles,
+        uploadKey
+      )
     })
   }
 
@@ -49,7 +65,7 @@ export class PlanActApiService {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId, planJson })
+      body: JSON.stringify({ planId, planJson }),
     })
     if (!response.ok) throw new Error(`Failed to save plan: ${response.status}`)
     return await response.json()
@@ -60,7 +76,7 @@ export class PlanActApiService {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/versions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId })
+      body: JSON.stringify({ planId }),
     })
     if (!response.ok) throw new Error(`Failed to get plan versions: ${response.status}`)
     return await response.json()
@@ -71,7 +87,7 @@ export class PlanActApiService {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/get-version`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId, versionIndex: versionIndex.toString() })
+      body: JSON.stringify({ planId, versionIndex: versionIndex.toString() }),
     })
     if (!response.ok) throw new Error(`Failed to get specific version plan: ${response.status}`)
     return await response.json()
@@ -84,13 +100,12 @@ export class PlanActApiService {
     return await response.json()
   }
 
-
   // Delete plan template
   public static async deletePlanTemplate(planId: string): Promise<any> {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId })
+      body: JSON.stringify({ planId }),
     })
     if (!response.ok) throw new Error(`Failed to delete plan template: ${response.status}`)
     return await response.json()
@@ -101,7 +116,7 @@ export class PlanActApiService {
     const response = await fetch(this.CRON_TASK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cronConfig)
+      body: JSON.stringify(cronConfig),
     })
     if (!response.ok) {
       try {
@@ -113,5 +128,4 @@ export class PlanActApiService {
     }
     return await response.json()
   }
-
 }

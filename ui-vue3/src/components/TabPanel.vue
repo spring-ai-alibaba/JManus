@@ -12,12 +12,7 @@
       </button>
     </div>
     <div class="tab-content">
-      <div
-        v-for="(tab, index) in tabs"
-        :key="index"
-        v-show="activeTab === index"
-        class="tab-pane"
-      >
+      <div v-for="(tab, index) in tabs" :key="index" v-show="activeTab === index" class="tab-pane">
         <slot :name="tab.name" :tab="tab">
           {{ tab.content }}
         </slot>
@@ -45,20 +40,23 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  modelValue: 0
+  modelValue: 0,
 })
 
 const emit = defineEmits<Emits>()
 
 const activeTab = ref(props.modelValue)
 
-watch(activeTab, (newValue) => {
+watch(activeTab, newValue => {
   emit('update:modelValue', newValue)
 })
 
-watch(() => props.modelValue, (newValue) => {
-  activeTab.value = newValue
-})
+watch(
+  () => props.modelValue,
+  newValue => {
+    activeTab.value = newValue
+  }
+)
 </script>
 
 <style scoped>
@@ -106,4 +104,4 @@ watch(() => props.modelValue, (newValue) => {
 .tab-pane {
   width: 100%;
 }
-</style> 
+</style>

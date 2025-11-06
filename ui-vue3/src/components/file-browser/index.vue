@@ -21,7 +21,7 @@
     <div class="file-browser-header">
       <h3>{{ $t('fileBrowser.title') }}</h3>
       <div class="header-actions">
-                <button
+        <button
           class="refresh-btn"
           @click="refreshFileTree"
           :disabled="loading"
@@ -29,7 +29,7 @@
         >
           <Icon
             icon="carbon:refresh"
-            :class="{ 'rotating': loading }"
+            :class="{ rotating: loading }"
             :style="{ color: '#ffffff', fontSize: '18px', width: '18px', height: '18px' }"
           />
         </button>
@@ -56,7 +56,7 @@
               </div>
             </div>
             <button @click="refreshFileTree" class="retry-btn" :disabled="loading">
-              <Icon icon="carbon:refresh" :class="{ 'rotating': loading }" />
+              <Icon icon="carbon:refresh" :class="{ rotating: loading }" />
               {{ loading ? $t('fileBrowser.checking') : $t('fileBrowser.checkNow') }}
             </button>
           </div>
@@ -100,11 +100,7 @@
             >
               <Icon icon="carbon:download" />
             </button>
-            <button
-              @click="closeFileViewer"
-              class="close-btn"
-              :title="$t('common.close')"
-            >
+            <button @click="closeFileViewer" class="close-btn" :title="$t('common.close')">
               <Icon icon="carbon:close" />
             </button>
           </div>
@@ -145,7 +141,11 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 import FileTreeNode from './FileTreeNode.vue'
-import { FileBrowserApiService, type FileNode, type FileContent } from '@/api/file-browser-api-service'
+import {
+  FileBrowserApiService,
+  type FileNode,
+  type FileContent,
+} from '@/api/file-browser-api-service'
 
 interface Props {
   planId: string
@@ -171,9 +171,9 @@ const isTextFile = computed(() => {
 })
 
 const isPlanDirectoryNotFound = computed(() => {
-  return error.value && (
-    error.value.includes('Plan directory not found') ||
-    error.value.includes('not found')
+  return (
+    error.value &&
+    (error.value.includes('Plan directory not found') || error.value.includes('not found'))
   )
 })
 
@@ -211,8 +211,7 @@ const refreshFileTree = async () => {
 
     // Start auto refresh if it's a "directory not found" error
     const errorMessage = err instanceof Error ? err.message : ''
-    if (errorMessage.includes('Plan directory not found') ||
-        errorMessage.includes('not found')) {
+    if (errorMessage.includes('Plan directory not found') || errorMessage.includes('not found')) {
       startAutoRefresh()
     }
   } finally {
@@ -266,13 +265,17 @@ const formatFileSize = (bytes: number): string => {
 }
 
 // Watch for plan ID changes
-watch(() => props.planId, (newPlanId) => {
-  if (newPlanId) {
-    selectedFile.value = null
-    fileContent.value = null
-    refreshFileTree()
-  }
-}, { immediate: true })
+watch(
+  () => props.planId,
+  newPlanId => {
+    if (newPlanId) {
+      selectedFile.value = null
+      fileContent.value = null
+      refreshFileTree()
+    }
+  },
+  { immediate: true }
+)
 
 // Lifecycle
 onMounted(() => {
@@ -620,8 +623,12 @@ onUnmounted(() => {
 }
 
 @keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Scrollbar styling */

@@ -44,7 +44,12 @@
             :class="{ active: activeCategory === item.key }"
             @click="handleNavClick(item.key)"
           >
-            <Icon :icon="item.icon" width="20" height="20" style="display: inline-block; flex-shrink: 0;" />
+            <Icon
+              :icon="item.icon"
+              width="20"
+              height="20"
+              style="display: inline-block; flex-shrink: 0"
+            />
             <span>{{ item.label }}</span>
           </div>
         </template>

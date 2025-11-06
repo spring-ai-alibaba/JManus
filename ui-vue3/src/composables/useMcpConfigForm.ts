@@ -10,7 +10,7 @@ export function useMcpConfigForm() {
     url: '',
     args: '', // Frontend input as JSON string
     env: '', // Frontend input as JSON string
-    status: 'ENABLE'
+    status: 'ENABLE',
   })
 
   // Parse environment variable string to object
@@ -41,7 +41,7 @@ export function useMcpConfigForm() {
       url: '',
       args: '',
       env: '',
-      status: 'ENABLE'
+      status: 'ENABLE',
     })
   }
 
@@ -105,7 +105,7 @@ export function useMcpConfigForm() {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     }
   }
 
@@ -124,6 +124,6 @@ export function useMcpConfigForm() {
     resetForm,
     populateFormFromServer,
     validateForm,
-    handleConnectionTypeChange
+    handleConnectionTypeChange,
   }
 }

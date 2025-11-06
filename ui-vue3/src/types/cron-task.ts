@@ -32,4 +32,3 @@ export interface CronTaskListResponse {
   data: CronConfig[]
   total: number
 }
-

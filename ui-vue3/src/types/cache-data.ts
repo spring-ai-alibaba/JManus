@@ -20,13 +20,13 @@
 export interface UIStateData {
   /** Whether the input component is enabled */
   enabled: boolean
-  
+
   /** Placeholder text for the input component */
   placeholder?: string
-  
+
   /** Additional UI properties */
   loading?: boolean
-  
+
   /** Any additional metadata for UI state */
   metadata?: Record<string, any>
 }

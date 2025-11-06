@@ -15,11 +15,7 @@
 -->
 <template>
   <div class="custom-select">
-    <button
-        class="select-btn"
-        @click="toggleDropdown"
-        :title="placeholder"
-    >
+    <button class="select-btn" @click="toggleDropdown" :title="placeholder">
       <span v-if="selectedOption" class="current-option">
         <span class="option-name">{{ selectedOption.name }}</span>
       </span>
@@ -27,9 +23,9 @@
         {{ placeholder }}
       </span>
       <Icon
-          :icon="showDropdown ? 'carbon:chevron-up' : 'carbon:chevron-down'"
-          width="14"
-          class="chevron"
+        :icon="showDropdown ? 'carbon:chevron-up' : 'carbon:chevron-down'"
+        width="14"
+        class="chevron"
       />
     </button>
 
@@ -37,19 +33,14 @@
       <div v-show="showDropdown" class="select-dropdown" @click.stop>
         <div class="select-options">
           <button
-              v-for="option in options"
-              :key="option.id"
-              class="select-option"
-              :class="{ active: isSelected(option) }"
-              @click="selectOption(option)"
+            v-for="option in options"
+            :key="option.id"
+            class="select-option"
+            :class="{ active: isSelected(option) }"
+            @click="selectOption(option)"
           >
             <span class="option-name">{{ option.name }}</span>
-            <Icon
-                v-if="isSelected(option)"
-                icon="carbon:checkmark"
-                width="16"
-                class="check-icon"
-            />
+            <Icon v-if="isSelected(option)" icon="carbon:checkmark" width="16" class="check-icon" />
           </button>
         </div>
       </div>
@@ -60,8 +51,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import {ref, computed} from 'vue'
-import {Icon} from '@iconify/vue'
+import { ref, computed } from 'vue'
+import { Icon } from '@iconify/vue'
 
 const props = defineProps<{
   modelValue?: string | null
@@ -104,7 +95,7 @@ const selectOption = (option: { id: string }) => {
   gap: 6px;
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.05);
-  border:1px solid rgba(80 78 78);
+  border: 1px solid rgba(80 78 78);
   border-radius: 8px;
   color: #fff;
   cursor: pointer;
@@ -149,7 +140,9 @@ const selectOption = (option: { id: string }) => {
   backdrop-filter: blur(16px);
   border: 1px solid rgba(102, 126, 234, 0.3);
   border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(102, 126, 234, 0.2);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(102, 126, 234, 0.2);
   min-width: 300px;
 }
 

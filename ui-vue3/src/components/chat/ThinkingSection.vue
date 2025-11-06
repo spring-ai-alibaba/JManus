@@ -42,10 +42,7 @@
       />
 
       <!-- Display the default processing state only when there is no final content -->
-      <div
-        v-else-if="!hasContent && thinking"
-        class="default-processing"
-      >
+      <div v-else-if="!hasContent && thinking" class="default-processing">
         <div class="processing-indicator">
           <div class="thinking-dots">
             <span></span>
@@ -77,7 +74,12 @@ interface Props {
 
 interface Emits {
   (e: 'agent-selected', agentIndex: number, agent: AgentExecutionRecord): void
-  (e: 'sub-plan-selected', agentIndex: number, subPlanIndex: number, subPlan: PlanExecutionRecord): void
+  (
+    e: 'sub-plan-selected',
+    agentIndex: number,
+    subPlanIndex: number,
+    subPlan: PlanExecutionRecord
+  ): void
   (e: 'user-input-submitted', inputData: any): void
   (e: 'step-selected', stepId: string): void
 }
@@ -87,9 +89,11 @@ const emit = defineEmits<Emits>()
 
 // Computed properties
 const shouldShowThinking = computed(() => {
-  return (props.thinking ?? false) || 
-         (props.thinkingDetails?.agentExecutionSequence?.length ?? 0) > 0 ||
-         (props.planExecution?.agentExecutionSequence?.length ?? 0) > 0
+  return (
+    (props.thinking ?? false) ||
+    (props.thinkingDetails?.agentExecutionSequence?.length ?? 0) > 0 ||
+    (props.planExecution?.agentExecutionSequence?.length ?? 0) > 0
+  )
 })
 
 // Event handlers
@@ -97,7 +101,11 @@ const handleAgentSelected = (agentIndex: number, agent: AgentExecutionRecord) =>
   emit('agent-selected', agentIndex, agent)
 }
 
-const handleSubPlanSelected = (agentIndex: number, subPlanIndex: number, subPlan: PlanExecutionRecord) => {
+const handleSubPlanSelected = (
+  agentIndex: number,
+  subPlanIndex: number,
+  subPlan: PlanExecutionRecord
+) => {
   emit('sub-plan-selected', agentIndex, subPlanIndex, subPlan)
 }
 
@@ -117,7 +125,7 @@ const handleStepSelected = (stepId: string) => {
   border-radius: 12px;
   background: rgba(102, 126, 234, 0.05);
   overflow: hidden;
-  
+
   .thinking-header {
     display: flex;
     align-items: center;
@@ -125,7 +133,7 @@ const handleStepSelected = (stepId: string) => {
     padding: 12px 16px;
     background: rgba(102, 126, 234, 0.1);
     border-bottom: 1px solid rgba(102, 126, 234, 0.15);
-    
+
     .thinking-avatar {
       display: flex;
       align-items: center;
@@ -134,23 +142,23 @@ const handleStepSelected = (stepId: string) => {
       height: 32px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-radius: 50%;
-      
+
       .thinking-icon {
         font-size: 16px;
         color: #ffffff;
       }
     }
-    
+
     .thinking-label {
       font-weight: 600;
       color: #ffffff;
       font-size: 14px;
     }
   }
-  
+
   .thinking-content {
     padding: 16px;
-    
+
     .thinking {
       display: flex;
       align-items: center;
@@ -161,18 +169,18 @@ const handleStepSelected = (stepId: string) => {
       border-radius: 8px;
       font-size: 13px;
       color: #ffffff;
-      
+
       .thinking-icon {
         font-size: 14px;
         color: #667eea;
         flex-shrink: 0;
       }
-      
+
       span {
         line-height: 1.4;
       }
     }
-    
+
     .default-processing {
       .processing-indicator {
         display: flex;
@@ -181,26 +189,26 @@ const handleStepSelected = (stepId: string) => {
         padding: 16px;
         color: #aaaaaa;
         font-size: 14px;
-        
+
         .thinking-dots {
           display: flex;
           gap: 4px;
-          
+
           span {
             width: 6px;
             height: 6px;
             background: #667eea;
             border-radius: 50%;
             animation: thinking-pulse 1.5s ease-in-out infinite;
-            
+
             &:nth-child(1) {
               animation-delay: 0s;
             }
-            
+
             &:nth-child(2) {
               animation-delay: 0.2s;
             }
-            
+
             &:nth-child(3) {
               animation-delay: 0.4s;
             }
@@ -212,7 +220,9 @@ const handleStepSelected = (stepId: string) => {
 }
 
 @keyframes thinking-pulse {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     opacity: 0.3;
     transform: scale(1);
   }
@@ -226,24 +236,24 @@ const handleStepSelected = (stepId: string) => {
   .thinking-section {
     .thinking-header {
       padding: 10px 14px;
-      
+
       .thinking-avatar {
         width: 28px;
         height: 28px;
-        
+
         .thinking-icon {
           font-size: 14px;
         }
       }
-      
+
       .thinking-label {
         font-size: 13px;
       }
     }
-    
+
     .thinking-content {
       padding: 14px;
-      
+
       .thinking {
         padding: 6px 10px;
         font-size: 12px;

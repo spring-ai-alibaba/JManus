@@ -392,7 +392,6 @@ const CONFIG_DISPLAY_NAMES: Record<string, string> = {
   maxMemory: 'config.basicConfig.agentSettings.maxMemory',
   parallelToolCalls: 'config.basicConfig.agentSettings.parallelToolCalls',
 
-
   // Infinite Context - TEMPORARILY COMMENTED OUT
   // 'enabled': ('config.basicConfig.infiniteContext.enabled'),
   // 'parallelThreads': ('config.basicConfig.infiniteContext.parallelThreads'),

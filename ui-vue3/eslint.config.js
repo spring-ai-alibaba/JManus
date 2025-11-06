@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import js from '@eslint/js';
-import vue from 'eslint-plugin-vue';
-import typescript from '@vue/eslint-config-typescript';
-import prettier from '@vue/eslint-config-prettier';
-import unusedImports from 'eslint-plugin-unused-imports';
-import tsParser from '@typescript-eslint/parser';
-import vueParser from 'vue-eslint-parser';
-import globals from 'globals';
+import js from '@eslint/js'
+import vue from 'eslint-plugin-vue'
+import typescript from '@vue/eslint-config-typescript'
+import prettier from '@vue/eslint-config-prettier'
+import unusedImports from 'eslint-plugin-unused-imports'
+import tsParser from '@typescript-eslint/parser'
+import vueParser from 'vue-eslint-parser'
+import globals from 'globals'
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production'
 
 export default [
   // Ignore patterns
@@ -50,6 +50,7 @@ export default [
       '**/*.njsproj',
       '**/*.sln',
       '**/*.sw?',
+      '**/.eslintrc.cjs', // Legacy ESLint config file
     ],
   },
   // Base config for all files
@@ -77,7 +78,7 @@ export default [
   // TypeScript config
   ...typescript(),
   // Prettier config (skip formatting)
-  ...prettier(),
+  prettier,
   // Unused imports plugin
   {
     plugins: {
@@ -155,5 +156,4 @@ export default [
       '@typescript-eslint/no-unnecessary-condition': 'off',
     },
   },
-];
-
+]

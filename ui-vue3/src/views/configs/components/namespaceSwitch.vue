@@ -91,14 +91,12 @@ const handleNamespaceChange = (value: string, option: { host?: string }) => {
 const getAllNamespaces = async () => {
   const loadedNamespaces = (await NamespaceApiService.getAllNamespaces()) as Namespace[]
 
-   // Check if the current URL's host is contained in the host of each item in loadedNamespaces, 
+  // Check if the current URL's host is contained in the host of each item in loadedNamespaces,
   // if so, select this as the defaultNamespaceCode
   const currentHost = window.location.host
   let defaultNamespaceCode = ''
 
-  const matchedNamespace = loadedNamespaces.find(
-    namespace => namespace.host?.includes(currentHost)
-  )
+  const matchedNamespace = loadedNamespaces.find(namespace => namespace.host?.includes(currentHost))
 
   if (matchedNamespace) {
     defaultNamespaceCode = matchedNamespace.code

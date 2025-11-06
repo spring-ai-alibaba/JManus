@@ -21,7 +21,7 @@
       :thinking-details="message.thinkingDetails"
       @step-selected="handleStepSelected"
     />
-    
+
     <!-- Plan execution section (when available) -->
     <ExecutionDetails
       v-if="message.planExecution"
@@ -30,16 +30,25 @@
       :generic-input="message.genericInput || ''"
       @step-selected="handleStepSelected"
     />
-    
+
     <!-- Response section -->
     <ResponseSection
-      v-if="message.content || message.error || isStreaming || message.planExecution?.userInputWaitState?.waiting"
+      v-if="
+        message.content ||
+        message.error ||
+        isStreaming ||
+        message.planExecution?.userInputWaitState?.waiting
+      "
       :content="message.content || ''"
       :is-streaming="isStreaming || false"
       v-bind="{
         ...(message.error ? { error: message.error } : {}),
-        ...(message.planExecution?.userInputWaitState ? { userInputWaitState: message.planExecution.userInputWaitState } : {}),
-        ...(message.planExecution?.currentPlanId ? { planId: message.planExecution.currentPlanId } : {})
+        ...(message.planExecution?.userInputWaitState
+          ? { userInputWaitState: message.planExecution.userInputWaitState }
+          : {}),
+        ...(message.planExecution?.currentPlanId
+          ? { planId: message.planExecution.currentPlanId }
+          : {}),
       }"
       :timestamp="message.timestamp"
       :generic-input="message.genericInput || ''"
@@ -101,7 +110,7 @@ const handleStepSelected = (stepId: string) => {
 <style lang="less" scoped>
 .assistant-message {
   margin-bottom: 24px;
-  
+
   // Add spacing between thinking and response sections
   > * + * {
     margin-top: 16px;
@@ -111,7 +120,7 @@ const handleStepSelected = (stepId: string) => {
 @media (max-width: 768px) {
   .assistant-message {
     margin-bottom: 20px;
-    
+
     > * + * {
       margin-top: 12px;
     }

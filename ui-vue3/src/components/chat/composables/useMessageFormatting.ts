@@ -21,13 +21,12 @@ import type { ChatMessage } from './useChatMessages'
  * Message formatting utilities
  */
 export function useMessageFormatting() {
-  
   /**
    * Format response text with markdown and code highlighting
    */
   const formatResponseText = (text: string): string => {
     if (!text) return ''
-    
+
     return text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -42,30 +41,30 @@ export function useMessageFormatting() {
   const formatTimestamp = (timestamp: Date): string => {
     const now = new Date()
     const diff = now.getTime() - timestamp.getTime()
-    
+
     // Less than 1 minute
     if (diff < 60000) {
       return 'Just now'
     }
-    
+
     // Less than 1 hour
     if (diff < 3600000) {
       const minutes = Math.floor(diff / 60000)
       return `${minutes} minutes ago`
     }
-    
+
     // Less than 1 day
     if (diff < 86400000) {
       const hours = Math.floor(diff / 3600000)
       return `${hours} hours ago`
     }
-    
+
     // More than 1 day
     return timestamp.toLocaleDateString('zh-CN', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
@@ -79,7 +78,7 @@ export function useMessageFormatting() {
       streaming: message.isStreaming,
       'has-error': !!message.error,
       'has-thinking': !!message.thinking,
-      'has-execution': !!message.planExecution
+      'has-execution': !!message.planExecution,
     }))
   }
 
@@ -88,11 +87,11 @@ export function useMessageFormatting() {
    */
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B'
-    
+
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
@@ -129,7 +128,8 @@ export function useMessageFormatting() {
   const getMessageStatus = (message: ChatMessage): string => {
     if (message.error) return 'Send failed'
     if (message.isStreaming) return 'Typing...'
-    if (message.type === 'assistant' && !message.content && !message.thinking) return 'Waiting for response'
+    if (message.type === 'assistant' && !message.content && !message.thinking)
+      return 'Waiting for response'
     return ''
   }
 
@@ -141,6 +141,6 @@ export function useMessageFormatting() {
     truncateText,
     stripHtml,
     hasDisplayableContent,
-    getMessageStatus
+    getMessageStatus,
   }
 }

@@ -285,7 +285,8 @@ const words: I18nType = {
       defaultModel: 'Default Model',
       apiKeySecurityNotice:
         'For security reasons, the API key cannot be sent to the frontend. Please re-enter the API key each time, then click the button to confirm and fetch models.',
-      apiKeyInstructions: 'For security reasons, the SK cannot be sent to the frontend. If you want to modify the default model, please follow these steps:',
+      apiKeyInstructions:
+        'For security reasons, the SK cannot be sent to the frontend. If you want to modify the default model, please follow these steps:',
       apiKeyStep1: '1) Re-enter the API Key (SK)',
       apiKeyStep2: '2) Click to verify SK and fetch model list',
       apiKeyStep3: '3) Select model',
@@ -439,10 +440,12 @@ const words: I18nType = {
       usernamePlaceholder: 'Enter database username',
       password: 'Password',
       passwordPlaceholder: 'Enter database password',
-      passwordSetHint: 'Password has been set. For security reasons, the password is only stored on the backend. If you need to update the connection, please re-enter the password.',
+      passwordSetHint:
+        'Password has been set. For security reasons, the password is only stored on the backend. If you need to update the connection, please re-enter the password.',
       passwordNotSetHint: 'Password has not been set. Please set a password.',
       deleteConfirm: 'Delete Confirmation',
-      deleteMessage: 'Are you sure you want to delete the configuration "{name}"? This action cannot be undone.',
+      deleteMessage:
+        'Are you sure you want to delete the configuration "{name}"? This action cannot be undone.',
     },
     // Basic configuration
     basicConfig: {
@@ -881,7 +884,8 @@ const words: I18nType = {
     saveFailed: 'Failed to save plan modifications',
     saving: 'Saving...',
     saveConfirmationTitle: 'Save Confirmation',
-    saveConfirmationMessage: 'Task requirements have been modified but not saved. Do you want to save the modifications before executing the plan?',
+    saveConfirmationMessage:
+      'Task requirements have been modified but not saved. Do you want to save the modifications before executing the plan?',
     continueWithoutSave: 'Continue Without Saving',
     generateSuccess: 'Plan generated successfully! Template ID: {templateId}',
     generateFailed: 'Failed to generate plan',

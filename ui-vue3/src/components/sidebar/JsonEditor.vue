@@ -210,7 +210,7 @@ import { Icon } from '@iconify/vue'
 import { useJsonEditor, type JsonEditorProps } from './json-editor-logic'
 
 // Props
-// eslint-disable-next-line vue/no-unused-properties
+
 const props = withDefaults(defineProps<JsonEditorProps>(), {
   currentPlanTemplateId: '',
   hiddenFields: () => [],

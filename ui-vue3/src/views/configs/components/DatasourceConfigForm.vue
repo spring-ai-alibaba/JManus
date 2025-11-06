@@ -49,7 +49,11 @@
           <span class="toggle-slider"></span>
         </label>
         <span class="toggle-label">
-          {{ formData.enable ? $t('config.databaseConfig.enabled') : $t('config.databaseConfig.disabled') }}
+          {{
+            formData.enable
+              ? $t('config.databaseConfig.enabled')
+              : $t('config.databaseConfig.disabled')
+          }}
         </span>
       </div>
     </div>
@@ -66,7 +70,9 @@
     </div>
 
     <div class="form-item">
-      <label>{{ $t('config.databaseConfig.driverClassName') }} <span class="required">*</span></label>
+      <label
+        >{{ $t('config.databaseConfig.driverClassName') }} <span class="required">*</span></label
+      >
       <input
         :value="formData.driver_class_name || ''"
         @input="handleInput('driver_class_name', $event)"
@@ -112,10 +118,18 @@
     </div>
 
     <div class="form-item">
-      <button class="test-connection-btn" @click="testConnection" :disabled="testingConnection || !canTestConnection">
+      <button
+        class="test-connection-btn"
+        @click="testConnection"
+        :disabled="testingConnection || !canTestConnection"
+      >
         <Icon v-if="testingConnection" icon="carbon:loading" class="spinning" />
         <Icon v-else icon="carbon:connection-signal" />
-        {{ testingConnection ? $t('config.databaseConfig.testing') : $t('config.databaseConfig.testConnection') }}
+        {{
+          testingConnection
+            ? $t('config.databaseConfig.testing')
+            : $t('config.databaseConfig.testConnection')
+        }}
       </button>
       <div v-if="testResult" :class="['test-result', testResult.success ? 'success' : 'error']">
         <Icon :icon="testResult.success ? 'carbon:checkmark-filled' : 'carbon:error-filled'" />
@@ -128,7 +142,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Icon } from '@iconify/vue'
-import { DatasourceConfigApiService, type DatasourceConfig } from '@/api/datasource-config-api-service'
+import {
+  DatasourceConfigApiService,
+  type DatasourceConfig,
+} from '@/api/datasource-config-api-service'
 
 // Driver class name mapping based on database type
 const DRIVER_CLASS_NAMES: Record<string, string> = {
@@ -189,8 +206,7 @@ const handleSelectChange = (field: keyof DatasourceConfig, event: Event) => {
       [field]: newValue,
       driver_class_name: DRIVER_CLASS_NAMES[newValue.toLowerCase()],
     })
-  }
-  else {
+  } else {
     emit('update:formData', {
       ...props.formData,
       [field]: newValue,
@@ -216,14 +232,14 @@ const testConnection = async () => {
   }
 
   // If password is set but not provided for testing, require password input
-        // If password_set is true but password is undefined, we need password from user
-        if (props.formData.password_set && props.formData.password === undefined) {
-          testResult.value = {
-            success: false,
-            message: 'Please enter password to test connection',
-          }
-          return
-        }
+  // If password_set is true but password is undefined, we need password from user
+  if (props.formData.password_set && props.formData.password === undefined) {
+    testResult.value = {
+      success: false,
+      message: 'Please enter password to test connection',
+    }
+    return
+  }
 
   testingConnection.value = true
   testResult.value = null
@@ -231,14 +247,12 @@ const testConnection = async () => {
   try {
     const result = await DatasourceConfigApiService.testConnection(props.formData)
     testResult.value = result
-  }
-  catch (error) {
+  } catch (error) {
     testResult.value = {
       success: false,
       message: error instanceof Error ? error.message : String(error),
     }
-  }
-  finally {
+  } finally {
     testingConnection.value = false
   }
 }
@@ -473,4 +487,3 @@ const testConnection = async () => {
   }
 }
 </style>
-

@@ -19,19 +19,17 @@
       <Icon icon="carbon:user" class="user-icon" />
       <h4 class="user-input-title">{{ $t('chat.userInputRequired') }}</h4>
     </div>
-    
+
     <p class="user-input-message">
       {{ userInputWaitState?.title ?? $t('chat.userInput.message') }}
     </p>
-    
+
     <p v-if="userInputWaitState?.formDescription" class="form-description">
       {{ userInputWaitState?.formDescription }}
     </p>
 
     <form @submit.prevent="handleUserInputSubmit" class="user-input-form">
-      <template
-        v-if="userInputWaitState?.formInputs && userInputWaitState.formInputs.length > 0"
-      >
+      <template v-if="userInputWaitState?.formInputs && userInputWaitState.formInputs.length > 0">
         <div class="form-grid">
           <div
             v-for="(input, inputIndex) in userInputWaitState?.formInputs"
@@ -116,10 +114,7 @@
               </option>
             </select>
 
-            <div
-              v-else-if="input.type === 'checkbox' && input.options"
-              class="checkbox-group"
-            >
+            <div v-else-if="input.type === 'checkbox' && input.options" class="checkbox-group">
               <label
                 v-for="option in getOptionsArray(input.options)"
                 :key="option"
@@ -137,10 +132,7 @@
               </label>
             </div>
 
-            <div
-              v-else-if="input.type === 'radio' && input.options"
-              class="radio-group"
-            >
+            <div v-else-if="input.type === 'radio' && input.options" class="radio-group">
               <label
                 v-for="option in getOptionsArray(input.options)"
                 :key="option"
@@ -226,16 +218,17 @@ const initializeFormInputs = () => {
   const formInputs = props.userInputWaitState?.formInputs
   if (formInputs && formInputs.length > 0) {
     // Only initialize if not already initialized or if form structure changed
-    const needsInitialization = !isInitialized.value || 
-      Object.keys(formInputsStore).length !== formInputs.length
-    
+    const needsInitialization =
+      !isInitialized.value || Object.keys(formInputsStore).length !== formInputs.length
+
     if (needsInitialization) {
       formInputs.forEach((input, index) => {
         // Only initialize if this field doesn't exist or is empty
-        if (!(index in formInputsStore) || 
-            (input.type === 'checkbox' && !Array.isArray(formInputsStore[index])) ||
-            (input.type !== 'checkbox' && formInputsStore[index] === '')) {
-          
+        if (
+          !(index in formInputsStore) ||
+          (input.type === 'checkbox' && !Array.isArray(formInputsStore[index])) ||
+          (input.type !== 'checkbox' && formInputsStore[index] === '')
+        ) {
           if (input.type === 'checkbox') {
             formInputsStore[index] = []
           } else {
@@ -253,19 +246,23 @@ onMounted(() => {
   initializeFormInputs()
 })
 
-watch(() => props.userInputWaitState?.formInputs, () => {
-  // Clear any existing timeout
-  if (initializationTimeout.value) {
-    clearTimeout(initializationTimeout.value)
-  }
-  
-  // Debounce initialization to avoid frequent resets
-  initializationTimeout.value = setTimeout(() => {
-    // Reset initialization flag when form structure changes
-    isInitialized.value = false
-    initializeFormInputs()
-  }, 100) // 100ms debounce
-}, { deep: true })
+watch(
+  () => props.userInputWaitState?.formInputs,
+  () => {
+    // Clear any existing timeout
+    if (initializationTimeout.value) {
+      clearTimeout(initializationTimeout.value)
+    }
+
+    // Debounce initialization to avoid frequent resets
+    initializationTimeout.value = setTimeout(() => {
+      // Reset initialization flag when form structure changes
+      isInitialized.value = false
+      initializeFormInputs()
+    }, 100) // 100ms debounce
+  },
+  { deep: true }
+)
 
 // Event handlers
 const handleUserInputSubmit = async () => {
@@ -310,7 +307,10 @@ const getOptionsArray = (options: string | string[] | undefined): string[] => {
   if (!options) return []
   if (Array.isArray(options)) return options
   if (typeof options === 'string') {
-    return options.split(',').map(opt => opt.trim()).filter(opt => opt.length > 0)
+    return options
+      .split(',')
+      .map(opt => opt.trim())
+      .filter(opt => opt.length > 0)
   }
   return []
 }
@@ -336,18 +336,18 @@ onUnmounted(() => {
   background: rgba(102, 126, 234, 0.1);
   border: 1px solid rgba(102, 126, 234, 0.2);
   border-radius: 8px;
-  
+
   .user-input-header {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 12px;
-    
+
     .user-icon {
       font-size: 16px;
       color: #667eea;
     }
-    
+
     .user-input-title {
       margin: 0;
       color: #ffffff;
@@ -355,44 +355,44 @@ onUnmounted(() => {
       font-weight: 600;
     }
   }
-  
+
   .user-input-message {
     margin-bottom: 12px;
     font-weight: 500;
     color: #ffffff;
     font-size: 14px;
   }
-  
+
   .form-description {
     margin-bottom: 16px;
     color: #aaaaaa;
     font-size: 13px;
     line-height: 1.4;
   }
-  
+
   .user-input-form {
     .form-grid {
       display: flex;
       flex-direction: column;
       gap: 16px;
       margin-bottom: 16px;
-      
+
       @media (max-width: 768px) {
         gap: 12px;
       }
     }
-    
+
     .form-group {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      
+
       label {
         font-size: 13px;
         font-weight: 500;
         color: #ffffff;
       }
-      
+
       .form-input {
         padding: 8px 12px;
         background: rgba(0, 0, 0, 0.3);
@@ -401,39 +401,39 @@ onUnmounted(() => {
         color: #ffffff;
         font-size: 14px;
         transition: border-color 0.2s ease;
-        
+
         &:focus {
           outline: none;
           border-color: #667eea;
           box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
         }
-        
+
         &::placeholder {
           color: #888888;
         }
       }
-      
+
       .form-textarea {
         resize: vertical;
         min-height: 60px;
         font-family: inherit;
       }
-      
+
       .form-select {
         cursor: pointer;
-        
+
         option {
           background: #2d3748;
           color: #ffffff;
         }
       }
-      
+
       .checkbox-group,
       .radio-group {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        
+
         .checkbox-item,
         .radio-item {
           display: flex;
@@ -441,7 +441,7 @@ onUnmounted(() => {
           gap: 8px;
           cursor: pointer;
           padding: 4px 0;
-          
+
           .form-checkbox,
           .form-radio {
             width: 16px;
@@ -450,7 +450,7 @@ onUnmounted(() => {
             cursor: pointer;
             accent-color: #667eea;
           }
-          
+
           .checkbox-label,
           .radio-label {
             color: #ffffff;
@@ -460,7 +460,7 @@ onUnmounted(() => {
         }
       }
     }
-    
+
     .submit-user-input-btn {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #ffffff;
@@ -471,12 +471,12 @@ onUnmounted(() => {
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
-      
+
       &:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
       }
-      
+
       &:active {
         transform: translateY(0);
       }

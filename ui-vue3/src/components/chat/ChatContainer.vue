@@ -16,9 +16,9 @@
 <template>
   <div class="chat-container">
     <!-- Messages container -->
-    <div 
-      class="messages" 
-      ref="messagesRef" 
+    <div
+      class="messages"
+      ref="messagesRef"
       @scroll="handleScroll"
       @click="handleMessageContainerClick"
     >
@@ -33,7 +33,7 @@
         @retry="handleRetryMessage"
         @step-selected="handleStepSelected"
       />
-      
+
       <!-- Loading indicator -->
       <div v-if="isLoading" class="loading-message">
         <div class="loading-content">
@@ -72,8 +72,7 @@ import { useScrollBehavior } from './composables/useScrollBehavior'
 // Import plan execution manager
 import { planExecutionManager } from '@/utils/plan-execution-manager'
 
-interface Props {
-}
+interface Props {}
 
 interface Emits {
   (e: 'step-selected', stepId: string): void
@@ -81,8 +80,7 @@ interface Emits {
 
 // InputMessage interface removed - not needed in display component
 
-withDefaults(defineProps<Props>(), {
-})
+withDefaults(defineProps<Props>(), {})
 
 const emit = defineEmits<Emits>()
 
@@ -98,16 +96,12 @@ const {
   updateMessage,
   startStreaming,
   stopStreaming,
-  findMessage
+  findMessage,
 } = useChatMessages()
 
 // Scroll behavior
 const messagesRef = ref<HTMLElement | null>(null)
-const {
-  scrollToBottom,
-  autoScrollToBottom,
-  showScrollToBottom
-} = useScrollBehavior(messagesRef)
+const { scrollToBottom, autoScrollToBottom, showScrollToBottom } = useScrollBehavior(messagesRef)
 
 // Local state
 const pollingInterval = ref<number>()
@@ -130,7 +124,7 @@ const handleScroll = () => {
 const handleMessageContainerClick = (event: Event) => {
   // Handle markdown copy buttons and other click events
   const target = event.target as HTMLElement
-  
+
   if (target.classList.contains('md-copy-btn')) {
     const rawText = target.getAttribute('data-raw')
     if (rawText) {
@@ -149,7 +143,7 @@ const handleMessageContainerClick = (event: Event) => {
 const handleCopyMessage = async (messageId: string) => {
   const message = findMessage(messageId)
   if (!message) return
-  
+
   try {
     // Strip HTML tags for clipboard
     const plainText = message.content.replace(/<[^>]*>/g, '')
@@ -166,7 +160,7 @@ const handleRegenerateMessage = (messageId: string) => {
   if (message && message.type === 'assistant') {
     // Reset message content and restart generation
     updateMessage(messageId, {
-      content: ''
+      content: '',
     })
     startStreaming(messageId)
     // Trigger regeneration logic here
@@ -178,7 +172,7 @@ const handleRetryMessage = (messageId: string) => {
   const message = findMessage(messageId)
   if (message) {
     updateMessage(messageId, {
-      content: ''
+      content: '',
     })
     startStreaming(messageId)
     // Trigger retry logic here
@@ -195,38 +189,39 @@ const handleStepSelected = (stepId: string) => {
 // Plan execution handlers
 const handlePlanUpdate = (rootPlanId: string) => {
   console.log('[ChatContainer] Plan update received:', rootPlanId)
-  
+
   // Get the PlanExecutionRecord from the cache
   const planDetails = planExecutionManager.getCachedPlanRecord(rootPlanId)
-  
+
   if (!planDetails) {
     console.warn('[ChatContainer] No cached plan data found for rootPlanId:', rootPlanId)
     return
   }
-  
+
   console.log('[ChatContainer] Retrieved plan details from cache:', planDetails)
-  
+
   // Find the corresponding message
   const messageIndex = messages.value.findIndex(
     m => m.planExecution?.currentPlanId === planDetails.currentPlanId && m.type === 'assistant'
   )
-  
+
   if (messageIndex !== -1) {
     const message = messages.value[messageIndex]
-    
+
     // Update planExecution data using updateMessage
     const updates: any = {
-      planExecution: JSON.parse(JSON.stringify(planDetails))
+      planExecution: JSON.parse(JSON.stringify(planDetails)),
     }
-    
+
     // Handle simple responses (cases without agent execution sequence)
     if (!planDetails.agentExecutionSequence || planDetails.agentExecutionSequence.length === 0) {
       console.log('[ChatContainer] Handling simple response without agent execution sequence')
-      
+
       if (planDetails.completed) {
         // Clear thinking state and set final response
         updates.thinking = ''
-        const finalResponse = planDetails.summary ?? planDetails.result ?? planDetails.message ?? 'Execution completed'
+        const finalResponse =
+          planDetails.summary ?? planDetails.result ?? planDetails.message ?? 'Execution completed'
         updates.content = finalResponse
         console.log('[ChatContainer] Set simple response content:', finalResponse)
       }
@@ -234,7 +229,7 @@ const handlePlanUpdate = (rootPlanId: string) => {
       console.log('[ChatContainer] Handling detailed plan with agent execution sequence')
       // This is a detailed plan with execution steps, keep the plan execution display
     }
-    
+
     // Update the message
     updateMessage(message.id, updates)
   }
@@ -242,19 +237,19 @@ const handlePlanUpdate = (rootPlanId: string) => {
 
 const handlePlanCompleted = (planDetails: any) => {
   console.log('[ChatContainer] Plan completed:', planDetails)
-  
+
   if (planDetails.rootPlanId) {
     const messageIndex = messages.value.findIndex(
       m => m.planExecution?.currentPlanId === planDetails.rootPlanId
     )
-    
+
     if (messageIndex !== -1) {
       const message = messages.value[messageIndex]
-      
+
       const summary = planDetails.summary ?? planDetails.result ?? 'Execution completed'
       updateMessage(message.id, {
         thinking: '',
-        content: summary
+        content: summary,
       })
       console.log('[ChatContainer] Updated completed message:', summary)
     }
@@ -268,7 +263,7 @@ const handleDialogRoundStart = (planId: string) => {
 
 const handlePlanError = (message: string) => {
   console.log('[ChatContainer] Plan error:', message)
-  
+
   // Show error message
   addMessage('assistant', `Error: ${message}`)
   console.error('[ChatContainer] Plan execution error:', message)
@@ -281,18 +276,22 @@ onMounted(() => {
   // Initial prompt processing removed - handled by parent component
 
   // Auto-scroll to bottom when new messages are added
-  watch(messages, () => {
-    nextTick(() => {
-      autoScrollToBottom()
-    })
-  }, { deep: true })
+  watch(
+    messages,
+    () => {
+      nextTick(() => {
+        autoScrollToBottom()
+      })
+    },
+    { deep: true }
+  )
 
   // Register plan execution callbacks
   planExecutionManager.setEventCallbacks({
     onPlanUpdate: handlePlanUpdate,
     onPlanCompleted: handlePlanCompleted,
     onDialogRoundStart: handleDialogRoundStart,
-    onPlanError: handlePlanError
+    onPlanError: handlePlanError,
   })
 })
 
@@ -312,7 +311,7 @@ defineExpose({
   addMessage,
   updateMessage,
   startStreaming,
-  stopStreaming
+  stopStreaming,
 })
 </script>
 
@@ -323,52 +322,52 @@ defineExpose({
   height: 100%;
   position: relative;
   background: #1a1a1a;
-  
+
   .messages {
     flex: 1;
     overflow-y: auto;
     padding: 20px;
     scroll-behavior: smooth;
-    
+
     // Custom scrollbar
     &::-webkit-scrollbar {
       width: 6px;
     }
-    
+
     &::-webkit-scrollbar-track {
       background: rgba(255, 255, 255, 0.1);
       border-radius: 3px;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background: rgba(255, 255, 255, 0.3);
       border-radius: 3px;
-      
+
       &:hover {
         background: rgba(255, 255, 255, 0.5);
       }
     }
   }
-  
+
   .loading-message {
     display: flex;
     justify-content: center;
     padding: 20px;
-    
+
     .loading-content {
       display: flex;
       align-items: center;
       gap: 12px;
       color: #aaaaaa;
       font-size: 14px;
-      
+
       .loading-icon {
         font-size: 16px;
         animation: spin 1s linear infinite;
       }
     }
   }
-  
+
   .scroll-to-bottom {
     position: absolute;
     bottom: 30px;
@@ -386,12 +385,12 @@ defineExpose({
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: all 0.2s ease;
     z-index: 10;
-    
+
     &:hover {
       background: rgba(79, 70, 229, 1);
       transform: scale(1.1);
     }
-    
+
     svg {
       font-size: 20px;
     }
@@ -424,13 +423,13 @@ defineExpose({
     .messages {
       padding: 16px;
     }
-    
+
     .scroll-to-bottom {
       bottom: 20px;
       right: 20px;
       width: 36px;
       height: 36px;
-      
+
       svg {
         font-size: 18px;
       }

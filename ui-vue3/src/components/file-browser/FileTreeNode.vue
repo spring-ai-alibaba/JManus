@@ -23,18 +23,14 @@
       :class="{
         'is-directory': node.type === 'directory',
         'is-file': node.type === 'file',
-        'is-expanded': isExpanded
+        'is-expanded': isExpanded,
       }"
       :style="{ paddingLeft: `${level * 16 + 12}px` }"
       @click="handleClick"
       @contextmenu.prevent="handleRightClick"
     >
       <!-- Expand/Collapse Icon for directories -->
-      <div
-        v-if="node.type === 'directory'"
-        class="expand-icon"
-        @click.stop="toggleExpanded"
-      >
+      <div v-if="node.type === 'directory'" class="expand-icon" @click.stop="toggleExpanded">
         <Icon
           :icon="isExpanded ? 'carbon:chevron-down' : 'carbon:chevron-right'"
           class="chevron-icon"
@@ -80,21 +76,12 @@
     </div>
 
     <!-- Context Menu -->
-    <div
-      v-if="showContextMenu"
-      class="context-menu"
-      :style="contextMenuStyle"
-      @click.stop
-    >
+    <div v-if="showContextMenu" class="context-menu" :style="contextMenuStyle" @click.stop>
       <div class="context-menu-item" @click="handleFileSelect">
         <Icon icon="carbon:view" />
         <span>Open</span>
       </div>
-      <div
-        v-if="node.type === 'file'"
-        class="context-menu-item"
-        @click="handleDownload"
-      >
+      <div v-if="node.type === 'file'" class="context-menu-item" @click="handleDownload">
         <Icon icon="carbon:download" />
         <span>Download</span>
       </div>
@@ -174,7 +161,7 @@ const handleRightClick = (event: MouseEvent) => {
     position: 'fixed',
     top: `${event.clientY}px`,
     left: `${event.clientX}px`,
-    zIndex: 1000
+    zIndex: 1000,
   }
 
   // Add click listener to hide context menu

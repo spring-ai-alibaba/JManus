@@ -45,20 +45,39 @@
 
             <!-- Task list -->
             <div v-else class="task-list">
-              <div v-for="task in cronTasks" :key="task.id || ''" class="task-item" @click="showTaskDetail(task)">
+              <div
+                v-for="task in cronTasks"
+                :key="task.id || ''"
+                class="task-item"
+                @click="showTaskDetail(task)"
+              >
                 <div class="task-main">
                   <div class="task-info">
                     <div class="task-header">
-                      <div class="task-name">{{ task.cronName}}</div>
-                      <div class="task-status-badge" :class="task.status === 0 ? 'active' : 'inactive'">
-                        <Icon :icon="task.status === 0 ? 'carbon:checkmark-filled' : 'carbon:pause-filled'" />
-                        <span>{{ task.status === 0 ? $t('cronTask.active') : $t('cronTask.inactive') }}</span>
+                      <div class="task-name">{{ task.cronName }}</div>
+                      <div
+                        class="task-status-badge"
+                        :class="task.status === 0 ? 'active' : 'inactive'"
+                      >
+                        <Icon
+                          :icon="
+                            task.status === 0 ? 'carbon:checkmark-filled' : 'carbon:pause-filled'
+                          "
+                        />
+                        <span>{{
+                          task.status === 0 ? $t('cronTask.active') : $t('cronTask.inactive')
+                        }}</span>
                       </div>
                     </div>
                     <div class="task-description">{{ task.planDesc }}</div>
                     <div class="task-time">
                       <Icon icon="carbon:time" />
-                      <span class="cron-readable" style="cursor:pointer" @click.stop="copyCronTime(task.cronTime)">{{ task.cronTime }}</span>
+                      <span
+                        class="cron-readable"
+                        style="cursor: pointer"
+                        @click.stop="copyCronTime(task.cronTime)"
+                        >{{ task.cronTime }}</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -74,7 +93,7 @@
                     {{ $t('cronTask.executeOnce') }}
                   </button>
 
-                  <div class="action-dropdown" :class="{ 'active': activeDropdown === task.id }">
+                  <div class="action-dropdown" :class="{ active: activeDropdown === task.id }">
                     <button
                       class="action-btn dropdown-btn"
                       @click="toggleDropdown(task.id!)"
@@ -85,10 +104,7 @@
                     </button>
 
                     <div class="dropdown-menu" v-show="activeDropdown === task.id">
-                      <button
-                        class="dropdown-item edit-btn"
-                        @click="showTaskDetail(task)"
-                      >
+                      <button class="dropdown-item edit-btn" @click="showTaskDetail(task)">
                         <Icon icon="carbon:edit" />
                         {{ $t('cronTask.edit') }}
                       </button>
@@ -98,7 +114,15 @@
                         @click="toggleTaskStatus(task)"
                         :disabled="toggling === task.id"
                       >
-                        <Icon :icon="toggling === task.id ? 'carbon:loading' : (task.status === 0 ? 'carbon:pause-filled' : 'carbon:play-filled')" />
+                        <Icon
+                          :icon="
+                            toggling === task.id
+                              ? 'carbon:loading'
+                              : task.status === 0
+                                ? 'carbon:pause-filled'
+                                : 'carbon:play-filled'
+                          "
+                        />
                         {{ task.status === 0 ? $t('cronTask.disable') : $t('cronTask.enable') }}
                       </button>
 
@@ -107,7 +131,9 @@
                         @click="showDeleteConfirmDialog(task)"
                         :disabled="deleting === task.id"
                       >
-                        <Icon :icon="deleting === task.id ? 'carbon:loading' : 'carbon:trash-can'" />
+                        <Icon
+                          :icon="deleting === task.id ? 'carbon:loading' : 'carbon:trash-can'"
+                        />
                         {{ $t('cronTask.delete') }}
                       </button>
                     </div>
@@ -122,11 +148,7 @@
   </Teleport>
 
   <!-- Task Detail Modal -->
-  <TaskDetailModal
-    v-model="showDetail"
-    :task="selectedTask"
-    @save="handleSaveTask"
-  />
+  <TaskDetailModal v-model="showDetail" :task="selectedTask" @save="handleSaveTask" />
 
   <!-- Delete Confirmation Modal -->
   <Teleport to="body">
@@ -138,7 +160,13 @@
             <h3>{{ $t('cronTask.deleteConfirm') }}</h3>
           </div>
           <div class="confirm-content">
-            <p>{{ $t('cronTask.deleteConfirmMessage', { taskName: taskToDelete?.cronName || taskToDelete?.planDesc || '' }) }}</p>
+            <p>
+              {{
+                $t('cronTask.deleteConfirmMessage', {
+                  taskName: taskToDelete?.cronName || taskToDelete?.planDesc || '',
+                })
+              }}
+            </p>
           </div>
           <div class="confirm-actions">
             <button class="confirm-btn cancel-btn" @click="cancelDelete">
@@ -235,8 +263,6 @@ const selectedTask = ref<CronConfig | null>(null)
 const showDeleteConfirm = ref(false)
 const taskToDelete = ref<CronConfig | null>(null)
 const showCreateOptions = ref(false)
-
-
 
 /**
  * Handle click on modal overlay area
@@ -439,7 +465,7 @@ const createWithJmanus = () => {
     const chatId = Date.now().toString()
     router.push({
       name: 'direct',
-      params: { id: chatId }
+      params: { id: chatId },
     })
   } catch (error) {
     console.error('Error in createWithJmanus:', error)
@@ -459,7 +485,7 @@ const createManually = () => {
     cronTime: '',
     planDesc: '',
     status: 0,
-    planTemplateId: ''
+    planTemplateId: '',
   }
   showDetail.value = true
 }
@@ -506,11 +532,14 @@ onUnmounted(() => {
 })
 
 // Watch modal display state, load task list
-watch(() => props.modelValue, (newValue) => {
-  if (newValue) {
-    loadCronTasks()
+watch(
+  () => props.modelValue,
+  newValue => {
+    if (newValue) {
+      loadCronTasks()
+    }
   }
-})
+)
 </script>
 
 <style scoped>
@@ -546,8 +575,6 @@ watch(() => props.modelValue, (newValue) => {
   padding: 20px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
-
-
 
 .modal-header h3 {
   margin: 0;
@@ -626,8 +653,12 @@ watch(() => props.modelValue, (newValue) => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .task-list {
@@ -1065,4 +1096,3 @@ watch(() => props.modelValue, (newValue) => {
   color: rgba(255, 255, 255, 0.6);
 }
 </style>
-
