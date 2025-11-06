@@ -75,6 +75,7 @@ public class DatabaseMetadataTool extends AbstractBaseTool<DatabaseRequest> {
 	public String getParameters() {
 		return """
 				{
+				    "type": "object",
 				    "oneOf": [
 				        {
 				            "type": "object",

@@ -15,13 +15,14 @@
  */
 package com.alibaba.cloud.ai.manus.tool.pptGenerator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 @Component
 public class PptGeneratorOperator extends AbstractBaseTool<PptInput> {
@@ -102,7 +103,7 @@ public class PptGeneratorOperator extends AbstractBaseTool<PptInput> {
 	@Override
 	public String getParameters() {
 		return """
-				{
+				{   "type": "object",
 				    "oneOf": [
 				        {
 				            "type": "object",

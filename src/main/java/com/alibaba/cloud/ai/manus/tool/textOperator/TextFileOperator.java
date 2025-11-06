@@ -780,6 +780,7 @@ public class TextFileOperator extends AbstractBaseTool<TextFileOperator.TextFile
 	public String getParameters() {
 		return """
 				{
+				    "type": "object",
 				    "oneOf": [
 				        {
 				            "type": "object",
