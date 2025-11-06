@@ -16,7 +16,6 @@
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,13 +23,13 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.cloud.ai.manus.tool.browser.AriaElementHolder;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.browser.DriverWrapper;
-import com.alibaba.cloud.ai.manus.tool.browser.InteractiveElement;
-import com.alibaba.cloud.ai.manus.tool.browser.InteractiveElementRegistry;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.ElementHandle;
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.TimeoutError;
 
@@ -70,6 +69,16 @@ public abstract class BrowserAction {
 	}
 
 	/**
+	 * Get reasonable timeout for element operations (capped at 10 seconds) This prevents
+	 * long waits when elements are not found or not ready
+	 * @return Timeout in milliseconds, capped at 10 seconds
+	 */
+	protected Integer getElementTimeoutMs() {
+		return Math.min(getBrowserTimeoutMs(), 10000); // Max 10 seconds for element
+														// operations
+	}
+
+	/**
 	 * Simulate human behavior
 	 * @param element Playwright ElementHandle instance
 	 */
@@ -102,25 +111,165 @@ public abstract class BrowserAction {
 	}
 
 	/**
-	 * Retrieve the interaction elements of the specified index
-	 * @param index element index
-	 * @return InteractiveElement
+	 * Get locator for element by idx (from ARIA snapshot) Uses ARIA node properties
+	 * (role, name) to create proper Playwright locators
+	 * @param idx Element idx (from ARIA snapshot)
+	 * @return Locator for the element, or null if not found
 	 */
-	protected InteractiveElement getInteractiveElement(int index) {
-		DriverWrapper driverWrapper = getDriverWrapper();
-		InteractiveElementRegistry interactiveElementRegistry = driverWrapper.getInteractiveElementRegistry();
-		Optional<InteractiveElement> elementOpt = interactiveElementRegistry.getElementById(index);
-		return elementOpt.orElse(null);
+	protected Locator getLocatorByIdx(int idx) {
+		Page page = getCurrentPage();
+		if (page == null) {
+			return null;
+		}
+
+		AriaElementHolder.AriaNode node = getAriaNodeByIdx(idx);
+		if (node == null) {
+			return null;
+		}
+
+		// Create locator based on ARIA role and name
+		return createLocatorFromAriaNode(page, node);
 	}
 
 	/**
-	 * Get interactive elements
-	 * @param page Playwright Page instance
-	 * @return List of interactive elements
+	 * Create Playwright locator from ARIA node properties
+	 * @param page The page to create locator on
+	 * @param node The ARIA node
+	 * @return Locator for the element
 	 */
-	protected List<InteractiveElement> getInteractiveElements(Page page) {
-		DriverWrapper driverWrapper = browserUseTool.getDriver();
-		return driverWrapper.getInteractiveElementRegistry().getAllElements(page);
+	private Locator createLocatorFromAriaNode(Page page, AriaElementHolder.AriaNode node) {
+		if (node.role == null) {
+			return null;
+		}
+
+		String role = node.role;
+		String name = node.name;
+
+		try {
+			// Use getByRole with name if available
+			if (name != null && !name.isEmpty()) {
+				switch (role) {
+					case "button":
+						return page.getByRole(com.microsoft.playwright.options.AriaRole.BUTTON,
+								new Page.GetByRoleOptions().setName(name));
+					case "link":
+						return page.getByRole(com.microsoft.playwright.options.AriaRole.LINK,
+								new Page.GetByRoleOptions().setName(name));
+					case "textbox":
+						return page.getByRole(com.microsoft.playwright.options.AriaRole.TEXTBOX,
+								new Page.GetByRoleOptions().setName(name));
+					case "checkbox":
+						return page.getByRole(com.microsoft.playwright.options.AriaRole.CHECKBOX,
+								new Page.GetByRoleOptions().setName(name));
+					case "radio":
+						return page.getByRole(com.microsoft.playwright.options.AriaRole.RADIO,
+								new Page.GetByRoleOptions().setName(name));
+					case "combobox":
+						return page.getByRole(com.microsoft.playwright.options.AriaRole.COMBOBOX,
+								new Page.GetByRoleOptions().setName(name));
+					default:
+						// Fallback: try to get by role without name
+						return getByRoleWithoutName(page, role);
+				}
+			}
+			else {
+				// No name, try to get by role only
+				return getByRoleWithoutName(page, role);
+			}
+		}
+		catch (Exception e) {
+			log.warn("Failed to create locator from ARIA node (role: {}, name: {}): {}", role, name, e.getMessage());
+			return null;
+		}
+	}
+
+	/**
+	 * Get locator by role without name (uses nth() to select by index if needed)
+	 */
+	private Locator getByRoleWithoutName(Page page, String role) {
+		try {
+			com.microsoft.playwright.options.AriaRole ariaRole = mapRoleToAriaRole(role);
+			if (ariaRole != null) {
+				// Get all elements with this role and use first() as fallback
+				// Note: This is less precise, but better than failing
+				return page.getByRole(ariaRole).first();
+			}
+		}
+		catch (Exception e) {
+			log.debug("Failed to map role {} to AriaRole: {}", role, e.getMessage());
+		}
+		return null;
+	}
+
+	/**
+	 * Map string role to Playwright AriaRole enum
+	 */
+	private com.microsoft.playwright.options.AriaRole mapRoleToAriaRole(String role) {
+		if (role == null) {
+			return null;
+		}
+		try {
+			return com.microsoft.playwright.options.AriaRole.valueOf(role.toUpperCase());
+		}
+		catch (IllegalArgumentException e) {
+			// Handle common role mappings
+			switch (role.toLowerCase()) {
+				case "textbox":
+					return com.microsoft.playwright.options.AriaRole.TEXTBOX;
+				case "button":
+					return com.microsoft.playwright.options.AriaRole.BUTTON;
+				case "link":
+					return com.microsoft.playwright.options.AriaRole.LINK;
+				case "checkbox":
+					return com.microsoft.playwright.options.AriaRole.CHECKBOX;
+				case "radio":
+					return com.microsoft.playwright.options.AriaRole.RADIO;
+				case "combobox":
+					return com.microsoft.playwright.options.AriaRole.COMBOBOX;
+				default:
+					return null;
+			}
+		}
+	}
+
+	/**
+	 * Get ARIA node by idx
+	 * @param idx Element idx (from ARIA snapshot)
+	 * @return AriaNode, or null if not found
+	 */
+	protected AriaElementHolder.AriaNode getAriaNodeByIdx(int idx) {
+		DriverWrapper driverWrapper = getDriverWrapper();
+		AriaElementHolder holder = driverWrapper.getAriaElementHolder();
+		if (holder == null) {
+			return null;
+		}
+		return holder.getByRefId(String.valueOf(idx));
+	}
+
+	/**
+	 * Get element name from ARIA node by idx
+	 * @param idx Element idx (from ARIA snapshot)
+	 * @return Element name, or empty string if not found
+	 */
+	protected String getElementNameByIdx(int idx) {
+		AriaElementHolder.AriaNode node = getAriaNodeByIdx(idx);
+		if (node != null) {
+			if (node.name != null && !node.name.isEmpty()) {
+				return node.name;
+			}
+			// If no name, return role as fallback
+			return node.role != null ? node.role : "element";
+		}
+		return "";
+	}
+
+	/**
+	 * Check if element exists by idx
+	 * @param idx Element idx (from ARIA snapshot)
+	 * @return true if element exists, false otherwise
+	 */
+	protected boolean elementExistsByIdx(int idx) {
+		return getAriaNodeByIdx(idx) != null;
 	}
 
 	protected String clickAndSwitchToNewTabIfOpened(Page pageToClickOn, Runnable clickLambda) {
@@ -132,7 +281,11 @@ public abstract class BrowserAction {
 
 		try {
 			Integer timeout = getBrowserTimeoutMs();
-			Page.WaitForPopupOptions popupOptions = new Page.WaitForPopupOptions().setTimeout(Math.min(timeout, 3000));
+			// Use the minimum of configured timeout and 2 seconds for popup detection
+			int popupTimeout = Math.min(timeout, 2000);
+			Page.WaitForPopupOptions popupOptions = new Page.WaitForPopupOptions().setTimeout(popupTimeout);
+
+			log.debug("Using popup timeout: {}ms, browser timeout: {}ms", popupTimeout, timeout);
 
 			newPageFromPopup = pageToClickOn.waitForPopup(popupOptions, clickLambda);
 

@@ -16,8 +16,13 @@
 package com.alibaba.cloud.ai.manus.mcp.service;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,10 +81,21 @@ public class McpConfigValidator {
 			throw new IOException("Server config is null for server: " + serverName);
 		}
 
+		// Ensure env is never null
+		if (serverConfig.getEnv() == null) {
+			serverConfig.setEnv(new java.util.HashMap<>());
+			logger.debug("Fixed null env field for server: {}", serverName);
+		}
+
 		// Validate required fields based on connection type
 		if (serverConfig.getCommand() != null && !serverConfig.getCommand().trim().isEmpty()) {
 			// STUDIO type: validate command
 			validateCommand(serverConfig.getCommand(), serverName);
+
+			// Validate args for STUDIO type
+			if (serverConfig.getArgs() != null && !serverConfig.getArgs().isEmpty()) {
+				validateArgs(serverConfig.getArgs(), serverName);
+			}
 		}
 		else {
 			// SSE/STREAMING type: validate URL
@@ -99,6 +115,40 @@ public class McpConfigValidator {
 		if (command == null || command.trim().isEmpty()) {
 			throw new IOException("Missing required 'command' field in server configuration for " + serverName);
 		}
+
+		// Validate that command is a proper executable
+		String trimmedCommand = command.trim();
+		if (trimmedCommand.contains(" ")) {
+			throw new IOException("Command field should contain only the executable name, not arguments. "
+					+ "Use 'args' field for arguments. Invalid command: '" + command + "' for server: " + serverName);
+		}
+
+		// Check for common MCP server commands
+		if (trimmedCommand.equals("uvx") || trimmedCommand.equals("npx") || trimmedCommand.equals("node")) {
+			logger.debug("Valid MCP command detected: {} for server: {}", trimmedCommand, serverName);
+		}
+	}
+
+	/**
+	 * Validate arguments configuration
+	 * @param args Arguments list
+	 * @param serverName Server name
+	 * @throws IOException Thrown when validation fails
+	 */
+	public void validateArgs(List<String> args, String serverName) throws IOException {
+		if (args == null) {
+			return; // null args is acceptable
+		}
+
+		for (int i = 0; i < args.size(); i++) {
+			String arg = args.get(i);
+			if (arg == null) {
+				throw new IOException("Argument at index " + i + " is null for server: " + serverName);
+			}
+			// Arguments can be empty strings, so we don't check for emptiness
+		}
+
+		logger.debug("Arguments validation passed for server: {} with {} args", serverName, args.size());
 	}
 
 	/**
@@ -113,7 +163,22 @@ public class McpConfigValidator {
 		}
 
 		try {
-			new URL(url.trim());
+			URL parsedUrl = new URL(url.trim());
+
+			// Validate URL format
+			if (parsedUrl.getHost() == null || parsedUrl.getHost().trim().isEmpty()) {
+				throw new IOException("Invalid URL host: " + url + " for server: " + serverName);
+			}
+
+			// Validate protocol
+			String protocol = parsedUrl.getProtocol();
+			if (!"http".equals(protocol) && !"https".equals(protocol)) {
+				throw new IOException("Unsupported protocol '" + protocol + "' in URL: " + url + " for server: "
+						+ serverName + ". Only HTTP and HTTPS are supported.");
+			}
+
+			// Pre-validate DNS resolution to avoid connection issues
+			validateDnsResolution(parsedUrl.getHost(), serverName);
 		}
 		catch (MalformedURLException e) {
 			throw new IOException("Invalid URL format: " + url + " for server: " + serverName, e);
@@ -176,6 +241,38 @@ public class McpConfigValidator {
 	public void validateServerExists(String serverName, Object existingServer) throws IOException {
 		if (existingServer == null) {
 			throw new IOException("MCP server not found with name: " + serverName);
+		}
+	}
+
+	/**
+	 * Validate DNS resolution for the given hostname
+	 * @param hostname Hostname to validate
+	 * @param serverName Server name for error messages
+	 * @throws IOException Thrown when DNS resolution fails
+	 */
+	private void validateDnsResolution(String hostname, String serverName) throws IOException {
+		try {
+			// Use CompletableFuture to add timeout to DNS resolution
+			CompletableFuture<InetAddress> future = CompletableFuture.supplyAsync(() -> {
+				try {
+					return InetAddress.getByName(hostname);
+				}
+				catch (UnknownHostException e) {
+					throw new RuntimeException(e);
+				}
+			});
+
+			// Wait for DNS resolution with 10 second timeout
+			future.get(10, TimeUnit.SECONDS);
+			logger.debug("DNS resolution successful for hostname: {} (server: {})", hostname, serverName);
+		}
+		catch (Exception e) {
+			String errorMessage = String.format(
+					"DNS resolution failed for hostname '%s' (server: %s). "
+							+ "Please verify the hostname is correct and accessible. " + "Error: %s",
+					hostname, serverName, e.getMessage());
+			logger.warn(errorMessage);
+			throw new IOException(errorMessage, e);
 		}
 	}
 

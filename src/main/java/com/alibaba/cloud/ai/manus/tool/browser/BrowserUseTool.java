@@ -15,9 +15,15 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
-
 import com.alibaba.cloud.ai.manus.tool.browser.actions.BrowserRequestVO;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.ClickByElementAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.CloseTabAction;
@@ -25,7 +31,6 @@ import com.alibaba.cloud.ai.manus.tool.browser.actions.ExecuteJsAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.GetElementPositionByNameAction;
 //import com.alibaba.cloud.ai.manus.tool.browser.actions.GetHtmlAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.GetTextAction;
-import com.alibaba.cloud.ai.manus.tool.browser.actions.GetMarkdownAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.InputTextAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.KeyEnterAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.MoveToAndClickAction;
@@ -39,12 +44,6 @@ import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Page;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
@@ -137,13 +136,6 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 						.processContent(currentPlanId, result.getOutput(), "get_text");
 					return new ToolExecuteResult(processedResult.getSummary());
 				}
-				case "get_markdown": {
-					result = new GetMarkdownAction(this).execute(requestVO);
-					// Markdown content may be long, use intelligent processing
-					SmartContentSavingService.SmartProcessResult processedResult = innerStorageService
-						.processContent(currentPlanId, result.getOutput(), "get_markdown");
-					return new ToolExecuteResult(processedResult.getSummary());
-				}
 				case "execute_js": {
 					result = new ExecuteJsAction(this).execute(requestVO);
 					// JS execution results may be long, use intelligent processing
@@ -230,10 +222,20 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 			List<Map<String, Object>> tabs = getTabsInfo(page);
 			state.put("tabs", tabs);
 
-			String interactiveElements = chromeDriverService.getDriver(currentPlanId)
-				.getInteractiveElementRegistry()
-				.generateElementsInfoText(page);
-			state.put("interactive_elements", interactiveElements);
+			// Generate ARIA snapshot using the new AriaSnapshot utility
+			AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
+				.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
+			DriverWrapper driver = getDriver();
+			AriaElementHolder ariaElementHolder = driver.getAriaElementHolder();
+			if (ariaElementHolder != null) {
+				String snapshot = ariaElementHolder.parsePageAndAssignRefs(page, snapshotOptions);
+				if (snapshot != null) {
+					state.put("interactive_elements", snapshot);
+				}
+			}
+			else {
+				throw new RuntimeException("Failed to get ARIA element holder");
+			}
 
 			return state;
 
@@ -268,7 +270,6 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				- 'screenshot': Capture screenshot
 				// - 'get_html': Get HTML content of current page
 				- 'get_text': Get text content of current page
-				- 'get_markdown': Get markdown content of current page
 				- 'execute_js': Execute JavaScript code
 				- 'scroll': Scroll page up/down
 				- 'refresh': Refresh current page
@@ -311,7 +312,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                },
 				                "index": {
 				                    "type": "integer",
-				                    "description": "Element index to click"
+				                    "description": "Element index to click. This corresponds to the idx value (e.g., idx=39) shown in the ARIA snapshot for each interactive element."
 				                }
 				            },
 				            "required": ["action", "index"],
@@ -326,7 +327,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                },
 				                "index": {
 				                    "type": "integer",
-				                    "description": "Element index to input text"
+				                    "description": "Element index to input text. This corresponds to the idx value (e.g., idx=39) shown in the ARIA snapshot for each interactive element."
 				                },
 				                "text": {
 				                    "type": "string",
@@ -345,7 +346,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                },
 				                "index": {
 				                    "type": "integer",
-				                    "description": "Element index to press enter"
+				                    "description": "Element index to press enter. This corresponds to the idx value (e.g., idx=39) shown in the ARIA snapshot for each interactive element."
 				                }
 				            },
 				            "required": ["action", "index"],
@@ -372,18 +373,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				            },
 				            "required": ["action"],
 				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "get_markdown"
-				                }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				        },
+				      },
 				        {
 				            "type": "object",
 				            "properties": {

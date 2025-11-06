@@ -20,7 +20,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-import io.modelcontextprotocol.client.transport.WebClientStreamableHttpTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -33,7 +32,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.modelcontextprotocol.client.transport.ServerParameters;
 import io.modelcontextprotocol.client.transport.StdioClientTransport;
+import io.modelcontextprotocol.client.transport.WebClientStreamableHttpTransport;
 import io.modelcontextprotocol.client.transport.WebFluxSseClientTransport;
+import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.spec.McpClientTransport;
 
 /**
@@ -119,11 +120,13 @@ public class McpTransportBuilder {
 
 		WebClient.Builder webClientBuilder = createWebClientBuilder(baseUrl);
 
+		JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(objectMapper);
+
 		if (sseEndpoint != null && !sseEndpoint.isEmpty()) {
-			return new WebFluxSseClientTransport(webClientBuilder, objectMapper, sseEndpoint);
+			return new WebFluxSseClientTransport(webClientBuilder, jsonMapper, sseEndpoint);
 		}
 		else {
-			return new WebFluxSseClientTransport(webClientBuilder, objectMapper);
+			return new WebFluxSseClientTransport(webClientBuilder, jsonMapper);
 		}
 	}
 
@@ -157,7 +160,8 @@ public class McpTransportBuilder {
 		}
 
 		ServerParameters serverParameters = builder.build();
-		return new StdioClientTransport(serverParameters, objectMapper);
+		JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(objectMapper);
+		return new StdioClientTransport(serverParameters, jsonMapper);
 	}
 
 	/**
@@ -194,8 +198,9 @@ public class McpTransportBuilder {
 		WebClient.Builder webClientBuilder = createWebClientBuilder(baseUrl);
 
 		logger.debug("Using WebClientStreamableHttpTransport with endpoint: {} for STREAMING mode", streamEndpoint);
+		JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(objectMapper);
 		return WebClientStreamableHttpTransport.builder(webClientBuilder)
-			.objectMapper(objectMapper)
+			.jsonMapper(jsonMapper)
 			.endpoint(streamEndpoint)
 			.resumableStreams(true)
 			.openConnectionOnStartup(false)
@@ -214,8 +219,16 @@ public class McpTransportBuilder {
 			.defaultHeader("Accept", "text/event-stream")
 			.defaultHeader("Content-Type", "application/json")
 			.defaultHeader("User-Agent", mcpProperties.getUserAgent())
-			.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024 * 10));
-
+			.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024 * 10))
+			// Add timeout to prevent hanging connections
+			.filter((request,
+					next) -> next.exchange(request).timeout(java.time.Duration.ofSeconds(30)).onErrorMap(ex -> {
+						if (ex.getMessage() != null && ex.getMessage().contains("Failed to resolve")) {
+							return new IOException("DNS resolution failed for URL: " + baseUrl + ". "
+									+ "Please verify the hostname is correct and accessible.", ex);
+						}
+						return ex;
+					}));
 	}
 
 }

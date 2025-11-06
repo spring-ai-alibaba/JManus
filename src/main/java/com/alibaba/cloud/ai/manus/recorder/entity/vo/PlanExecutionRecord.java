@@ -16,15 +16,15 @@
 
 package com.alibaba.cloud.ai.manus.recorder.entity.vo;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.UserInputWaitState;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Plan execution record class for tracking and recording detailed information about
@@ -97,6 +97,8 @@ public class PlanExecutionRecord {
 	// Parent tool call information that triggered this sub-plan (for sub-plan detail
 	// displaying)
 	private ActToolInfo parentActToolCall;
+
+	private String structureResult;
 
 	/**
 	 * Default constructor for Jackson and other frameworks.
@@ -321,6 +323,14 @@ public class PlanExecutionRecord {
 
 	public void setParentActToolCall(ActToolInfo parentActToolCall) {
 		this.parentActToolCall = parentActToolCall;
+	}
+
+	public String getStructureResult() {
+		return structureResult;
+	}
+
+	public void setStructureResult(String structureResult) {
+		this.structureResult = structureResult;
 	}
 
 }

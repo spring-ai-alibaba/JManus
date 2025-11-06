@@ -15,6 +15,16 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -25,15 +35,6 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.Cookie;
 import com.microsoft.playwright.options.SameSiteAttribute; // Import for SameSiteAttribute
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.List;
 
 public class DriverWrapper {
 
@@ -47,7 +48,7 @@ public class DriverWrapper {
 
 	private Browser browser;
 
-	private InteractiveElementRegistry interactiveElementRegistry;
+	private AriaElementHolder ariaElementHolder;
 
 	private final Path cookiePath;
 
@@ -85,7 +86,7 @@ public class DriverWrapper {
 		this.playwright = playwright;
 		this.currentPage = currentPage;
 		this.browser = browser;
-		this.interactiveElementRegistry = new InteractiveElementRegistry();
+		this.ariaElementHolder = null; // Will be initialized on first use
 		this.objectMapper = objectMapper;
 		// Configure ObjectMapper
 		this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -165,8 +166,38 @@ public class DriverWrapper {
 		}
 	}
 
-	public InteractiveElementRegistry getInteractiveElementRegistry() {
-		return interactiveElementRegistry;
+	/**
+	 * Get AriaElementHolder, refreshing from current page if needed
+	 * @return AriaElementHolder instance
+	 */
+	public AriaElementHolder getAriaElementHolder() {
+		if (ariaElementHolder == null && currentPage != null) {
+			refreshAriaElementHolder();
+		}
+		return ariaElementHolder;
+	}
+
+	/**
+	 * Refresh ARIA element holder from current page
+	 */
+	private void refreshAriaElementHolder() {
+		if (currentPage == null) {
+			return;
+		}
+		try {
+			AriaSnapshotOptions options = new AriaSnapshotOptions().setSelector("body").setTimeout(30000);
+
+			// Create new instance and use the new method to parse page and assign refs
+			ariaElementHolder = new AriaElementHolder();
+			String snapshot = ariaElementHolder.parsePageAndAssignRefs(currentPage, options);
+
+			if (snapshot != null) {
+				log.debug("Successfully refreshed ARIA element holder with snapshot");
+			}
+		}
+		catch (Exception e) {
+			log.warn("Failed to refresh ARIA element holder: {}", e.getMessage());
+		}
 	}
 
 	public Playwright getPlaywright() {
@@ -183,6 +214,8 @@ public class DriverWrapper {
 
 	public void setCurrentPage(Page currentPage) {
 		this.currentPage = currentPage;
+		// Refresh ARIA element holder when page changes
+		this.ariaElementHolder = null;
 		// Potentially load cookies if page context changes and it's desired
 		// loadCookies();
 	}

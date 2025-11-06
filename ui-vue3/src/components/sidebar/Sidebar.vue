@@ -98,7 +98,7 @@
             <div class="task-details">
               <div class="task-title">{{ template.title || $t('sidebar.unnamedPlan') }}</div>
               <div class="task-preview">
-                {{ truncateText(template.description || $t('sidebar.noDescription'), 40) }}
+                {{ getTaskPreviewText(template) }}
               </div>
             </div>
             <div class="task-time">
@@ -251,6 +251,7 @@ import PublishServiceModal from '@/components/publish-service-modal/PublishServi
 import { useToast } from '@/plugins/useToast'
 import { sidebarStore } from '@/stores/sidebar'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
+import type { PlanTemplate } from '@/types/plan-template'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -281,6 +282,9 @@ const currentToolInfo = ref<CoordinatorToolVO>({
   enableInternalToolcall: false,
   serviceGroup: '',
 })
+
+// Store tool information for all templates
+const templateToolInfo = ref<Record<string, CoordinatorToolVO>>({})
 const publishMcpModalRef = ref<InstanceType<typeof PublishServiceModal> | null>(null)
 
 // CoordinatorTool configuration
@@ -550,6 +554,9 @@ const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
   // Reload available tools to include the newly published service
   console.log('[Sidebar] 🔄 Reloading available tools after service publish/delete')
   await sidebarStore.loadAvailableTools()
+
+  // Reload tool info for all templates to update the task preview
+  await loadAllTemplateToolInfo()
 }
 
 // Execution Controller event handlers
@@ -695,9 +702,28 @@ const getRelativeTimeString = (date: Date): string => {
   return date.toLocaleDateString('zh-CN')
 }
 
-const truncateText = (text: string, maxLength: number): string => {
-  if (!text || text.length <= maxLength) return text
-  return text.substring(0, maxLength) + '...'
+// Get task preview text - show tool name if published, otherwise empty
+const getTaskPreviewText = (template: PlanTemplate): string => {
+  const toolInfo = templateToolInfo.value[template.id]
+  if (toolInfo?.toolName) {
+    return `${t('sidebar.publishedTool')}: ${toolInfo.toolName}`
+  }
+  return '' // Return empty string when no tools are published
+}
+
+// Load tool information for all templates
+const loadAllTemplateToolInfo = async () => {
+  for (const template of sidebarStore.planTemplateList) {
+    try {
+      const toolData = await CoordinatorToolApiService.getCoordinatorToolsByTemplate(template.id)
+      if (toolData?.toolName) {
+        templateToolInfo.value[template.id] = toolData
+      }
+    } catch (error) {
+      // Silently ignore errors for templates without published tools
+      console.debug(`No tool found for template ${template.id}:`, error)
+    }
+  }
 }
 
 // Sidebar resize methods
@@ -755,8 +781,9 @@ watch(
 )
 
 // Lifecycle
-onMounted(() => {
-  sidebarStore.loadPlanTemplateList()
+onMounted(async () => {
+  await sidebarStore.loadPlanTemplateList()
+  await loadAllTemplateToolInfo() // Load tool info after templates are loaded
   loadCoordinatorToolConfig()
   sidebarStore.loadAvailableTools() // Load available tools on sidebar mount
 

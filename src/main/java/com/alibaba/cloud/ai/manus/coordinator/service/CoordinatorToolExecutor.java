@@ -32,6 +32,7 @@ import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.repository.ThinkActRecordRepository;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -39,6 +40,7 @@ import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
+import io.modelcontextprotocol.spec.McpSchema.JsonSchema;
 
 /**
  * Coordinator Tool Execution Engine
@@ -82,11 +84,35 @@ public class CoordinatorToolExecutor {
 	 * @return Tool specification
 	 */
 	public McpServerFeatures.SyncToolSpecification createSpec(CoordinatorTool tool) {
+		String schemaJson = tool.getToolSchema();
+		JsonSchema inputSchema = null;
+		if (schemaJson != null && !schemaJson.trim().isEmpty()) {
+			try {
+				// Parse JSON string to JsonNode first, then convert to JsonSchema
+				JsonNode jsonNode = objectMapper.readTree(schemaJson);
+				inputSchema = objectMapper.convertValue(jsonNode, JsonSchema.class);
+			}
+			catch (Exception e) {
+				log.warn("{} Failed to parse tool schema JSON for tool: {}, error: {}", LOG_PREFIX, tool.getToolName(),
+						e.getMessage());
+				// Try to create empty schema from empty JSON object
+				try {
+					JsonNode emptyNode = objectMapper.readTree("{}");
+					inputSchema = objectMapper.convertValue(emptyNode, JsonSchema.class);
+				}
+				catch (Exception ex) {
+					log.error("{} Failed to create empty JsonSchema: {}", LOG_PREFIX, ex.getMessage());
+					// inputSchema remains null
+				}
+			}
+		}
+		// If schemaJson is null or empty, inputSchema remains null which is acceptable
+
 		return McpServerFeatures.SyncToolSpecification.builder()
 			.tool(io.modelcontextprotocol.spec.McpSchema.Tool.builder()
 				.name(tool.getToolName())
 				.description(tool.getToolDescription())
-				.inputSchema(tool.getToolSchema())
+				.inputSchema(inputSchema)
 				.build())
 			.callHandler((exchange, request) -> execute(request))
 			.build();
@@ -117,15 +143,19 @@ public class CoordinatorToolExecutor {
 
 			// 4. Return success result
 			log.info("{} Tool call execution completed: {}", LOG_PREFIX, toolName);
-			return new CallToolResult(List.of(new McpSchema.TextContent(resultString)), false);
+			return CallToolResult.builder()
+				.content(List.of(new McpSchema.TextContent(resultString)))
+				.isError(false)
+				.build();
 
 		}
 		catch (Exception e) {
 			log.error("{} Tool call failed: {} - {}", LOG_PREFIX, toolName, e.getMessage(), e);
-			return new CallToolResult(
-					List.of(new McpSchema.TextContent(
-							String.format("Tool call failed: %s - %s", e.getClass().getSimpleName(), e.getMessage()))),
-					true);
+			return CallToolResult.builder()
+				.content(List.of(new McpSchema.TextContent(
+						String.format("Tool call failed: %s - %s", e.getClass().getSimpleName(), e.getMessage()))))
+				.isError(true)
+				.build();
 		}
 	}
 

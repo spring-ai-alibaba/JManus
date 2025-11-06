@@ -325,7 +325,22 @@ Response: {
   "status": "completed",
   "summary": "Execution completed successfully",
   "agentExecutionSequence": [...],
-  "userInputWaitState": null
+  "userInputWaitState": null,
+  "structureResult": {
+    "message": [
+      {
+        "name": "Product A",
+        "price": "100",
+        "quantity": "5"
+      }
+    ],
+    "fileList": [
+      {
+        "fileName": "report.md",
+        "fileDescription": "Generated report with product information"
+      }
+    ]
+  }
 }`,
   },
 ])

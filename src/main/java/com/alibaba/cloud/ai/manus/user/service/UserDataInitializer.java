@@ -20,7 +20,6 @@ import com.alibaba.cloud.ai.manus.user.repository.UserRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +37,6 @@ public class UserDataInitializer implements CommandLineRunner {
 
 	private final UserRepository userRepository;
 
-	@Autowired
 	public UserDataInitializer(UserRepository userRepository) {
 		this.userRepository = userRepository;
 	}

@@ -17,6 +17,7 @@
 package com.alibaba.cloud.ai.manus.recorder.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,22 +26,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.alibaba.cloud.ai.manus.recorder.entity.po.AgentExecutionRecordEntity;
-import com.alibaba.cloud.ai.manus.recorder.entity.po.PlanExecutionRecordEntity;
-import com.alibaba.cloud.ai.manus.recorder.entity.po.ExecutionStatusEntity;
-import com.alibaba.cloud.ai.manus.recorder.repository.PlanExecutionRecordRepository;
-import com.alibaba.cloud.ai.manus.recorder.repository.AgentExecutionRecordRepository;
-import com.alibaba.cloud.ai.manus.recorder.repository.ThinkActRecordRepository;
-import com.alibaba.cloud.ai.manus.recorder.entity.po.ThinkActRecordEntity;
-import com.alibaba.cloud.ai.manus.recorder.entity.po.ActToolInfoEntity;
 import com.alibaba.cloud.ai.manus.agent.AgentState;
-import com.alibaba.cloud.ai.manus.recorder.repository.ActToolInfoRepository;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
-import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
-import com.alibaba.cloud.ai.manus.recorder.entity.vo.ThinkActRecord;
+import com.alibaba.cloud.ai.manus.recorder.entity.po.ActToolInfoEntity;
+import com.alibaba.cloud.ai.manus.recorder.entity.po.AgentExecutionRecordEntity;
+import com.alibaba.cloud.ai.manus.recorder.entity.po.ExecutionStatusEntity;
+import com.alibaba.cloud.ai.manus.recorder.entity.po.PlanExecutionRecordEntity;
+import com.alibaba.cloud.ai.manus.recorder.entity.po.ThinkActRecordEntity;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.ActToolInfo;
+import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.ExecutionStatus;
-import java.util.ArrayList;
+import com.alibaba.cloud.ai.manus.recorder.entity.vo.ThinkActRecord;
+import com.alibaba.cloud.ai.manus.recorder.repository.ActToolInfoRepository;
+import com.alibaba.cloud.ai.manus.recorder.repository.AgentExecutionRecordRepository;
+import com.alibaba.cloud.ai.manus.recorder.repository.PlanExecutionRecordRepository;
+import com.alibaba.cloud.ai.manus.recorder.repository.ThinkActRecordRepository;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 
 import jakarta.annotation.Resource;
 

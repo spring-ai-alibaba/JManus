@@ -51,7 +51,6 @@ import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.mcp.model.vo.McpServiceEntity;
 import com.alibaba.cloud.ai.manus.mcp.model.vo.McpTool;
 import com.alibaba.cloud.ai.manus.mcp.service.McpService;
-import com.alibaba.cloud.ai.manus.mcp.service.McpStateHolderService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanFinalizer;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
@@ -107,7 +106,8 @@ public class PlanningFactory {
 
 	private final DataSourceService dataSourceService;
 
-	private final TableProcessingService tableProcessingService;
+	// private final TableProcessingService tableProcessingService; // Currently unused -
+	// commented out for future use
 
 	private final static Logger log = LoggerFactory.getLogger(PlanningFactory.class);
 
@@ -165,7 +165,7 @@ public class PlanningFactory {
 		this.innerStorageService = innerStorageService;
 		this.unifiedDirectoryManager = unifiedDirectoryManager;
 		this.dataSourceService = dataSourceService;
-		this.tableProcessingService = tableProcessingService;
+		// this.tableProcessingService = tableProcessingService; // Currently unused
 	}
 
 	/**
@@ -254,8 +254,7 @@ public class PlanningFactory {
 			ToolCallback[] tCallbacks = toolCallback.getAsyncMcpToolCallbackProvider().getToolCallbacks();
 			for (ToolCallback tCallback : tCallbacks) {
 				// The serviceGroup is the name of the tool
-				toolDefinitions.add(new McpTool(tCallback, serviceGroup, planId, new McpStateHolderService(),
-						innerStorageService, objectMapper));
+				toolDefinitions.add(new McpTool(tCallback, serviceGroup, planId, innerStorageService, objectMapper));
 			}
 		}
 		// Create FunctionToolCallback for each tool

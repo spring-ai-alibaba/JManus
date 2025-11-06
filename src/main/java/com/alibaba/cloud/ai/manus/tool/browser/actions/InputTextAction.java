@@ -15,10 +15,10 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
-import com.microsoft.playwright.Locator;
+import com.alibaba.cloud.ai.manus.tool.browser.AriaElementHolder;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
-import com.alibaba.cloud.ai.manus.tool.browser.InteractiveElement;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.microsoft.playwright.Locator;
 
 public class InputTextAction extends BrowserAction {
 
@@ -35,20 +35,24 @@ public class InputTextAction extends BrowserAction {
 			return new ToolExecuteResult("Index and text are required for 'input_text' action");
 		}
 
-		// Get interactive elements (InteractiveElement), supports all frames (including
-		// iframe)
-		// Already supports recursion frame
-		InteractiveElement inputElement = getInteractiveElement(index);
-		if (inputElement == null) {
-			return new ToolExecuteResult("Element with index " + index + " not found");
+		// Get ARIA node to check role
+		AriaElementHolder.AriaNode node = getAriaNodeByIdx(index);
+		if (node == null) {
+			return new ToolExecuteResult("Element with index " + index + " not found in ARIA snapshot");
 		}
-		String tagName = inputElement.getTagName();
-		if (!"input".equals(tagName) && !"textarea".equals(tagName)) {
-			return new ToolExecuteResult("Element at index " + index + " is not an input element");
+
+		// Check if element is a text input element
+		if (!"textbox".equals(node.role) && !"combobox".equals(node.role)) {
+			return new ToolExecuteResult(
+					"Element at index " + index + " is not an input element (role: " + node.role + ")");
 		}
+
 		// Get element locator
-		Locator elementLocator = inputElement.getLocator();
-		// 3. Try fill
+		Locator elementLocator = getLocatorByIdx(index);
+		if (elementLocator == null) {
+			return new ToolExecuteResult("Failed to create locator for element with index " + index);
+		}
+		// Try fill
 		try {
 			elementLocator.fill(""); // Clear first
 			// Set character input delay to 100ms, adjustable as needed
@@ -56,13 +60,13 @@ public class InputTextAction extends BrowserAction {
 			elementLocator.pressSequentially(text, options);
 		}
 		catch (Exception e) {
-			// 4. If fill fails, try pressSequentially
+			// If fill fails, try direct fill
 			try {
 				elementLocator.fill(""); // Clear again
 				elementLocator.fill(text); // Direct fill
 			}
 			catch (Exception e2) {
-				// 5. If still fails, use JS assignment and trigger input event
+				// If still fails, use JS assignment and trigger input event
 				try {
 					elementLocator.evaluate(
 							"(el, value) => { el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); }",

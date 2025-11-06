@@ -68,7 +68,6 @@ public class ModelServiceImpl implements ModelService {
 
 	private static final long CACHE_EXPIRY_MS = 2000; // 2 seconds
 
-	@Autowired
 	public ModelServiceImpl(DynamicModelRepository repository) {
 		this.repository = repository;
 	}
