@@ -69,7 +69,7 @@ import ChatMessage from './ChatMessage.vue'
 import {
   useChatMessages,
   convertMessageToCompatible,
-  type ChatMessage,
+  type ChatMessage as ChatMessageType,
 } from './composables/useChatMessages'
 import { useScrollBehavior } from './composables/useScrollBehavior'
 
@@ -82,7 +82,7 @@ interface Emits {
 
 // InputMessage interface removed - not needed in display component
 
-defineProps<Record<string, never>>()
+defineProps<{}>()
 
 const emit = defineEmits<Emits>()
 
@@ -211,7 +211,7 @@ const handlePlanUpdate = (rootPlanId: string) => {
     const message = messages.value[messageIndex]
 
     // Update planExecution data using updateMessage
-    const updates: Partial<ChatMessage> = {
+    const updates: Partial<ChatMessageType> = {
       planExecution: JSON.parse(JSON.stringify(planDetails)),
     }
 
