@@ -113,7 +113,7 @@ public class StreamingResponseHandler {
 	public StreamingResult processStreamingResponse(Flux<ChatResponse> responseFlux, String contextName,
 			String planId) {
 		try {
-      llmTraceRecorder.setPlanId(planId);
+			llmTraceRecorder.setPlanId(planId);
 
 			AtomicReference<Long> lastLogTime = new AtomicReference<>(System.currentTimeMillis());
 
@@ -234,11 +234,11 @@ public class StreamingResponseHandler {
 
 			}).doOnError(e -> {
 				log.error("Aggregation Error", e);
-        if(e instanceof WebClientResponseException) {
-          System.out.println(Thread.currentThread().getName());
-          WebClientResponseException errorMessage= (WebClientResponseException) e;
-          llmTraceRecorder.recordErrorResponse(errorMessage);
-        }
+				if (e instanceof WebClientResponseException) {
+					System.out.println(Thread.currentThread().getName());
+					WebClientResponseException errorMessage = (WebClientResponseException) e;
+					llmTraceRecorder.recordErrorResponse(errorMessage);
+				}
 				jmanusEventPublisher.publish(new PlanExceptionEvent(planId, e));
 			}).blockLast();
 
@@ -246,7 +246,7 @@ public class StreamingResponseHandler {
 			return new StreamingResult(finalChatResponseRef.get());
 		}
 		finally {
-      llmTraceRecorder.cleaningPlanId();
+			llmTraceRecorder.cleaningPlanId();
 		}
 	}
 

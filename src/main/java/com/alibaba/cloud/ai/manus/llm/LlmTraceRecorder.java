@@ -33,49 +33,47 @@ public class LlmTraceRecorder {
 
 	private static final Logger selfLogger = LoggerFactory.getLogger(LlmTraceRecorder.class);
 
-  private String planId;
+	private String planId;
 
 	@Autowired
 	private ObjectMapper objectMapper;
 
 	public void recordRequest(OpenAiApi.ChatCompletionRequest chatRequest) {
 		try {
-			logger.info("Request[{}]: {}", planId , objectMapper.writer().writeValueAsString(chatRequest));
+			logger.info("Request[{}]: {}", planId, objectMapper.writer().writeValueAsString(chatRequest));
 		}
 		catch (Throwable e) {
 			selfLogger.error("Failed to serialize chat request", e);
 		}
 	}
 
-  public void recordErrorResponse(WebClientResponseException webClientResponseException) {
-    try {
-      logger.info("Response[{}] :\nStatus code: {} \nStatus Text : {} \nHeaders: {} \nBody: {} \n ",
-        planId,
-        webClientResponseException.getStatusCode(),
-        webClientResponseException.getStatusText(),
-        webClientResponseException.getHeaders(),
-        webClientResponseException.getResponseBodyAsString());
-    }catch (Throwable e){
-      selfLogger.error("Failed to serialize error response", e);
-    }
+	public void recordErrorResponse(WebClientResponseException webClientResponseException) {
+		try {
+			logger.info("Response[{}] :\nStatus code: {} \nStatus Text : {} \nHeaders: {} \nBody: {} \n ", planId,
+					webClientResponseException.getStatusCode(), webClientResponseException.getStatusText(),
+					webClientResponseException.getHeaders(), webClientResponseException.getResponseBodyAsString());
+		}
+		catch (Throwable e) {
+			selfLogger.error("Failed to serialize error response", e);
+		}
 
-  }
+	}
 
 	public void recordResponse(ChatResponse chatResponse) {
 		try {
-			logger.info("Response[{}]: {}", planId , objectMapper.writer().writeValueAsString(chatResponse));
+			logger.info("Response[{}]: {}", planId, objectMapper.writer().writeValueAsString(chatResponse));
 		}
 		catch (Throwable e) {
 			selfLogger.error("Failed to serialize chat response", e);
 		}
 	}
 
-  public void setPlanId(String planId) {
-    this.planId = planId;
-  }
+	public void setPlanId(String planId) {
+		this.planId = planId;
+	}
 
-  public void cleaningPlanId(){
-    this.planId = null;
-  }
+	public void cleaningPlanId() {
+		this.planId = null;
+	}
 
 }
