@@ -39,7 +39,6 @@ optimized-file-manager-plan.json
 # Node.js dependencies
 node_modules/
 package-lock.json
-pnpm-lock.yaml
 
 # Test case documentation
 docs/test-case/
@@ -58,6 +57,5 @@ src/.DS_Store
 
 # Python
 .venv/
-ui-vue3/.npmrc
 .cursor/rules/1.mdc
 application-database-tool.yml
