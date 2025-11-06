@@ -190,6 +190,7 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 	public String getParameters() {
 		return """
 				{
+				    "type": "object",
 				    "oneOf": [
 				        {
 				            "type": "object",

@@ -15,25 +15,26 @@
  */
 package com.alibaba.cloud.ai.manus.coordinator.service;
 
-import com.alibaba.cloud.ai.manus.coordinator.entity.vo.CoordinatorToolVO;
-import com.alibaba.cloud.ai.manus.coordinator.entity.po.CoordinatorToolEntity;
-import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
-import com.alibaba.cloud.ai.manus.coordinator.repository.CoordinatorToolRepository;
-import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
-import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanParamDef;
-import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.alibaba.cloud.ai.manus.coordinator.entity.po.CoordinatorToolEntity;
+import com.alibaba.cloud.ai.manus.coordinator.entity.vo.CoordinatorToolVO;
+import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
+import com.alibaba.cloud.ai.manus.coordinator.repository.CoordinatorToolRepository;
+import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanParamDef;
+import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
+import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Service implementation for managing Coordinator Tools Handles both
@@ -256,23 +257,6 @@ public class CoordinatorToolServiceImpl {
 		}
 	}
 
-	public CoordinatorToolVO getOrCreateCoordinatorToolByPlanTemplateId(String planTemplateId) {
-		try {
-			// Try to get existing tool
-			Optional<CoordinatorToolVO> existingTool = getCoordinatorToolByPlanTemplateId(planTemplateId);
-			if (existingTool.isPresent()) {
-				return existingTool.get();
-			}
-
-			// Create default tool VO (not saved to database)
-			return createDefaultToolVO(planTemplateId);
-		}
-		catch (Exception e) {
-			log.error("Error getting or creating coordinator tool: {}", e.getMessage(), e);
-			return createDefaultToolVO(planTemplateId);
-		}
-	}
-
 	public List<CoordinatorToolVO> getAllCoordinatorTools() {
 		try {
 			return coordinatorToolRepository.findAll()
@@ -413,24 +397,6 @@ public class CoordinatorToolServiceImpl {
 		}
 
 		return toolDef;
-	}
-
-	/**
-	 * Create default CoordinatorToolVO for a plan template
-	 */
-	private CoordinatorToolVO createDefaultToolVO(String planTemplateId) {
-		CoordinatorToolVO toolVO = new CoordinatorToolVO();
-		toolVO.setToolName(null);
-		toolVO.setToolDescription(null);
-		toolVO.setPlanTemplateId(planTemplateId);
-		toolVO.setEnableInternalToolcall(false);
-		toolVO.setEnableHttpService(false);
-		toolVO.setEnableMcpService(false);
-		toolVO.setInputSchema("[]");
-		toolVO.setPublishStatus("UNPUBLISHED");
-		toolVO.setServiceGroup(null);
-
-		return toolVO;
 	}
 
 }

@@ -44,7 +44,7 @@
             :class="{ active: activeCategory === item.key }"
             @click="handleNavClick(item.key)"
           >
-            <Icon :icon="item.icon" width="20" />
+            <Icon :icon="item.icon" width="20" height="20" style="display: inline-block; flex-shrink: 0;" />
             <span>{{ item.label }}</span>
           </div>
         </template>
@@ -66,6 +66,7 @@ import { useI18n } from 'vue-i18n'
 import BasicConfig from './basicConfig.vue'
 import ModelConfig from './modelConfig.vue'
 import McpConfig from './mcpConfig.vue'
+import DatabaseConfig from './databaseConfig.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
 import NamespaceConfig from './namespaceConfig.vue'
 import NamespaceSwitch from './components/namespaceSwitch.vue'
@@ -75,6 +76,7 @@ interface CategoryMap {
   basic: typeof BasicConfig
   model: typeof ModelConfig
   mcp: typeof McpConfig
+  database: typeof DatabaseConfig
   namespace: typeof NamespaceConfig
 }
 
@@ -89,6 +91,7 @@ const categoryMap: CategoryMap = {
   basic: BasicConfig,
   model: ModelConfig,
   mcp: McpConfig,
+  database: DatabaseConfig,
   namespace: NamespaceConfig,
 }
 
@@ -101,6 +104,7 @@ const categories = computed(() => [
   { key: 'basic', label: t('config.categories.basic'), icon: 'carbon:settings' },
   { key: 'model', label: t('config.categories.model'), icon: 'carbon:build-image' },
   { key: 'mcp', label: t('config.categories.mcp'), icon: 'carbon:tool-box' },
+  { key: 'database', label: t('config.categories.database'), icon: 'carbon:database' },
   {
     key: 'namespace',
     label: t('config.categories.namespace'),
@@ -185,6 +189,19 @@ const handleNavClick = (categoryKey: string) => {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;
+}
+
+.nav-item :deep(svg) {
+  color: rgba(255, 255, 255, 0.8);
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.nav-item :deep(.iconify) {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
 }
 
 .nav-item:hover {

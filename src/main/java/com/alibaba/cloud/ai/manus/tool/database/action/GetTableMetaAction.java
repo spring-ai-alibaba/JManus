@@ -16,23 +16,28 @@
 
 package com.alibaba.cloud.ai.manus.tool.database.action;
 
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.manus.tool.database.DatabaseRequest;
-import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
-import com.alibaba.cloud.ai.manus.tool.database.meta.TableMeta;
-import com.alibaba.cloud.ai.manus.tool.database.meta.ColumnMeta;
-import com.alibaba.cloud.ai.manus.tool.database.meta.IndexMeta;
-import com.alibaba.cloud.ai.manus.tool.database.sql.DatabaseSqlGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
+import com.alibaba.cloud.ai.manus.tool.database.DatabaseRequest;
+import com.alibaba.cloud.ai.manus.tool.database.meta.ColumnMeta;
+import com.alibaba.cloud.ai.manus.tool.database.meta.IndexMeta;
+import com.alibaba.cloud.ai.manus.tool.database.meta.TableMeta;
+import com.alibaba.cloud.ai.manus.tool.database.sql.DatabaseSqlGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class GetTableMetaAction extends AbstractDatabaseAction {
 
@@ -67,7 +72,20 @@ public class GetTableMetaAction extends AbstractDatabaseAction {
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
 					String tableName = rs.getString("TABLE_NAME");
-					String tableComment = rs.getString("TABLE_COMMENT");
+					// Handle different column names for table comment across databases
+					String tableComment = null;
+					try {
+						tableComment = rs.getString("TABLE_COMMENT");
+					}
+					catch (SQLException e) {
+						// Fallback: try REMARKS for H2 and other databases
+						try {
+							tableComment = rs.getString("REMARKS");
+						}
+						catch (SQLException e2) {
+							log.debug("Could not read table comment for table: {}", tableName);
+						}
+					}
 					TableMeta tableMeta = new TableMeta();
 					tableMeta.setTableName(tableName);
 					tableMeta.setTableComment(tableComment);

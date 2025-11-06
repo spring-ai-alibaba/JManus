@@ -568,8 +568,29 @@ const handleChatSendMessage = async (query: InputMessage) => {
 
     // Import and call DirectApiService to send message to backend
     const { DirectApiService } = await import('@/api/direct-api-service')
-    console.log('[DirectView] Calling DirectApiService.sendMessageWithDefaultPlan')
-    const response = await DirectApiService.sendMessageWithDefaultPlan(query)
+
+    // Check if a specific tool is selected (toolName and replacementParams in query)
+    const queryAny = query as any
+    let response: any
+
+    if (queryAny.toolName && queryAny.replacementParams) {
+      // Execute selected tool
+      console.log(
+        '[DirectView] Calling DirectApiService.executeByToolName with tool:',
+        queryAny.toolName
+      )
+      response = await DirectApiService.executeByToolName(
+        queryAny.toolName,
+        queryAny.replacementParams,
+        query.uploadedFiles,
+        query.uploadKey
+      )
+    } else {
+      // Use default plan template
+      console.log('[DirectView] Calling DirectApiService.sendMessageWithDefaultPlan')
+      response = await DirectApiService.sendMessageWithDefaultPlan(query)
+    }
+
     console.log('[DirectView] API response received:', response)
 
     // Handle the response

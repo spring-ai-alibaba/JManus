@@ -26,53 +26,72 @@
       @upload-completed="handleUploadCompleted"
       @upload-error="handleUploadError"
     />
-    
+
     <div class="input-container">
-      <textarea
-        v-model="currentInput"
-        ref="inputRef"
-        class="chat-input"
-        :placeholder="currentPlaceholder"
-        :disabled="isDisabled"
-        @keydown="handleKeydown"
-        @input="adjustInputHeight"
-      ></textarea>
-      <button class="plan-mode-btn" :title="$t('input.planMode')" @click="handlePlanModeClick">
-        <Icon icon="carbon:document" />
-        {{ $t('input.planMode') }}
-      </button>
-      <button
-        v-if="!isTaskRunning"
-        class="send-button"
-        :disabled="!currentInput.trim() || isDisabled"
-        @click="handleSend"
-        :title="$t('input.send')"
-      >
-        <Icon icon="carbon:send-alt" />
-        {{ $t('input.send') }}
-      </button>
-      <button
-        v-else
-        class="send-button stop-button"
-        @click="handleStop"
-        :title="$t('input.stop')"
-      >
-        <Icon icon="carbon:stop-filled" />
-        {{ $t('input.stop') }}
-      </button>
+      <!-- First line: User input form -->
+      <div class="input-row-first">
+        <textarea
+          v-model="currentInput"
+          ref="inputRef"
+          class="chat-input"
+          :placeholder="currentPlaceholder"
+          :disabled="isDisabled"
+          @keydown="handleKeydown"
+          @input="adjustInputHeight"
+        ></textarea>
+      </div>
+
+      <!-- Second line: Selection input, Func-Agent mode and send button -->
+      <div class="input-row-second">
+        <select
+          v-model="selectedOption"
+          class="selection-input"
+          :title="$t('input.selectionTitle')"
+          :disabled="isLoadingTools || isDisabled"
+        >
+          <option value="">{{ $t('input.defaultFuncAgent') }}</option>
+          <option v-for="option in selectionOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+        <button class="plan-mode-btn" :title="$t('input.planMode')" @click="handlePlanModeClick">
+          <Icon icon="carbon:document" />
+          {{ $t('input.planMode') }}
+        </button>
+        <button
+          v-if="!isTaskRunning"
+          class="send-button"
+          :disabled="!currentInput.trim() || isDisabled"
+          @click="handleSend"
+          :title="$t('input.send')"
+        >
+          <Icon icon="carbon:send-alt" />
+          {{ $t('input.send') }}
+        </button>
+        <button
+          v-else
+          class="send-button stop-button"
+          @click="handleStop"
+          :title="$t('input.stop')"
+        >
+          <Icon icon="carbon:stop-filled" />
+          {{ $t('input.stop') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted, computed, watch } from 'vue'
-import { Icon } from '@iconify/vue'
-import { useI18n } from 'vue-i18n'
-import { memoryStore } from "@/stores/memory"
-import type { InputMessage } from "@/stores/memory"
-import { FileInfo } from "@/api/file-upload-api-service"
-import FileUploadComponent from "@/components/file-upload/FileUploadComponent.vue"
+import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
+import { FileInfo } from '@/api/file-upload-api-service'
+import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
+import type { InputMessage } from '@/stores/memory'
+import { memoryStore } from '@/stores/memory'
 import { useTaskStore } from '@/stores/task'
+import { Icon } from '@iconify/vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const taskStore = useTaskStore()
@@ -84,6 +103,15 @@ interface Props {
   placeholder?: string
   disabled?: boolean
   initialValue?: string
+  selectionOptions?: Array<{ value: string; label: string }>
+}
+
+interface InnerToolOption {
+  value: string
+  label: string
+  toolName: string
+  planTemplateId: string
+  paramName: string
 }
 
 interface Emits {
@@ -91,14 +119,14 @@ interface Emits {
   (e: 'clear'): void
   (e: 'update-state', enabled: boolean, placeholder?: string): void
   (e: 'plan-mode-clicked'): void
+  (e: 'selection-changed', value: string): void
 }
-
-
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: '',
   disabled: false,
   initialValue: '',
+  selectionOptions: () => [],
 })
 
 const emit = defineEmits<Emits>()
@@ -110,6 +138,91 @@ const defaultPlaceholder = computed(() => props.placeholder || t('input.placehol
 const currentPlaceholder = ref(defaultPlaceholder.value)
 const uploadedFiles = ref<string[]>([])
 const uploadKey = ref<string | null>(null)
+const selectedOption = ref('')
+const innerToolOptions = ref<InnerToolOption[]>([])
+const isLoadingTools = ref(false)
+
+// Load inner tools with single parameter
+const loadInnerTools = async () => {
+  isLoadingTools.value = true
+  try {
+    console.log('[InputArea] Loading inner tools...')
+    const allTools = await CoordinatorToolApiService.getAllCoordinatorTools()
+
+    // Filter tools: enableInternalToolcall=true and exactly one parameter
+    const filteredTools: InnerToolOption[] = []
+
+    for (const tool of allTools) {
+      // Check if it's an internal toolcall
+      if (!tool.enableInternalToolcall) {
+        continue
+      }
+
+      // Parse inputSchema to count parameters
+      try {
+        const inputSchema = JSON.parse(tool.inputSchema || '[]')
+        if (Array.isArray(inputSchema) && inputSchema.length === 1) {
+          // Exactly one parameter
+          const param = inputSchema[0]
+          filteredTools.push({
+            value: tool.planTemplateId,
+            label: `${tool.toolName} (${param.name})`,
+            toolName: tool.toolName,
+            planTemplateId: tool.planTemplateId,
+            paramName: param.name,
+          })
+        }
+      } catch (e) {
+        console.warn('[InputArea] Failed to parse inputSchema for tool:', tool.toolName, e)
+      }
+    }
+
+    innerToolOptions.value = filteredTools
+    console.log('[InputArea] Loaded', filteredTools.length, 'inner tools with single parameter')
+
+    // Restore selected tool from localStorage and validate it still exists
+    const savedTool = localStorage.getItem('inputAreaSelectedTool')
+    if (savedTool) {
+      const toolExists = filteredTools.some(tool => tool.value === savedTool)
+      if (toolExists) {
+        selectedOption.value = savedTool
+        console.log('[InputArea] Restored selected tool from localStorage:', savedTool)
+      } else {
+        console.log('[InputArea] Saved tool no longer available, clearing selection')
+        localStorage.removeItem('inputAreaSelectedTool')
+        selectedOption.value = ''
+      }
+    }
+  } catch (error) {
+    console.error('[InputArea] Failed to load inner tools:', error)
+    innerToolOptions.value = []
+  } finally {
+    isLoadingTools.value = false
+  }
+}
+
+// Computed property for selection options (use inner tools if available, otherwise use props)
+const selectionOptions = computed(() => {
+  if (innerToolOptions.value.length > 0) {
+    return innerToolOptions.value.map(tool => ({
+      value: tool.value,
+      label: tool.label,
+    }))
+  }
+  return props.selectionOptions
+})
+
+// Watch for selection changes and persist to localStorage
+watch(selectedOption, newValue => {
+  emit('selection-changed', newValue)
+  // Save to localStorage
+  localStorage.setItem('inputAreaSelectedTool', newValue || '')
+})
+
+// Load inner tools on mount
+onMounted(() => {
+  loadInnerTools()
+})
 
 // Function to reset session when starting a new conversation session
 const resetSession = () => {
@@ -126,7 +239,7 @@ const handleFilesUploaded = (files: FileInfo[], key: string | null) => {
   uploadedFiles.value = files.map(file => file.originalName)
   uploadKey.value = key
   console.log('[InputArea] Files uploaded:', files.length, 'uploadKey:', key)
-  
+
   // Update placeholder to show files are attached
   if (uploadedFiles.value.length > 0) {
     currentPlaceholder.value = t('input.filesAttached', { count: uploadedFiles.value.length })
@@ -136,7 +249,7 @@ const handleFilesUploaded = (files: FileInfo[], key: string | null) => {
 const handleFilesRemoved = (files: FileInfo[]) => {
   uploadedFiles.value = files.map(file => file.originalName)
   console.log('[InputArea] Files removed, remaining:', files.length)
-  
+
   // Update placeholder
   if (uploadedFiles.value.length === 0) {
     currentPlaceholder.value = defaultPlaceholder.value
@@ -181,17 +294,18 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const handleSend = () => {
+const handleSend = async () => {
   if (!currentInput.value.trim() || isDisabled.value) return
 
   const finalInput = currentInput.value.trim()
 
+  // Prepare query with tool information if selected
   const query: InputMessage = {
     input: finalInput,
     memoryId: memoryStore.selectMemoryId,
-    uploadedFiles: uploadedFiles.value
+    uploadedFiles: uploadedFiles.value,
   }
-  
+
   // Add uploadKey if it exists
   if (uploadKey.value) {
     query.uploadKey = uploadKey.value
@@ -200,7 +314,22 @@ const handleSend = () => {
     console.log('[InputArea] No uploadKey available for message')
   }
 
-  // Use Vue's emit to send a message
+  // Check if a tool is selected
+  if (selectedOption.value) {
+    const selectedTool = innerToolOptions.value.find(tool => tool.value === selectedOption.value)
+
+    if (selectedTool) {
+      // Add tool information to query for backend processing
+      // This will be handled by handleChatSendMessage which will call executeByToolName
+      ;(query as any).toolName = selectedTool.planTemplateId
+      ;(query as any).replacementParams = {
+        [selectedTool.paramName]: finalInput,
+      }
+      console.log('[InputArea] Sending message with tool:', selectedTool.toolName)
+    }
+  }
+
+  // Use Vue's emit to send a message (this will trigger handleChatSendMessage which shows assistant message)
   emit('send', query)
 
   // Clear the input but keep uploaded files and uploadKey for follow-up conversations
@@ -221,7 +350,6 @@ const handleStop = async () => {
     console.error('[InputArea] Failed to stop task')
   }
 }
-
 
 /**
  * Clear the input box
@@ -264,7 +392,7 @@ const getQuery = () => {
 // Watch for initialValue changes
 watch(
   () => props.initialValue,
-  (newValue) => {
+  newValue => {
     if (newValue.trim()) {
       currentInput.value = newValue
       adjustInputHeight()
@@ -281,8 +409,12 @@ defineExpose({
   getQuery,
   resetSession,
   focus: () => inputRef.value?.focus(),
-  get uploadedFiles() { return fileUploadRef.value?.uploadedFiles?.map(f => f.originalName) || [] },
-  get uploadKey() { return fileUploadRef.value?.uploadKey || null }
+  get uploadedFiles() {
+    return fileUploadRef.value?.uploadedFiles?.map(f => f.originalName) || []
+  },
+  get uploadKey() {
+    return fileUploadRef.value?.uploadKey || null
+  },
 })
 
 onMounted(() => {
@@ -315,7 +447,7 @@ onUnmounted(() => {
 
 .input-container {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -327,6 +459,57 @@ onUnmounted(() => {
   }
 }
 
+.input-row-first {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-row-second {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.selection-input {
+  flex-shrink: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  width: 24ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  &:focus {
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  option {
+    background: #1a1a1a;
+    color: #ffffff;
+    white-space: normal;
+    padding: 4px 8px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
 
 .chat-input {
   flex: 1;
@@ -397,19 +580,18 @@ onUnmounted(() => {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   &.stop-button {
     background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
-    
+
     &:hover {
       background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
     }
   }
 }
 
-.clear-memory-btn{
+.clear-memory-btn {
   width: 1.5em;
   height: 1.5em;
 }
-
 </style>

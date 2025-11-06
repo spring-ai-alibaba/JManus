@@ -287,6 +287,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 	public String getParameters() {
 		return """
 				{
+				    "type": "object",
 				    "oneOf": [
 				        {
 				            "type": "object",
