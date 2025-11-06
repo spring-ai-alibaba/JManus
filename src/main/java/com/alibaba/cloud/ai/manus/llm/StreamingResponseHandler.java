@@ -235,7 +235,6 @@ public class StreamingResponseHandler {
 			}).doOnError(e -> {
 				log.error("Aggregation Error", e);
 				if (e instanceof WebClientResponseException) {
-					System.out.println(Thread.currentThread().getName());
 					WebClientResponseException errorMessage = (WebClientResponseException) e;
 					llmTraceRecorder.recordErrorResponse(errorMessage);
 				}
