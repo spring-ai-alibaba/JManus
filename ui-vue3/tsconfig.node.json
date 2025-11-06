@@ -1,5 +1,4 @@
 {
-  "extends": "@tsconfig/node22",
   "include": [
     "vite.config.*",
     "vitest.config.*",
@@ -10,7 +9,13 @@
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
+    "target": "ES2022",
+    "lib": ["es2023", "esnext.array", "esnext.collection"],
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   }
 }

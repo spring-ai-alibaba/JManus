@@ -538,7 +538,7 @@ const updateConfigValue = (item: ExtendedConfigItem, value: unknown, autoSave: b
 
   // Handle the value according to the input type
   if (item.inputType === 'BOOLEAN' || item.inputType === 'CHECKBOX') {
-    stringValue = handleBooleanUpdate(item, value)
+    stringValue = handleBooleanUpdate(item, value as string | boolean)
   } else {
     stringValue = String(value)
   }

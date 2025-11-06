@@ -334,9 +334,9 @@ export class SidebarStore {
       console.log('[SidebarStore] Starting to load plan template list...')
       const response = await PlanActApiService.getAllPlanTemplates()
       if (response?.templates && Array.isArray(response.templates)) {
-        this.planTemplateList = response.templates
+        this.planTemplateList = response.templates as PlanTemplate[]
         console.log(
-          `[SidebarStore] Successfully loaded ${response.templates.length} plan templates`
+          `[SidebarStore] Successfully loaded ${(response.templates as PlanTemplate[]).length} plan templates`
         )
         // Load service group information for each template
         await this.loadTemplateServiceGroups()
@@ -386,7 +386,7 @@ export class SidebarStore {
   async loadTemplateData(template: PlanTemplate) {
     try {
       const versionsResponse = await PlanActApiService.getPlanVersions(template.id)
-      this.planVersions = versionsResponse.versions || []
+      this.planVersions = (versionsResponse as { versions?: PlanVersion[] }).versions || []
       if (this.planVersions.length > 0) {
         const latestContent = this.planVersions[this.planVersions.length - 1]
         this.jsonContent = latestContent
@@ -515,15 +515,15 @@ export class SidebarStore {
       const saveResult = await PlanActApiService.savePlanTemplate(this.selectedTemplate.id, content)
 
       // Update the selected template ID with the real planId returned from backend
-      if (saveResult?.planId && this.selectedTemplate.id.startsWith('new-')) {
+      if ((saveResult as { planId?: string })?.planId && this.selectedTemplate.id.startsWith('new-')) {
         console.log(
           '[SidebarStore] Updating template ID from',
           this.selectedTemplate.id,
           'to',
-          saveResult.planId
+          (saveResult as { planId: string }).planId
         )
-        this.selectedTemplate.id = saveResult.planId
-        this.currentPlanTemplateId = saveResult.planId
+        this.selectedTemplate.id = (saveResult as { planId: string }).planId
+        this.currentPlanTemplateId = (saveResult as { planId: string }).planId
       }
 
       if (this.currentVersionIndex < this.planVersions.length - 1) {

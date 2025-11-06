@@ -149,21 +149,21 @@ const goToDirectPage = () => {
 const examples = computed(() => [
   {
     title: t('home.examples.stockPrice.title'),
-    type: 'github',
+    type: 'github' as const,
     description: t('home.examples.stockPrice.description'),
     icon: 'carbon:chart-line-data',
     url: t('home.examples.stockPrice.url'),
   },
   {
     title: t('home.examples.weather.title'),
-    type: 'github',
+    type: 'github' as const,
     description: t('home.examples.weather.description'),
     icon: 'carbon:location',
     url: t('home.examples.weather.url'),
   },
   {
     title: t('home.examples.imagePdfRecognition.title'),
-    type: 'github',
+    type: 'github' as const,
     description: t('home.examples.imagePdfRecognition.description'),
     icon: 'carbon:document-view',
     url: t('home.examples.imagePdfRecognition.url'),
@@ -172,21 +172,21 @@ const examples = computed(() => [
 const plans = computed(() => [
   {
     title: t('home.examples.queryplan.title'),
-    type: 'github',
+    type: 'github' as const,
     description: t('home.examples.queryplan.description'),
     icon: 'carbon:plan',
     url: t('home.examples.queryplan.url'),
   },
   {
     title: t('home.examples.ainovel.title'),
-    type: 'github',
+    type: 'github' as const,
     description: t('home.examples.ainovel.description'),
     icon: 'carbon:document-tasks',
     url: t('home.examples.ainovel.url'),
   },
   {
     title: t('home.examples.formInputDemo.title'),
-    type: 'github',
+    type: 'github' as const,
     description: t('home.examples.formInputDemo.description'),
     icon: 'carbon:watson',
     url: t('home.examples.formInputDemo.url'),
@@ -228,24 +228,25 @@ const saveJsonPlanToTemplate = async (jsonPlan: JsonPlan) => {
     await sidebarStore.createNewTemplate(jsonPlan.planType)
     sidebarStore.jsonContent = JSON.stringify(jsonPlan)
     const saveResult = await sidebarStore.saveTemplate()
-    if (saveResult?.duplicate) {
+    const result = saveResult as { duplicate?: boolean; saved?: boolean; message?: string; versionCount?: number }
+    if (result?.duplicate) {
       console.log(
         '[Sidebar] ' +
           t('sidebar.saveCompleted', {
-            message: saveResult.message,
-            versionCount: saveResult.versionCount,
+            message: result.message,
+            versionCount: result.versionCount,
           })
       )
-    } else if (saveResult?.saved) {
+    } else if (result?.saved) {
       console.log(
         '[Sidebar] ' +
           t('sidebar.saveSuccess', {
-            message: saveResult.message,
-            versionCount: saveResult.versionCount,
+            message: result.message,
+            versionCount: result.versionCount,
           })
       )
-    } else if (saveResult?.message) {
-      console.log('[Sidebar] ' + t('sidebar.saveStatus', { message: saveResult.message }))
+    } else if (result?.message) {
+      console.log('[Sidebar] ' + t('sidebar.saveStatus', { message: result.message }))
     }
     return saveResult // Return the save result
   } catch (error: unknown) {
@@ -366,7 +367,7 @@ const selectPlan = async (plan: PlanItem) => {
       console.log('[Sidebar] Template list loaded')
 
       // Find and select the template - use the updated ID from saveResult or fallback to original
-      const templateId = saveResult?.planId || plan.planJson.planTemplateId
+      const templateId = (saveResult as { planId?: string })?.planId || plan.planJson.planTemplateId
       const template = sidebarStore.planTemplateList.find(t => t.id === templateId)
       if (!template) {
         console.error('[Sidebar] Template not found for ID:', templateId)

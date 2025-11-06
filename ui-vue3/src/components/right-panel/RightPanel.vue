@@ -540,7 +540,7 @@ const formatJson = (jsonData: unknown): string => {
     return 'N/A'
   }
   try {
-    const jsonObj = typeof jsonData === 'object' ? jsonData : JSON.parse(jsonData)
+    const jsonObj = typeof jsonData === 'object' ? jsonData : JSON.parse(jsonData as string)
     return JSON.stringify(jsonObj, null, 2)
   } catch {
     // If parsing fails, return string format directly (similar to _escapeHtml in right-sidebar.js)

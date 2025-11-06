@@ -607,20 +607,21 @@ const handleChatSendMessage = async (query: InputMessage) => {
       )
       response = await DirectApiService.executeByToolName(
         extendedQuery.toolName,
-        extendedQuery.replacementParams,
+        extendedQuery.replacementParams as Record<string, string>,
         query.uploadedFiles,
         query.uploadKey
-      )
+      ) as ApiResponse
     } else {
       // Use default plan template
       console.log('[DirectView] Calling DirectApiService.sendMessageWithDefaultPlan')
-      response = await DirectApiService.sendMessageWithDefaultPlan(query)
+      response = await DirectApiService.sendMessageWithDefaultPlan(query) as ApiResponse
     }
 
     console.log('[DirectView] API response received:', response)
 
     // Handle the response
-    if (response.planId && assistantMessage) {
+    const typedResponse = response as { planId?: string }
+    if (typedResponse.planId && assistantMessage) {
       // Plan mode: Update message with plan execution info
       chatRef.value?.updateMessage(assistantMessage.id, {
         thinking: t('chat.planningExecution'),
@@ -835,12 +836,12 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
       })
 
       // Set current root plan ID for the new plan execution
-      currentRootPlanId.value = response.planId
-      console.log('[Direct] Set currentRootPlanId to:', response.planId)
+      currentRootPlanId.value = typedResponse.planId
+      console.log('[Direct] Set currentRootPlanId to:', typedResponse.planId)
 
       // Use planExecutionManager to handle plan execution
       console.log('[Direct] Delegating plan execution to planExecutionManager')
-      planExecutionManager.handlePlanExecutionRequested(response.planId, payload.title)
+      planExecutionManager.handlePlanExecutionRequested(typedResponse.planId!, payload.title)
     } else {
       console.error('[Direct] No planId in response:', response)
       throw new Error(t('direct.executionFailedNoPlanId'))
@@ -866,20 +867,20 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
       // Update assistant message with error or add new error message
       if (assistantMessage) {
         chatRef.value?.updateMessage(assistantMessage.id, {
-          content: `${t('direct.executionFailed')}: ${error.message || t('common.unknownError')}`,
+          content: `${t('direct.executionFailed')}: ${(error as Error).message || t('common.unknownError')}`,
           thinking: undefined,
         })
         chatRef.value?.stopStreaming(assistantMessage.id)
       } else {
         chatRef.value?.addMessage(
           'assistant',
-          `${t('direct.executionFailed')}: ${error.message || t('common.unknownError')}`
+          `${t('direct.executionFailed')}: ${(error as Error).message || t('common.unknownError')}`
         )
       }
     } catch (errorHandlingError) {
       console.error('[Direct] Failed to add error messages:', errorHandlingError)
       // Note: This would need toast import if used in this context
-      alert(`${t('direct.executionFailed')}: ${error.message || t('common.unknownError')}`)
+      alert(`${t('direct.executionFailed')}: ${(error as Error).message || t('common.unknownError')}`)
     }
   } finally {
     console.log('[Direct] Plan execution finished, resetting isExecutingPlan flag')

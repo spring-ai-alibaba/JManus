@@ -263,14 +263,14 @@ export class PlanExecutionManager {
       // Use direct execution mode API to send message
       const response = await DirectApiService.sendMessage({
         input: query,
-      })
+      }) as Record<string, unknown>
 
       if (response?.planId) {
-        this.state.activePlanId = response.planId
+        this.state.activePlanId = response.planId as string
         return response
       } else if (response?.planTemplateId) {
         // If response contains planTemplateId instead of planId
-        this.state.activePlanId = response.planTemplateId
+        this.state.activePlanId = response.planTemplateId as string
         return { ...response, planId: response.planTemplateId }
       }
 

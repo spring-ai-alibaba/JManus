@@ -675,7 +675,7 @@ const validateMcpConfig = (
         // 2. Validate url or baseUrl format
         const urlToValidate = hasUrl ? server.url : server.baseUrl
         try {
-          new URL(urlToValidate)
+          new URL(urlToValidate as string)
         } catch {
           errors.push(t('config.mcpConfig.invalidUrl', { serverId }))
         }
@@ -738,7 +738,7 @@ const normalizeMcpConfig = (config: Record<string, unknown>): Record<string, unk
       }
     }
 
-    normalizedConfig.mcpServers[serverId] = normalizedServer
+    ;(normalizedConfig.mcpServers as Record<string, unknown>)[serverId] = normalizedServer
   }
 
   return normalizedConfig
@@ -796,10 +796,10 @@ const toggleServerStatus = async (server: McpServer) => {
     // If currently disabled, enable after click
     if (server.status === 'ENABLE') {
       // Currently enabled, disable after click
-      result = await McpApiService.disableMcpServer(server.id)
+      result = await McpApiService.disableMcpServer(server.id) as { [key: string]: unknown; success: boolean; message?: string }
     } else {
       // Currently disabled, enable after click
-      result = await McpApiService.enableMcpServer(server.id)
+      result = await McpApiService.enableMcpServer(server.id) as { [key: string]: unknown; success: boolean; message?: string }
     }
 
     if (result.success) {
