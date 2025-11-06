@@ -284,8 +284,7 @@ export class ModelConfigModel {
 
       if (isImport) {
         // Import new Model, remove ID
-        const importData = { ...modelData }
-        delete (importData as any).id
+        const { id: _id, ...importData } = modelData
         result = await ModelApiService.createModel(importData)
       } else if (modelData.id) {
         // Update existing Model

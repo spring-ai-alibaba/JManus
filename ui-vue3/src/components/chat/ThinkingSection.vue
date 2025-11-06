@@ -67,7 +67,7 @@ interface Props {
   thinking?: string
   thinkingDetails?: CompatiblePlanExecutionRecord
   planExecution?: CompatiblePlanExecutionRecord
-  stepActions?: any[]
+  stepActions?: unknown[]
   genericInput?: string
   hasContent?: boolean
 }
@@ -80,7 +80,7 @@ interface Emits {
     subPlanIndex: number,
     subPlan: PlanExecutionRecord
   ): void
-  (e: 'user-input-submitted', inputData: any): void
+  (e: 'user-input-submitted', inputData: Record<string, unknown>): void
   (e: 'step-selected', stepId: string): void
 }
 
@@ -109,7 +109,7 @@ const handleSubPlanSelected = (
   emit('sub-plan-selected', agentIndex, subPlanIndex, subPlan)
 }
 
-const handleUserInputSubmit = (inputData: any) => {
+const handleUserInputSubmit = (inputData: Record<string, unknown>) => {
   emit('user-input-submitted', inputData)
 }
 

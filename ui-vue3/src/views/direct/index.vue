@@ -121,6 +121,32 @@ import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+
+// Define component name for Vue linting rules
+defineOptions({
+  name: 'DirectIndex',
+})
+
+// Extended InputMessage with optional properties
+interface ExtendedInputMessage extends InputMessage {
+  attachments?: unknown[]
+  toolName?: string
+  replacementParams?: Record<string, unknown>
+}
+
+// API Response type
+interface ApiResponse {
+  planId?: string
+  message?: string
+  result?: string
+  [key: string]: unknown
+}
+
+// Message type from chat component
+interface ChatMessage {
+  id: string
+  [key: string]: unknown
+}
 const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()
@@ -540,7 +566,7 @@ const shouldProcessEventForCurrentPlan = (
 
 // Handle message sending from ChatContainer via event
 const handleChatSendMessage = async (query: InputMessage) => {
-  let assistantMessage: any = null
+  let assistantMessage: ChatMessage | null = null
 
   try {
     console.log('[DirectView] Processing send-message event:', query)
@@ -553,8 +579,9 @@ const handleChatSendMessage = async (query: InputMessage) => {
 
     // Add user message to UI
     const userMessage = chatRef.value?.addMessage('user', query.input)
-    if ((query as any).attachments && userMessage) {
-      chatRef.value?.updateMessage(userMessage.id, { attachments: (query as any).attachments })
+    const extendedQuery = query as ExtendedInputMessage
+    if (extendedQuery.attachments && userMessage) {
+      chatRef.value?.updateMessage(userMessage.id, { attachments: extendedQuery.attachments })
     }
 
     // Add assistant thinking message
@@ -570,18 +597,18 @@ const handleChatSendMessage = async (query: InputMessage) => {
     const { DirectApiService } = await import('@/api/direct-api-service')
 
     // Check if a specific tool is selected (toolName and replacementParams in query)
-    const queryAny = query as any
-    let response: any
+    const extendedQuery = query as ExtendedInputMessage
+    let response: ApiResponse
 
-    if (queryAny.toolName && queryAny.replacementParams) {
+    if (extendedQuery.toolName && extendedQuery.replacementParams) {
       // Execute selected tool
       console.log(
         '[DirectView] Calling DirectApiService.executeByToolName with tool:',
-        queryAny.toolName
+        extendedQuery.toolName
       )
       response = await DirectApiService.executeByToolName(
-        queryAny.toolName,
-        queryAny.replacementParams,
+        extendedQuery.toolName,
+        extendedQuery.replacementParams,
         query.uploadedFiles,
         query.uploadKey
       )
@@ -619,11 +646,12 @@ const handleChatSendMessage = async (query: InputMessage) => {
       })
       chatRef.value?.stopStreaming(assistantMessage.id)
     }
-  } catch (error: any) {
-    console.error('[DirectView] Send message failed:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('[DirectView] Send message failed:', errorMessage)
 
     // Show error message
-    chatRef.value?.addMessage('assistant', `Error: ${error?.message || 'Failed to send message'}`)
+    chatRef.value?.addMessage('assistant', `Error: ${errorMessage}`)
     if (assistantMessage) {
       chatRef.value?.stopStreaming(assistantMessage.id)
     }
@@ -721,7 +749,7 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
 
   // Mark whether user message has been added
   let userMessageAdded = false
-  let assistantMessage: any = null
+  let assistantMessage: ChatMessage | null = null
 
   // Add user and assistant messages using the same pattern as handleChatSendMessage
   try {
@@ -818,9 +846,11 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
       console.error('[Direct] No planId in response:', response)
       throw new Error(t('direct.executionFailedNoPlanId'))
     }
-  } catch (error: any) {
-    console.error('[Direct] Plan execution failed:', error)
-    console.error('[Direct] Error details:', { message: error.message, stack: error.stack })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('[Direct] Plan execution failed:', errorMessage)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    console.error('[Direct] Error details:', { message: errorMessage, stack: errorStack })
 
     // Clear current root plan ID on error
     currentRootPlanId.value = null

@@ -32,7 +32,7 @@ export interface ChatMessage {
   thinking?: string
   thinkingDetails?: CompatiblePlanExecutionRecord
   planExecution?: CompatiblePlanExecutionRecord
-  stepActions?: any[]
+  stepActions?: unknown[]
   genericInput?: string
   isStreaming?: boolean
   error?: string
@@ -53,14 +53,14 @@ type MakeMutable<T> = T extends readonly (infer U)[] ? U[] : T
 /**
  * Convert readonly PlanExecutionRecord to mutable compatible version with strong typing
  */
-function convertPlanExecutionRecord<T extends Record<string, any>>(
+function convertPlanExecutionRecord<T extends Record<string, unknown>>(
   record: T
 ): CompatiblePlanExecutionRecord {
   const converted = { ...record } as unknown as CompatiblePlanExecutionRecord
 
   if ('agentExecutionSequence' in record && Array.isArray(record.agentExecutionSequence)) {
-    converted.agentExecutionSequence = record.agentExecutionSequence.map((agent: any) =>
-      convertAgentExecutionRecord(agent)
+    converted.agentExecutionSequence = record.agentExecutionSequence.map((agent: unknown) =>
+      convertAgentExecutionRecord(agent as Record<string, unknown>)
     )
   }
 
@@ -70,14 +70,14 @@ function convertPlanExecutionRecord<T extends Record<string, any>>(
 /**
  * Convert readonly AgentExecutionRecord to mutable compatible version with strong typing
  */
-function convertAgentExecutionRecord<T extends Record<string, any>>(
+function convertAgentExecutionRecord<T extends Record<string, unknown>>(
   record: T
 ): AgentExecutionRecord {
   const converted = { ...record } as unknown as AgentExecutionRecord
 
   if ('subPlanExecutionRecords' in record && Array.isArray(record.subPlanExecutionRecords)) {
-    converted.subPlanExecutionRecords = record.subPlanExecutionRecords.map((subPlan: any) =>
-      convertPlanExecutionRecord(subPlan)
+    converted.subPlanExecutionRecords = record.subPlanExecutionRecords.map((subPlan: unknown) =>
+      convertPlanExecutionRecord(subPlan as Record<string, unknown>)
     )
   }
 
@@ -87,7 +87,9 @@ function convertAgentExecutionRecord<T extends Record<string, any>>(
 /**
  * Convert a message with potentially readonly arrays to a fully mutable version
  */
-export function convertMessageToCompatible<T extends Record<string, any>>(message: T): ChatMessage {
+export function convertMessageToCompatible<T extends Record<string, unknown>>(
+  message: T
+): ChatMessage {
   const converted = { ...message } as unknown as ChatMessage
 
   if ('thinkingDetails' in message && message.thinkingDetails) {

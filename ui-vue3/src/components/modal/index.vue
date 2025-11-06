@@ -55,6 +55,10 @@
 </template>
 
 <script setup lang="ts">
+// Define component name to satisfy Vue linting rules
+defineOptions({
+  name: 'ModalDialog',
+})
 import { Icon } from '@iconify/vue'
 import { onMounted, onUnmounted } from 'vue'
 

@@ -115,7 +115,7 @@ export const useTaskStore = defineStore('task', () => {
   // Emit plan execution requested event
   const emitPlanExecutionRequested = (payload: {
     title: string
-    planData: any
+    planData: unknown
     params?: string
   }) => {
     console.log('[TaskStore] emitPlanExecutionRequested called with payload:', payload)

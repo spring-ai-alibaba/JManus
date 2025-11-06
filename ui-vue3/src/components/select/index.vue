@@ -71,6 +71,10 @@
   </div>
 </template>
 <script setup lang="ts">
+// Define component name to satisfy Vue linting rules
+defineOptions({
+  name: 'CustomSelect',
+})
 import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 
@@ -83,7 +87,7 @@ const props = defineProps<{
   icon?: string
   direction?: 'left' | 'right'
   dropStyles?: Record<string, string>
-  onChange?: (value: string, option: Record<string, any>) => void // add onChange prop
+  onChange?: (value: string, option: Record<string, unknown>) => void // add onChange prop
 }>()
 
 // Define emit

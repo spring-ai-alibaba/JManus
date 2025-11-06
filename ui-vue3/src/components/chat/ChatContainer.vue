@@ -66,13 +66,15 @@ import { Icon } from '@iconify/vue'
 import ChatMessage from './ChatMessage.vue'
 
 // Import composables
-import { useChatMessages, convertMessageToCompatible } from './composables/useChatMessages'
+import {
+  useChatMessages,
+  convertMessageToCompatible,
+  type ChatMessage,
+} from './composables/useChatMessages'
 import { useScrollBehavior } from './composables/useScrollBehavior'
 
 // Import plan execution manager
 import { planExecutionManager } from '@/utils/plan-execution-manager'
-
-interface Props {}
 
 interface Emits {
   (e: 'step-selected', stepId: string): void
@@ -80,7 +82,7 @@ interface Emits {
 
 // InputMessage interface removed - not needed in display component
 
-withDefaults(defineProps<Props>(), {})
+defineProps<Record<string, never>>()
 
 const emit = defineEmits<Emits>()
 
@@ -209,7 +211,7 @@ const handlePlanUpdate = (rootPlanId: string) => {
     const message = messages.value[messageIndex]
 
     // Update planExecution data using updateMessage
-    const updates: any = {
+    const updates: Partial<ChatMessage> = {
       planExecution: JSON.parse(JSON.stringify(planDetails)),
     }
 
@@ -235,18 +237,28 @@ const handlePlanUpdate = (rootPlanId: string) => {
   }
 }
 
-const handlePlanCompleted = (planDetails: any) => {
+const handlePlanCompleted = (planDetails: unknown) => {
   console.log('[ChatContainer] Plan completed:', planDetails)
 
-  if (planDetails.rootPlanId) {
+  if (
+    planDetails &&
+    typeof planDetails === 'object' &&
+    'rootPlanId' in planDetails &&
+    planDetails.rootPlanId
+  ) {
+    const planDetailsObj = planDetails as Record<string, unknown>
+    const rootPlanId = planDetailsObj.rootPlanId as string
     const messageIndex = messages.value.findIndex(
-      m => m.planExecution?.currentPlanId === planDetails.rootPlanId
+      m => m.planExecution?.currentPlanId === rootPlanId
     )
 
     if (messageIndex !== -1) {
       const message = messages.value[messageIndex]
 
-      const summary = planDetails.summary ?? planDetails.result ?? 'Execution completed'
+      const summary =
+        (planDetailsObj.summary as string) ??
+        (planDetailsObj.result as string) ??
+        'Execution completed'
       updateMessage(message.id, {
         thinking: '',
         content: summary,

@@ -23,9 +23,13 @@ export default function useMonaco(language = 'json') {
   const updateVal = async (val: string) => {
     monacoEditor?.setValue(val)
     setTimeout(async () => {
-      initReadOnly && monacoEditor?.updateOptions({ readOnly: false })
+      if (initReadOnly) {
+        monacoEditor?.updateOptions({ readOnly: false })
+      }
       await monacoEditor?.getAction('editor.action.formatDocument')?.run()
-      initReadOnly && monacoEditor?.updateOptions({ readOnly: true })
+      if (initReadOnly) {
+        monacoEditor?.updateOptions({ readOnly: true })
+      }
     }, 100)
   }
 

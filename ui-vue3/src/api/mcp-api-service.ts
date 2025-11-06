@@ -47,7 +47,7 @@ export interface McpServerSaveRequest extends McpServerFieldRequest {
   id?: number // Optional, if present it's an update, otherwise it's a new addition
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   message: string
   data?: T
@@ -99,7 +99,7 @@ export class McpApiService {
   /**
    * Import MCP server configurations from JSON
    */
-  public static async importMcpServers(jsonData: any): Promise<ApiResponse> {
+  public static async importMcpServers(jsonData: unknown): Promise<ApiResponse> {
     try {
       const response = await fetch(`${this.BASE_URL}/batch-import`, {
         method: 'POST',

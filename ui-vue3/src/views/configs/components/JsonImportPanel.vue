@@ -73,12 +73,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
 import MonacoEditor from '@/components/MonacoEditor.vue'
 import TabPanel from '@/components/TabPanel.vue'
-import type { TabConfig, JsonValidationResult } from '@/types/mcp'
+import type {
+  JsonValidationResult,
+  McpConfigJson,
+  McpServerJsonConfig,
+  TabConfig,
+} from '@/types/mcp'
+import { Icon } from '@iconify/vue'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 // Props
 interface Props {
@@ -200,11 +205,17 @@ const emitValidationResult = () => {
 }
 
 // Validate MCP configuration structure
-const validateMcpConfig = (config: any): JsonValidationResult => {
+const validateMcpConfig = (config: unknown): JsonValidationResult => {
   const errors: string[] = []
 
-  // Check if config has mcpServers property
-  if (!config.mcpServers || typeof config.mcpServers !== 'object') {
+  // Type guard: check if config is an object with mcpServers property
+  if (
+    !config ||
+    typeof config !== 'object' ||
+    !('mcpServers' in config) ||
+    !config.mcpServers ||
+    typeof config.mcpServers !== 'object'
+  ) {
     errors.push(t('config.mcpConfig.missingMcpServers'))
     errors.push(
       '💡 Correct format example: {"mcpServers": {"server-id": {"name": "Server Name", "url": "Server URL"}}}'
@@ -212,7 +223,7 @@ const validateMcpConfig = (config: any): JsonValidationResult => {
     return { isValid: false, errors }
   }
 
-  const servers = config.mcpServers
+  const servers = config.mcpServers as Record<string, unknown>
 
   // Validate each server configuration
   for (const [serverId, serverConfig] of Object.entries(servers)) {
@@ -221,7 +232,7 @@ const validateMcpConfig = (config: any): JsonValidationResult => {
       continue
     }
 
-    const server = serverConfig as any
+    const server = serverConfig as McpServerJsonConfig
 
     // Validate based on whether command exists
     if (server.command) {
@@ -271,14 +282,16 @@ const validateMcpConfig = (config: any): JsonValidationResult => {
       } else {
         // Validate url or baseUrl format
         const urlToValidate = hasUrl ? server.url : server.baseUrl
-        try {
-          new URL(urlToValidate)
-        } catch {
-          errors.push(t('config.mcpConfig.invalidUrl', { serverId }))
+        if (urlToValidate) {
+          try {
+            new URL(urlToValidate)
+          } catch {
+            errors.push(t('config.mcpConfig.invalidUrl', { serverId }))
+          }
         }
 
         // Unify url field usage: if baseUrl is used in config, convert to url
-        if (hasBaseUrl && !hasUrl) {
+        if (hasBaseUrl && !hasUrl && server.baseUrl) {
           server.url = server.baseUrl
           delete server.baseUrl
         }
@@ -294,16 +307,24 @@ const validateMcpConfig = (config: any): JsonValidationResult => {
 }
 
 // Unify url field handling in MCP configuration
-const normalizeMcpConfig = (config: any): any => {
-  if (!config.mcpServers) {
-    return config
+const normalizeMcpConfig = (config: unknown): McpConfigJson => {
+  // Type guard: check if config is an object with mcpServers property
+  if (
+    !config ||
+    typeof config !== 'object' ||
+    !('mcpServers' in config) ||
+    !config.mcpServers ||
+    typeof config.mcpServers !== 'object'
+  ) {
+    return config as McpConfigJson
   }
 
-  const normalizedConfig = { ...config }
-  normalizedConfig.mcpServers = { ...config.mcpServers }
+  const typedConfig = config as McpConfigJson
+  const normalizedConfig: McpConfigJson = { ...typedConfig }
+  normalizedConfig.mcpServers = { ...typedConfig.mcpServers }
 
-  for (const [serverId, serverConfig] of Object.entries(config.mcpServers)) {
-    const server = serverConfig as any
+  for (const [serverId, serverConfig] of Object.entries(typedConfig.mcpServers)) {
+    const server = serverConfig as McpServerJsonConfig
     const normalizedServer = { ...server }
 
     // If no command, handle url/baseUrl unification
@@ -311,7 +332,7 @@ const normalizeMcpConfig = (config: any): any => {
       const hasUrl = server.url && typeof server.url === 'string'
       const hasBaseUrl = server.baseUrl && typeof server.baseUrl === 'string'
 
-      if (hasBaseUrl && !hasUrl) {
+      if (hasBaseUrl && !hasUrl && server.baseUrl) {
         // If only baseUrl exists, convert to url
         normalizedServer.url = server.baseUrl
         delete normalizedServer.baseUrl

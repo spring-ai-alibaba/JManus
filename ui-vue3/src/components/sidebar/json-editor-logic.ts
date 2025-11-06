@@ -91,13 +91,16 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
       displayData.planType = parsed.planType || 'dynamic_agent'
 
       // Parse steps - maps ExecutionStep structure
-      displayData.steps = (parsed.steps || []).map((step: any) => ({
-        stepRequirement: step.stepRequirement || '',
-        agentName: step.agentName || '',
-        modelName: step.modelName || null, // Default to null if not specified
-        selectedToolKeys: step.selectedToolKeys || [],
-        terminateColumns: step.terminateColumns || '',
-      }))
+      displayData.steps = (parsed.steps || []).map((step: unknown) => {
+        const stepObj = step as Record<string, unknown>
+        return {
+          stepRequirement: (stepObj.stepRequirement as string) || '',
+          agentName: (stepObj.agentName as string) || '',
+          modelName: (stepObj.modelName as string | null) || null, // Default to null if not specified
+          selectedToolKeys: (stepObj.selectedToolKeys as string[]) || [],
+          terminateColumns: (stepObj.terminateColumns as string) || '',
+        }
+      })
 
       console.log('[JsonEditorLogic] Updated displayData to:', displayData)
     } catch (error) {
@@ -120,7 +123,7 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
    */
   const convertVisualToJson = (): string => {
     try {
-      const result: any = {
+      const result: Record<string, unknown> = {
         title: displayData.title,
         steps: displayData.steps.map(step => ({
           stepRequirement: step.stepRequirement,

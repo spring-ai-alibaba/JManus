@@ -213,6 +213,10 @@
 </template>
 
 <script setup lang="ts">
+// Define component name to satisfy Vue linting rules
+defineOptions({
+  name: 'MemoryPanel',
+})
 import { onMounted, onUnmounted, ref } from 'vue'
 import { MemoryApiService } from '@/api/memory-api-service'
 import type { Memory } from '@/api/memory-api-service'

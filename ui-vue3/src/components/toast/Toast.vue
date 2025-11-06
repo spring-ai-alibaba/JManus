@@ -38,6 +38,11 @@
 </template>
 
 <script setup lang="ts">
+// Define component name to satisfy Vue linting rules
+defineOptions({
+  name: 'ToastNotification',
+})
+
 import { ref } from 'vue'
 import { Icon } from '@iconify/vue'
 

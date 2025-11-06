@@ -21,7 +21,7 @@ export class DirectApiService {
   private static readonly BASE_URL = '/api/executor'
 
   // Send task directly (direct execution mode)
-  public static async sendMessage(query: InputMessage): Promise<any> {
+  public static async sendMessage(query: InputMessage): Promise<unknown> {
     return LlmCheckService.withLlmCheck(async () => {
       // Add Vue identification flag to distinguish from HTTP requests
       const requestBody = {
@@ -40,7 +40,7 @@ export class DirectApiService {
   }
 
   // Send task using executeByToolNameAsync with default plan template
-  public static async sendMessageWithDefaultPlan(query: InputMessage): Promise<any> {
+  public static async sendMessageWithDefaultPlan(query: InputMessage): Promise<unknown> {
     // Use default plan template ID as toolName
     const toolName = 'default-plan-id-001000222'
 
@@ -58,7 +58,7 @@ export class DirectApiService {
     replacementParams?: Record<string, string>,
     uploadedFiles?: string[],
     uploadKey?: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     return LlmCheckService.withLlmCheck(async () => {
       console.log('[DirectApiService] executeByToolName called with:', {
         toolName,
@@ -67,7 +67,7 @@ export class DirectApiService {
         uploadKey,
       })
 
-      const requestBody: Record<string, any> = {
+      const requestBody: Record<string, unknown> = {
         toolName: toolName,
         isVueRequest: true,
       }
@@ -117,7 +117,7 @@ export class DirectApiService {
   }
 
   // Stop a running task by plan ID
-  public static async stopTask(planId: string): Promise<any> {
+  public static async stopTask(planId: string): Promise<unknown> {
     return LlmCheckService.withLlmCheck(async () => {
       console.log('[DirectApiService] Stopping task for planId:', planId)
 

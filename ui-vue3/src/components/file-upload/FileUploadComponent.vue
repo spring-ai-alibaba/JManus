@@ -76,7 +76,7 @@ interface Emits {
   (e: 'upload-key-changed', uploadKey: string | null): void
   (e: 'upload-started'): void
   (e: 'upload-completed'): void
-  (e: 'upload-error', error: any): void
+  (e: 'upload-error', error: unknown): void
 }
 
 const props = withDefaults(defineProps<FileUploadProps>(), {

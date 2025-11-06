@@ -40,7 +40,7 @@ export interface McpServerRequest {
 }
 
 // API response interface
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   message?: string
   data?: T
@@ -77,4 +77,18 @@ export interface TabConfig {
 export interface JsonValidationResult {
   isValid: boolean
   errors?: string[]
+}
+
+// MCP server configuration in JSON format
+export interface McpServerJsonConfig {
+  command?: string
+  args?: string[]
+  env?: Record<string, string> | string[] | null
+  url?: string
+  baseUrl?: string
+}
+
+// MCP configuration structure for JSON import
+export interface McpConfigJson {
+  mcpServers: Record<string, McpServerJsonConfig>
 }

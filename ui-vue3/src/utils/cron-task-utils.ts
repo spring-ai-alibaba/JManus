@@ -100,7 +100,7 @@ export const CronTaskUtils = {
    */
   prepareTaskExecution(task: CronConfig): {
     useTemplate: boolean
-    planData?: any
+    planData?: unknown
     taskContent?: string
   } {
     if (task.planTemplateId) {

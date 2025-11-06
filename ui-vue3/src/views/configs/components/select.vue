@@ -54,6 +54,11 @@
 import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 
+// Define component name to satisfy Vue linting rules
+defineOptions({
+  name: 'ConfigSelect',
+})
+
 const props = defineProps<{
   modelValue?: string | null
   options: Array<{ id: string; name: string }>

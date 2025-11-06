@@ -274,7 +274,7 @@ export interface PlanExecutionRecord {
   updatedAt?: string
 
   /** Additional metadata */
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 // API response type for getDetails method

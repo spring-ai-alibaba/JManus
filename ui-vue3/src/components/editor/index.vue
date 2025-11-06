@@ -24,6 +24,11 @@
 </template>
 
 <script lang="ts" setup>
+// Define component name to satisfy Vue linting rules
+defineOptions({
+  name: 'MonacoEditor',
+})
+
 import { onMounted, watch } from 'vue'
 import useMonaco from './MonacoEditor'
 

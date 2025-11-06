@@ -90,6 +90,40 @@ import BlurCard from '@/components/blurCard/BlurCard.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
 import { useTaskStore } from '@/stores/task'
 
+// Define component name for Vue linting rules
+defineOptions({
+  name: 'HomeIndex',
+})
+
+// Type definitions
+interface CardItem {
+  title: string
+  type: 'github' | 'message' | 'plan-act'
+  description: string
+  icon: string
+  url?: string
+  prompt?: string
+}
+
+interface ExampleItem extends CardItem {
+  type: 'github' | 'message'
+  prompt?: string
+}
+
+interface PlanItem extends CardItem {
+  type: 'plan-act'
+  planJson: {
+    planType: string
+    planTemplateId?: string
+  }
+}
+
+interface JsonPlan {
+  planType: string
+  planTemplateId?: string
+  [key: string]: unknown
+}
+
 const router = useRouter()
 const taskStore = useTaskStore()
 const userInput = ref('')
@@ -160,20 +194,20 @@ const plans = computed(() => [
 ])
 const allCards = computed(() => [...examples.value, ...plans.value])
 
-const openGitHubPage = (item: any) => {
+const openGitHubPage = (item: CardItem) => {
   console.log('[Home] openGitHubPage called with item:', item)
   if (item.url) {
     window.open(item.url, '_blank')
   }
 }
 
-const handleCardClick = (item: any) => {
+const handleCardClick = (item: CardItem) => {
   if (item.type === 'github') {
     openGitHubPage(item)
   } else if (item.type === 'message') {
-    selectExample(item)
+    selectExample(item as ExampleItem)
   } else if (item.type === 'plan-act') {
-    selectPlan(item)
+    selectPlan(item as PlanItem)
   }
 }
 
@@ -189,7 +223,7 @@ onMounted(() => {
 
 import { sidebarStore } from '@/stores/sidebar'
 
-const saveJsonPlanToTemplate = async (jsonPlan: any) => {
+const saveJsonPlanToTemplate = async (jsonPlan: JsonPlan) => {
   try {
     await sidebarStore.createNewTemplate(jsonPlan.planType)
     sidebarStore.jsonContent = JSON.stringify(jsonPlan)
@@ -214,10 +248,11 @@ const saveJsonPlanToTemplate = async (jsonPlan: any) => {
       console.log('[Sidebar] ' + t('sidebar.saveStatus', { message: saveResult.message }))
     }
     return saveResult // Return the save result
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Sidebar] Failed to save the plan to the template library:', error)
     // Note: This would need toast import if used in this context
-    alert(error.message || t('sidebar.saveFailed'))
+    const errorMessage = error instanceof Error ? error.message : t('sidebar.saveFailed')
+    alert(errorMessage)
     throw error // Re-throw the error
   }
 }
@@ -271,12 +306,14 @@ const handleSend = () => {
     })
 }
 
-const selectExample = (example: any) => {
+const selectExample = (example: ExampleItem) => {
   console.log('[Home] selectExample called with example:', example)
   console.log('[Home] Example prompt:', example.prompt)
 
   // Send the task directly using the example's prompt
-  taskStore.setTask(example.prompt)
+  if (example.prompt) {
+    taskStore.setTask(example.prompt)
+  }
   console.log('[Home] Task set to store from example, current task:', taskStore.currentTask)
 
   // Navigate to direct page
@@ -296,7 +333,7 @@ const selectExample = (example: any) => {
     })
 }
 
-const selectPlan = async (plan: any) => {
+const selectPlan = async (plan: PlanItem) => {
   console.log('[Home] selectPlan called with plan:', plan)
 
   try {

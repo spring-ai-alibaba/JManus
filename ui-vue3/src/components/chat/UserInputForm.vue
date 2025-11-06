@@ -198,7 +198,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'user-input-submitted', inputData: any): void
+  (e: 'user-input-submitted', inputData: Record<string, unknown>): void
 }
 
 const props = defineProps<Props>()
@@ -267,7 +267,7 @@ watch(
 // Event handlers
 const handleUserInputSubmit = async () => {
   try {
-    const inputData: any = {}
+    const inputData: Record<string, unknown> = {}
 
     const formInputs = props.userInputWaitState?.formInputs
     if (formInputs && formInputs.length > 0) {
@@ -297,7 +297,7 @@ const handleUserInputSubmit = async () => {
     }
 
     emit('user-input-submitted', inputData)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[UserInputForm] User input submission failed:', error)
   }
 }

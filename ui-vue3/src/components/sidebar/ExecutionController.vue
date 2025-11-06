@@ -417,7 +417,7 @@ const handleUploadCompleted = () => {
   console.log('[ExecutionController] Upload completed')
 }
 
-const handleUploadError = (error: any) => {
+const handleUploadError = (error: unknown) => {
   console.error('[ExecutionController] Upload error:', error)
 }
 
@@ -519,9 +519,10 @@ const handleSaveAndExecute = async () => {
       emit('executePlan', pendingExecutionPayload.value)
       pendingExecutionPayload.value = null
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[ExecutionController] ❌ Failed to save before execute:', error)
-    toast.error(error.message || t('sidebar.saveFailed'))
+    const message = error instanceof Error ? error.message : t('sidebar.saveFailed')
+    toast.error(message)
   }
 }
 

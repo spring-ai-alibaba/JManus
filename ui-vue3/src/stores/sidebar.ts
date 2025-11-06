@@ -137,7 +137,7 @@ export class SidebarStore {
   }
 
   // Helper function to parse date from different formats
-  parseDateTime(dateValue: any): Date {
+  parseDateTime(dateValue: unknown): Date {
     if (!dateValue) {
       return new Date()
     }
@@ -344,10 +344,11 @@ export class SidebarStore {
         this.planTemplateList = []
         console.warn('[SidebarStore] API returned abnormal data format, using empty list', response)
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[SidebarStore] Failed to load plan template list:', error)
       this.planTemplateList = []
-      this.errorMessage = `Load failed: ${error.message}`
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      this.errorMessage = `Load failed: ${message}`
     } finally {
       this.isLoading = false
     }
@@ -415,7 +416,7 @@ export class SidebarStore {
         this.planType = 'dynamic_agent'
         this.hasTaskRequirementModified = false
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load template data:', error)
       throw error
     }
@@ -461,7 +462,7 @@ export class SidebarStore {
       }
       await this.loadPlanTemplateList()
       console.log(`[SidebarStore] Plan template ${template.id} has been deleted`)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to delete plan template:', error)
       await this.loadPlanTemplateList()
       throw error
@@ -506,8 +507,9 @@ export class SidebarStore {
     }
     try {
       JSON.parse(content)
-    } catch (e: any) {
-      throw new Error('Invalid format, please correct and save.\nError: ' + e.message)
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error'
+      throw new Error('Invalid format, please correct and save.\nError: ' + message)
     }
     try {
       const saveResult = await PlanActApiService.savePlanTemplate(this.selectedTemplate.id, content)
@@ -532,7 +534,7 @@ export class SidebarStore {
       // Reset modification flag after successful save
       this.hasTaskRequirementModified = false
       return saveResult
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to save plan template:', error)
       throw error
     }
@@ -556,7 +558,7 @@ export class SidebarStore {
         params: this.executionParams.trim() || undefined,
         replacementParams: undefined as Record<string, string> | undefined,
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to prepare plan execution:', error)
       this.isExecuting = false
       throw error

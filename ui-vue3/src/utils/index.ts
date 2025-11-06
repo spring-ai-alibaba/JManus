@@ -67,7 +67,7 @@ export function exportObjectAsFile(
  * @param fileType File type ('json' | 'text')
  * @returns Promise that resolves with parsed data
  */
-export function importFile(fileType: 'json' | 'text' = 'json'): Promise<any> {
+export function importFile(fileType: 'json' | 'text' = 'json'): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const input = document.createElement('input')
     input.type = 'file'

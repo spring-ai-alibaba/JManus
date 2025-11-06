@@ -110,7 +110,7 @@ interface Emits {
   (e: 'copy'): void
   (e: 'regenerate'): void
   (e: 'retry'): void
-  (e: 'user-input-submitted', inputData: any): void
+  (e: 'user-input-submitted', inputData: Record<string, unknown>): void
 }
 
 const props = defineProps<Props>()
@@ -140,7 +140,7 @@ const handleRetry = () => {
   emit('retry')
 }
 
-const handleUserInputSubmitted = (inputData: any) => {
+const handleUserInputSubmitted = (inputData: Record<string, unknown>) => {
   console.log('[ResponseSection] User input submitted:', inputData)
   emit('user-input-submitted', inputData)
 }

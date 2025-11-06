@@ -20,6 +20,11 @@
 </template>
 
 <script setup lang="ts">
+// Define component name to satisfy Vue linting rules
+defineOptions({
+  name: 'FlexContainer',
+})
+
 import { computed, defineProps, type CSSProperties } from 'vue'
 
 interface FlexProps {

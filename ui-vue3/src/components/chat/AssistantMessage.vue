@@ -55,7 +55,9 @@
       @copy="handleCopy"
       @regenerate="handleRegenerate"
       @retry="handleRetry"
-      @user-input-submitted="(inputData: any) => handleUserInputSubmit(message, inputData)"
+      @user-input-submitted="
+        (inputData: Record<string, unknown>) => handleUserInputSubmit(message, inputData)
+      "
     />
   </div>
 </template>
@@ -96,7 +98,7 @@ const handleRetry = () => {
 
 // Plan execution event handlers
 
-const handleUserInputSubmit = (message: ChatMessage, inputData: any) => {
+const handleUserInputSubmit = (message: ChatMessage, inputData: Record<string, unknown>) => {
   console.log('[AssistantMessage] User input submitted:', inputData, 'for message:', message.id)
   // Handle user input submission - can be extended for more functionality
 }

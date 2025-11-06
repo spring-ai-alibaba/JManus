@@ -91,8 +91,11 @@ export const routes: Readonly<RouteRecordType[]> = [
   },
 ]
 
-function handlePath(...paths: any[]) {
-  return paths.join('/').replace(/\/+/g, '/')
+function handlePath(...paths: (string | undefined)[]): string {
+  return paths
+    .filter((p): p is string => typeof p === 'string')
+    .join('/')
+    .replace(/\/+/g, '/')
 }
 
 function handleRoutes(

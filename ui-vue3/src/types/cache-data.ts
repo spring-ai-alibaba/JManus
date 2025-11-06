@@ -28,5 +28,5 @@ export interface UIStateData {
   loading?: boolean
 
   /** Any additional metadata for UI state */
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }

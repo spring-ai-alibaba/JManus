@@ -535,7 +535,7 @@ const autoScrollToBottomIfNeeded = () => {
 }
 
 // Actions - Utility functions
-const formatJson = (jsonData: any): string => {
+const formatJson = (jsonData: unknown): string => {
   if (jsonData === null || typeof jsonData === 'undefined' || jsonData === '') {
     return 'N/A'
   }

@@ -533,7 +533,7 @@ const handleBooleanUpdate = (item: ExtendedConfigItem, newValue: string | boolea
 }
 
 // Update configuration value
-const updateConfigValue = (item: ExtendedConfigItem, value: any, autoSave: boolean = false) => {
+const updateConfigValue = (item: ExtendedConfigItem, value: unknown, autoSave: boolean = false) => {
   let stringValue: string
 
   // Handle the value according to the input type

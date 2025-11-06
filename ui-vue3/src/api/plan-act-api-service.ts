@@ -31,7 +31,7 @@ export class PlanActApiService {
     uploadedFiles?: string[],
     replacementParams?: Record<string, string>,
     uploadKey?: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     return LlmCheckService.withLlmCheck(async () => {
       console.log('[PlanActApiService] executePlan called with:', {
         planTemplateId,
@@ -61,7 +61,7 @@ export class PlanActApiService {
   }
 
   // Save plan to server
-  public static async savePlanTemplate(planId: string, planJson: string): Promise<any> {
+  public static async savePlanTemplate(planId: string, planJson: string): Promise<unknown> {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -72,7 +72,7 @@ export class PlanActApiService {
   }
 
   // Get all versions of plan
-  public static async getPlanVersions(planId: string): Promise<any> {
+  public static async getPlanVersions(planId: string): Promise<unknown> {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/versions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -83,7 +83,7 @@ export class PlanActApiService {
   }
 
   // Get specific version of plan
-  public static async getVersionPlan(planId: string, versionIndex: number): Promise<any> {
+  public static async getVersionPlan(planId: string, versionIndex: number): Promise<unknown> {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/get-version`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -94,14 +94,14 @@ export class PlanActApiService {
   }
 
   // Get all plan template list
-  public static async getAllPlanTemplates(): Promise<any> {
+  public static async getAllPlanTemplates(): Promise<unknown> {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/list`)
     if (!response.ok) throw new Error(`Failed to get plan template list: ${response.status}`)
     return await response.json()
   }
 
   // Delete plan template
-  public static async deletePlanTemplate(planId: string): Promise<any> {
+  public static async deletePlanTemplate(planId: string): Promise<unknown> {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

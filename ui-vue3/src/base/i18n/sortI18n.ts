@@ -17,7 +17,7 @@
 import EN_MAP from './en'
 import ZH_MAP from './zh'
 
-const sortArr: { label: string; value: any }[] = []
+const sortArr: { label: string; value: unknown }[] = []
 const checkArr: string[] = []
 
 function mapToArr() {

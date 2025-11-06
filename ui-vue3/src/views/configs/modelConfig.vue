@@ -514,9 +514,10 @@ const loadData = async () => {
     if (normalizedModels.length > 0) {
       await selectModel(normalizedModels[0])
     }
-  } catch (err: any) {
-    console.error('Failed to load data:', err)
-    showMessage(t('config.modelConfig.loadDataFailed') + ': ' + err.message, 'error')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    console.error('Failed to load data:', errorMessage)
+    showMessage(t('config.modelConfig.loadDataFailed') + ': ' + errorMessage, 'error')
   } finally {
     loading.value = false
   }
@@ -532,9 +533,10 @@ const selectModel = async (model: Model) => {
     }
     // When switching models, clear validation state but keep available model list for that model
     validating.value = false
-  } catch (err: any) {
-    console.error('Failed to load Model details:', err)
-    showMessage(t('config.modelConfig.loadDetailsFailed') + ': ' + err.message, 'error')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    console.error('Failed to load Model details:', errorMessage)
+    showMessage(t('config.modelConfig.loadDetailsFailed') + ': ' + errorMessage, 'error')
     // Use basic information as a fallback
     selectedModel.value = {
       ...model,
@@ -592,8 +594,9 @@ const handleValidateConfig = async () => {
     } else {
       showMessage(t('config.modelConfig.validationFailed') + ': ' + result.message, 'error')
     }
-  } catch (err: any) {
-    showMessage(t('config.modelConfig.validationFailed') + ': ' + err.message, 'error')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    showMessage(t('config.modelConfig.validationFailed') + ': ' + errorMessage, 'error')
   } finally {
     validating.value = false
   }
@@ -677,8 +680,9 @@ const handleNewModelValidateConfig = async () => {
     } else {
       showMessage(t('config.modelConfig.validationFailed') + ': ' + result.message, 'error')
     }
-  } catch (err: any) {
-    showMessage(t('config.modelConfig.validationFailed') + ': ' + err.message, 'error')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    showMessage(t('config.modelConfig.validationFailed') + ': ' + errorMessage, 'error')
   } finally {
     newModelValidating.value = false
   }
@@ -726,8 +730,9 @@ const handleAddModel = async () => {
       )
       return
     }
-  } catch (err: any) {
-    showMessage(t('config.modelConfig.validationFailedCannotSave') + ': ' + err.message, 'error')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    showMessage(t('config.modelConfig.validationFailedCannotSave') + ': ' + errorMessage, 'error')
     return
   }
 
@@ -749,8 +754,9 @@ const handleAddModel = async () => {
     selectedModel.value = createdModel
     showModal.value = false
     showMessage(t('config.modelConfig.createSuccess'), 'success')
-  } catch (err: any) {
-    showMessage(t('config.modelConfig.createFailed') + ': ' + err.message, 'error')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    showMessage(t('config.modelConfig.createFailed') + ': ' + errorMessage, 'error')
   }
 }
 
@@ -796,8 +802,9 @@ const handleSave = async () => {
 
       // Validation successful, update available model list
       modelAvailableModels.value.set(selectedModel.value.id, validationResult.availableModels ?? [])
-    } catch (err: any) {
-      showMessage(t('config.modelConfig.validationFailedCannotSave') + ': ' + err.message, 'error')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      showMessage(t('config.modelConfig.validationFailedCannotSave') + ': ' + errorMessage, 'error')
       return
     }
   }
@@ -822,8 +829,9 @@ const handleSave = async () => {
     }
     selectedModel.value = savedModel
     showMessage(t('config.modelConfig.saveSuccess'), 'success')
-  } catch (err: any) {
-    showMessage(t('config.modelConfig.saveFailed') + ': ' + err.message, 'error')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    showMessage(t('config.modelConfig.saveFailed') + ': ' + errorMessage, 'error')
   }
 }
 
@@ -849,8 +857,9 @@ const handleSetDefault = async () => {
     selectedModel.value.isDefault = true
 
     showMessage(t('config.modelConfig.setDefaultSuccess'), 'success')
-  } catch (err: any) {
-    showMessage(t('config.modelConfig.setDefaultFailed') + ': ' + err.message, 'error')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    showMessage(t('config.modelConfig.setDefaultFailed') + ': ' + errorMessage, 'error')
   } finally {
     settingDefault.value = false
   }
@@ -873,8 +882,9 @@ const handleDelete = async () => {
     selectedModel.value = models.length > 0 ? models[0] : null
     showDeleteModal.value = false
     showMessage(t('config.modelConfig.deleteSuccess'), 'success')
-  } catch (err: any) {
-    showMessage(t('config.modelConfig.deleteFailed') + ': ' + err.message, 'error')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    showMessage(t('config.modelConfig.deleteFailed') + ': ' + errorMessage, 'error')
   }
 }
 
@@ -901,8 +911,9 @@ const handleImport = () => {
           models.push(savedModel)
           selectedModel.value = savedModel
           showMessage(t('config.modelConfig.importSuccess'), 'success')
-        } catch (err: any) {
-          showMessage(t('config.modelConfig.importFailed') + ': ' + err.message, 'error')
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : String(err)
+          showMessage(t('config.modelConfig.importFailed') + ': ' + errorMessage, 'error')
         }
       }
       reader.readAsText(file)
@@ -925,8 +936,9 @@ const handleExport = () => {
     link.click()
     URL.revokeObjectURL(url)
     showMessage(t('config.modelConfig.exportSuccess'), 'success')
-  } catch (err: any) {
-    showMessage(t('config.modelConfig.exportFailed') + ': ' + err.message, 'error')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    showMessage(t('config.modelConfig.exportFailed') + ': ' + errorMessage, 'error')
   }
 }
 

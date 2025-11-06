@@ -134,7 +134,7 @@ const props = defineProps<Props>()
 // Emits
 const emit = defineEmits<{
   'connection-type-change': []
-  'update:formData': [data: any]
+  'update:formData': [data: Props['formData']]
 }>()
 
 // Connection type options
@@ -149,7 +149,7 @@ const handleInput = (field: string, event: Event) => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement
   if (props.isEditMode) {
     // Edit mode: directly modify formData
-    ;(props.formData as any)[field] = target.value
+    ;(props.formData as Record<string, unknown>)[field] = target.value
   } else {
     // Add mode: notify parent component via emit
     emit('update:formData', { ...props.formData, [field]: target.value })
@@ -162,7 +162,7 @@ const handleConnectionTypeUpdate = (value: string | null) => {
 
   if (props.isEditMode) {
     // Edit mode: directly modify formData
-    ;(props.formData as any).connectionType = value
+    ;(props.formData as { connectionType: 'STUDIO' | 'SSE' | 'STREAMING' }).connectionType = value
   } else {
     // Add mode: notify parent component via emit
     emit('update:formData', { ...props.formData, connectionType: value })

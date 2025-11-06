@@ -290,16 +290,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
-import { LlmCheckService } from '@/utils/llm-check'
 import {
+  LOCAL_STORAGE_LOCALE,
   changeLanguageWithAgentReset,
   initializePlanTemplates,
-  LOCAL_STORAGE_LOCALE,
 } from '@/base/i18n'
+import { LlmCheckService } from '@/utils/llm-check'
+import { Icon } from '@iconify/vue'
+import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+
+// Define component name for Vue linting rules
+defineOptions({
+  name: 'InitIndex',
+})
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -352,15 +357,18 @@ const goToNextStep = async () => {
       try {
         await initializePlanTemplates(selectedLanguage.value)
         console.log('Plan templates initialized successfully')
-      } catch (planTemplateErr: any) {
-        console.warn('Failed to initialize plan templates:', planTemplateErr)
+      } catch (planTemplateErr: unknown) {
+        const errorMessage =
+          planTemplateErr instanceof Error ? planTemplateErr.message : String(planTemplateErr)
+        console.warn('Failed to initialize plan templates:', errorMessage)
         // Continue even if plan template initialization fails
       }
 
       // Move to next step
       currentStep.value = 2
-    } catch (err: any) {
-      console.warn('Failed to switch language:', err)
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      console.warn('Failed to switch language:', errorMessage)
       // Continue to next step even if language switch fails, don't block user flow
       currentStep.value = 2
     } finally {
@@ -415,7 +423,7 @@ const handleSubmit = async () => {
     loading.value = true
     error.value = ''
 
-    const requestBody: any = {
+    const requestBody: Record<string, string> = {
       configMode: form.value.configMode,
       apiKey: form.value.apiKey.trim(),
     }

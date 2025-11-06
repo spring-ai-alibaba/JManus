@@ -400,7 +400,7 @@ const handleJsonSave = () => {
 }
 
 // Create new server from JSON
-const handleAddServerFromJson = async (serverData: any) => {
+const handleAddServerFromJson = async (serverData: Record<string, unknown>) => {
   try {
     loading.value = true
     const result = await McpApiService.importMcpServers(serverData)
@@ -600,7 +600,9 @@ const validateJson = () => {
 }
 
 // Validate MCP configuration structure
-const validateMcpConfig = (config: any): { isValid: boolean; errors?: string[] } => {
+const validateMcpConfig = (
+  config: Record<string, unknown>
+): { isValid: boolean; errors?: string[] } => {
   const errors: string[] = []
 
   // Check if config has mcpServers property
@@ -619,7 +621,7 @@ const validateMcpConfig = (config: any): { isValid: boolean; errors?: string[] }
       continue
     }
 
-    const server = serverConfig as any
+    const server = serverConfig as Record<string, unknown>
 
     // Check required fields - name field is optional, so we skip validation
 
@@ -709,7 +711,7 @@ const formatJson = () => {
 }
 
 // Unify url field handling in MCP configuration
-const normalizeMcpConfig = (config: any): any => {
+const normalizeMcpConfig = (config: Record<string, unknown>): Record<string, unknown> => {
   if (!config.mcpServers) {
     return config
   }
@@ -718,7 +720,7 @@ const normalizeMcpConfig = (config: any): any => {
   normalizedConfig.mcpServers = { ...config.mcpServers }
 
   for (const [serverId, serverConfig] of Object.entries(config.mcpServers)) {
-    const server = serverConfig as any
+    const server = serverConfig as Record<string, unknown>
     const normalizedServer = { ...server }
 
     // If no command, handle url/baseUrl unification
@@ -787,7 +789,7 @@ const loadMcpServers = async () => {
 const toggleServerStatus = async (server: McpServer) => {
   try {
     loading.value = true
-    let result: any
+    let result: { success: boolean; message?: string; [key: string]: unknown }
 
     // Determine operation to execute based on current status
     // If currently enabled, disable after click
@@ -880,7 +882,7 @@ const exportAllConfigs = async () => {
     const servers = await McpApiService.getAllMcpServers()
 
     // Build export data
-    const exportData: { mcpServers: Record<string, any> } = {
+    const exportData: { mcpServers: Record<string, Record<string, unknown>> } = {
       mcpServers: {},
     }
 

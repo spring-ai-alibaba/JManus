@@ -271,7 +271,7 @@ const handleUploadCompleted = () => {
   console.log('[InputArea] Upload completed')
 }
 
-const handleUploadError = (error: any) => {
+const handleUploadError = (error: unknown) => {
   console.error('[InputArea] Upload error:', error)
 }
 
@@ -321,8 +321,12 @@ const handleSend = async () => {
     if (selectedTool) {
       // Add tool information to query for backend processing
       // This will be handled by handleChatSendMessage which will call executeByToolName
-      ;(query as any).toolName = selectedTool.planTemplateId
-      ;(query as any).replacementParams = {
+      const extendedQuery = query as InputMessage & {
+        toolName?: string
+        replacementParams?: Record<string, string>
+      }
+      extendedQuery.toolName = selectedTool.planTemplateId
+      extendedQuery.replacementParams = {
         [selectedTool.paramName]: finalInput,
       }
       console.log('[InputArea] Sending message with tool:', selectedTool.toolName)
