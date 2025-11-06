@@ -58,17 +58,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 // Import new modular components
 import ChatMessage from './ChatMessage.vue'
 
 // Import composables
 import {
-  useChatMessages,
   convertMessageToCompatible,
+  useChatMessages,
   type ChatMessage as ChatMessageType,
 } from './composables/useChatMessages'
 import { useScrollBehavior } from './composables/useScrollBehavior'
@@ -81,8 +81,10 @@ interface Emits {
 }
 
 // InputMessage interface removed - not needed in display component
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface Props {}
 
-defineProps<{}>()
+defineProps<Props>()
 
 const emit = defineEmits<Emits>()
 
