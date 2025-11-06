@@ -597,7 +597,6 @@ const handleChatSendMessage = async (query: InputMessage) => {
     const { DirectApiService } = await import('@/api/direct-api-service')
 
     // Check if a specific tool is selected (toolName and replacementParams in query)
-    const extendedQuery = query as ExtendedInputMessage
     let response: ApiResponse
 
     if (extendedQuery.toolName && extendedQuery.replacementParams) {
