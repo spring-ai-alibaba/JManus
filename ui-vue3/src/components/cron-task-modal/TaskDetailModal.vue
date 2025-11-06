@@ -181,7 +181,7 @@ const formData = ref<CronConfig>({
  */
 const fetchTemplates = async () => {
   try {
-    const response = await PlanActApiService.getAllPlanTemplates() as Record<string, unknown>
+    const response = (await PlanActApiService.getAllPlanTemplates()) as Record<string, unknown>
     if (response?.templates) {
       templates.value = (response.templates as PlanTemplate[]).map((template: PlanTemplate) => ({
         id: template.id,

@@ -321,7 +321,9 @@ const executeTask = async (taskId: string | number) => {
     // Execute task
     if (executionData.useTemplate && executionData.planData) {
       // Execute plan using template
-      taskStore.emitPlanExecutionRequested(executionData.planData as { title: string; planData: unknown; params?: string })
+      taskStore.emitPlanExecutionRequested(
+        executionData.planData as { title: string; planData: unknown; params?: string }
+      )
     } else if (executionData.taskContent) {
       // Execute directly using task description as content
       taskStore.setTask(executionData.taskContent)

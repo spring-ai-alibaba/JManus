@@ -261,9 +261,9 @@ export class PlanExecutionManager {
   private async sendUserMessageAndSetPlanId(query: string): Promise<unknown> {
     try {
       // Use direct execution mode API to send message
-      const response = await DirectApiService.sendMessage({
+      const response = (await DirectApiService.sendMessage({
         input: query,
-      }) as Record<string, unknown>
+      })) as Record<string, unknown>
 
       if (response?.planId) {
         this.state.activePlanId = response.planId as string

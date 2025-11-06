@@ -425,7 +425,12 @@ const handleSaveTemplate = async () => {
   try {
     const saveResult = await sidebarStore.saveTemplate()
 
-    const result = saveResult as { duplicate?: boolean; saved?: boolean; message?: string; versionCount?: number }
+    const result = saveResult as {
+      duplicate?: boolean
+      saved?: boolean
+      message?: string
+      versionCount?: number
+    }
     if (result?.duplicate) {
       toast.success(
         t('sidebar.saveCompleted', {

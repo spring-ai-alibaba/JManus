@@ -93,11 +93,15 @@ export function convertMessageToCompatible<T extends Record<string, unknown>>(
   const converted = { ...message } as unknown as ChatMessage
 
   if ('thinkingDetails' in message && message.thinkingDetails) {
-    converted.thinkingDetails = convertPlanExecutionRecord(message.thinkingDetails as Record<string, unknown>)
+    converted.thinkingDetails = convertPlanExecutionRecord(
+      message.thinkingDetails as Record<string, unknown>
+    )
   }
 
   if ('planExecution' in message && message.planExecution) {
-    converted.planExecution = convertPlanExecutionRecord(message.planExecution as Record<string, unknown>)
+    converted.planExecution = convertPlanExecutionRecord(
+      message.planExecution as Record<string, unknown>
+    )
   }
 
   if ('attachments' in message && Array.isArray(message.attachments)) {

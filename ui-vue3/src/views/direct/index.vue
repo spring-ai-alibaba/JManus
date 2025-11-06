@@ -605,16 +605,16 @@ const handleChatSendMessage = async (query: InputMessage) => {
         '[DirectView] Calling DirectApiService.executeByToolName with tool:',
         extendedQuery.toolName
       )
-      response = await DirectApiService.executeByToolName(
+      response = (await DirectApiService.executeByToolName(
         extendedQuery.toolName,
         extendedQuery.replacementParams as Record<string, string>,
         query.uploadedFiles,
         query.uploadKey
-      ) as ApiResponse
+      )) as ApiResponse
     } else {
       // Use default plan template
       console.log('[DirectView] Calling DirectApiService.sendMessageWithDefaultPlan')
-      response = await DirectApiService.sendMessageWithDefaultPlan(query) as ApiResponse
+      response = (await DirectApiService.sendMessageWithDefaultPlan(query)) as ApiResponse
     }
 
     console.log('[DirectView] API response received:', response)
@@ -824,7 +824,11 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
     // Use the returned planId to start the plan execution process
     const executionResponse = response as { planId?: string }
     if (executionResponse.planId && assistantMessage) {
-      console.log('[Direct] Got planId from response:', executionResponse.planId, 'starting plan execution')
+      console.log(
+        '[Direct] Got planId from response:',
+        executionResponse.planId,
+        'starting plan execution'
+      )
 
       // Update assistant message with plan execution info
       chatRef.value?.updateMessage(assistantMessage.id, {
@@ -881,7 +885,9 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
     } catch (errorHandlingError) {
       console.error('[Direct] Failed to add error messages:', errorHandlingError)
       // Note: This would need toast import if used in this context
-      alert(`${t('direct.executionFailed')}: ${(error as Error).message || t('common.unknownError')}`)
+      alert(
+        `${t('direct.executionFailed')}: ${(error as Error).message || t('common.unknownError')}`
+      )
     }
   } finally {
     console.log('[Direct] Plan execution finished, resetting isExecutingPlan flag')

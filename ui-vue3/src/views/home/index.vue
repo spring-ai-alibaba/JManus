@@ -228,7 +228,12 @@ const saveJsonPlanToTemplate = async (jsonPlan: JsonPlan) => {
     await sidebarStore.createNewTemplate(jsonPlan.planType)
     sidebarStore.jsonContent = JSON.stringify(jsonPlan)
     const saveResult = await sidebarStore.saveTemplate()
-    const result = saveResult as { duplicate?: boolean; saved?: boolean; message?: string; versionCount?: number }
+    const result = saveResult as {
+      duplicate?: boolean
+      saved?: boolean
+      message?: string
+      versionCount?: number
+    }
     if (result?.duplicate) {
       console.log(
         '[Sidebar] ' +

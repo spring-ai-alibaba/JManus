@@ -332,7 +332,9 @@ export class SidebarStore {
     this.errorMessage = ''
     try {
       console.log('[SidebarStore] Starting to load plan template list...')
-      const response = await PlanActApiService.getAllPlanTemplates() as { templates?: PlanTemplate[] }
+      const response = (await PlanActApiService.getAllPlanTemplates()) as {
+        templates?: PlanTemplate[]
+      }
       if (response?.templates && Array.isArray(response.templates)) {
         this.planTemplateList = response.templates
         console.log(
@@ -515,7 +517,10 @@ export class SidebarStore {
       const saveResult = await PlanActApiService.savePlanTemplate(this.selectedTemplate.id, content)
 
       // Update the selected template ID with the real planId returned from backend
-      if ((saveResult as { planId?: string })?.planId && this.selectedTemplate.id.startsWith('new-')) {
+      if (
+        (saveResult as { planId?: string })?.planId &&
+        this.selectedTemplate.id.startsWith('new-')
+      ) {
         console.log(
           '[SidebarStore] Updating template ID from',
           this.selectedTemplate.id,

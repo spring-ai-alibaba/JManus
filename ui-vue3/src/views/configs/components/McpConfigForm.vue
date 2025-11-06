@@ -162,10 +162,14 @@ const handleConnectionTypeUpdate = (value: string | null) => {
 
   if (props.isEditMode) {
     // Edit mode: directly modify formData
-    ;(props.formData as { connectionType: 'STUDIO' | 'SSE' | 'STREAMING' }).connectionType = value as 'STUDIO' | 'SSE' | 'STREAMING'
+    ;(props.formData as { connectionType: 'STUDIO' | 'SSE' | 'STREAMING' }).connectionType =
+      value as 'STUDIO' | 'SSE' | 'STREAMING'
   } else {
     // Add mode: notify parent component via emit
-    emit('update:formData', { ...props.formData, connectionType: value as 'STUDIO' | 'SSE' | 'STREAMING' })
+    emit('update:formData', {
+      ...props.formData,
+      connectionType: value as 'STUDIO' | 'SSE' | 'STREAMING',
+    })
   }
 
   // Trigger connection type change event

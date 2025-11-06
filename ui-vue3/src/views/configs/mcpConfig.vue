@@ -796,10 +796,18 @@ const toggleServerStatus = async (server: McpServer) => {
     // If currently disabled, enable after click
     if (server.status === 'ENABLE') {
       // Currently enabled, disable after click
-      result = await McpApiService.disableMcpServer(server.id) as { [key: string]: unknown; success: boolean; message?: string }
+      result = (await McpApiService.disableMcpServer(server.id)) as {
+        [key: string]: unknown
+        success: boolean
+        message?: string
+      }
     } else {
       // Currently disabled, enable after click
-      result = await McpApiService.enableMcpServer(server.id) as { [key: string]: unknown; success: boolean; message?: string }
+      result = (await McpApiService.enableMcpServer(server.id)) as {
+        [key: string]: unknown
+        success: boolean
+        message?: string
+      }
     }
 
     if (result.success) {
