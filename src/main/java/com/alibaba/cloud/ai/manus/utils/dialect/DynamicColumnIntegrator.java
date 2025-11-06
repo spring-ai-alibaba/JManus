@@ -37,7 +37,7 @@
 // * auth: dahua time: 20250809
 // */
 // @Component
-// TODO: Not sure how to use this, temporarily commented out by Shen Xun
+//
 // public class DynamicColumnIntegrator implements Integrator {
 
 // @Override

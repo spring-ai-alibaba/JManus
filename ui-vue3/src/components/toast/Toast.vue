@@ -19,16 +19,8 @@
   <Teleport to="body">
     <transition name="modal">
       <!-- Toast message box -->
-      <div
-        v-if="visible"
-        class="toast-overlay"
-        @click="hide"
-      >
-        <div
-          class="toast-modal"
-          :class="`toast--${type}`"
-          @click.stop
-        >
+      <div v-if="visible" class="toast-overlay" @click="hide">
+        <div class="toast-modal" :class="`toast--${type}`" @click.stop>
           <div class="toast-header">
             <Icon :icon="icon" class="toast-icon" />
             <span class="toast-title">{{ type === 'success' ? 'Success' : 'Error' }}</span>
@@ -37,9 +29,7 @@
             <span>{{ message }}</span>
           </div>
           <div class="toast-actions">
-            <button class="toast-btn toast-btn--primary" @click="hide">
-              Confirm
-            </button>
+            <button class="toast-btn toast-btn--primary" @click="hide">Confirm</button>
           </div>
         </div>
       </div>
@@ -48,6 +38,11 @@
 </template>
 
 <script setup lang="ts">
+// Define component name to satisfy Vue linting rules
+defineOptions({
+  name: 'ToastNotification',
+})
+
 import { ref } from 'vue'
 import { Icon } from '@iconify/vue'
 
@@ -72,13 +67,12 @@ const duration = ref(3000)
  * @param toastType - Type of toast: 'success' or 'error'
  * @param customDuration - Optional custom duration in ms (ignored for modal style)
  */
-const show = (msg:string, toastType = 'success', customDuration = 3000) => {
+const show = (msg: string, toastType = 'success', customDuration = 3000) => {
   message.value = msg
   type.value = toastType
   icon.value = toastType === 'success' ? 'carbon:checkmark' : 'carbon:error'
   duration.value = customDuration
   visible.value = true
-
 
   // Modal style toast doesn't auto-hide, user must click confirm
   // setTimeout(() => {
@@ -223,4 +217,3 @@ defineExpose<ToastInstance>({ show })
   transform: scale(1) translateY(0);
 }
 </style>
-

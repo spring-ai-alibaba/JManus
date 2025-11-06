@@ -79,7 +79,9 @@ const filteredSelectedToolIds = computed(() => {
   if (!Array.isArray(props.selectedToolIds)) {
     return []
   }
-  return props.selectedToolIds.filter(toolId => props.availableTools.some(tool => tool.key === toolId))
+  return props.selectedToolIds.filter(toolId =>
+    props.availableTools.some(tool => tool.key === toolId)
+  )
 })
 
 // Watch for changes in filtered tools and emit event

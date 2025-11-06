@@ -24,7 +24,11 @@
               <div class="status-switch">
                 <span class="status-label">{{ $t('cronTask.taskStatus') }}</span>
                 <label class="toggle-switch">
-                  <input type="checkbox" :checked="formData.status === 0" @change="formData.status = formData.status === 0 ? 1 : 0">
+                  <input
+                    type="checkbox"
+                    :checked="formData.status === 0"
+                    @change="formData.status = formData.status === 0 ? 1 : 0"
+                  />
                   <span class="toggle-slider"></span>
                 </label>
               </div>
@@ -96,10 +100,7 @@
                   </button>
                 </div>
                 <div v-if="formData.linkTemplate" class="template-selector">
-                  <select
-                    v-model="formData.templateId"
-                    class="form-select"
-                  >
+                  <select v-model="formData.templateId" class="form-select">
                     <option value="">{{ $t('cronTask.selectTemplate') }}</option>
                     <option v-for="template in templates" :key="template.id" :value="template.id">
                       {{ template.name }}
@@ -157,12 +158,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'save': [task: CronConfig]
+  save: [task: CronConfig]
 }>()
 
 // State variables
 const saving = ref(false)
-const templates = ref<Array<{id: string, name: string}>>([])
+const templates = ref<Array<{ id: string; name: string }>>([])
 
 // Form data
 const formData = ref<CronConfig>({
@@ -172,7 +173,7 @@ const formData = ref<CronConfig>({
   status: 1,
   linkTemplate: false,
   templateId: '',
-  planTemplateId: ''
+  planTemplateId: '',
 })
 
 /**
@@ -180,11 +181,11 @@ const formData = ref<CronConfig>({
  */
 const fetchTemplates = async () => {
   try {
-    const response = await PlanActApiService.getAllPlanTemplates()
+    const response = (await PlanActApiService.getAllPlanTemplates()) as Record<string, unknown>
     if (response?.templates) {
-      templates.value = response.templates.map((template: PlanTemplate) => ({
+      templates.value = (response.templates as PlanTemplate[]).map((template: PlanTemplate) => ({
         id: template.id,
-        name: template.title ?? 'Unnamed Template'
+        name: template.title ?? 'Unnamed Template',
       }))
     }
   } catch (error) {
@@ -284,7 +285,7 @@ const handleSave = async () => {
       cronTime: formData.value.cronTime.trim(),
       planDesc: formData.value.planDesc.trim(),
       status: formData.value.status,
-      planTemplateId: formData.value.linkTemplate ? formData.value.templateId ?? '' : ''
+      planTemplateId: formData.value.linkTemplate ? (formData.value.templateId ?? '') : '',
     }
 
     // Trigger save event
@@ -297,7 +298,7 @@ const handleSave = async () => {
 // Watch for task changes, update form data
 watch(
   () => props.task,
-  (newTask) => {
+  newTask => {
     if (newTask) {
       // Unified handling of template ID field
       const templateId = newTask.templateId ?? newTask.planTemplateId ?? ''
@@ -309,7 +310,7 @@ watch(
         status: newTask.status,
         linkTemplate: !!templateId,
         templateId: templateId,
-        planTemplateId: templateId
+        planTemplateId: templateId,
       }
     } else {
       // Reset form
@@ -320,7 +321,7 @@ watch(
         status: 1,
         linkTemplate: false,
         templateId: '',
-        planTemplateId: ''
+        planTemplateId: '',
       }
     }
   },
@@ -330,7 +331,7 @@ watch(
 // Reset form when modal closes
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     if (!newValue) {
       formData.value = {
         cronName: '',
@@ -339,7 +340,7 @@ watch(
         status: 1,
         linkTemplate: false,
         templateId: '',
-        planTemplateId: ''
+        planTemplateId: '',
       }
     }
   }
@@ -592,8 +593,12 @@ watch(
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Transition animations */
@@ -629,19 +634,19 @@ watch(
   right: 0;
   bottom: 0;
   background-color: rgba(255, 255, 255, 0.2);
-  transition: .4s;
+  transition: 0.4s;
   border-radius: 24px;
 }
 
 .toggle-slider:before {
   position: absolute;
-  content: "";
+  content: '';
   height: 18px;
   width: 18px;
   left: 3px;
   bottom: 3px;
   background-color: white;
-  transition: .4s;
+  transition: 0.4s;
   border-radius: 50%;
 }
 
@@ -657,4 +662,3 @@ input:checked + .toggle-slider:before {
   transform: translateX(26px);
 }
 </style>
-

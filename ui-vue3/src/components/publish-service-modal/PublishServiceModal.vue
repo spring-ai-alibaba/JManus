@@ -558,9 +558,10 @@ const handlePublish = async () => {
       showMessage(t('mcpService.saveSuccess'), 'success')
       emit('published', currentTool.value)
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[PublishModal] Failed to publish service:', err)
-    showMessage(t('mcpService.publishFailed') + ': ' + err.message, 'error')
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    showMessage(t('mcpService.publishFailed') + ': ' + message, 'error')
   } finally {
     publishing.value = false
   }
@@ -602,9 +603,10 @@ const handleDelete = async () => {
     } else {
       throw new Error(result.message)
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[PublishModal] Failed to delete MCP service:', error)
-    showMessage(t('mcpService.deleteFailed') + ': ' + error.message, 'error')
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    showMessage(t('mcpService.deleteFailed') + ': ' + message, 'error')
   } finally {
     deleting.value = false
   }
@@ -706,9 +708,10 @@ const loadCoordinatorToolData = async () => {
     }
 
     console.log('[PublishModal] Form data filled:', formData)
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[PublishModal] ' + t('mcpService.loadToolDataFailed') + ':', err)
-    showMessage(t('mcpService.loadToolDataFailed') + ': ' + err.message, 'error')
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    showMessage(t('mcpService.loadToolDataFailed') + ': ' + message, 'error')
   }
 }
 

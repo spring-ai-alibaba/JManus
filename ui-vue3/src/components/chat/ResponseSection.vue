@@ -20,13 +20,13 @@
         <Icon icon="carbon:bot" class="bot-icon" />
       </div>
       <div class="response-name">{{ $t('chat.botName') }}</div>
-      
+
       <!-- Response timestamp -->
       <div v-if="timestamp" class="response-timestamp">
         {{ formatTimestamp(timestamp) }}
       </div>
     </div>
-    
+
     <div class="response-content">
       <!-- User input form -->
       <UserInputForm
@@ -36,11 +36,11 @@
         :generic-input="genericInput ?? ''"
         @user-input-submitted="handleUserInputSubmitted"
       />
-      
+
       <!-- Final response with content -->
       <div v-if="content" class="final-response">
         <div class="response-text" v-html="formatResponseText(content)"></div>
-        
+
         <!-- Response actions -->
         <div class="response-actions">
           <button
@@ -50,7 +50,7 @@
           >
             <Icon icon="carbon:copy" />
           </button>
-          
+
           <button
             class="action-btn regenerate-btn"
             @click="handleRegenerate"
@@ -60,7 +60,7 @@
           </button>
         </div>
       </div>
-      
+
       <!-- Loading/streaming state -->
       <div v-else-if="isStreaming" class="response-placeholder">
         <div class="typing-indicator">
@@ -72,7 +72,7 @@
           <span class="typing-text">{{ $t('chat.thinkingResponse') }}</span>
         </div>
       </div>
-      
+
       <!-- Error state -->
       <div v-else-if="error" class="response-error">
         <Icon icon="carbon:warning" class="error-icon" />
@@ -81,7 +81,7 @@
           {{ $t('chat.retry') }}
         </button>
       </div>
-      
+
       <!-- Empty state -->
       <div v-else class="response-empty">
         <span class="empty-text">{{ $t('chat.waitingForResponse') }}</span>
@@ -110,7 +110,7 @@ interface Emits {
   (e: 'copy'): void
   (e: 'regenerate'): void
   (e: 'retry'): void
-  (e: 'user-input-submitted', inputData: any): void
+  (e: 'user-input-submitted', inputData: Record<string, unknown>): void
 }
 
 const props = defineProps<Props>()
@@ -121,7 +121,7 @@ const { formatResponseText, formatTimestamp } = useMessageFormatting()
 // Methods
 const copyToClipboard = async () => {
   if (!props.content) return
-  
+
   try {
     // Strip HTML tags for clipboard
     const plainText = props.content.replace(/<[^>]*>/g, '')
@@ -140,7 +140,7 @@ const handleRetry = () => {
   emit('retry')
 }
 
-const handleUserInputSubmitted = (inputData: any) => {
+const handleUserInputSubmitted = (inputData: Record<string, unknown>) => {
   console.log('[ResponseSection] User input submitted:', inputData)
   emit('user-input-submitted', inputData)
 }
@@ -153,7 +153,7 @@ const handleUserInputSubmitted = (inputData: any) => {
     align-items: center;
     gap: 12px;
     margin-bottom: 12px;
-    
+
     .response-avatar {
       display: flex;
       align-items: center;
@@ -163,30 +163,30 @@ const handleUserInputSubmitted = (inputData: any) => {
       background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
       border-radius: 50%;
       flex-shrink: 0;
-      
+
       .bot-icon {
         font-size: 16px;
         color: #ffffff;
       }
     }
-    
+
     .response-name {
       font-weight: 600;
       color: #ffffff;
       font-size: 14px;
       flex: 1;
     }
-    
+
     .response-timestamp {
       font-size: 11px;
       color: #aaaaaa;
     }
   }
-  
+
   .response-content {
     .final-response {
       position: relative;
-      
+
       .response-text {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -195,17 +195,17 @@ const handleUserInputSubmitted = (inputData: any) => {
         color: #ffffff;
         line-height: 1.6;
         font-size: 14px;
-        
+
         :deep(strong) {
           font-weight: 600;
           color: #ffffff;
         }
-        
+
         :deep(em) {
           font-style: italic;
           color: #cccccc;
         }
-        
+
         :deep(code) {
           background: rgba(0, 0, 0, 0.3);
           padding: 2px 6px;
@@ -214,14 +214,14 @@ const handleUserInputSubmitted = (inputData: any) => {
           font-size: 13px;
           color: #8be9fd;
         }
-        
+
         :deep(pre) {
           background: rgba(0, 0, 0, 0.4);
           padding: 12px;
           border-radius: 8px;
           overflow-x: auto;
           margin: 8px 0;
-          
+
           code {
             background: none;
             padding: 0;
@@ -230,14 +230,14 @@ const handleUserInputSubmitted = (inputData: any) => {
           }
         }
       }
-      
+
       .response-actions {
         display: flex;
         gap: 8px;
         margin-top: 8px;
         opacity: 0;
         transition: opacity 0.2s ease;
-        
+
         .action-btn {
           display: flex;
           align-items: center;
@@ -250,23 +250,23 @@ const handleUserInputSubmitted = (inputData: any) => {
           color: #aaaaaa;
           cursor: pointer;
           transition: all 0.2s ease;
-          
+
           &:hover {
             background: rgba(255, 255, 255, 0.2);
             color: #ffffff;
           }
-          
+
           svg {
             font-size: 14px;
           }
         }
       }
-      
+
       &:hover .response-actions {
         opacity: 1;
       }
     }
-    
+
     .response-placeholder {
       .typing-indicator {
         display: flex;
@@ -275,38 +275,38 @@ const handleUserInputSubmitted = (inputData: any) => {
         padding: 16px;
         color: #aaaaaa;
         font-size: 14px;
-        
+
         .typing-dots {
           display: flex;
           gap: 4px;
-          
+
           span {
             width: 6px;
             height: 6px;
             background: #4f46e5;
             border-radius: 50%;
             animation: typing-pulse 1.5s ease-in-out infinite;
-            
+
             &:nth-child(1) {
               animation-delay: 0s;
             }
-            
+
             &:nth-child(2) {
               animation-delay: 0.2s;
             }
-            
+
             &:nth-child(3) {
               animation-delay: 0.4s;
             }
           }
         }
-        
+
         .typing-text {
           font-style: italic;
         }
       }
     }
-    
+
     .response-error {
       display: flex;
       align-items: center;
@@ -317,17 +317,17 @@ const handleUserInputSubmitted = (inputData: any) => {
       border-radius: 8px;
       color: #ff9999;
       font-size: 13px;
-      
+
       .error-icon {
         font-size: 16px;
         color: #ef4444;
         flex-shrink: 0;
       }
-      
+
       .error-text {
         flex: 1;
       }
-      
+
       .retry-btn {
         background: rgba(239, 68, 68, 0.2);
         border: none;
@@ -337,13 +337,13 @@ const handleUserInputSubmitted = (inputData: any) => {
         font-size: 12px;
         cursor: pointer;
         transition: background 0.2s ease;
-        
+
         &:hover {
           background: rgba(239, 68, 68, 0.3);
         }
       }
     }
-    
+
     .response-empty {
       padding: 16px;
       text-align: center;
@@ -355,7 +355,9 @@ const handleUserInputSubmitted = (inputData: any) => {
 }
 
 @keyframes typing-pulse {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     opacity: 0.3;
     transform: scale(1);
   }
@@ -369,35 +371,35 @@ const handleUserInputSubmitted = (inputData: any) => {
   .response-section {
     .response-header {
       gap: 10px;
-      
+
       .response-avatar {
         width: 28px;
         height: 28px;
-        
+
         .bot-icon {
           font-size: 14px;
         }
       }
-      
+
       .response-name {
         font-size: 13px;
       }
     }
-    
+
     .response-content {
       .final-response {
         .response-text {
           padding: 14px;
           font-size: 13px;
         }
-        
+
         .response-actions {
           margin-top: 6px;
-          
+
           .action-btn {
             width: 26px;
             height: 26px;
-            
+
             svg {
               font-size: 12px;
             }

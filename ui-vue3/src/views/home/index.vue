@@ -45,19 +45,21 @@
           <div class="welcome-section">
             <h2 class="welcome-title">{{ $t('home.welcomeTitle') }}</h2>
             <p class="welcome-subtitle">{{ $t('home.welcomeSubtitle') }}</p>
-            <button class="direct-button" @click="goToDirectPage">{{ $t('home.directButton') }}</button>
+            <button class="direct-button" @click="goToDirectPage">
+              {{ $t('home.directButton') }}
+            </button>
           </div>
 
           <!-- Input section -->
           <div class="input-section">
             <div class="input-container">
               <textarea
-                  v-model="userInput"
-                  ref="textareaRef"
-                  class="main-input"
-                  :placeholder="$t('home.inputPlaceholder')"
-                  @keydown="handleKeydown"
-                  @input="adjustTextareaHeight"
+                v-model="userInput"
+                ref="textareaRef"
+                class="main-input"
+                :placeholder="$t('home.inputPlaceholder')"
+                @keydown="handleKeydown"
+                @input="adjustTextareaHeight"
               ></textarea>
               <button class="send-button" :disabled="!userInput.trim()" @click="handleSend">
                 <Icon icon="carbon:send-alt" />
@@ -68,10 +70,7 @@
           <div class="examples-section">
             <div class="examples-grid">
               <div v-for="item in allCards" :key="item.title" class="card-with-type">
-                <BlurCard
-                    :content="item"
-                    @clickCard="handleCardClick(item)"
-                />
+                <BlurCard :content="item" @clickCard="handleCardClick(item)" />
                 <span class="card-type">{{ item.type === 'github' ? 'GitHub' : item.type }}</span>
               </div>
             </div>
@@ -91,6 +90,40 @@ import BlurCard from '@/components/blurCard/BlurCard.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
 import { useTaskStore } from '@/stores/task'
 
+// Define component name for Vue linting rules
+defineOptions({
+  name: 'HomeIndex',
+})
+
+// Type definitions
+interface CardItem {
+  title: string
+  type: 'github' | 'message' | 'plan-act'
+  description: string
+  icon: string
+  url?: string
+  prompt?: string
+}
+
+interface ExampleItem extends CardItem {
+  type: 'github' | 'message'
+  prompt?: string
+}
+
+interface PlanItem extends CardItem {
+  type: 'plan-act'
+  planJson: {
+    planType: string
+    planTemplateId?: string
+  }
+}
+
+interface JsonPlan {
+  planType: string
+  planTemplateId?: string
+  [key: string]: unknown
+}
+
 const router = useRouter()
 const taskStore = useTaskStore()
 const userInput = ref('')
@@ -100,42 +133,81 @@ const { t } = useI18n()
 
 const goToDirectPage = () => {
   const chatId = Date.now().toString()
-  router.push({
-    name: 'direct',
-    params: { id: chatId },
-  }).then(() => {
-    console.log('[Home] jump to direct page' + t('common.success'))
-  }).catch((error) => {
-    console.error('[Home] jump to direct page' + t('common.error'), error)
-  })
+  router
+    .push({
+      name: 'direct',
+      params: { id: chatId },
+    })
+    .then(() => {
+      console.log('[Home] jump to direct page' + t('common.success'))
+    })
+    .catch(error => {
+      console.error('[Home] jump to direct page' + t('common.error'), error)
+    })
 }
 
 const examples = computed(() => [
-  { title: t('home.examples.stockPrice.title'), type: 'github', description: t('home.examples.stockPrice.description'), icon: 'carbon:chart-line-data', url: t('home.examples.stockPrice.url') },
-  { title: t('home.examples.weather.title'), type: 'github', description: t('home.examples.weather.description'), icon: 'carbon:location', url: t('home.examples.weather.url') },
-  { title: t('home.examples.imagePdfRecognition.title'), type: 'github', description: t('home.examples.imagePdfRecognition.description'), icon: 'carbon:document-view', url: t('home.examples.imagePdfRecognition.url') }
+  {
+    title: t('home.examples.stockPrice.title'),
+    type: 'github' as const,
+    description: t('home.examples.stockPrice.description'),
+    icon: 'carbon:chart-line-data',
+    url: t('home.examples.stockPrice.url'),
+  },
+  {
+    title: t('home.examples.weather.title'),
+    type: 'github' as const,
+    description: t('home.examples.weather.description'),
+    icon: 'carbon:location',
+    url: t('home.examples.weather.url'),
+  },
+  {
+    title: t('home.examples.imagePdfRecognition.title'),
+    type: 'github' as const,
+    description: t('home.examples.imagePdfRecognition.description'),
+    icon: 'carbon:document-view',
+    url: t('home.examples.imagePdfRecognition.url'),
+  },
 ])
 const plans = computed(() => [
-  { title: t('home.examples.queryplan.title'), type: 'github', description: t('home.examples.queryplan.description'), icon: 'carbon:plan', url: t('home.examples.queryplan.url') },
-  { title: t('home.examples.ainovel.title'), type: 'github', description: t('home.examples.ainovel.description'), icon: 'carbon:document-tasks', url: t('home.examples.ainovel.url') },
-  { title: t('home.examples.formInputDemo.title'), type: 'github', description: t('home.examples.formInputDemo.description'), icon: 'carbon:watson', url: t('home.examples.formInputDemo.url') }
+  {
+    title: t('home.examples.queryplan.title'),
+    type: 'github' as const,
+    description: t('home.examples.queryplan.description'),
+    icon: 'carbon:plan',
+    url: t('home.examples.queryplan.url'),
+  },
+  {
+    title: t('home.examples.ainovel.title'),
+    type: 'github' as const,
+    description: t('home.examples.ainovel.description'),
+    icon: 'carbon:document-tasks',
+    url: t('home.examples.ainovel.url'),
+  },
+  {
+    title: t('home.examples.formInputDemo.title'),
+    type: 'github' as const,
+    description: t('home.examples.formInputDemo.description'),
+    icon: 'carbon:watson',
+    url: t('home.examples.formInputDemo.url'),
+  },
 ])
-const allCards = computed(() => [...examples.value,  ...plans.value])
+const allCards = computed(() => [...examples.value, ...plans.value])
 
-const openGitHubPage = (item: any) => {
+const openGitHubPage = (item: CardItem) => {
   console.log('[Home] openGitHubPage called with item:', item)
   if (item.url) {
     window.open(item.url, '_blank')
   }
 }
 
-const handleCardClick = (item: any) => {
+const handleCardClick = (item: CardItem) => {
   if (item.type === 'github') {
     openGitHubPage(item)
   } else if (item.type === 'message') {
-    selectExample(item)
+    selectExample(item as ExampleItem)
   } else if (item.type === 'plan-act') {
-    selectPlan(item)
+    selectPlan(item as PlanItem)
   }
 }
 
@@ -151,24 +223,43 @@ onMounted(() => {
 
 import { sidebarStore } from '@/stores/sidebar'
 
-const saveJsonPlanToTemplate = async (jsonPlan: any) => {
+const saveJsonPlanToTemplate = async (jsonPlan: JsonPlan) => {
   try {
-    await sidebarStore.createNewTemplate(jsonPlan.planType);
-    sidebarStore.jsonContent = JSON.stringify(jsonPlan);
-    const saveResult = await sidebarStore.saveTemplate();
-    if (saveResult?.duplicate) {
-      console.log('[Sidebar] ' + t('sidebar.saveCompleted', { message: saveResult.message, versionCount: saveResult.versionCount }));
-    } else if (saveResult?.saved) {
-      console.log('[Sidebar] ' + t('sidebar.saveSuccess', { message: saveResult.message, versionCount: saveResult.versionCount }));
-    } else if (saveResult?.message) {
-      console.log('[Sidebar] ' + t('sidebar.saveStatus', { message: saveResult.message }));
+    await sidebarStore.createNewTemplate(jsonPlan.planType)
+    sidebarStore.jsonContent = JSON.stringify(jsonPlan)
+    const saveResult = await sidebarStore.saveTemplate()
+    const result = saveResult as {
+      duplicate?: boolean
+      saved?: boolean
+      message?: string
+      versionCount?: number
     }
-    return saveResult; // Return the save result
-  } catch (error: any) {
-    console.error('[Sidebar] Failed to save the plan to the template library:', error);
+    if (result?.duplicate) {
+      console.log(
+        '[Sidebar] ' +
+          t('sidebar.saveCompleted', {
+            message: result.message,
+            versionCount: result.versionCount,
+          })
+      )
+    } else if (result?.saved) {
+      console.log(
+        '[Sidebar] ' +
+          t('sidebar.saveSuccess', {
+            message: result.message,
+            versionCount: result.versionCount,
+          })
+      )
+    } else if (result?.message) {
+      console.log('[Sidebar] ' + t('sidebar.saveStatus', { message: result.message }))
+    }
+    return saveResult // Return the save result
+  } catch (error: unknown) {
+    console.error('[Sidebar] Failed to save the plan to the template library:', error)
     // Note: This would need toast import if used in this context
-    alert(error.message || t('sidebar.saveFailed'));
-    throw error; // Re-throw the error
+    const errorMessage = error instanceof Error ? error.message : t('sidebar.saveFailed')
+    alert(errorMessage)
+    throw error // Re-throw the error
   }
 }
 
@@ -208,39 +299,47 @@ const handleSend = () => {
   const chatId = Date.now().toString()
   console.log('[Home] Navigating to direct page with chatId:', chatId)
 
-  router.push({
-    name: 'direct',
-    params: { id: chatId },
-  }).then(() => {
-    console.log('[Home] Navigation to direct page completed')
-  }).catch((error) => {
-    console.error('[Home] Navigation error:', error)
-  })
+  router
+    .push({
+      name: 'direct',
+      params: { id: chatId },
+    })
+    .then(() => {
+      console.log('[Home] Navigation to direct page completed')
+    })
+    .catch(error => {
+      console.error('[Home] Navigation error:', error)
+    })
 }
 
-const selectExample = (example: any) => {
+const selectExample = (example: ExampleItem) => {
   console.log('[Home] selectExample called with example:', example)
   console.log('[Home] Example prompt:', example.prompt)
 
   // Send the task directly using the example's prompt
-  taskStore.setTask(example.prompt)
+  if (example.prompt) {
+    taskStore.setTask(example.prompt)
+  }
   console.log('[Home] Task set to store from example, current task:', taskStore.currentTask)
 
   // Navigate to direct page
   const chatId = Date.now().toString()
   console.log('[Home] Navigating to direct page with chatId:', chatId)
 
-  router.push({
-    name: 'direct',
-    params: { id: chatId },
-  }).then(() => {
-    console.log('[Home] Navigation to direct page completed (from example)')
-  }).catch((error) => {
-    console.error('[Home] Navigation error (from example):', error)
-  })
+  router
+    .push({
+      name: 'direct',
+      params: { id: chatId },
+    })
+    .then(() => {
+      console.log('[Home] Navigation to direct page completed (from example)')
+    })
+    .catch(error => {
+      console.error('[Home] Navigation error (from example):', error)
+    })
 }
 
-const selectPlan = async (plan: any) => {
+const selectPlan = async (plan: PlanItem) => {
   console.log('[Home] selectPlan called with plan:', plan)
 
   try {
@@ -273,11 +372,14 @@ const selectPlan = async (plan: any) => {
       console.log('[Sidebar] Template list loaded')
 
       // Find and select the template - use the updated ID from saveResult or fallback to original
-      const templateId = saveResult?.planId || plan.planJson.planTemplateId
+      const templateId = (saveResult as { planId?: string })?.planId || plan.planJson.planTemplateId
       const template = sidebarStore.planTemplateList.find(t => t.id === templateId)
       if (!template) {
         console.error('[Sidebar] Template not found for ID:', templateId)
-        console.log('[Sidebar] Available templates:', sidebarStore.planTemplateList.map(t => t.id))
+        console.log(
+          '[Sidebar] Available templates:',
+          sidebarStore.planTemplateList.map(t => t.id)
+        )
         return
       }
 
@@ -297,8 +399,6 @@ const selectPlan = async (plan: any) => {
     console.error('[Home] Error in selectPlan:', error)
   }
 }
-
-
 </script>
 
 <style lang="less" scoped>
@@ -545,7 +645,6 @@ const selectPlan = async (plan: any) => {
           box-shadow: 0 8px 25px rgba(130, 151, 246, 0.4);
         }
       }
-
     }
   }
 }

@@ -53,7 +53,6 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final ManusProperties manusProperties;
 
-	@SuppressWarnings("unused")
 	private final ObjectMapper objectMapper;
 
 	private final LevelBasedExecutorPool levelBasedExecutorPool;

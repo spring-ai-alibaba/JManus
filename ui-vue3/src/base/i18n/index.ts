@@ -114,8 +114,8 @@ export const initializePlanTemplates = async (locale: string) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        language: locale
+      body: JSON.stringify({
+        language: locale,
       }),
     })
 

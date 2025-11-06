@@ -18,7 +18,8 @@ import { ref, computed, readonly } from 'vue'
 import type { PlanExecutionRecord, AgentExecutionRecord } from '@/types/plan-execution-record'
 
 // Local interface to handle readonly compatibility issues
-export interface CompatiblePlanExecutionRecord extends Omit<PlanExecutionRecord, 'agentExecutionSequence'> {
+export interface CompatiblePlanExecutionRecord
+  extends Omit<PlanExecutionRecord, 'agentExecutionSequence'> {
   agentExecutionSequence?: AgentExecutionRecord[]
 }
 
@@ -31,7 +32,7 @@ export interface ChatMessage {
   thinking?: string
   thinkingDetails?: CompatiblePlanExecutionRecord
   planExecution?: CompatiblePlanExecutionRecord
-  stepActions?: any[]
+  stepActions?: unknown[]
   genericInput?: string
   isStreaming?: boolean
   error?: string
@@ -52,55 +53,61 @@ type MakeMutable<T> = T extends readonly (infer U)[] ? U[] : T
 /**
  * Convert readonly PlanExecutionRecord to mutable compatible version with strong typing
  */
-function convertPlanExecutionRecord<T extends Record<string, any>>(
+function convertPlanExecutionRecord<T extends Record<string, unknown>>(
   record: T
 ): CompatiblePlanExecutionRecord {
   const converted = { ...record } as unknown as CompatiblePlanExecutionRecord
-  
+
   if ('agentExecutionSequence' in record && Array.isArray(record.agentExecutionSequence)) {
-    converted.agentExecutionSequence = record.agentExecutionSequence.map(
-      (agent: any) => convertAgentExecutionRecord(agent)
+    converted.agentExecutionSequence = record.agentExecutionSequence.map((agent: unknown) =>
+      convertAgentExecutionRecord(agent as Record<string, unknown>)
     )
   }
-  
+
   return converted
 }
 
 /**
  * Convert readonly AgentExecutionRecord to mutable compatible version with strong typing
  */
-function convertAgentExecutionRecord<T extends Record<string, any>>(
+function convertAgentExecutionRecord<T extends Record<string, unknown>>(
   record: T
 ): AgentExecutionRecord {
   const converted = { ...record } as unknown as AgentExecutionRecord
-  
+
   if ('subPlanExecutionRecords' in record && Array.isArray(record.subPlanExecutionRecords)) {
-    converted.subPlanExecutionRecords = record.subPlanExecutionRecords.map(
-      (subPlan: any) => convertPlanExecutionRecord(subPlan)
+    converted.subPlanExecutionRecords = record.subPlanExecutionRecords.map((subPlan: unknown) =>
+      convertPlanExecutionRecord(subPlan as Record<string, unknown>)
     )
   }
-  
+
   return converted
 }
 
 /**
  * Convert a message with potentially readonly arrays to a fully mutable version
  */
-export function convertMessageToCompatible<T extends Record<string, any>>(message: T): ChatMessage {
+export function convertMessageToCompatible<T extends Record<string, unknown>>(
+  message: T
+): ChatMessage {
   const converted = { ...message } as unknown as ChatMessage
-  
+
   if ('thinkingDetails' in message && message.thinkingDetails) {
-    converted.thinkingDetails = convertPlanExecutionRecord(message.thinkingDetails)
+    converted.thinkingDetails = convertPlanExecutionRecord(
+      message.thinkingDetails as Record<string, unknown>
+    )
   }
-  
+
   if ('planExecution' in message && message.planExecution) {
-    converted.planExecution = convertPlanExecutionRecord(message.planExecution)
+    converted.planExecution = convertPlanExecutionRecord(
+      message.planExecution as Record<string, unknown>
+    )
   }
-  
+
   if ('attachments' in message && Array.isArray(message.attachments)) {
     converted.attachments = [...message.attachments] as MakeMutable<typeof message.attachments>
   }
-  
+
   return converted
 }
 
@@ -128,14 +135,18 @@ export function useChatMessages() {
   })
 
   // Methods
-  const addMessage = (type: 'user' | 'assistant', content: string, options?: Partial<ChatMessage>): ChatMessage => {
+  const addMessage = (
+    type: 'user' | 'assistant',
+    content: string,
+    options?: Partial<ChatMessage>
+  ): ChatMessage => {
     const message: ChatMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,
       content,
       timestamp: new Date(),
       isStreaming: false,
-      ...options
+      ...options,
     }
 
     messages.value.push(message)
@@ -232,7 +243,7 @@ export function useChatMessages() {
     updateMessageThinkingDetails,
     updateMessagePlanExecution,
     findMessage,
-    getMessageIndex
+    getMessageIndex,
   }
 }
 
@@ -240,13 +251,15 @@ export function useChatMessages() {
 export const createUserMessage = (content: string): Omit<ChatMessage, 'id' | 'timestamp'> => ({
   type: 'user',
   content,
-  isStreaming: false
+  isStreaming: false,
 })
 
-export const createAssistantMessage = (options?: Partial<ChatMessage>): Omit<ChatMessage, 'id' | 'timestamp'> => ({
+export const createAssistantMessage = (
+  options?: Partial<ChatMessage>
+): Omit<ChatMessage, 'id' | 'timestamp'> => ({
   type: 'assistant',
   content: '',
   thinking: '',
   isStreaming: true,
-  ...options
+  ...options,
 })

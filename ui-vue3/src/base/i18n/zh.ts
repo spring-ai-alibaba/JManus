@@ -403,6 +403,8 @@ const words: I18nType = {
     // 数据库配置页面
     databaseConfig: {
       title: '数据库配置',
+      description:
+        '这个配置页面是用来配置数据库工具（database_metadata_use，database_read_use，database_write_use）所能操作的数据库用的。\n\n当配置了数据库以后，你就可以通过上面的三个核心方法来操作该数据库的增删改查等操作，可以方便您在agent执行过程中存储一些需要共享的中间数据。',
       configList: '配置列表',
       noConfigs: '暂无数据库配置',
       newConfig: '新建配置',
@@ -414,7 +416,7 @@ const words: I18nType = {
       delete: '删除',
       create: '创建',
       cancel: '取消',
-      name: '名称',
+      name: '数据库名称(schema)',
       namePlaceholder: '输入数据源名称',
       type: '类型',
       selectType: '选择数据库类型',
@@ -430,7 +432,8 @@ const words: I18nType = {
       usernamePlaceholder: '输入数据库用户名',
       password: '密码',
       passwordPlaceholder: '输入数据库密码',
-      passwordSetHint: '密码已经设置，但从安全考虑，密码只保存在后端，如果你要更新链接请重新输入密码',
+      passwordSetHint:
+        '密码已经设置，但从安全考虑，密码只保存在后端，如果你要更新链接请重新输入密码',
       passwordNotSetHint: '密码还未设置，请设置密码',
       deleteConfirm: '删除确认',
       deleteMessage: '确定要删除配置 "{name}" 吗？此操作不可恢复。',

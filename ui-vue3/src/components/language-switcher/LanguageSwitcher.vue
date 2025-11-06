@@ -15,14 +15,14 @@
 -->
 <template>
   <div class="language-switcher">
-    <button
-      class="language-btn"
-      @click="toggleDropdown"
-      :title="$t('language.switch')"
-    >
+    <button class="language-btn" @click="toggleDropdown" :title="$t('language.switch')">
       <Icon icon="carbon:translate" width="18" />
       <span class="current-lang">{{ currentLanguageLabel }}</span>
-      <Icon :icon="showDropdown ? 'carbon:chevron-up' : 'carbon:chevron-down'" width="14" class="chevron" />
+      <Icon
+        :icon="showDropdown ? 'carbon:chevron-up' : 'carbon:chevron-down'"
+        width="14"
+        class="chevron"
+      />
     </button>
 
     <div v-if="showDropdown" class="language-dropdown" @click.stop>
@@ -39,7 +39,7 @@
           class="language-option"
           :class="{
             active: currentLocale === option.value,
-            loading: isChangingLanguage && currentLocale !== option.value
+            loading: isChangingLanguage && currentLocale !== option.value,
           }"
           :disabled="isChangingLanguage"
           @click="selectLanguage(option.value)"
@@ -63,11 +63,7 @@
     </div>
 
     <!-- Backdrop -->
-    <div
-      v-if="showDropdown"
-      class="backdrop"
-      @click="showDropdown = false"
-    ></div>
+    <div v-if="showDropdown" class="backdrop" @click="showDropdown = false"></div>
   </div>
 </template>
 
@@ -195,7 +191,9 @@ onUnmounted(() => {
   backdrop-filter: blur(16px);
   border: 1px solid rgba(102, 126, 234, 0.3);
   border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(102, 126, 234, 0.2);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(102, 126, 234, 0.2);
   min-width: 200px;
   animation: slideDown 0.2s ease;
 }

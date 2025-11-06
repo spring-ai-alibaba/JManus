@@ -30,12 +30,12 @@ export function useScrollBehavior(containerRef: Ref<HTMLElement | null>) {
    */
   const scrollToBottom = async (smooth = true) => {
     if (!containerRef.value) return
-    
+
     await nextTick()
-    
+
     containerRef.value.scrollTo({
       top: containerRef.value.scrollHeight,
-      behavior: smooth ? 'smooth' : 'auto'
+      behavior: smooth ? 'smooth' : 'auto',
     })
   }
 
@@ -44,7 +44,7 @@ export function useScrollBehavior(containerRef: Ref<HTMLElement | null>) {
    */
   const isNearBottom = (): boolean => {
     if (!containerRef.value) return false
-    
+
     const { scrollTop, scrollHeight, clientHeight } = containerRef.value
     return scrollHeight - scrollTop - clientHeight < scrollThreshold
   }
@@ -54,10 +54,11 @@ export function useScrollBehavior(containerRef: Ref<HTMLElement | null>) {
    */
   const checkScrollPosition = () => {
     if (!containerRef.value) return
-    
+
     const nearBottom = isNearBottom()
-    showScrollToBottom.value = !nearBottom && containerRef.value.scrollHeight > containerRef.value.clientHeight
-    
+    showScrollToBottom.value =
+      !nearBottom && containerRef.value.scrollHeight > containerRef.value.clientHeight
+
     // Enable auto-scroll when user scrolls to bottom
     if (nearBottom) {
       isAutoScrollEnabled.value = true
@@ -69,7 +70,7 @@ export function useScrollBehavior(containerRef: Ref<HTMLElement | null>) {
    */
   const handleScroll = () => {
     checkScrollPosition()
-    
+
     // Disable auto-scroll when user manually scrolls up
     if (!isNearBottom()) {
       isAutoScrollEnabled.value = false
@@ -98,12 +99,12 @@ export function useScrollBehavior(containerRef: Ref<HTMLElement | null>) {
    */
   const scrollToMessage = (messageId: string, smooth = true) => {
     if (!containerRef.value) return
-    
+
     const messageElement = containerRef.value.querySelector(`[data-message-id="${messageId}"]`)
     if (messageElement) {
       messageElement.scrollIntoView({
         behavior: smooth ? 'smooth' : 'auto',
-        block: 'center'
+        block: 'center',
       })
     }
   }
@@ -119,16 +120,15 @@ export function useScrollBehavior(containerRef: Ref<HTMLElement | null>) {
         clientHeight: 0,
         isAtTop: true,
         isAtBottom: true,
-        scrollPercentage: 0
+        scrollPercentage: 0,
       }
     }
 
     const { scrollTop, scrollHeight, clientHeight } = containerRef.value
     const isAtTop = scrollTop === 0
     const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5
-    const scrollPercentage = scrollHeight > clientHeight 
-      ? (scrollTop / (scrollHeight - clientHeight)) * 100 
-      : 100
+    const scrollPercentage =
+      scrollHeight > clientHeight ? (scrollTop / (scrollHeight - clientHeight)) * 100 : 100
 
     return {
       scrollTop,
@@ -136,7 +136,7 @@ export function useScrollBehavior(containerRef: Ref<HTMLElement | null>) {
       clientHeight,
       isAtTop,
       isAtBottom,
-      scrollPercentage
+      scrollPercentage,
     }
   }
 
@@ -201,7 +201,7 @@ export function useScrollBehavior(containerRef: Ref<HTMLElement | null>) {
     addScrollListener,
     removeScrollListener,
     initializeScrollBehavior,
-    cleanupScrollBehavior
+    cleanupScrollBehavior,
   }
 }
 
@@ -222,9 +222,9 @@ export function useSmoothScroll() {
       if (startTime === null) startTime = currentTime
       const timeElapsed = currentTime - startTime
       const run = easeInOutQuad(timeElapsed, startPosition, distance, duration)
-      
+
       element.scrollTop = run
-      
+
       if (timeElapsed < duration) {
         requestAnimationFrame(animation)
       }
@@ -236,12 +236,12 @@ export function useSmoothScroll() {
   // Easing function
   const easeInOutQuad = (t: number, b: number, c: number, d: number): number => {
     t /= d / 2
-    if (t < 1) return c / 2 * t * t + b
+    if (t < 1) return (c / 2) * t * t + b
     t--
-    return -c / 2 * (t * (t - 2) - 1) + b
+    return (-c / 2) * (t * (t - 2) - 1) + b
   }
 
   return {
-    scrollWithEasing
+    scrollWithEasing,
   }
 }

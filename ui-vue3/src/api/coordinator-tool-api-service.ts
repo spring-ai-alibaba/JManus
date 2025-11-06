@@ -58,9 +58,10 @@ export class CoordinatorToolApiService {
 
       const result = await response.json()
       return result || []
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to get coordinator tools:', error)
-      throw new Error('Failed to get coordinator tools: ' + error.message)
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      throw new Error('Failed to get coordinator tools: ' + message)
     }
   }
 
@@ -81,13 +82,14 @@ export class CoordinatorToolApiService {
       }
 
       return await response.json()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to get CoordinatorTool configuration:', error)
       // Return default configuration
+      const message = error instanceof Error ? error.message : 'Unknown error'
       return {
         enabled: true,
         success: false,
-        message: error.message,
+        message: message,
       }
     }
   }
@@ -109,9 +111,10 @@ export class CoordinatorToolApiService {
       }
 
       return await response.json()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to get endpoints:', error)
-      throw new Error('Failed to get endpoints: ' + error.message)
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      throw new Error('Failed to get endpoints: ' + message)
     }
   }
 
@@ -180,9 +183,10 @@ export class CoordinatorToolApiService {
 
       console.log('[CoordinatorToolApiService] Successfully got coordinator tool:', result)
       return result
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CoordinatorToolApiService] Failed to get coordinator tool:', error)
-      throw new Error('Failed to get coordinator tool: ' + error.message)
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      throw new Error('Failed to get coordinator tool: ' + message)
     }
   }
 
@@ -268,9 +272,10 @@ export class CoordinatorToolApiService {
       const result = await response.json()
       console.log('[CoordinatorToolApiService] Created successfully, result:', result)
       return result
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CoordinatorToolApiService] Failed to create coordinator tool:', error)
-      throw new Error('Failed to create coordinator tool: ' + error.message)
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      throw new Error('Failed to create coordinator tool: ' + message)
     }
   }
 
@@ -331,9 +336,10 @@ export class CoordinatorToolApiService {
       const result = await response.json()
       console.log('[CoordinatorToolApiService] Updated successfully, result:', result)
       return result
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CoordinatorToolApiService] Failed to update coordinator tool:', error)
-      throw new Error('Failed to update coordinator tool: ' + error.message)
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      throw new Error('Failed to update coordinator tool: ' + message)
     }
   }
 
@@ -366,9 +372,10 @@ export class CoordinatorToolApiService {
       const result = await response.json()
       console.log('[CoordinatorToolApiService] Deleted successfully, result:', result)
       return result
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CoordinatorToolApiService] Failed to delete coordinator tool:', error)
-      throw new Error('Failed to delete coordinator tool: ' + error.message)
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      throw new Error('Failed to delete coordinator tool: ' + message)
     }
   }
 }

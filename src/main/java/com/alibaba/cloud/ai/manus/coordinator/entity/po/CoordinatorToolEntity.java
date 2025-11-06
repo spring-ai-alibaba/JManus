@@ -29,7 +29,7 @@ public class CoordinatorToolEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false, length = 50)
+	@Column(nullable = false, length = 3000)
 	private String toolName;
 
 	@Column(nullable = false, length = 200)

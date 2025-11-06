@@ -44,7 +44,12 @@
             :class="{ active: activeCategory === item.key }"
             @click="handleNavClick(item.key)"
           >
-            <Icon :icon="item.icon" width="20" height="20" style="display: inline-block; flex-shrink: 0;" />
+            <Icon
+              :icon="item.icon"
+              width="20"
+              height="20"
+              style="display: inline-block; flex-shrink: 0"
+            />
             <span>{{ item.label }}</span>
           </div>
         </template>
@@ -71,8 +76,20 @@ import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vu
 import NamespaceConfig from './namespaceConfig.vue'
 import NamespaceSwitch from './components/namespaceSwitch.vue'
 
+// Define component name for Vue linting rules
+defineOptions({
+  name: 'ConfigsIndex',
+})
+
+type ConfigComponent =
+  | typeof BasicConfig
+  | typeof ModelConfig
+  | typeof McpConfig
+  | typeof DatabaseConfig
+  | typeof NamespaceConfig
+
 interface CategoryMap {
-  [key: string]: any
+  [key: string]: ConfigComponent | undefined
   basic: typeof BasicConfig
   model: typeof ModelConfig
   mcp: typeof McpConfig

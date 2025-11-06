@@ -36,7 +36,7 @@ ui-rebuild: ## Rebuild the UI
 .PHONY: ui-lint
 ui-lint: ## Lint the UI code
 	@$(LOG_TARGET)
-	cd ui-vue3 && pnpm install && pnpm run lint
+	cd ui-vue3 && pnpm install --no-frozen-lockfile && pnpm run lint
 
 # Deploy UI to static directory
 .PHONY: ui-deploy

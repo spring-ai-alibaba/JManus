@@ -28,7 +28,7 @@
           <option value="dynamic_agent">{{ t('sidebar.dynamicAgentPlan') }}</option>
         </select>
       </div>
-      
+
       <!-- Dynamic Agent Plan - Show readonly instruction textarea -->
       <div v-if="selectedPlanType === 'dynamic_agent'" class="dynamic-agent-instruction">
         <textarea
@@ -38,7 +38,7 @@
           :value="t('sidebar.dynamicAgentInstruction')"
         ></textarea>
       </div>
-      
+
       <!-- Simple Plan - Show editable prompt and actions -->
       <template v-else>
         <textarea
@@ -63,11 +63,7 @@
           <button
             class="btn btn-secondary btn-sm"
             @click="handleUpdatePlan"
-            :disabled="
-              isGenerating ||
-              !generatorPrompt.trim() ||
-              !jsonContent.trim()
-            "
+            :disabled="isGenerating || !generatorPrompt.trim() || !jsonContent.trim()"
           >
             <Icon icon="carbon:edit" width="14" />
             {{ t('sidebar.updatePlan') }}
@@ -94,7 +90,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  planType: 'dynamic_agent'
+  planType: 'dynamic_agent',
 })
 
 // Emits
@@ -110,20 +106,26 @@ const generatorPrompt = ref(props.generatorPrompt)
 const selectedPlanType = ref(props.planType)
 
 // Watch for changes in generator prompt
-watch(() => props.generatorPrompt, (newValue) => {
-  generatorPrompt.value = newValue
-})
+watch(
+  () => props.generatorPrompt,
+  newValue => {
+    generatorPrompt.value = newValue
+  }
+)
 
-watch(generatorPrompt, (newValue) => {
+watch(generatorPrompt, newValue => {
   emit('updateGeneratorPrompt', newValue)
 })
 
 // Watch for changes in plan type
-watch(() => props.planType, (newValue) => {
-  selectedPlanType.value = newValue
-})
+watch(
+  () => props.planType,
+  newValue => {
+    selectedPlanType.value = newValue
+  }
+)
 
-watch(selectedPlanType, (newValue) => {
+watch(selectedPlanType, newValue => {
   emit('updatePlanType', newValue)
 })
 
@@ -138,7 +140,7 @@ const handleUpdatePlan = () => {
 
 // Expose methods for parent component
 defineExpose({
-  generatorPrompt
+  generatorPrompt,
 })
 </script>
 

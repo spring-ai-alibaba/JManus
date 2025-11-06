@@ -31,7 +31,6 @@
     "allowImportingTsExtensions": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "verbatimModuleSyntax": false,
-    "types": ["vite/client"]
+    "verbatimModuleSyntax": false
   }
 }

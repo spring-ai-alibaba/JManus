@@ -35,7 +35,7 @@ router.beforeEach(async (to, _from, next) => {
     // Check initialization status from server
     const response = await fetch('/api/init/status')
     const result = await response.json()
-    
+
     if (result.success && !result.initialized) {
       // System not initialized, redirect to init page
       localStorage.removeItem('hasInitialized')

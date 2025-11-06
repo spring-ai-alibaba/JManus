@@ -18,7 +18,12 @@
     <button class="select-btn" @click="toggleDropdown" :title="placeholder">
       <Icon :icon="props.icon || 'carbon:select-01'" width="18" />
       <span v-if="selectedOption" class="current-option">
-        <Icon v-if="selectedOption.icon" :icon="selectedOption.icon" width="16" class="option-icon" />
+        <Icon
+          v-if="selectedOption.icon"
+          :icon="selectedOption.icon"
+          width="16"
+          class="option-icon"
+        />
         <span class="option-name">{{ selectedOption.name }}</span>
       </span>
       <span v-else class="current-option">
@@ -66,6 +71,10 @@
   </div>
 </template>
 <script setup lang="ts">
+// Define component name to satisfy Vue linting rules
+defineOptions({
+  name: 'CustomSelect',
+})
 import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 
@@ -78,7 +87,7 @@ const props = defineProps<{
   icon?: string
   direction?: 'left' | 'right'
   dropStyles?: Record<string, string>
-  onChange?: (value: string, option: Record<string,any>) => void // add onChange prop
+  onChange?: (value: string, option: Record<string, unknown>) => void // add onChange prop
 }>()
 
 // Define emit
@@ -115,11 +124,11 @@ const toggleDropdown = () => {
 const calculateDropdownPosition = () => {
   const selectElement = document.querySelector('.custom-select') as HTMLElement | null
   if (!selectElement) return
-  
+
   const rect = selectElement.getBoundingClientRect()
   const windowHeight = window.innerHeight
   const dropdownHeight = 200 // Estimated dropdown height
-  
+
   // If there's not enough space below, show above
   if (rect.bottom + dropdownHeight > windowHeight) {
     dropdownPosition.value = 'top'
@@ -130,8 +139,8 @@ const calculateDropdownPosition = () => {
 
 // Triggered when an option is selected
 const selectOption = (option: { id: string }) => {
- // If onChange prop is provided, execute it instead of emitting update:modelValue
- if (props.onChange) {
+  // If onChange prop is provided, execute it instead of emitting update:modelValue
+  if (props.onChange) {
     props.onChange(option.id, option)
   } else {
     emit('update:modelValue', option.id)

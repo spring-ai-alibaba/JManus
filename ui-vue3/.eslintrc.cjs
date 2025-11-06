@@ -15,7 +15,7 @@
  */
 
 /* eslint-env node */
-require('@rushstack/eslint-patch/modern-module-resolution');
+require('@rushstack/eslint-patch/modern-module-resolution')
 
 module.exports = {
   root: true,
@@ -24,11 +24,11 @@ module.exports = {
     es2022: true,
     browser: true,
   },
-  'extends': [
+  extends: [
     'eslint:recommended',
     'plugin:vue/essential',
     '@vue/eslint-config-typescript/recommended',
-    '@vue/eslint-config-prettier/skip-formatting'
+    '@vue/eslint-config-prettier/skip-formatting',
   ],
   plugins: ['unused-imports'],
   parser: 'vue-eslint-parser',
@@ -48,8 +48,8 @@ module.exports = {
         // TypeScript specific rules that require project - keep as warnings for better DX
         '@typescript-eslint/prefer-nullish-coalescing': 'warn',
         '@typescript-eslint/prefer-optional-chain': 'warn',
-        '@typescript-eslint/no-unnecessary-condition': 'warn'
-      }
+        '@typescript-eslint/no-unnecessary-condition': 'warn',
+      },
     },
     {
       files: ['*.js', '*.cjs', '*.mjs'],
@@ -59,7 +59,7 @@ module.exports = {
       rules: {
         // Disable TypeScript-specific rules for JS files
         '@typescript-eslint/no-var-requires': 'off',
-      }
+      },
     },
     {
       files: ['*.config.ts', '*.config.js', 'cypress/**/*', 'vite.config.ts', 'vitest.config.ts'],
@@ -74,9 +74,9 @@ module.exports = {
         // Disable TypeScript-specific rules for config files
         '@typescript-eslint/prefer-nullish-coalescing': 'off',
         '@typescript-eslint/prefer-optional-chain': 'off',
-        '@typescript-eslint/no-unnecessary-condition': 'off'
-      }
-    }
+        '@typescript-eslint/no-unnecessary-condition': 'off',
+      },
+    },
   ],
   rules: {
     'vue/multi-word-component-names': 'off',
@@ -85,7 +85,7 @@ module.exports = {
     'unused-imports/no-unused-imports': 'error',
     'unused-imports/no-unused-vars': [
       'warn',
-      { 'vars': 'all', 'varsIgnorePattern': '^_', 'args': 'after-used', 'argsIgnorePattern': '^_' }
+      { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_' },
     ],
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
@@ -102,5 +102,5 @@ module.exports = {
     '@typescript-eslint/no-inferrable-types': 'off',
     // Additional rules for better code quality - set to warn for less noise
     'no-prototype-builtins': 'warn',
-  }
-};
+  },
+}

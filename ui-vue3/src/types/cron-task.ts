@@ -23,7 +23,7 @@ export interface CronConfig {
   linkTemplate?: boolean // Whether to link plan template
   templateId?: string // Linked plan template ID
   planTemplateId?: string // Plan template ID field used by backend API
-  executionParams?: any // Execution parameters
+  executionParams?: unknown // Execution parameters
   createTime?: string
   updateTime?: string
 }
@@ -32,4 +32,3 @@ export interface CronTaskListResponse {
   data: CronConfig[]
   total: number
 }
-

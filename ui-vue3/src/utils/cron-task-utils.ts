@@ -98,7 +98,11 @@ export const CronTaskUtils = {
    * @param task Task object
    * @returns Execution data object
    */
-  prepareTaskExecution(task: CronConfig): { useTemplate: boolean; planData?: any; taskContent?: string } {
+  prepareTaskExecution(task: CronConfig): {
+    useTemplate: boolean
+    planData?: unknown
+    taskContent?: string
+  } {
     if (task.planTemplateId) {
       // Execute using template
       return {
@@ -108,17 +112,17 @@ export const CronTaskUtils = {
           planData: {
             id: task.planTemplateId,
             planTemplateId: task.planTemplateId,
-            planId: task.planTemplateId
+            planId: task.planTemplateId,
           },
-          params: task.executionParams || undefined
-        }
+          params: task.executionParams || undefined,
+        },
       }
     } else {
       // Execute task content directly
       return {
         useTemplate: false,
-        taskContent: task.planDesc || task.cronName || ''
+        taskContent: task.planDesc || task.cronName || '',
       }
     }
-  }
+  },
 }

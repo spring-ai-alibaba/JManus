@@ -22,7 +22,9 @@
         <div class="sub-plan-details">
           <div class="sub-plan-title">
             {{ subPlan.title || $t('chat.subPlan') }} #{{ subPlanIndex + 1 }}
-            <span v-if="(nestingLevel ?? 0) > 0" class="nesting-level">(L{{ (nestingLevel ?? 0) + 1 }})</span>
+            <span v-if="(nestingLevel ?? 0) > 0" class="nesting-level"
+              >(L{{ (nestingLevel ?? 0) + 1 }})</span
+            >
           </div>
           <div class="sub-plan-id">{{ subPlan.currentPlanId }}</div>
         </div>
@@ -42,13 +44,11 @@
     <div v-if="subPlan.agentExecutionSequence?.length" class="sub-plan-progress">
       <div class="progress-info">
         <span class="progress-text">
-          {{ $t('chat.progress') }}: {{ getSubPlanCompletedCount() }} / {{ subPlan.agentExecutionSequence.length }}
+          {{ $t('chat.progress') }}: {{ getSubPlanCompletedCount() }} /
+          {{ subPlan.agentExecutionSequence.length }}
         </span>
         <div class="progress-bar">
-          <div 
-            class="progress-fill" 
-            :style="{ width: getSubPlanProgress() + '%' }"
-          ></div>
+          <div class="progress-fill" :style="{ width: getSubPlanProgress() + '%' }"></div>
         </div>
       </div>
     </div>
@@ -73,7 +73,7 @@
               {{ getAgentStatusText(agent.status) }}
             </div>
           </div>
-          
+
           <!-- Agent execution info for sub-plan agents -->
           <div class="sub-agent-execution-info">
             <!-- Agent result -->
@@ -98,7 +98,9 @@
             <div v-if="agent.thinkActSteps?.length" class="think-act-preview">
               <div class="think-act-header">
                 <Icon icon="carbon:thinking" class="think-act-icon" />
-                <span class="think-act-label">{{ $t('chat.thinkActSteps') }} ({{ agent.thinkActSteps.length }})</span>
+                <span class="think-act-label"
+                  >{{ $t('chat.thinkActSteps') }} ({{ agent.thinkActSteps.length }})</span
+                >
               </div>
               <div class="think-act-steps-preview">
                 <div
@@ -108,12 +110,18 @@
                   @click.stop="handleThinkActStepClick(agentIndex, stepIndex, agent)"
                 >
                   <span class="step-number">#{{ stepIndex + 1 }}</span>
-                  <span class="step-description">{{ step.actionDescription || $t('chat.thinking') }}</span>
+                  <span class="step-description">{{
+                    step.actionDescription || $t('chat.thinking')
+                  }}</span>
                   <Icon icon="carbon:arrow-right" class="step-arrow" />
                 </div>
                 <div v-if="agent.thinkActSteps.length > (maxVisibleSteps ?? 2)" class="more-steps">
                   <span class="more-steps-text">
-                    {{ $t('chat.andMoreSteps', { count: agent.thinkActSteps.length - (maxVisibleSteps ?? 2) }) }}
+                    {{
+                      $t('chat.andMoreSteps', {
+                        count: agent.thinkActSteps.length - (maxVisibleSteps ?? 2),
+                      })
+                    }}
                   </span>
                 </div>
               </div>
@@ -168,10 +176,15 @@
 </template>
 
 <script setup lang="ts">
-import { } from 'vue'
+import {} from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
-import type { PlanExecutionRecord, AgentExecutionRecord, ExecutionStatus, ThinkActRecord } from '@/types/plan-execution-record'
+import type {
+  PlanExecutionRecord,
+  AgentExecutionRecord,
+  ExecutionStatus,
+  ThinkActRecord,
+} from '@/types/plan-execution-record'
 
 interface Props {
   subPlan: PlanExecutionRecord
@@ -182,14 +195,19 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'sub-plan-selected', agentIndex: number, subPlanIndex: number, subPlan: PlanExecutionRecord): void
+  (
+    e: 'sub-plan-selected',
+    agentIndex: number,
+    subPlanIndex: number,
+    subPlan: PlanExecutionRecord
+  ): void
   (e: 'step-selected', stepId: string): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   nestingLevel: 0,
   maxNestingDepth: 3,
-  maxVisibleSteps: 2
+  maxVisibleSteps: 2,
 })
 
 const emit = defineEmits<Emits>()
@@ -207,17 +225,21 @@ const getSubPlanStatusClass = (): string => {
   if (props.subPlan.completed) {
     return 'completed'
   }
-  
-  const hasRunningAgent = props.subPlan.agentExecutionSequence?.some(agent => agent.status === 'RUNNING')
+
+  const hasRunningAgent = props.subPlan.agentExecutionSequence?.some(
+    agent => agent.status === 'RUNNING'
+  )
   if (hasRunningAgent) {
     return 'running'
   }
-  
-  const hasFinishedAgent = props.subPlan.agentExecutionSequence?.some(agent => agent.status === 'FINISHED')
+
+  const hasFinishedAgent = props.subPlan.agentExecutionSequence?.some(
+    agent => agent.status === 'FINISHED'
+  )
   if (hasFinishedAgent) {
     return 'in-progress'
   }
-  
+
   return 'pending'
 }
 
@@ -255,7 +277,7 @@ const getSubPlanStatusIcon = (): string => {
 const getSubPlanProgress = (): number => {
   if (!props.subPlan.agentExecutionSequence?.length) return 0
   if (props.subPlan.completed) return 100
-  
+
   const completedCount = getSubPlanCompletedCount()
   return Math.min(100, (completedCount / props.subPlan.agentExecutionSequence.length) * 100)
 }
@@ -321,12 +343,20 @@ const handleSubPlanAgentClick = (agentIndex: number, agent: AgentExecutionRecord
   emit('step-selected', stepId)
 }
 
-const handleThinkActStepClick = (agentIndex: number, _stepIndex: number, agent: AgentExecutionRecord) => {
+const handleThinkActStepClick = (
+  agentIndex: number,
+  _stepIndex: number,
+  agent: AgentExecutionRecord
+) => {
   const stepId = agent.stepId ?? `subplan-${props.subPlanIndex}-agent-${agentIndex}`
   emit('step-selected', stepId)
 }
 
-const handleNestedSubPlanSelected = (agentIndex: number, subPlanIndex: number, subPlan: PlanExecutionRecord) => {
+const handleNestedSubPlanSelected = (
+  agentIndex: number,
+  subPlanIndex: number,
+  subPlan: PlanExecutionRecord
+) => {
   emit('sub-plan-selected', agentIndex, subPlanIndex, subPlan)
 }
 
@@ -616,20 +646,23 @@ const handleNestedStepSelected = (stepId: string) => {
         .sub-agent-execution-info {
           margin-left: 22px;
 
-          .agent-result, .agent-error {
+          .agent-result,
+          .agent-error {
             margin-bottom: 8px;
 
             &:last-child {
               margin-bottom: 0;
             }
 
-            .result-header, .error-header {
+            .result-header,
+            .error-header {
               display: flex;
               align-items: center;
               gap: 4px;
               margin-bottom: 4px;
 
-              .result-icon, .error-icon {
+              .result-icon,
+              .error-icon {
                 font-size: 12px;
               }
 
@@ -641,14 +674,16 @@ const handleNestedStepSelected = (stepId: string) => {
                 color: #ef4444;
               }
 
-              .result-label, .error-label {
+              .result-label,
+              .error-label {
                 color: #ffffff;
                 font-size: 11px;
                 font-weight: 500;
               }
             }
 
-            .result-content, .error-content {
+            .result-content,
+            .error-content {
               margin: 0;
               padding: 6px;
               background: rgba(0, 0, 0, 0.2);
@@ -733,28 +768,33 @@ const handleNestedStepSelected = (stepId: string) => {
             }
           }
 
-          .nested-sub-plans, .direct-sub-plans {
+          .nested-sub-plans,
+          .direct-sub-plans {
             margin-top: 12px;
 
-            .nested-sub-plans-header, .direct-sub-plans-header {
+            .nested-sub-plans-header,
+            .direct-sub-plans-header {
               display: flex;
               align-items: center;
               gap: 6px;
               margin-bottom: 8px;
 
-              .nested-icon, .direct-icon {
+              .nested-icon,
+              .direct-icon {
                 font-size: 12px;
                 color: #fbbf24;
               }
 
-              .nested-label, .direct-label {
+              .nested-label,
+              .direct-label {
                 color: #aaaaaa;
                 font-size: 11px;
                 font-weight: 500;
               }
             }
 
-            .nested-sub-plans-list, .direct-sub-plans-list {
+            .nested-sub-plans-list,
+            .direct-sub-plans-list {
               display: flex;
               flex-direction: column;
               gap: 6px;

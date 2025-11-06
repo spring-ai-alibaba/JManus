@@ -5,7 +5,7 @@ export function useMessage() {
   const message = reactive<Message>({
     show: false,
     text: '',
-    type: 'success'
+    type: 'success',
   })
 
   const showMessage = (text: string, type: MessageType = 'success') => {
@@ -28,6 +28,6 @@ export function useMessage() {
 
   return {
     message,
-    showMessage
+    showMessage,
   }
 }

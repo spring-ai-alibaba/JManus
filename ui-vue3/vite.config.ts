@@ -50,10 +50,11 @@ export default defineConfig({
       typescript: true,
       // Temporarily disable Vue template type checking due to @volar/typescript compatibility issue
       // vueTsc: true,
-      // Temporarily disable ESLint checking during debugging to avoid conflicts
-      eslint: {
-        lintCommand: 'eslint "./src/**/*.{ts,tsx,vue}"',
-      },
+      // Temporarily disable ESLint checking - vite-plugin-checker 0.9.3 has compatibility issues with ESLint 9.x
+      // ESLint can still be run manually via: pnpm lint
+      // eslint: {
+      //   lintCommand: 'eslint "./src/**/*.{ts,tsx,vue}"',
+      // },
     }),
   ],
   resolve: {

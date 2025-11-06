@@ -20,7 +20,7 @@ export class ConfigApiService {
       const response: AxiosResponse<AvailableModelsResponse> = await axios({
         url: '/api/models/available-models',
         method: 'GET',
-        baseURL: '' // Override the default /api/v1 baseURL
+        baseURL: '', // Override the default /api/v1 baseURL
       })
       return response.data
     } catch (error) {
@@ -28,4 +28,4 @@ export class ConfigApiService {
       return { options: [], total: 0 }
     }
   }
-} 
+}

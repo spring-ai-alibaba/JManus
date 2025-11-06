@@ -1,11 +1,7 @@
 <template>
   <div class="json-import-panel">
     <div class="form-item">
-      <TabPanel
-        :tabs="tabs"
-        v-model="activeTabIndex"
-        class="json-tab-panel"
-      >
+      <TabPanel :tabs="tabs" v-model="activeTabIndex" class="json-tab-panel">
         <template #json-config>
           <div class="json-config-container">
             <MonacoEditor
@@ -77,12 +73,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
 import MonacoEditor from '@/components/MonacoEditor.vue'
 import TabPanel from '@/components/TabPanel.vue'
-import type { TabConfig, JsonValidationResult } from '@/types/mcp'
+import type {
+  JsonValidationResult,
+  McpConfigJson,
+  McpServerJsonConfig,
+  TabConfig,
+} from '@/types/mcp'
+import { Icon } from '@iconify/vue'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 // Props
 interface Props {
@@ -92,13 +93,13 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
-  onValidationChange: () => {}
+  onValidationChange: () => {},
 })
 
 // Emits
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  'validationChange': [result: JsonValidationResult]
+  validationChange: [result: JsonValidationResult]
 }>()
 
 // Internationalization
@@ -114,21 +115,24 @@ const activeTabIndex = ref(0)
 const tabs = computed<TabConfig[]>(() => [
   {
     name: 'json-config',
-    label: 'JSON Configuration'
+    label: 'JSON Configuration',
   },
   {
     name: 'config-example',
-    label: 'Configuration Example'
-  }
+    label: 'Configuration Example',
+  },
 ])
 
 // Watch modelValue changes
-watch(() => props.modelValue, (newValue) => {
-  jsonContent.value = newValue
-})
+watch(
+  () => props.modelValue,
+  newValue => {
+    jsonContent.value = newValue
+  }
+)
 
 // Watch jsonContent changes
-watch(jsonContent, (newValue) => {
+watch(jsonContent, newValue => {
   emit('update:modelValue', newValue)
 })
 
@@ -172,7 +176,8 @@ const validateJson = () => {
     if (error instanceof SyntaxError) {
       const message = error.message
       if (message.includes('Unexpected token')) {
-        errorMessage = '❌ JSON syntax error - Please check if brackets, commas, quotes and other symbols are correct'
+        errorMessage =
+          '❌ JSON syntax error - Please check if brackets, commas, quotes and other symbols are correct'
       } else if (message.includes('Unexpected end')) {
         errorMessage = '❌ JSON incomplete - Please check if closing brackets or quotes are missing'
       } else if (message.includes('Unexpected number')) {
@@ -193,24 +198,32 @@ const validateJson = () => {
 const emitValidationResult = () => {
   const result: JsonValidationResult = {
     isValid: isJsonValid.value,
-    errors: validationErrors.value
+    errors: validationErrors.value,
   }
   emit('validationChange', result)
   props.onValidationChange(result)
 }
 
 // Validate MCP configuration structure
-const validateMcpConfig = (config: any): JsonValidationResult => {
+const validateMcpConfig = (config: unknown): JsonValidationResult => {
   const errors: string[] = []
 
-  // Check if config has mcpServers property
-  if (!config.mcpServers || typeof config.mcpServers !== 'object') {
+  // Type guard: check if config is an object with mcpServers property
+  if (
+    !config ||
+    typeof config !== 'object' ||
+    !('mcpServers' in config) ||
+    !config.mcpServers ||
+    typeof config.mcpServers !== 'object'
+  ) {
     errors.push(t('config.mcpConfig.missingMcpServers'))
-    errors.push('💡 Correct format example: {"mcpServers": {"server-id": {"name": "Server Name", "url": "Server URL"}}}')
+    errors.push(
+      '💡 Correct format example: {"mcpServers": {"server-id": {"name": "Server Name", "url": "Server URL"}}}'
+    )
     return { isValid: false, errors }
   }
 
-  const servers = config.mcpServers
+  const servers = config.mcpServers as Record<string, unknown>
 
   // Validate each server configuration
   for (const [serverId, serverConfig] of Object.entries(servers)) {
@@ -219,7 +232,7 @@ const validateMcpConfig = (config: any): JsonValidationResult => {
       continue
     }
 
-    const server = serverConfig as any
+    const server = serverConfig as McpServerJsonConfig
 
     // Validate based on whether command exists
     if (server.command) {
@@ -269,14 +282,16 @@ const validateMcpConfig = (config: any): JsonValidationResult => {
       } else {
         // Validate url or baseUrl format
         const urlToValidate = hasUrl ? server.url : server.baseUrl
-        try {
-          new URL(urlToValidate)
-        } catch {
-          errors.push(t('config.mcpConfig.invalidUrl', { serverId }))
+        if (urlToValidate) {
+          try {
+            new URL(urlToValidate)
+          } catch {
+            errors.push(t('config.mcpConfig.invalidUrl', { serverId }))
+          }
         }
 
         // Unify url field usage: if baseUrl is used in config, convert to url
-        if (hasBaseUrl && !hasUrl) {
+        if (hasBaseUrl && !hasUrl && server.baseUrl) {
           server.url = server.baseUrl
           delete server.baseUrl
         }
@@ -292,16 +307,24 @@ const validateMcpConfig = (config: any): JsonValidationResult => {
 }
 
 // Unify url field handling in MCP configuration
-const normalizeMcpConfig = (config: any): any => {
-  if (!config.mcpServers) {
-    return config
+const normalizeMcpConfig = (config: unknown): McpConfigJson => {
+  // Type guard: check if config is an object with mcpServers property
+  if (
+    !config ||
+    typeof config !== 'object' ||
+    !('mcpServers' in config) ||
+    !config.mcpServers ||
+    typeof config.mcpServers !== 'object'
+  ) {
+    return config as McpConfigJson
   }
 
-  const normalizedConfig = { ...config }
-  normalizedConfig.mcpServers = { ...config.mcpServers }
+  const typedConfig = config as McpConfigJson
+  const normalizedConfig: McpConfigJson = { ...typedConfig }
+  normalizedConfig.mcpServers = { ...typedConfig.mcpServers }
 
-  for (const [serverId, serverConfig] of Object.entries(config.mcpServers)) {
-    const server = serverConfig as any
+  for (const [serverId, serverConfig] of Object.entries(typedConfig.mcpServers)) {
+    const server = serverConfig as McpServerJsonConfig
     const normalizedServer = { ...server }
 
     // If no command, handle url/baseUrl unification
@@ -309,7 +332,7 @@ const normalizeMcpConfig = (config: any): any => {
       const hasUrl = server.url && typeof server.url === 'string'
       const hasBaseUrl = server.baseUrl && typeof server.baseUrl === 'string'
 
-      if (hasBaseUrl && !hasUrl) {
+      if (hasBaseUrl && !hasUrl && server.baseUrl) {
         // If only baseUrl exists, convert to url
         normalizedServer.url = server.baseUrl
         delete normalizedServer.baseUrl
@@ -329,7 +352,7 @@ const normalizeMcpConfig = (config: any): any => {
 defineExpose({
   validateJson,
   isJsonValid: computed(() => isJsonValid.value),
-  validationErrors: computed(() => validationErrors.value)
+  validationErrors: computed(() => validationErrors.value),
 })
 </script>
 
@@ -390,11 +413,21 @@ defineExpose({
 }
 
 /* JSON syntax highlighting */
-.example-json .string { color: #a78bfa; }
-.example-json .number { color: #fbbf24; }
-.example-json .boolean { color: #f87171; }
-.example-json .null { color: rgba(255, 255, 255, 0.6); }
-.example-json .key { color: #34d399; }
+.example-json .string {
+  color: #a78bfa;
+}
+.example-json .number {
+  color: #fbbf24;
+}
+.example-json .boolean {
+  color: #f87171;
+}
+.example-json .null {
+  color: rgba(255, 255, 255, 0.6);
+}
+.example-json .key {
+  color: #34d399;
+}
 
 /* JSON configuration container */
 .json-config-container {

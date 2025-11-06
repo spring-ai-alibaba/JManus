@@ -185,7 +185,7 @@ export class PlanExecutionManager {
       } else {
         throw new Error('Failed to get valid plan ID')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[PlanExecutionManager] Failed to send user message:', error)
       // Set UI state to enabled for error recovery
       const errorPlanId = this.state.activePlanId ?? 'error'
@@ -258,25 +258,25 @@ export class PlanExecutionManager {
   /**
    * Send user message and set plan ID
    */
-  private async sendUserMessageAndSetPlanId(query: string): Promise<any> {
+  private async sendUserMessageAndSetPlanId(query: string): Promise<unknown> {
     try {
       // Use direct execution mode API to send message
-      const response = await DirectApiService.sendMessage({
+      const response = (await DirectApiService.sendMessage({
         input: query,
-      })
+      })) as Record<string, unknown>
 
       if (response?.planId) {
-        this.state.activePlanId = response.planId
+        this.state.activePlanId = response.planId as string
         return response
       } else if (response?.planTemplateId) {
         // If response contains planTemplateId instead of planId
-        this.state.activePlanId = response.planTemplateId
+        this.state.activePlanId = response.planTemplateId as string
         return { ...response, planId: response.planTemplateId }
       }
 
       console.error('[PlanExecutionManager] Failed to get planId from response:', response)
       throw new Error('Failed to get valid planId from API response')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[PlanExecutionManager] API call failed:', error)
       throw error
     }
@@ -328,13 +328,15 @@ export class PlanExecutionManager {
             console.log(
               `[PlanExecutionManager] Plan template ${this.state.activePlanId} deleted successfully`
             )
-          } catch (error: any) {
-            console.log(`Delete plan execution record failed: ${error.message}`)
+          } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error'
+            console.log(`Delete plan execution record failed: ${message}`)
           }
         }
       }, 5000)
-    } catch (error: any) {
-      console.log(`Delete plan execution record failed: ${error.message}`)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      console.log(`Delete plan execution record failed: ${message}`)
     }
 
     if (details.completed) {
@@ -364,13 +366,15 @@ export class PlanExecutionManager {
             console.log(
               `[PlanExecutionManager] Plan template ${this.state.activePlanId} deleted successfully`
             )
-          } catch (error: any) {
-            console.log(`Delete plan execution record failed: ${error.message}`)
+          } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error'
+            console.log(`Delete plan execution record failed: ${message}`)
           }
         }
       }, 5000)
-    } catch (error: any) {
-      console.log(`Delete plan execution record failed: ${error.message}`)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      console.log(`Delete plan execution record failed: ${message}`)
     }
   }
 
@@ -421,7 +425,7 @@ export class PlanExecutionManager {
       if (details.completed) {
         this.handlePlanCompletion(details)
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[PlanExecutionManager] Failed to poll plan status:', error)
     } finally {
       this.state.isPolling = false
@@ -445,12 +449,13 @@ export class PlanExecutionManager {
       }
 
       return details
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[PlanExecutionManager] Failed to get plan details:', error)
+      const message = error instanceof Error ? error.message : 'Failed to get plan'
       return {
         currentPlanId: planId,
         status: 'failed',
-        message: error instanceof Error ? error.message : 'Failed to get plan',
+        message: message,
       }
     }
   }

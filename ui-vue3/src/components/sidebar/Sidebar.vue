@@ -323,6 +323,11 @@
 </template>
 
 <script setup lang="ts">
+// Define component name to satisfy Vue linting rules
+defineOptions({
+  name: 'SidebarPanel',
+})
+
 import type { CoordinatorToolConfig, CoordinatorToolVO } from '@/api/coordinator-tool-api-service'
 import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
 import PublishServiceModal from '@/components/publish-service-modal/PublishServiceModal.vue'
@@ -420,28 +425,35 @@ const handleSaveTemplate = async () => {
   try {
     const saveResult = await sidebarStore.saveTemplate()
 
-    if (saveResult?.duplicate) {
+    const result = saveResult as {
+      duplicate?: boolean
+      saved?: boolean
+      message?: string
+      versionCount?: number
+    }
+    if (result?.duplicate) {
       toast.success(
         t('sidebar.saveCompleted', {
-          message: saveResult.message,
-          versionCount: saveResult.versionCount,
+          message: result.message,
+          versionCount: result.versionCount,
         })
       )
-    } else if (saveResult?.saved) {
+    } else if (result?.saved) {
       toast.success(
         t('sidebar.saveSuccess', {
-          message: saveResult.message,
-          versionCount: saveResult.versionCount,
+          message: result.message,
+          versionCount: result.versionCount,
         })
       )
       // Refresh parameter requirements after successful save
       refreshParameterRequirements()
-    } else if (saveResult?.message) {
-      toast.success(t('sidebar.saveStatus', { message: saveResult.message }))
+    } else if (result?.message) {
+      toast.success(t('sidebar.saveStatus', { message: result.message }))
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to save plan modifications:', error)
-    toast.error(error.message || t('sidebar.saveFailed'))
+    const message = error instanceof Error ? error.message : t('sidebar.saveFailed')
+    toast.error(message)
     throw error // Re-throw to allow caller to handle
   }
 }
@@ -570,9 +582,10 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
     emit('planExecutionRequested', finalPayload)
 
     console.log('[Sidebar] ✅ Event emitted successfully')
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Sidebar] ❌ Error executing plan:', error)
-    toast.error(t('sidebar.executeFailed') + ': ' + error.message)
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    toast.error(t('sidebar.executeFailed') + ': ' + message)
   } finally {
     console.log('[Sidebar] 🧹 Cleaning up after execution')
     sidebarStore.finishPlanExecution()
@@ -697,16 +710,18 @@ const confirmCopyPlan = async () => {
     const { PlanActApiService } = await import('@/api/plan-act-api-service')
     const result = await PlanActApiService.savePlanTemplate('', JSON.stringify(newPlan))
 
-    if (result.saved) {
+    const typedResult = result as { saved?: boolean; message?: string }
+    if (typedResult.saved) {
       toast.success(t('sidebar.copyPlanSuccess', { title: newPlanTitle.value.trim() }))
       await sidebarStore.loadPlanTemplateList()
       closeCopyPlanModal()
     } else {
-      toast.error(t('sidebar.copyPlanFailed', { message: result.message || 'Unknown error' }))
+      toast.error(t('sidebar.copyPlanFailed', { message: typedResult.message || 'Unknown error' }))
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Sidebar] Error copying plan:', error)
-    toast.error(t('sidebar.copyPlanFailed', { message: error.message || 'Unknown error' }))
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    toast.error(t('sidebar.copyPlanFailed', { message: message }))
   } finally {
     isCopyingPlan.value = false
   }

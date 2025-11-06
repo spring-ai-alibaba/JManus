@@ -223,8 +223,6 @@ export interface PlanExecutionRecord {
   /** Timestamp when execution ended */
   endTime?: string
 
-
-
   /** Current step index being executed */
   currentStepIndex?: number
 
@@ -276,10 +274,8 @@ export interface PlanExecutionRecord {
   updatedAt?: string
 
   /** Additional metadata */
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 // API response type for getDetails method
 export type PlanExecutionRecordResponse = PlanExecutionRecord | null
-
-

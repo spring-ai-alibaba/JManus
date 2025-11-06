@@ -28,7 +28,7 @@ export class LlmCheckService {
   public static async checkLlmConfiguration(): Promise<{ initialized: boolean; message?: string }> {
     // Check cache
     const now = Date.now()
-    if (this.cachedStatus && (now - this.cachedStatus.lastCheck) < this.CACHE_DURATION) {
+    if (this.cachedStatus && now - this.cachedStatus.lastCheck < this.CACHE_DURATION) {
       return { initialized: this.cachedStatus.initialized }
     }
 
@@ -44,13 +44,14 @@ export class LlmCheckService {
       // Update cache
       this.cachedStatus = {
         initialized,
-        lastCheck: now
+        lastCheck: now,
       }
 
       if (!initialized) {
         return {
           initialized: false,
-          message: 'System has not configured LLM model yet, please configure API key through initialization page first.'
+          message:
+            'System has not configured LLM model yet, please configure API key through initialization page first.',
         }
       }
 
@@ -59,7 +60,8 @@ export class LlmCheckService {
       console.error('[LlmCheckService] Failed to check LLM configuration:', error)
       return {
         initialized: false,
-        message: 'Unable to check LLM configuration status, please ensure system is running normally.'
+        message:
+          'Unable to check LLM configuration status, please ensure system is running normally.',
       }
     }
   }

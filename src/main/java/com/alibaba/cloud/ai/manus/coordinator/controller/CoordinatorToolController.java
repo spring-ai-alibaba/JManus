@@ -107,7 +107,7 @@ public class CoordinatorToolController {
 	public ResponseEntity<CoordinatorToolVO> getCoordinatorToolByTemplate(
 			@PathVariable("planTemplateId") String planTemplateId) {
 		try {
-			log.info("Getting coordinator tool for plan template: {}", planTemplateId);
+			log.debug("Getting coordinator tool for plan template: {}", planTemplateId);
 			Optional<CoordinatorToolVO> toolOpt = coordinatorToolService
 				.getCoordinatorToolByPlanTemplateId(planTemplateId);
 			if (toolOpt.isPresent()) {

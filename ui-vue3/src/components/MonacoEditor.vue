@@ -21,7 +21,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   readonly: false,
-  language: 'json'
+  language: 'json',
 })
 
 const emit = defineEmits<Emits>()
@@ -49,7 +49,7 @@ const createEditor = () => {
       vertical: 'visible',
       horizontal: 'visible',
       verticalScrollbarSize: 8,
-      horizontalScrollbarSize: 8
+      horizontalScrollbarSize: 8,
     },
     folding: true,
     wordWrap: 'on',
@@ -59,7 +59,7 @@ const createEditor = () => {
     detectIndentation: false,
     trimAutoWhitespace: true,
     largeFileOptimizations: false,
-    readOnly: props.readonly
+    readOnly: props.readonly,
   })
 
   // Listen for content changes
@@ -79,7 +79,7 @@ const createEditor = () => {
       { token: 'keyword', foreground: '#a78bfa' },
       { token: 'comment', foreground: '#6b7280' },
       { token: 'operator', foreground: '#fbbf24' },
-      { token: 'delimiter', foreground: '#fbbf24' }
+      { token: 'delimiter', foreground: '#fbbf24' },
     ],
     colors: {
       'editor.background': 'rgba(255, 255, 255, 0.05)',
@@ -93,8 +93,8 @@ const createEditor = () => {
       'editorIndentGuide.activeBackground': '#6b7280',
       'editorLineNumber.foreground': '#9ca3af',
       'editorLineNumber.activeForeground': '#f9fafb',
-      'editorGutter.background': 'rgba(255, 255, 255, 0.05)'
-    }
+      'editorGutter.background': 'rgba(255, 255, 255, 0.05)',
+    },
   })
 
   editor.updateOptions({ theme: 'custom-dark' })
@@ -111,18 +111,24 @@ const updateContent = (content: string) => {
 }
 
 // Watch for modelValue changes
-watch(() => props.modelValue, (newValue) => {
-  if (editor) {
-    updateContent(newValue)
+watch(
+  () => props.modelValue,
+  newValue => {
+    if (editor) {
+      updateContent(newValue)
+    }
   }
-})
+)
 
 // Watch for readonly changes
-watch(() => props.readonly, (readonly) => {
-  if (editor) {
-    editor.updateOptions({ readOnly: readonly })
+watch(
+  () => props.readonly,
+  readonly => {
+    if (editor) {
+      editor.updateOptions({ readOnly: readonly })
+    }
   }
-})
+)
 
 onMounted(() => {
   nextTick(() => {

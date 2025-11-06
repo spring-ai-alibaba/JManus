@@ -45,10 +45,10 @@
 
         <div class="search-box">
           <input
-              v-model="searchQuery"
-              type="text"
-              :placeholder="t('config.mcpSearch')"
-              class="search-input"
+            v-model="searchQuery"
+            type="text"
+            :placeholder="t('config.mcpSearch')"
+            class="search-input"
           />
           <Icon icon="carbon:search" class="search-icon" />
         </div>
@@ -64,17 +64,21 @@
             <div class="server-card-header">
               <span class="server-name">{{ server.mcpServerName }}</span>
               <div class="server-status-toggle" @click.stop="toggleServerStatus(server)">
-                <div
-                  class="status-toggle"
-                  :class="{ 'enabled': server.status === 'ENABLE' }"
-                >
+                <div class="status-toggle" :class="{ enabled: server.status === 'ENABLE' }">
                   <div class="toggle-thumb"></div>
-                  <span class="toggle-label">{{ server.status === 'ENABLE' ? t('config.mcpConfig.enabled') : t('config.mcpConfig.disabled') }}</span>
+                  <span class="toggle-label">{{
+                    server.status === 'ENABLE'
+                      ? t('config.mcpConfig.enabled')
+                      : t('config.mcpConfig.disabled')
+                  }}</span>
                 </div>
               </div>
             </div>
             <div class="server-connection-type">
-              <Icon :icon="getConnectionTypeIcon(server.connectionType)" class="connection-type-icon" />
+              <Icon
+                :icon="getConnectionTypeIcon(server.connectionType)"
+                class="connection-type-icon"
+              />
               <span class="connection-type-badge" :class="server.connectionType.toLowerCase()">
                 {{ server.connectionType }}
               </span>
@@ -168,21 +172,21 @@
         </div>
       </div>
 
-                  <!-- JSON import form panel -->
-            <div v-else-if="showJsonImport" class="server-detail">
-              <div class="detail-header">
-                <h3>{{ t('config.mcpConfig.importAll') }}</h3>
-                <div class="detail-actions">
-                  <button class="action-btn primary" @click="handleJsonImport" :disabled="loading">
-                    <Icon icon="carbon:save" />
-                    {{ t('config.mcpConfig.import') }}
-                  </button>
-                  <button class="action-btn" @click="cancelJsonImport">
-                    <Icon icon="carbon:close" />
-                    {{ t('config.mcpConfig.cancel') }}
-                  </button>
-                </div>
-              </div>
+      <!-- JSON import form panel -->
+      <div v-else-if="showJsonImport" class="server-detail">
+        <div class="detail-header">
+          <h3>{{ t('config.mcpConfig.importAll') }}</h3>
+          <div class="detail-actions">
+            <button class="action-btn primary" @click="handleJsonImport" :disabled="loading">
+              <Icon icon="carbon:save" />
+              {{ t('config.mcpConfig.import') }}
+            </button>
+            <button class="action-btn" @click="cancelJsonImport">
+              <Icon icon="carbon:close" />
+              {{ t('config.mcpConfig.cancel') }}
+            </button>
+          </div>
+        </div>
         <div class="detail-content">
           <JsonImportPanel
             v-model="jsonEditorContent"
@@ -199,10 +203,17 @@
     </div>
 
     <!-- JSON Editor Modal -->
-    <Modal v-model="showJsonModal" :title="t('config.mcpConfig.jsonEditor')" @confirm="handleJsonSave">
+    <Modal
+      v-model="showJsonModal"
+      :title="t('config.mcpConfig.jsonEditor')"
+      @confirm="handleJsonSave"
+    >
       <div class="json-editor-container">
         <div class="json-editor-header">
-          <span class="json-status" :class="{ 'valid': isJsonValid, 'invalid': !isJsonValid && jsonEditorContent.trim() }">
+          <span
+            class="json-status"
+            :class="{ valid: isJsonValid, invalid: !isJsonValid && jsonEditorContent.trim() }"
+          >
             {{ getJsonStatusText() }}
           </span>
           <button
@@ -217,18 +228,22 @@
         </div>
         <div class="json-editor-wrapper">
           <MonacoEditor
-              v-model="jsonEditorContent"
-              :placeholder="t('config.mcpConfig.configJsonPlaceholder')"
-              @change="validateJson"
-              class="json-editor"
-              language="json"
+            v-model="jsonEditorContent"
+            :placeholder="t('config.mcpConfig.configJsonPlaceholder')"
+            @change="validateJson"
+            class="json-editor"
+            language="json"
           />
         </div>
       </div>
     </Modal>
 
     <!-- Delete confirmation modal -->
-    <Modal v-model="showDeleteModal" :title="t('config.mcpConfig.confirmDelete')" @confirm="handleDeleteServer">
+    <Modal
+      v-model="showDeleteModal"
+      :title="t('config.mcpConfig.confirmDelete')"
+      @confirm="handleDeleteServer"
+    >
       <div class="delete-confirm">
         <Icon icon="carbon:warning" class="warning-icon" />
         <p>{{ t('config.mcpConfig.deleteConfirmMessage') }}</p>
@@ -272,7 +287,8 @@ interface ExtendedMcpServer extends McpServer {
 const { t } = useI18n()
 
 // Use composition functions
-const { configForm, resetForm, populateFormFromServer, validateForm, handleConnectionTypeChange } = useMcpConfigForm()
+const { configForm, resetForm, populateFormFromServer, validateForm, handleConnectionTypeChange } =
+  useMcpConfigForm()
 const { message, showMessage } = useMessage()
 const { loading } = useRequest()
 
@@ -291,8 +307,6 @@ const searchQuery = ref('')
 // JSON Editor Modal
 const isJsonModalForEdit = ref(false) // true for edit, false for new
 
-
-
 // Computed property: Filtered MCP servers
 const filteredMcpServers = computed(() => {
   if (!searchQuery.value.trim()) {
@@ -300,7 +314,8 @@ const filteredMcpServers = computed(() => {
   }
 
   const query = searchQuery.value.toLowerCase()
-  return servers.value.filter((server: McpServer) =>
+  return servers.value.filter(
+    (server: McpServer) =>
       server.mcpServerName.toLowerCase().includes(query) ||
       server.connectionType.toLowerCase().includes(query) ||
       server.connectionConfig.toLowerCase().includes(query)
@@ -308,7 +323,10 @@ const filteredMcpServers = computed(() => {
 })
 
 // Helper function to get server configuration values
-const getServerConfigValue = (server: McpServer, field: 'command' | 'url' | 'args' | 'env'): string => {
+const getServerConfigValue = (
+  server: McpServer,
+  field: 'command' | 'url' | 'args' | 'env'
+): string => {
   try {
     const config = JSON.parse(server.connectionConfig)
     switch (field) {
@@ -349,16 +367,12 @@ const getServerConfigValue = (server: McpServer, field: 'command' | 'url' | 'arg
   }
 }
 
-
-
 // Select a server
 const selectServer = (server: McpServer) => {
   selectedServer.value = { ...server }
   showAddForm.value = false // Hide add form
   showJsonImport.value = false // Hide JSON import form
 }
-
-
 
 // Handle JSON save
 const handleJsonSave = () => {
@@ -371,8 +385,8 @@ const handleJsonSave = () => {
     const parsed = JSON.parse(jsonEditorContent.value)
 
     if (isJsonModalForEdit.value && selectedServer.value) {
-              // Edit mode: update selected server
-        selectedServer.value.connectionConfig = JSON.stringify(parsed, null, 2)
+      // Edit mode: update selected server
+      selectedServer.value.connectionConfig = JSON.stringify(parsed, null, 2)
     } else {
       // Create mode: create new server
       handleAddServerFromJson(parsed)
@@ -386,7 +400,7 @@ const handleJsonSave = () => {
 }
 
 // Create new server from JSON
-const handleAddServerFromJson = async (serverData: any) => {
+const handleAddServerFromJson = async (serverData: Record<string, unknown>) => {
   try {
     loading.value = true
     const result = await McpApiService.importMcpServers(serverData)
@@ -404,8 +418,6 @@ const handleAddServerFromJson = async (serverData: any) => {
     loading.value = false
   }
 }
-
-
 
 // Handle delete server
 const handleDeleteServer = async () => {
@@ -447,7 +459,7 @@ const handleSave = async () => {
     const requestData: McpServerSaveRequest = {
       connectionType: configForm.connectionType,
       mcpServerName: configForm.mcpServerName,
-      status: configForm.status
+      status: configForm.status,
     }
 
     if (configForm.connectionType === 'STUDIO') {
@@ -509,7 +521,12 @@ const handleSave = async () => {
     const result = await McpApiService.saveMcpServer(requestData)
 
     if (result.success) {
-      showMessage(selectedServer.value?.id ? t('config.mcpConfig.updateSuccess') : t('config.mcpConfig.addSuccess'), 'success')
+      showMessage(
+        selectedServer.value?.id
+          ? t('config.mcpConfig.updateSuccess')
+          : t('config.mcpConfig.addSuccess'),
+        'success'
+      )
       await loadMcpServers()
       if (!selectedServer.value?.id) {
         // Reset form after successful addition
@@ -524,8 +541,6 @@ const handleSave = async () => {
     showMessage(t('config.mcpConfig.saveFailed'), 'error')
   }
 }
-
-
 
 // JSON validation
 const validateJson = () => {
@@ -585,7 +600,9 @@ const validateJson = () => {
 }
 
 // Validate MCP configuration structure
-const validateMcpConfig = (config: any): { isValid: boolean; errors?: string[] } => {
+const validateMcpConfig = (
+  config: Record<string, unknown>
+): { isValid: boolean; errors?: string[] } => {
   const errors: string[] = []
 
   // Check if config has mcpServers property
@@ -604,7 +621,7 @@ const validateMcpConfig = (config: any): { isValid: boolean; errors?: string[] }
       continue
     }
 
-    const server = serverConfig as any
+    const server = serverConfig as Record<string, unknown>
 
     // Check required fields - name field is optional, so we skip validation
 
@@ -658,7 +675,7 @@ const validateMcpConfig = (config: any): { isValid: boolean; errors?: string[] }
         // 2. Validate url or baseUrl format
         const urlToValidate = hasUrl ? server.url : server.baseUrl
         try {
-          new URL(urlToValidate)
+          new URL(urlToValidate as string)
         } catch {
           errors.push(t('config.mcpConfig.invalidUrl', { serverId }))
         }
@@ -694,7 +711,7 @@ const formatJson = () => {
 }
 
 // Unify url field handling in MCP configuration
-const normalizeMcpConfig = (config: any): any => {
+const normalizeMcpConfig = (config: Record<string, unknown>): Record<string, unknown> => {
   if (!config.mcpServers) {
     return config
   }
@@ -703,7 +720,7 @@ const normalizeMcpConfig = (config: any): any => {
   normalizedConfig.mcpServers = { ...config.mcpServers }
 
   for (const [serverId, serverConfig] of Object.entries(config.mcpServers)) {
-    const server = serverConfig as any
+    const server = serverConfig as Record<string, unknown>
     const normalizedServer = { ...server }
 
     // If no command, handle url/baseUrl unification
@@ -721,7 +738,7 @@ const normalizeMcpConfig = (config: any): any => {
       }
     }
 
-    normalizedConfig.mcpServers[serverId] = normalizedServer
+    ;(normalizedConfig.mcpServers as Record<string, unknown>)[serverId] = normalizedServer
   }
 
   return normalizedConfig
@@ -745,8 +762,6 @@ const getJsonStatusText = (): string => {
   }
 }
 
-
-
 // Load MCP servers list
 const loadMcpServers = async () => {
   try {
@@ -754,7 +769,12 @@ const loadMcpServers = async () => {
     servers.value = await McpApiService.getAllMcpServers()
 
     // If there are servers and no currently selected server, auto-select the first one
-    if (servers.value.length > 0 && !selectedServer.value && !showAddForm.value && !showJsonImport.value) {
+    if (
+      servers.value.length > 0 &&
+      !selectedServer.value &&
+      !showAddForm.value &&
+      !showJsonImport.value
+    ) {
       selectServer(servers.value[0])
     }
   } catch (error) {
@@ -765,25 +785,29 @@ const loadMcpServers = async () => {
   }
 }
 
-
-
-
-
 // Toggle server status
 const toggleServerStatus = async (server: McpServer) => {
   try {
     loading.value = true
-    let result: any
+    let result: { success: boolean; message?: string; [key: string]: unknown }
 
     // Determine operation to execute based on current status
     // If currently enabled, disable after click
     // If currently disabled, enable after click
     if (server.status === 'ENABLE') {
       // Currently enabled, disable after click
-      result = await McpApiService.disableMcpServer(server.id)
+      result = (await McpApiService.disableMcpServer(server.id)) as {
+        [key: string]: unknown
+        success: boolean
+        message?: string
+      }
     } else {
       // Currently disabled, enable after click
-      result = await McpApiService.enableMcpServer(server.id)
+      result = (await McpApiService.enableMcpServer(server.id)) as {
+        [key: string]: unknown
+        success: boolean
+        message?: string
+      }
     }
 
     if (result.success) {
@@ -835,11 +859,15 @@ const cancelJsonImport = () => {
 }
 
 // Watch selectedServer changes, populate configForm
-watch(selectedServer, (newServer) => {
-  if (newServer) {
-    populateFormFromServer(newServer)
-  }
-}, { immediate: true })
+watch(
+  selectedServer,
+  newServer => {
+    if (newServer) {
+      populateFormFromServer(newServer)
+    }
+  },
+  { immediate: true }
+)
 
 // Load data when the component is mounted
 onMounted(() => {
@@ -862,8 +890,8 @@ const exportAllConfigs = async () => {
     const servers = await McpApiService.getAllMcpServers()
 
     // Build export data
-    const exportData: { mcpServers: Record<string, any> } = {
-      mcpServers: {}
+    const exportData: { mcpServers: Record<string, Record<string, unknown>> } = {
+      mcpServers: {},
     }
 
     servers.forEach(server => {
@@ -922,7 +950,10 @@ const handleJsonImport = async () => {
         showMessage(result.message || t('config.mcpConfig.importFailed'), 'error')
       }
     } else {
-      showMessage(validationResult.errors?.join('\n') ?? t('config.mcpConfig.importInvalidJson'), 'error')
+      showMessage(
+        validationResult.errors?.join('\n') ?? t('config.mcpConfig.importInvalidJson'),
+        'error'
+      )
     }
   } catch {
     showMessage(t('config.mcpConfig.importFailed'), 'error')
@@ -1052,8 +1083,12 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .mcp-layout {
@@ -1402,8 +1437,6 @@ const getConnectionTypeIcon = (type: string) => {
   justify-content: flex-end;
 }
 
-
-
 .server-detail {
   flex: 1;
   background: rgba(255, 255, 255, 0.03);
@@ -1506,8 +1539,6 @@ const getConnectionTypeIcon = (type: string) => {
     font-size: 12px;
   }
 }
-
-
 
 .form-item {
   margin-bottom: 20px;
@@ -1970,9 +2001,19 @@ const getConnectionTypeIcon = (type: string) => {
 }
 
 /* JSON syntax highlighting */
-.example-json .string { color: #a78bfa; }
-.example-json .number { color: #fbbf24; }
-.example-json .boolean { color: #f87171; }
-.example-json .null { color: rgba(255, 255, 255, 0.6); }
-.example-json .key { color: #34d399; }
+.example-json .string {
+  color: #a78bfa;
+}
+.example-json .number {
+  color: #fbbf24;
+}
+.example-json .boolean {
+  color: #f87171;
+}
+.example-json .null {
+  color: rgba(255, 255, 255, 0.6);
+}
+.example-json .key {
+  color: #34d399;
+}
 </style>

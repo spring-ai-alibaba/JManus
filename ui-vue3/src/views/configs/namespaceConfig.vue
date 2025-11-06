@@ -245,9 +245,10 @@ const loadData = async () => {
       await selectNamespace(loadedNamespaces[0])
     }
     namespaces.splice(0, namespaces.length, ...loadedNamespaces)
-  } catch (err: any) {
-    console.error('Failed to load data:', err)
-    error(t('config.namespaceConfig.loadDataFailed') + ': ' + err.message)
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    console.error('Failed to load data:', errorMessage)
+    error(t('config.namespaceConfig.loadDataFailed') + ': ' + errorMessage)
   } finally {
     loading.value = false
   }
@@ -283,8 +284,9 @@ const handleAddNamespace = async () => {
     showModal.value = false
     updateNamespace()
     success(t('config.namespaceConfig.saveSuccess'))
-  } catch (err: any) {
-    error(t('config.namespaceConfig.createFailed') + ': ' + err.message)
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    error(t('config.namespaceConfig.createFailed') + ': ' + errorMessage)
   }
 }
 
@@ -315,8 +317,9 @@ const handleSave = async () => {
     }
     updateNamespace()
     success(t('config.namespaceConfig.saveSuccess'))
-  } catch (err: any) {
-    error(t('config.namespaceConfig.saveFailed') + ': ' + err.message)
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    error(t('config.namespaceConfig.saveFailed') + ': ' + errorMessage)
   }
 }
 
@@ -335,8 +338,9 @@ const handleDelete = async () => {
     showDeleteModal.value = false
     updateNamespace()
     success(t('config.namespaceConfig.deleteSuccess'))
-  } catch (err: any) {
-    error(t('config.namespaceConfig.deleteFailed') + ': ' + err.message)
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    error(t('config.namespaceConfig.deleteFailed') + ': ' + errorMessage)
   }
 }
 
@@ -381,7 +385,7 @@ function validateNamespaceFieldsUnique(
 
     // Check if the field exists in the namespace object
     if (field in namespace) {
-      value = (namespace as any)[field] as string | undefined
+      value = (namespace as Record<string, unknown>)[field] as string | undefined
     } else {
       continue
     }

@@ -129,4 +129,3 @@ export class CronApiService {
     return response
   }
 }
-

@@ -13,6 +13,10 @@
       <h2>{{ t('config.databaseConfig.title') }}</h2>
     </template>
 
+    <div class="description-section">
+      <p class="description-text">{{ t('config.databaseConfig.description') }}</p>
+    </div>
+
     <div class="database-layout">
       <!-- Datasource List -->
       <div class="config-list">
@@ -431,6 +435,22 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.description-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 8px;
+}
+
+.description-text {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
 .database-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;

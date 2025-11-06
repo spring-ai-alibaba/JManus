@@ -35,7 +35,7 @@ export const routes: Readonly<RouteRecordType[]> = [
       if (!hasInitialized) {
         return '/init'
       }
-      
+
       // Check if user has visited the homepage before
       const hasVisited = localStorage.getItem('hasVisitedHome') === 'true'
       return hasVisited ? '/direct' : '/home'
@@ -91,8 +91,11 @@ export const routes: Readonly<RouteRecordType[]> = [
   },
 ]
 
-function handlePath(...paths: any[]) {
-  return paths.join('/').replace(/\/+/g, '/')
+function handlePath(...paths: (string | undefined)[]): string {
+  return paths
+    .filter((p): p is string => typeof p === 'string')
+    .join('/')
+    .replace(/\/+/g, '/')
 }
 
 function handleRoutes(

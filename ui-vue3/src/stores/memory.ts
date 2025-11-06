@@ -13,62 +13,62 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {reactive} from "vue";
+import { reactive } from 'vue'
 
 export interface MemoryEmits {
-    (e: 'memory-selected'): void
+  (e: 'memory-selected'): void
 }
 
 export interface InputMessage {
-    input: string
-    memoryId?: string
-    uploadedFiles?: string[]
-    uploadKey?: string
+  input: string
+  memoryId?: string
+  uploadedFiles?: string[]
+  uploadKey?: string
 }
 
 export class MemoryStore {
-    // Basic state
-    isCollapsed = false
-    selectMemoryId = ''
-    loadMessages = () => {}
-    intervalId: number | undefined = undefined
+  // Basic state
+  isCollapsed = false
+  selectMemoryId = ''
+  loadMessages = () => {}
+  intervalId: number | undefined = undefined
 
-    toggleSidebar() {
-        this.isCollapsed = !this.isCollapsed
-        if (this.isCollapsed) {
-            this.loadMessages();
-            this.intervalId = window.setInterval(() => {
-                this.loadMessages();
-            }, 3000);
-        } else {
-            clearInterval(this.intervalId);
-        }
+  toggleSidebar() {
+    this.isCollapsed = !this.isCollapsed
+    if (this.isCollapsed) {
+      this.loadMessages()
+      this.intervalId = window.setInterval(() => {
+        this.loadMessages()
+      }, 3000)
+    } else {
+      clearInterval(this.intervalId)
     }
+  }
 
-    selectMemory(memoryId: string) {
-        this.toggleSidebar()
-        this.selectMemoryId = memoryId
-    }
+  selectMemory(memoryId: string) {
+    this.toggleSidebar()
+    this.selectMemoryId = memoryId
+  }
 
-    setMemory(memoryId: string) {
-        this.selectMemoryId = memoryId
-    }
+  setMemory(memoryId: string) {
+    this.selectMemoryId = memoryId
+  }
 
-    defaultMemoryId() {
-        this.selectMemoryId = this.generateRandomId()
-    }
+  defaultMemoryId() {
+    this.selectMemoryId = this.generateRandomId()
+  }
 
-    clearMemoryId() {
-        this.selectMemoryId = ''
-    }
+  clearMemoryId() {
+    this.selectMemoryId = ''
+  }
 
-    generateRandomId(): string {
-        return Math.random().toString(36).substring(2, 10);
-    }
+  generateRandomId(): string {
+    return Math.random().toString(36).substring(2, 10)
+  }
 
-    setLoadMessages(messages : () => void) {
-        this.loadMessages = messages
-    }
+  setLoadMessages(messages: () => void) {
+    this.loadMessages = messages
+  }
 }
 
 export const memoryStore = reactive(new MemoryStore())

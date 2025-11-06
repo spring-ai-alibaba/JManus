@@ -137,7 +137,7 @@ export class SidebarStore {
   }
 
   // Helper function to parse date from different formats
-  parseDateTime(dateValue: any): Date {
+  parseDateTime(dateValue: unknown): Date {
     if (!dateValue) {
       return new Date()
     }
@@ -332,7 +332,9 @@ export class SidebarStore {
     this.errorMessage = ''
     try {
       console.log('[SidebarStore] Starting to load plan template list...')
-      const response = await PlanActApiService.getAllPlanTemplates()
+      const response = (await PlanActApiService.getAllPlanTemplates()) as {
+        templates?: PlanTemplate[]
+      }
       if (response?.templates && Array.isArray(response.templates)) {
         this.planTemplateList = response.templates
         console.log(
@@ -344,10 +346,11 @@ export class SidebarStore {
         this.planTemplateList = []
         console.warn('[SidebarStore] API returned abnormal data format, using empty list', response)
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[SidebarStore] Failed to load plan template list:', error)
       this.planTemplateList = []
-      this.errorMessage = `Load failed: ${error.message}`
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      this.errorMessage = `Load failed: ${message}`
     } finally {
       this.isLoading = false
     }
@@ -385,7 +388,7 @@ export class SidebarStore {
   async loadTemplateData(template: PlanTemplate) {
     try {
       const versionsResponse = await PlanActApiService.getPlanVersions(template.id)
-      this.planVersions = versionsResponse.versions || []
+      this.planVersions = (versionsResponse as { versions?: string[] }).versions || []
       if (this.planVersions.length > 0) {
         const latestContent = this.planVersions[this.planVersions.length - 1]
         this.jsonContent = latestContent
@@ -415,7 +418,7 @@ export class SidebarStore {
         this.planType = 'dynamic_agent'
         this.hasTaskRequirementModified = false
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load template data:', error)
       throw error
     }
@@ -461,7 +464,7 @@ export class SidebarStore {
       }
       await this.loadPlanTemplateList()
       console.log(`[SidebarStore] Plan template ${template.id} has been deleted`)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to delete plan template:', error)
       await this.loadPlanTemplateList()
       throw error
@@ -506,22 +509,26 @@ export class SidebarStore {
     }
     try {
       JSON.parse(content)
-    } catch (e: any) {
-      throw new Error('Invalid format, please correct and save.\nError: ' + e.message)
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error'
+      throw new Error('Invalid format, please correct and save.\nError: ' + message)
     }
     try {
       const saveResult = await PlanActApiService.savePlanTemplate(this.selectedTemplate.id, content)
 
       // Update the selected template ID with the real planId returned from backend
-      if (saveResult?.planId && this.selectedTemplate.id.startsWith('new-')) {
+      if (
+        (saveResult as { planId?: string })?.planId &&
+        this.selectedTemplate.id.startsWith('new-')
+      ) {
         console.log(
           '[SidebarStore] Updating template ID from',
           this.selectedTemplate.id,
           'to',
-          saveResult.planId
+          (saveResult as { planId: string }).planId
         )
-        this.selectedTemplate.id = saveResult.planId
-        this.currentPlanTemplateId = saveResult.planId
+        this.selectedTemplate.id = (saveResult as { planId: string }).planId
+        this.currentPlanTemplateId = (saveResult as { planId: string }).planId
       }
 
       if (this.currentVersionIndex < this.planVersions.length - 1) {
@@ -532,7 +539,7 @@ export class SidebarStore {
       // Reset modification flag after successful save
       this.hasTaskRequirementModified = false
       return saveResult
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to save plan template:', error)
       throw error
     }
@@ -556,7 +563,7 @@ export class SidebarStore {
         params: this.executionParams.trim() || undefined,
         replacementParams: undefined as Record<string, string> | undefined,
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to prepare plan execution:', error)
       this.isExecuting = false
       throw error

@@ -22,6 +22,11 @@
 </template>
 
 <script setup lang="ts">
+// Define component name to satisfy Vue linting rules
+defineOptions({
+  name: 'CustomSwitch',
+})
+
 defineProps<{
   enabled: boolean
   label: string
