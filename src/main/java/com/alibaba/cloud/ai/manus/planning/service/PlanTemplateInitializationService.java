@@ -15,13 +15,17 @@
  */
 package com.alibaba.cloud.ai.manus.planning.service;
 
-import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
-import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplateVersion;
-import com.alibaba.cloud.ai.manus.planning.repository.PlanTemplateRepository;
-import com.alibaba.cloud.ai.manus.planning.repository.PlanTemplateVersionRepository;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.DynamicAgentExecutionPlan;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,12 +34,13 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.Optional;
+import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
+import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplateVersion;
+import com.alibaba.cloud.ai.manus.planning.repository.PlanTemplateRepository;
+import com.alibaba.cloud.ai.manus.planning.repository.PlanTemplateVersionRepository;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.DynamicAgentExecutionPlan;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Plan template initialization service for managing plan template configurations with
@@ -67,7 +72,7 @@ public class PlanTemplateInitializationService {
 	 * @param namespace Namespace
 	 */
 	public void initializePlanTemplatesForNamespace(String namespace) {
-		String defaultLanguage = "en";
+		String defaultLanguage = "zh";
 		initializePlanTemplatesForNamespaceWithLanguage(namespace, defaultLanguage);
 	}
 
@@ -81,8 +86,8 @@ public class PlanTemplateInitializationService {
 		try {
 			log.info("Starting plan template initialization for namespace: {} with language: {}", namespace, language);
 
-			// Get available plan names
-			List<String> planNames = scanAvailablePlans();
+			// Get available plan names for the specific language only
+			List<String> planNames = scanAvailablePlansForLanguage(language);
 
 			for (String planName : planNames) {
 				try {

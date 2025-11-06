@@ -10,5 +10,22 @@
   ],
   "directResponse": false,
   "planType": "dynamic_agent",
-  "planTemplateId": "default-plan-id-001000222"
+  "planTemplateId": "default-plan-id-001000222",
+  "readOnly": true,
+  "toolConfig": {
+    "toolName": "Default User Input Processing(don't delete this plan)",
+    "toolDescription": "This is a default user input plan, do not delete this plan",
+    "serviceGroup": "inited-toolcall",
+    "enableInternalToolcall": true,
+    "enableHttpService": false,
+    "enableMcpService": false,
+    "publishStatus": "PUBLISHED",
+    "inputSchema": [
+      {
+        "name": "userRequirement",
+        "description": "User input question",
+        "type": "string"
+      }
+    ]
+  }
 }

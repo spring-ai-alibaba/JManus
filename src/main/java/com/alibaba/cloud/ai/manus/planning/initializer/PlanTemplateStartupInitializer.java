@@ -15,11 +15,12 @@
  */
 package com.alibaba.cloud.ai.manus.planning.initializer;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,16 +28,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.cloud.ai.manus.coordinator.entity.vo.CoordinatorToolVO;
+import com.alibaba.cloud.ai.manus.coordinator.entity.vo.PlanTemplateConfigVO;
 import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
 import com.alibaba.cloud.ai.manus.coordinator.service.CoordinatorToolServiceImpl;
-import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
-import com.alibaba.cloud.ai.manus.planning.repository.PlanTemplateRepository;
-import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
-import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateInitializationService;
-import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -48,26 +46,12 @@ public class PlanTemplateStartupInitializer {
 
 	private static final Logger log = LoggerFactory.getLogger(PlanTemplateStartupInitializer.class);
 
-	private static final String DEFAULT_PLAN_TEMPLATE_ID = "default-plan-id-001000222";
+	private static final String CONFIG_BASE_PATH = "prompts/startup-plans/";
 
-	private static final int MAX_RETRIES = 5;
-
-	private static final long RETRY_DELAY_MS = 1000;
-
-	@Autowired
-	private PlanTemplateInitializationService planTemplateInitializationService;
-
-	@Autowired
-	private PlanTemplateRepository planTemplateRepository;
+	private static final String DEFAULT_LANGUAGE = "en";
 
 	@Autowired
 	private CoordinatorToolServiceImpl coordinatorToolService;
-
-	@Autowired
-	private PlanTemplateService planTemplateService;
-
-	@Autowired
-	private IPlanParameterMappingService parameterMappingService;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -83,13 +67,9 @@ public class PlanTemplateStartupInitializer {
 		log.info("Starting startup plan templates initialization for namespace: {}", namespace);
 
 		try {
-			// Step 1: Initialize plan templates for the current namespace
-			planTemplateInitializationService.initializePlanTemplatesForNamespace(namespace);
-			log.info("Successfully initialized startup plan templates for namespace: {}", namespace);
-
-			// Step 2: Register default plan template as coordinator tool (internal
-			// toolcall)
-			registerDefaultPlanTemplateAsTool();
+			// Register all plan templates with toolConfig as coordinator tools
+			// This will also create PlanTemplate if it doesn't exist
+			registerPlanTemplatesAsTools();
 
 		}
 		catch (Exception e) {
@@ -98,147 +78,150 @@ public class PlanTemplateStartupInitializer {
 	}
 
 	/**
-	 * Register default plan template as coordinator tool (internal toolcall) Uses
-	 * createCoordinatorTool() if tool doesn't exist, or updateCoordinatorTool() if it
-	 * exists
+	 * Register all plan templates with toolConfig as coordinator tools Scans all JSON
+	 * files in startup-plans directory and registers those with toolConfig
 	 */
-	private void registerDefaultPlanTemplateAsTool() {
-		log.info("Starting registration of default plan template as coordinator tool: {}", DEFAULT_PLAN_TEMPLATE_ID);
+	private void registerPlanTemplatesAsTools() {
+		log.info("Starting registration of plan templates as coordinator tools");
+
+		int successCount = 0;
+		int errorCount = 0;
+
+		// Scan for all JSON files in startup-plans directory
+		List<String> configFilePaths = scanPlanTemplateConfigFiles();
+
+		if (configFilePaths.isEmpty()) {
+			log.info("No plan template configuration files found to register as coordinator tools");
+			return;
+		}
+
+		log.info("Found {} plan template configuration files to process", configFilePaths.size());
+
+		// Process each configuration file
+		for (String configPath : configFilePaths) {
+			try {
+				// Load and parse PlanTemplateConfigVO from JSON file
+				PlanTemplateConfigVO configVO = loadPlanTemplateConfigFromFile(configPath);
+				if (configVO == null) {
+					log.warn("Failed to load PlanTemplateConfigVO from file: {}. Skipping.", configPath);
+					errorCount++;
+					continue;
+				}
+
+				// Only register if toolConfig is present
+				if (configVO.getToolConfig() == null) {
+					log.debug("Plan template {} does not have toolConfig, skipping coordinator tool registration",
+							configVO.getPlanTemplateId());
+					continue;
+				}
+
+				// Validate planTemplateId
+				String planTemplateId = configVO.getPlanTemplateId();
+				if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
+					log.warn("Plan template in file {} does not have planTemplateId. Skipping.", configPath);
+					errorCount++;
+					continue;
+				}
+
+				// Use the service method to create or update coordinator tool
+				coordinatorToolService.createOrUpdateCoordinatorToolFromPlanTemplateConfig(configVO);
+				log.info("Successfully registered coordinator tool for plan template: {} from file: {}", planTemplateId,
+						configPath);
+				successCount++;
+
+			}
+			catch (CoordinatorToolException e) {
+				log.error("Failed to register coordinator tool from file {}: {}", configPath, e.getMessage(), e);
+				errorCount++;
+			}
+			catch (Exception e) {
+				log.error("Unexpected error while registering coordinator tool from file {}", configPath, e);
+				errorCount++;
+			}
+		}
+
+		log.info("Completed registration of plan templates as coordinator tools. Success: {}, Errors: {}", successCount,
+				errorCount);
+	}
+
+	/**
+	 * Scan for all plan template configuration files in startup-plans directory
+	 * @return List of configuration file paths
+	 */
+	private List<String> scanPlanTemplateConfigFiles() {
+		List<String> configFilePaths = new ArrayList<>();
 
 		try {
-			// Wait for plan template to be available (with retry mechanism)
-			Optional<PlanTemplate> templateOpt = waitForPlanTemplate(DEFAULT_PLAN_TEMPLATE_ID);
+			PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
-			if (templateOpt.isEmpty()) {
-				log.warn(
-						"Default plan template {} not found after {} retries. Registration will be skipped. Make sure the plan template is initialized.",
-						DEFAULT_PLAN_TEMPLATE_ID, MAX_RETRIES);
-				return;
+			// Scan for JSON files in the default language directory only
+			String pattern = CONFIG_BASE_PATH + DEFAULT_LANGUAGE + "/*.json";
+			try {
+				Resource[] resources = resolver.getResources("classpath:" + pattern);
+				for (Resource resource : resources) {
+					if (resource.exists() && resource.isReadable()) {
+						String path = CONFIG_BASE_PATH + DEFAULT_LANGUAGE + "/" + resource.getFilename();
+						configFilePaths.add(path);
+						log.debug("Found plan template configuration file: {}", path);
+					}
+				}
+			}
+			catch (Exception ex) {
+				log.debug("No resources found for pattern: {}", pattern);
 			}
 
-			PlanTemplate planTemplate = templateOpt.get();
+			log.info("Scanned {} plan template configuration files", configFilePaths.size());
+			return configFilePaths;
 
-			// Check if coordinator tool already exists
-			Optional<CoordinatorToolVO> existingToolOpt = coordinatorToolService
-				.getCoordinatorToolByPlanTemplateId(DEFAULT_PLAN_TEMPLATE_ID);
-
-			// Create CoordinatorToolVO for the plan template
-			CoordinatorToolVO coordinatorToolVO = new CoordinatorToolVO();
-			coordinatorToolVO.setToolName("tool_" + planTemplate.getTitle());
-			coordinatorToolVO.setToolDescription(planTemplate.getUserRequest());
-			coordinatorToolVO.setPlanTemplateId(planTemplate.getPlanTemplateId());
-			coordinatorToolVO.setServiceGroup("inited-toolcall");
-
-			// Enable internal toolcall service
-			coordinatorToolVO.setEnableInternalToolcall(true);
-			coordinatorToolVO.setEnableHttpService(false);
-			coordinatorToolVO.setEnableMcpService(false);
-
-			// Generate input schema from plan template parameters
-			String inputSchema = generateInputSchemaFromPlanTemplate(planTemplate.getPlanTemplateId());
-			coordinatorToolVO.setInputSchema(inputSchema);
-			log.debug("Generated inputSchema for plan template {}: {}", DEFAULT_PLAN_TEMPLATE_ID, inputSchema);
-
-			coordinatorToolVO.setPublishStatus("PUBLISHED");
-
-			CoordinatorToolVO savedTool;
-			if (existingToolOpt.isPresent()) {
-				// Tool exists, update it
-				Long toolId = existingToolOpt.get().getId();
-				log.info("Coordinator tool already exists for plan template {}, updating with ID: {}",
-						DEFAULT_PLAN_TEMPLATE_ID, toolId);
-				savedTool = coordinatorToolService.updateCoordinatorTool(toolId, coordinatorToolVO);
-				log.info("Successfully updated coordinator tool for plan template: {}", DEFAULT_PLAN_TEMPLATE_ID);
-			}
-			else {
-				// Tool doesn't exist, create it
-				log.info("Creating new coordinator tool for plan template: {}", DEFAULT_PLAN_TEMPLATE_ID);
-				savedTool = coordinatorToolService.createCoordinatorTool(coordinatorToolVO);
-				log.info("Successfully created coordinator tool for plan template: {} with ID: {}",
-						DEFAULT_PLAN_TEMPLATE_ID, savedTool.getId());
-			}
-
-		}
-		catch (CoordinatorToolException e) {
-			log.error("Failed to register default plan template {} as coordinator tool: {}", DEFAULT_PLAN_TEMPLATE_ID,
-					e.getMessage(), e);
 		}
 		catch (Exception e) {
-			log.error("Failed to register default plan template {} as coordinator tool", DEFAULT_PLAN_TEMPLATE_ID, e);
+			log.error("Failed to scan plan template configuration directory", e);
+			return configFilePaths;
 		}
 	}
 
 	/**
-	 * Wait for plan template to be available in database with retry mechanism
-	 * @param planTemplateId Plan template ID to wait for
-	 * @return Optional containing the plan template if found, empty otherwise
+	 * Load PlanTemplateConfigVO from JSON configuration file
+	 * @param configPath Configuration file path
+	 * @return PlanTemplateConfigVO if loaded successfully, null otherwise
 	 */
-	private Optional<PlanTemplate> waitForPlanTemplate(String planTemplateId) {
-		for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-			Optional<PlanTemplate> templateOpt = planTemplateRepository.findByPlanTemplateId(planTemplateId);
-
-			if (templateOpt.isPresent()) {
-				log.debug("Found plan template {} on attempt {}", planTemplateId, attempt);
-				return templateOpt;
-			}
-
-			if (attempt < MAX_RETRIES) {
-				log.debug("Plan template {} not found, retrying in {}ms (attempt {}/{})", planTemplateId,
-						RETRY_DELAY_MS, attempt, MAX_RETRIES);
-				try {
-					Thread.sleep(RETRY_DELAY_MS);
-				}
-				catch (InterruptedException e) {
-					Thread.currentThread().interrupt();
-					log.warn("Interrupted while waiting for plan template {}", planTemplateId);
-					return Optional.empty();
-				}
-			}
-		}
-
-		return Optional.empty();
-	}
-
-	/**
-	 * Generate input schema JSON string from plan template parameters InputSchema format:
-	 * [{"name": "paramName", "type": "string", "description": "param description"}]
-	 * @param planTemplateId Plan template ID
-	 * @return JSON string representation of input schema array
-	 */
-	private String generateInputSchemaFromPlanTemplate(String planTemplateId) {
+	private PlanTemplateConfigVO loadPlanTemplateConfigFromFile(String configPath) {
 		try {
-			// Get plan template JSON
-			String planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
-			if (planJson == null) {
-				log.warn("Plan JSON not found for template {}, using empty inputSchema", planTemplateId);
-				return "[]";
+			org.springframework.core.io.ClassPathResource resource = new org.springframework.core.io.ClassPathResource(
+					configPath);
+			if (!resource.exists()) {
+				log.warn("Plan template configuration file does not exist: {}", configPath);
+				return null;
 			}
 
-			// Extract parameter placeholders from plan JSON (e.g., <<userRequirement>>)
-			List<String> parameters = parameterMappingService.extractParameterPlaceholders(planJson);
-
-			// Build input schema array
-			List<Map<String, Object>> inputSchemaArray = new ArrayList<>();
-
-			for (String paramName : parameters) {
-				Map<String, Object> paramSchema = new HashMap<>();
-				paramSchema.put("name", paramName);
-				paramSchema.put("type", "string");
-				paramSchema.put("description", "Parameter: " + paramName);
-				paramSchema.put("required", true);
-				inputSchemaArray.add(paramSchema);
+			StringBuilder content = new StringBuilder();
+			try (BufferedReader reader = new BufferedReader(
+					new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					content.append(line).append("\n");
+				}
 			}
 
-			// Convert to JSON string
-			String inputSchemaJson = objectMapper.writeValueAsString(inputSchemaArray);
-			log.debug("Generated inputSchema with {} parameters: {}", parameters.size(), inputSchemaJson);
-			return inputSchemaJson;
+			String jsonContent = content.toString().trim();
+			if (jsonContent.isEmpty()) {
+				log.warn("Plan template configuration file is empty: {}", configPath);
+				return null;
+			}
 
+			// Parse JSON to PlanTemplateConfigVO
+			PlanTemplateConfigVO configVO = objectMapper.readValue(jsonContent, PlanTemplateConfigVO.class);
+			log.debug("Successfully loaded PlanTemplateConfigVO from file: {}", configPath);
+			return configVO;
+
+		}
+		catch (IOException e) {
+			log.error("Failed to load plan template configuration file: {}", configPath, e);
+			return null;
 		}
 		catch (Exception e) {
-			log.error("Failed to generate inputSchema for plan template: {}", planTemplateId, e);
-			// Return empty array as fallback
-			return "[]";
+			log.error("Failed to parse PlanTemplateConfigVO from file: {}", configPath, e);
+			return null;
 		}
 	}
 

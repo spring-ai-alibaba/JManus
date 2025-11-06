@@ -16,7 +16,9 @@
 package com.alibaba.cloud.ai.manus.coordinator.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -28,8 +30,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.cloud.ai.manus.coordinator.entity.po.CoordinatorToolEntity;
 import com.alibaba.cloud.ai.manus.coordinator.entity.vo.CoordinatorToolVO;
+import com.alibaba.cloud.ai.manus.coordinator.entity.vo.PlanTemplateConfigVO;
 import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
 import com.alibaba.cloud.ai.manus.coordinator.repository.CoordinatorToolRepository;
+import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
+import com.alibaba.cloud.ai.manus.planning.repository.PlanTemplateRepository;
+import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
+import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanParamDef;
 import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
 import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
@@ -53,6 +60,15 @@ public class CoordinatorToolServiceImpl {
 
 	@Autowired
 	private ObjectMapper objectMapper;
+
+	@Autowired
+	private PlanTemplateService planTemplateService;
+
+	@Autowired
+	private IPlanParameterMappingService parameterMappingService;
+
+	@Autowired
+	private PlanTemplateRepository planTemplateRepository;
 
 	@Transactional
 	public CoordinatorToolVO createCoordinatorTool(CoordinatorToolVO toolVO) throws CoordinatorToolException {
@@ -397,6 +413,270 @@ public class CoordinatorToolServiceImpl {
 		}
 
 		return toolDef;
+	}
+
+	/**
+	 * Create or update coordinator tool from PlanTemplateConfigVO Uses planTemplateId as
+	 * the key identity to determine if tool exists
+	 * @param configVO Plan template configuration VO
+	 * @return Created or updated CoordinatorToolVO
+	 * @throws CoordinatorToolException if validation or operation fails
+	 */
+	@Transactional
+	public CoordinatorToolVO createOrUpdateCoordinatorToolFromPlanTemplateConfig(PlanTemplateConfigVO configVO)
+			throws CoordinatorToolException {
+		if (configVO == null) {
+			throw new CoordinatorToolException("VALIDATION_ERROR", "PlanTemplateConfigVO cannot be null");
+		}
+
+		String planTemplateId = configVO.getPlanTemplateId();
+		if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
+			throw new CoordinatorToolException("VALIDATION_ERROR",
+					"planTemplateId is required in PlanTemplateConfigVO");
+		}
+
+		log.info("Creating or updating coordinator tool from PlanTemplateConfigVO for planTemplateId: {}",
+				planTemplateId);
+
+		try {
+			// Check if coordinator tool already exists by planTemplateId
+			Optional<CoordinatorToolVO> existingToolOpt = getCoordinatorToolByPlanTemplateId(planTemplateId);
+
+			// Get plan template for default values, create if it doesn't exist
+			PlanTemplate planTemplate = planTemplateRepository.findByPlanTemplateId(planTemplateId).orElse(null);
+			if (planTemplate == null) {
+				log.info("Plan template not found for planTemplateId: {}, creating new PlanTemplate", planTemplateId);
+				planTemplate = createPlanTemplateFromConfig(configVO);
+			}
+
+			// Convert PlanTemplateConfigVO to CoordinatorToolVO
+			CoordinatorToolVO coordinatorToolVO = convertPlanTemplateConfigToCoordinatorToolVO(configVO, planTemplate);
+
+			// Set input schema: use from toolConfig if provided, otherwise generate from
+			// plan template
+			String inputSchema;
+			PlanTemplateConfigVO.ToolConfigVO toolConfig = configVO.getToolConfig();
+			if (toolConfig != null && toolConfig.getInputSchema() != null && !toolConfig.getInputSchema().isEmpty()) {
+				// Use inputSchema from toolConfig
+				inputSchema = convertInputSchemaListToJson(toolConfig.getInputSchema());
+				log.debug("Using inputSchema from toolConfig for plan template {}: {}", planTemplateId, inputSchema);
+			}
+			else {
+				// Generate input schema from plan template parameters
+				inputSchema = generateInputSchemaFromPlanTemplate(planTemplateId);
+				log.debug("Generated inputSchema from plan template parameters for plan template {}: {}",
+						planTemplateId, inputSchema);
+			}
+			coordinatorToolVO.setInputSchema(inputSchema);
+
+			if (existingToolOpt.isPresent()) {
+				// Tool exists, update it
+				Long toolId = existingToolOpt.get().getId();
+				log.info("Coordinator tool already exists for plan template {}, updating with ID: {}", planTemplateId,
+						toolId);
+				return updateCoordinatorTool(toolId, coordinatorToolVO);
+			}
+			else {
+				// Tool doesn't exist, create it
+				log.info("Creating new coordinator tool for plan template: {}", planTemplateId);
+				return createCoordinatorTool(coordinatorToolVO);
+			}
+
+		}
+		catch (CoordinatorToolException e) {
+			throw e;
+		}
+		catch (Exception e) {
+			log.error("Failed to create or update coordinator tool from PlanTemplateConfigVO for planTemplateId: {}",
+					planTemplateId, e);
+			throw new CoordinatorToolException("INTERNAL_ERROR",
+					"An unexpected error occurred while creating or updating coordinator tool: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Convert PlanTemplateConfigVO to CoordinatorToolVO Applies toolConfig settings with
+	 * fallback to defaults from plan template
+	 * @param configVO Plan template configuration VO
+	 * @param planTemplate Plan template entity (can be null)
+	 * @return CoordinatorToolVO
+	 */
+	private CoordinatorToolVO convertPlanTemplateConfigToCoordinatorToolVO(PlanTemplateConfigVO configVO,
+			PlanTemplate planTemplate) {
+		CoordinatorToolVO toolVO = new CoordinatorToolVO();
+		PlanTemplateConfigVO.ToolConfigVO toolConfig = configVO.getToolConfig();
+
+		// Set planTemplateId
+		toolVO.setPlanTemplateId(configVO.getPlanTemplateId());
+
+		// Apply toolConfig if available, otherwise use defaults
+		if (toolConfig != null) {
+			// Tool name: use from toolConfig if not null, otherwise default to "tool_" +
+			// title
+			if (toolConfig.getToolName() != null && !toolConfig.getToolName().trim().isEmpty()) {
+				toolVO.setToolName(toolConfig.getToolName());
+			}
+			else {
+				String defaultToolName = planTemplate != null ? "tool_" + planTemplate.getTitle()
+						: "tool_" + configVO.getTitle();
+				toolVO.setToolName(defaultToolName);
+			}
+
+			// Tool description: use from toolConfig if not null, otherwise default to
+			// userRequest
+			if (toolConfig.getToolDescription() != null && !toolConfig.getToolDescription().trim().isEmpty()) {
+				toolVO.setToolDescription(toolConfig.getToolDescription());
+			}
+			else {
+				String defaultDescription = planTemplate != null ? planTemplate.getUserRequest() : configVO.getTitle();
+				toolVO.setToolDescription(defaultDescription);
+			}
+
+			// Service group
+			toolVO.setServiceGroup(
+					toolConfig.getServiceGroup() != null ? toolConfig.getServiceGroup() : "inited-toolcall");
+
+			// Service enablement flags
+			toolVO.setEnableInternalToolcall(
+					toolConfig.getEnableInternalToolcall() != null ? toolConfig.getEnableInternalToolcall() : true);
+			toolVO.setEnableHttpService(
+					toolConfig.getEnableHttpService() != null ? toolConfig.getEnableHttpService() : false);
+			toolVO.setEnableMcpService(
+					toolConfig.getEnableMcpService() != null ? toolConfig.getEnableMcpService() : false);
+
+			// Publish status
+			toolVO
+				.setPublishStatus(toolConfig.getPublishStatus() != null ? toolConfig.getPublishStatus() : "PUBLISHED");
+		}
+		else {
+			// No toolConfig provided, use defaults
+			toolVO
+				.setToolName(planTemplate != null ? "tool_" + planTemplate.getTitle() : "tool_" + configVO.getTitle());
+			toolVO.setToolDescription(planTemplate != null ? planTemplate.getUserRequest() : configVO.getTitle());
+			toolVO.setServiceGroup("inited-toolcall");
+			toolVO.setEnableInternalToolcall(true);
+			toolVO.setEnableHttpService(false);
+			toolVO.setEnableMcpService(false);
+			toolVO.setPublishStatus("PUBLISHED");
+		}
+
+		return toolVO;
+	}
+
+	/**
+	 * Generate input schema JSON string from plan template parameters InputSchema format:
+	 * [{"name": "paramName", "type": "string", "description": "param description"}]
+	 * @param planTemplateId Plan template ID
+	 * @return JSON string representation of input schema array
+	 */
+	private String generateInputSchemaFromPlanTemplate(String planTemplateId) {
+		try {
+			// Get plan template JSON
+			String planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
+			if (planJson == null) {
+				log.warn("Plan JSON not found for template {}, using empty inputSchema", planTemplateId);
+				return "[]";
+			}
+
+			// Extract parameter placeholders from plan JSON (e.g., <<userRequirement>>)
+			List<String> parameters = parameterMappingService.extractParameterPlaceholders(planJson);
+
+			// Build input schema array
+			List<Map<String, Object>> inputSchemaArray = new ArrayList<>();
+
+			for (String paramName : parameters) {
+				Map<String, Object> paramSchema = new HashMap<>();
+				paramSchema.put("name", paramName);
+				paramSchema.put("type", "string");
+				paramSchema.put("description", "Parameter: " + paramName);
+				paramSchema.put("required", true);
+				inputSchemaArray.add(paramSchema);
+			}
+
+			// Convert to JSON string
+			String inputSchemaJson = objectMapper.writeValueAsString(inputSchemaArray);
+			log.debug("Generated inputSchema with {} parameters: {}", parameters.size(), inputSchemaJson);
+			return inputSchemaJson;
+
+		}
+		catch (Exception e) {
+			log.error("Failed to generate inputSchema for plan template: {}", planTemplateId, e);
+			// Return empty array as fallback
+			return "[]";
+		}
+	}
+
+	/**
+	 * Convert List of InputSchemaParam to JSON string
+	 * @param inputSchemaParams List of input schema parameters
+	 * @return JSON string representation of input schema array
+	 */
+	private String convertInputSchemaListToJson(List<PlanTemplateConfigVO.InputSchemaParam> inputSchemaParams) {
+		try {
+			List<Map<String, Object>> inputSchemaArray = new ArrayList<>();
+
+			for (PlanTemplateConfigVO.InputSchemaParam param : inputSchemaParams) {
+				Map<String, Object> paramSchema = new HashMap<>();
+				paramSchema.put("name", param.getName());
+				paramSchema.put("type", param.getType() != null ? param.getType() : "string");
+				paramSchema.put("description", param.getDescription());
+				paramSchema.put("required", param.getRequired() != null ? param.getRequired() : true);
+				inputSchemaArray.add(paramSchema);
+			}
+
+			String inputSchemaJson = objectMapper.writeValueAsString(inputSchemaArray);
+			log.debug("Converted inputSchema list to JSON: {}", inputSchemaJson);
+			return inputSchemaJson;
+
+		}
+		catch (Exception e) {
+			log.error("Failed to convert inputSchema list to JSON: {}", e.getMessage(), e);
+			return "[]";
+		}
+	}
+
+	/**
+	 * Create PlanTemplate from PlanTemplateConfigVO and save it to database
+	 * @param configVO Plan template configuration VO
+	 * @return Created PlanTemplate
+	 */
+	private PlanTemplate createPlanTemplateFromConfig(PlanTemplateConfigVO configVO) {
+		try {
+			String planTemplateId = configVO.getPlanTemplateId();
+			String title = configVO.getTitle() != null ? configVO.getTitle() : "Untitled Plan";
+			String userRequest = configVO.getTitle() != null ? configVO.getTitle() : "User request";
+
+			// Convert PlanTemplateConfigVO to JSON string (excluding toolConfig)
+			// Create a copy without toolConfig for the plan JSON
+			PlanTemplateConfigVO planJsonConfig = new PlanTemplateConfigVO();
+			planJsonConfig.setTitle(configVO.getTitle());
+			planJsonConfig.setSteps(configVO.getSteps());
+			planJsonConfig.setDirectResponse(configVO.getDirectResponse());
+			planJsonConfig.setPlanType(configVO.getPlanType());
+			planJsonConfig.setPlanTemplateId(configVO.getPlanTemplateId());
+			// Explicitly do not set toolConfig
+
+			String planJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(planJsonConfig);
+
+			// Save plan template and its version
+			planTemplateService.savePlanTemplate(planTemplateId, title, userRequest, planJson, false);
+
+			// Retrieve the saved plan template
+			PlanTemplate savedTemplate = planTemplateRepository.findByPlanTemplateId(planTemplateId)
+				.orElseThrow(() -> new CoordinatorToolException("INTERNAL_ERROR",
+						"Failed to retrieve created PlanTemplate with ID: " + planTemplateId));
+
+			log.info("Successfully created PlanTemplate with ID: {}", planTemplateId);
+			return savedTemplate;
+
+		}
+		catch (CoordinatorToolException e) {
+			throw e;
+		}
+		catch (Exception e) {
+			log.error("Failed to create PlanTemplate from PlanTemplateConfigVO: {}", e.getMessage(), e);
+			throw new CoordinatorToolException("INTERNAL_ERROR", "Failed to create PlanTemplate: " + e.getMessage());
+		}
 	}
 
 }
