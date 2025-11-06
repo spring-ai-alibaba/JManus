@@ -413,6 +413,8 @@ const words: I18nType = {
     // Database configuration page
     databaseConfig: {
       title: 'Database Configuration',
+      description:
+        'This configuration page is used to configure databases that can be operated by database tools (database_metadata_use, database_read_use, database_write_use).\n\nAfter configuring the database, you can use the three core methods above to perform CRUD operations on the database, which can conveniently store some intermediate data that needs to be shared during agent execution.',
       configList: 'Configuration List',
       noConfigs: 'No database configurations available',
       newConfig: 'New Configuration',
