@@ -285,7 +285,7 @@ const currentToolInfo = ref<CoordinatorToolVO>({
 })
 
 // Store tool information for all templates
-const templateToolInfo = ref<Record<string, CoordinatorToolVO>>({})
+const templateToolInfo = ref<Partial<Record<string, CoordinatorToolVO>>>({})
 const publishMcpModalRef = ref<InstanceType<typeof PublishServiceModal> | null>(null)
 
 // CoordinatorTool configuration
@@ -712,10 +712,10 @@ const getRelativeTimeString = (date: Date): string => {
 // Get task preview text - show tool name if published, otherwise empty
 const getTaskPreviewText = (template: PlanTemplate): string => {
   const toolInfo = templateToolInfo.value[template.id]
-  if (toolInfo?.toolName) {
-    return `${t('sidebar.publishedTool')}: ${toolInfo.toolName}`
+  if (!toolInfo) {
+    return '' // Return empty string when no tools are published
   }
-  return '' // Return empty string when no tools are published
+  return `${t('sidebar.publishedTool')}: ${toolInfo.toolName}`
 }
 
 // Load tool information for all templates

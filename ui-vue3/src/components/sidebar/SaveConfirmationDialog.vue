@@ -44,7 +44,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 
 interface Props {
   modelValue: boolean
@@ -56,9 +55,8 @@ interface Emits {
   (e: 'continue'): void
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 const emit = defineEmits<Emits>()
-const { t } = useI18n()
 
 const isSaving = ref(false)
 

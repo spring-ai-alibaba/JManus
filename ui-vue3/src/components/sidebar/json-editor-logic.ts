@@ -167,7 +167,7 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
   // Watch for stepRequirement/stepContent changes to track modifications
   watch(
     () => displayData.steps.map(step => step.stepRequirement || step.stepContent || ''),
-    (newRequirements, oldRequirements) => {
+    (newRequirements) => {
       // Skip on initial load
       if (isInitialLoad) {
         initialStepRequirements = [...newRequirements]
