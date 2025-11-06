@@ -26,6 +26,32 @@ import globals from 'globals';
 const isProduction = process.env.NODE_ENV === 'production';
 
 export default [
+  // Ignore patterns
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/dist-ssr/**',
+      '**/coverage/**',
+      '**/build/**',
+      '**/out/**',
+      '**/ui/**',
+      '**/.vscode/**',
+      '**/.idea/**',
+      '**/*.local',
+      '**/cypress/videos/**',
+      '**/cypress/screenshots/**',
+      '**/*.tsbuildinfo',
+      '**/*.log',
+      '**/.env*',
+      '**/Thumbs.db',
+      '**/*.suo',
+      '**/*.ntvs*',
+      '**/*.njsproj',
+      '**/*.sln',
+      '**/*.sw?',
+    ],
+  },
   // Base config for all files
   {
     languageOptions: {
