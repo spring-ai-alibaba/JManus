@@ -43,6 +43,7 @@ import org.springframework.util.StringUtils;
 import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
 import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
 
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 
 /**
@@ -112,7 +113,8 @@ public class StreamingResponseHandler {
 	public StreamingResult processStreamingResponse(Flux<ChatResponse> responseFlux, String contextName,
 			String planId) {
 		try {
-			LlmTraceRecorder.initRequest();
+      llmTraceRecorder.setPlanId(planId);
+
 			AtomicReference<Long> lastLogTime = new AtomicReference<>(System.currentTimeMillis());
 
 			// Assistant Message
@@ -232,6 +234,11 @@ public class StreamingResponseHandler {
 
 			}).doOnError(e -> {
 				log.error("Aggregation Error", e);
+        if(e instanceof WebClientResponseException) {
+          System.out.println(Thread.currentThread().getName());
+          WebClientResponseException errorMessage= (WebClientResponseException) e;
+          llmTraceRecorder.recordErrorResponse(errorMessage);
+        }
 				jmanusEventPublisher.publish(new PlanExceptionEvent(planId, e));
 			}).blockLast();
 
@@ -239,7 +246,7 @@ public class StreamingResponseHandler {
 			return new StreamingResult(finalChatResponseRef.get());
 		}
 		finally {
-			LlmTraceRecorder.clearRequest();
+      llmTraceRecorder.cleaningPlanId();
 		}
 	}
 

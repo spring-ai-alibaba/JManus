@@ -22,6 +22,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.UUID;
 
@@ -32,35 +33,49 @@ public class LlmTraceRecorder {
 
 	private static final Logger selfLogger = LoggerFactory.getLogger(LlmTraceRecorder.class);
 
-	private static final ThreadLocal<String> REQUEST_ID = new ThreadLocal<>();
+  private String planId;
 
 	@Autowired
 	private ObjectMapper objectMapper;
 
 	public void recordRequest(OpenAiApi.ChatCompletionRequest chatRequest) {
 		try {
-			logger.info("Request[{}]: {}", REQUEST_ID.get(), objectMapper.writer().writeValueAsString(chatRequest));
+			logger.info("Request[{}]: {}", planId , objectMapper.writer().writeValueAsString(chatRequest));
 		}
 		catch (Throwable e) {
 			selfLogger.error("Failed to serialize chat request", e);
 		}
 	}
 
+  public void recordErrorResponse(WebClientResponseException webClientResponseException) {
+    try {
+      logger.info("Response[{}] :\nStatus code: {} \nStatus Text : {} \nHeaders: {} \nBody: {} \n ",
+        planId,
+        webClientResponseException.getStatusCode(),
+        webClientResponseException.getStatusText(),
+        webClientResponseException.getHeaders(),
+        webClientResponseException.getResponseBodyAsString());
+    }catch (Throwable e){
+      selfLogger.error("Failed to serialize error response", e);
+    }
+
+  }
+
 	public void recordResponse(ChatResponse chatResponse) {
 		try {
-			logger.info("Response[{}]: {}", REQUEST_ID.get(), objectMapper.writer().writeValueAsString(chatResponse));
+			logger.info("Response[{}]: {}", planId , objectMapper.writer().writeValueAsString(chatResponse));
 		}
 		catch (Throwable e) {
 			selfLogger.error("Failed to serialize chat response", e);
 		}
 	}
 
-	public static void initRequest() {
-		REQUEST_ID.set(UUID.randomUUID().toString());
-	}
+  public void setPlanId(String planId) {
+    this.planId = planId;
+  }
 
-	public static void clearRequest() {
-		REQUEST_ID.remove();
-	}
+  public void cleaningPlanId(){
+    this.planId = null;
+  }
 
 }
