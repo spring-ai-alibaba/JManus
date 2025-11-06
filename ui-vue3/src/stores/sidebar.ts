@@ -59,6 +59,9 @@ export class SidebarStore {
   isLoadingTools = false
   toolsLoadError = ''
 
+  // Track task requirement modifications
+  hasTaskRequirementModified = false
+
   constructor() {
     // Ensure properties are properly initialized
     this.planVersions = []
@@ -172,6 +175,8 @@ export class SidebarStore {
         const latestContent = this.planVersions[this.planVersions.length - 1]
         this.jsonContent = latestContent
         this.currentVersionIndex = this.planVersions.length - 1
+        // Reset modification flag when loading new template
+        this.hasTaskRequirementModified = false
         try {
           const parsed = JSON.parse(latestContent)
           if (parsed.prompt) {
@@ -193,6 +198,7 @@ export class SidebarStore {
         this.generatorPrompt = ''
         this.executionParams = ''
         this.planType = 'dynamic_agent'
+        this.hasTaskRequirementModified = false
       }
     } catch (error: any) {
       console.error('Failed to load template data:', error)
@@ -218,6 +224,8 @@ export class SidebarStore {
     this.currentTab = 'config'
     // Reset to default planType for new templates
     this.planType = planType
+    // Reset modification flag for new template
+    this.hasTaskRequirementModified = false
 
     // Reload available tools to ensure fresh tool list
     console.log('[SidebarStore] 🔄 Reloading available tools for new template')
@@ -254,6 +262,7 @@ export class SidebarStore {
     this.planVersions = []
     this.currentVersionIndex = -1
     this.currentTab = 'list'
+    this.hasTaskRequirementModified = false
   }
 
   clearExecutionParams() {
@@ -305,6 +314,8 @@ export class SidebarStore {
       }
       this.planVersions.push(content)
       this.currentVersionIndex = this.planVersions.length - 1
+      // Reset modification flag after successful save
+      this.hasTaskRequirementModified = false
       return saveResult
     } catch (error: any) {
       console.error('Failed to save plan template:', error)

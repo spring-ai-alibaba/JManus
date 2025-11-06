@@ -185,6 +185,13 @@
       </div>
     </div>
   </div>
+
+  <!-- Save Confirmation Dialog -->
+  <SaveConfirmationDialog
+    v-model="showSaveDialog"
+    @save="handleSaveAndExecute"
+    @continue="handleContinueExecution"
+  />
 </template>
 
 <script setup lang="ts">
@@ -195,12 +202,16 @@ import {
   type ParameterRequirements,
 } from '@/api/plan-parameter-api-service'
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
+import SaveConfirmationDialog from '@/components/sidebar/SaveConfirmationDialog.vue'
+import { sidebarStore } from '@/stores/sidebar'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useToast } from '@/plugins/useToast'
 
 const { t } = useI18n()
+const toast = useToast()
 
 // Props
 interface Props {
@@ -234,6 +245,7 @@ const emit = defineEmits<{
   publishMcpService: []
   clearParams: []
   updateExecutionParams: [params: string]
+  saveBeforeExecute: []
 }>()
 
 // Local state
@@ -254,6 +266,10 @@ const isExecutingPlan = ref(false) // Flag to prevent parameter reload during ex
 const fileUploadRef = ref<InstanceType<typeof FileUploadComponent>>()
 const uploadedFiles = ref<string[]>([])
 const uploadKey = ref<string | null>(null)
+
+// Save confirmation dialog state
+const showSaveDialog = ref(false)
+const pendingExecutionPayload = ref<PlanExecutionRequestPayload | null>(null)
 
 // API tabs configuration
 const apiTabs = ref([
@@ -409,6 +425,44 @@ const handleUploadError = (error: any) => {
 const handleExecutePlan = () => {
   console.log('[ExecutionController] 🚀 Execute button clicked')
 
+  // Check if task requirements have been modified
+  if (sidebarStore.hasTaskRequirementModified) {
+    console.log(
+      '[ExecutionController] ⚠️ Task requirements modified, showing save confirmation dialog'
+    )
+    // Prepare payload but don't execute yet
+    if (!validateParameters()) {
+      console.log('[ExecutionController] ❌ Parameter validation failed:', parameterErrors.value)
+      return
+    }
+
+    const replacementParams =
+      parameterRequirements.value.hasParameters && Object.keys(parameterValues.value).length > 0
+        ? parameterValues.value
+        : undefined
+
+    pendingExecutionPayload.value = {
+      title: '', // Will be set by the parent component
+      planData: {
+        title: '',
+        steps: [],
+        directResponse: false,
+      }, // Will be set by the parent component
+      params: undefined, // Will be set by the parent component
+      replacementParams,
+      uploadedFiles: uploadedFiles.value,
+      uploadKey: uploadKey.value,
+    }
+
+    showSaveDialog.value = true
+    return
+  }
+
+  // Continue with normal execution if no modifications
+  proceedWithExecution()
+}
+
+const proceedWithExecution = () => {
   // Set execution flag to prevent parameter reload
   isExecutingPlan.value = true
   console.log('[ExecutionController] 🔒 Set isExecutingPlan to true')
@@ -446,6 +500,41 @@ const handleExecutePlan = () => {
     JSON.stringify(payload, null, 2)
   )
   emit('executePlan', payload)
+}
+
+const handleSaveAndExecute = async () => {
+  console.log('[ExecutionController] 💾 Save and execute requested')
+  try {
+    // Emit save event to parent (Sidebar component)
+    // The parent will handle the save and then we can execute
+    emit('saveBeforeExecute')
+    // Wait a bit for save to complete
+    await new Promise(resolve => setTimeout(resolve, 500))
+    // Now proceed with execution
+    if (pendingExecutionPayload.value) {
+      console.log(
+        '[ExecutionController] 📤 Emitting executePlan after save:',
+        JSON.stringify(pendingExecutionPayload.value, null, 2)
+      )
+      emit('executePlan', pendingExecutionPayload.value)
+      pendingExecutionPayload.value = null
+    }
+  } catch (error: any) {
+    console.error('[ExecutionController] ❌ Failed to save before execute:', error)
+    toast.error(error.message || t('sidebar.saveFailed'))
+  }
+}
+
+const handleContinueExecution = () => {
+  console.log('[ExecutionController] ⏩ Continue without save requested')
+  if (pendingExecutionPayload.value) {
+    console.log(
+      '[ExecutionController] 📤 Emitting executePlan without save:',
+      JSON.stringify(pendingExecutionPayload.value, null, 2)
+    )
+    emit('executePlan', pendingExecutionPayload.value)
+    pendingExecutionPayload.value = null
+  }
 }
 
 const handlePublishMcpService = () => {

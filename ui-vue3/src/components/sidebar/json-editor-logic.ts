@@ -17,6 +17,7 @@
 import { reactive, computed, watch, ref } from 'vue'
 // import { useI18n } from 'vue-i18n' // Currently unused
 import type { StepData, DisplayPlanData } from '@/types/plan-execution'
+import { sidebarStore } from '@/stores/sidebar'
 
 export interface JsonEditorProps {
   jsonContent: string
@@ -158,6 +159,42 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
       displayData.planTemplateId = newId
     }
   })
+
+  // Track initial step requirements to detect actual changes
+  let initialStepRequirements: string[] = []
+  let isInitialLoad = true
+
+  // Watch for stepRequirement/stepContent changes to track modifications
+  watch(
+    () => displayData.steps.map(step => step.stepRequirement || step.stepContent || ''),
+    (newRequirements, oldRequirements) => {
+      // Skip on initial load
+      if (isInitialLoad) {
+        initialStepRequirements = [...newRequirements]
+        isInitialLoad = false
+        return
+      }
+
+      // Only set flag if requirements actually changed
+      const hasChanged =
+        newRequirements.length !== initialStepRequirements.length ||
+        newRequirements.some((req, index) => req !== (initialStepRequirements[index] || ''))
+
+      if (hasChanged) {
+        sidebarStore.hasTaskRequirementModified = true
+      }
+    },
+    { deep: true }
+  )
+
+  // Reset initial state when JSON content changes (new template loaded)
+  watch(
+    () => props.jsonContent,
+    () => {
+      isInitialLoad = true
+      initialStepRequirements = []
+    }
+  )
 
   // Step management functions
   const addStep = () => {

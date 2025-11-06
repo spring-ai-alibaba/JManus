@@ -181,6 +181,7 @@
             @publish-mcp-service="handlePublishMcpService"
             @clear-params="handleClearExecutionParams"
             @update-execution-params="handleUpdateExecutionParams"
+            @save-before-execute="handleSaveBeforeExecute"
           />
         </div>
       </div>
@@ -364,7 +365,13 @@ const handleSaveTemplate = async () => {
   } catch (error: any) {
     console.error('Failed to save plan modifications:', error)
     toast.error(error.message || t('sidebar.saveFailed'))
+    throw error // Re-throw to allow caller to handle
   }
+}
+
+const handleSaveBeforeExecute = async () => {
+  console.log('[Sidebar] 💾 Save before execute requested')
+  await handleSaveTemplate()
 }
 
 // Method to refresh parameter requirements
