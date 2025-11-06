@@ -819,6 +819,14 @@ const words: I18nType = {
     toolName: 'Tool Name',
     publishedTool: 'Published Tool',
     serviceGroup: 'Service Group',
+    organizationMethod: 'Organization',
+    organizationByTime: 'By Modify Time',
+    organizationByAbc: 'By ABC',
+    organizationByGroupTime: 'By Service Group & Time',
+    organizationByGroupAbc: 'By Service Group & ABC',
+    ungroupedMethods: 'Ungrouped Methods',
+    collapseGroup: 'Collapse Group',
+    expandGroup: 'Expand Group',
     internalCallUsage:
       'After adding this tool in agent configuration, you can directly call this method in the agent',
     internalCallExample:
