@@ -203,8 +203,7 @@ public class DatabaseSqlGenerator {
 
 	private static String generateSqlServerColumnInfoSql(String inClause) {
 		return "SELECT t.name as TABLE_NAME, c.name as COLUMN_NAME, "
-				+ "ty.name as COLUMN_TYPE, c.max_length as CHARACTER_MAXIMUM_LENGTH, "
-				+ "ep.value as COLUMN_COMMENT, "
+				+ "ty.name as COLUMN_TYPE, c.max_length as CHARACTER_MAXIMUM_LENGTH, " + "ep.value as COLUMN_COMMENT, "
 				+ "OBJECT_DEFINITION(dc.object_id) as COLUMN_DEFAULT, "
 				+ "CASE WHEN c.is_nullable = 1 THEN 'YES' ELSE 'NO' END as IS_NULLABLE " + "FROM sys.columns c "
 				+ "JOIN sys.tables t ON c.object_id = t.object_id "
@@ -228,13 +227,12 @@ public class DatabaseSqlGenerator {
 	// H2 SQL generation methods
 	private static String generateH2TableInfoSql(boolean fuzzy, String fuzzyText) {
 		if (fuzzy) {
-			return "SELECT table_name as TABLE_NAME, remarks as TABLE_COMMENT "
-					+ "FROM information_schema.tables "
+			return "SELECT table_name as TABLE_NAME, remarks as TABLE_COMMENT " + "FROM information_schema.tables "
 					+ "WHERE table_type = 'BASE TABLE' AND table_name LIKE ?";
 		}
 		else {
-			return "SELECT table_name as TABLE_NAME, remarks as TABLE_COMMENT "
-					+ "FROM information_schema.tables " + "WHERE table_type = 'BASE TABLE'";
+			return "SELECT table_name as TABLE_NAME, remarks as TABLE_COMMENT " + "FROM information_schema.tables "
+					+ "WHERE table_type = 'BASE TABLE'";
 		}
 	}
 
@@ -247,12 +245,12 @@ public class DatabaseSqlGenerator {
 	}
 
 	private static String generateH2IndexInfoSql(String inClause) {
-		return "SELECT ic.table_name as TABLE_NAME, i.index_name as INDEX_NAME, "
-				+ "ic.column_name as COLUMN_NAME, "
+		return "SELECT ic.table_name as TABLE_NAME, i.index_name as INDEX_NAME, " + "ic.column_name as COLUMN_NAME, "
 				+ "CASE WHEN i.index_type_name = 'PRIMARY KEY' THEN 'PRIMARY' ELSE 'BTREE' END as INDEX_TYPE "
 				+ "FROM information_schema.index_columns ic "
 				+ "JOIN information_schema.indexes i ON ic.table_name = i.table_name AND ic.index_name = i.index_name "
-				+ "WHERE ic.table_name IN (" + inClause + ") " + "ORDER BY ic.table_name, i.index_name, ic.ordinal_position";
+				+ "WHERE ic.table_name IN (" + inClause + ") "
+				+ "ORDER BY ic.table_name, i.index_name, ic.ordinal_position";
 	}
 
 }

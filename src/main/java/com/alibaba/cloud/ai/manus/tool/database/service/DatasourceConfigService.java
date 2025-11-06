@@ -92,7 +92,8 @@ public class DatasourceConfigService {
 	public DatasourceConfigVO createConfig(DatasourceConfigVO vo) {
 		logger.info("Creating datasource configuration: {}", vo.getName());
 		if (repository.existsByName(vo.getName())) {
-			throw new IllegalArgumentException("Datasource configuration with name '" + vo.getName() + "' already exists");
+			throw new IllegalArgumentException(
+					"Datasource configuration with name '" + vo.getName() + "' already exists");
 		}
 
 		DatasourceConfigEntity entity = mapToEntity(vo);
@@ -117,7 +118,8 @@ public class DatasourceConfigService {
 		DatasourceConfigEntity entity = entityOpt.get();
 		// Check if name is being changed and if new name already exists
 		if (!entity.getName().equals(vo.getName()) && repository.existsByName(vo.getName())) {
-			throw new IllegalArgumentException("Datasource configuration with name '" + vo.getName() + "' already exists");
+			throw new IllegalArgumentException(
+					"Datasource configuration with name '" + vo.getName() + "' already exists");
 		}
 
 		// Update fields
@@ -202,4 +204,3 @@ public class DatasourceConfigService {
 	}
 
 }
-

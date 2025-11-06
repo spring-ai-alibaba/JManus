@@ -109,7 +109,7 @@ public class CoordinatorToolController {
 		try {
 			log.info("Getting coordinator tool for plan template: {}", planTemplateId);
 			Optional<CoordinatorToolVO> toolOpt = coordinatorToolService
-					.getCoordinatorToolByPlanTemplateId(planTemplateId);
+				.getCoordinatorToolByPlanTemplateId(planTemplateId);
 			if (toolOpt.isPresent()) {
 				return ResponseEntity.ok(toolOpt.get());
 			}

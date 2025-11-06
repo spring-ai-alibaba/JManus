@@ -33,4 +33,3 @@ public interface DatasourceConfigRepository extends JpaRepository<DatasourceConf
 	boolean existsByName(String name);
 
 }
-

@@ -40,8 +40,8 @@ import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Startup initializer for plan templates from startup-plans directory
- * Also registers default plan templates as coordinator tools (internal toolcalls)
+ * Startup initializer for plan templates from startup-plans directory Also registers
+ * default plan templates as coordinator tools (internal toolcalls)
  */
 @Component
 public class PlanTemplateStartupInitializer {
@@ -87,7 +87,8 @@ public class PlanTemplateStartupInitializer {
 			planTemplateInitializationService.initializePlanTemplatesForNamespace(namespace);
 			log.info("Successfully initialized startup plan templates for namespace: {}", namespace);
 
-			// Step 2: Register default plan template as coordinator tool (internal toolcall)
+			// Step 2: Register default plan template as coordinator tool (internal
+			// toolcall)
 			registerDefaultPlanTemplateAsTool();
 
 		}
@@ -97,8 +98,9 @@ public class PlanTemplateStartupInitializer {
 	}
 
 	/**
-	 * Register default plan template as coordinator tool (internal toolcall)
-	 * Uses createCoordinatorTool() if tool doesn't exist, or updateCoordinatorTool() if it exists
+	 * Register default plan template as coordinator tool (internal toolcall) Uses
+	 * createCoordinatorTool() if tool doesn't exist, or updateCoordinatorTool() if it
+	 * exists
 	 */
 	private void registerDefaultPlanTemplateAsTool() {
 		log.info("Starting registration of default plan template as coordinator tool: {}", DEFAULT_PLAN_TEMPLATE_ID);
@@ -118,7 +120,7 @@ public class PlanTemplateStartupInitializer {
 
 			// Check if coordinator tool already exists
 			Optional<CoordinatorToolVO> existingToolOpt = coordinatorToolService
-					.getCoordinatorToolByPlanTemplateId(DEFAULT_PLAN_TEMPLATE_ID);
+				.getCoordinatorToolByPlanTemplateId(DEFAULT_PLAN_TEMPLATE_ID);
 
 			// Create CoordinatorToolVO for the plan template
 			CoordinatorToolVO coordinatorToolVO = new CoordinatorToolVO();
@@ -181,8 +183,8 @@ public class PlanTemplateStartupInitializer {
 			}
 
 			if (attempt < MAX_RETRIES) {
-				log.debug("Plan template {} not found, retrying in {}ms (attempt {}/{})", planTemplateId, RETRY_DELAY_MS,
-						attempt, MAX_RETRIES);
+				log.debug("Plan template {} not found, retrying in {}ms (attempt {}/{})", planTemplateId,
+						RETRY_DELAY_MS, attempt, MAX_RETRIES);
 				try {
 					Thread.sleep(RETRY_DELAY_MS);
 				}
@@ -198,9 +200,8 @@ public class PlanTemplateStartupInitializer {
 	}
 
 	/**
-	 * Generate input schema JSON string from plan template parameters
-	 * InputSchema format: [{"name": "paramName", "type": "string", "description": "param description"}]
-	 * 
+	 * Generate input schema JSON string from plan template parameters InputSchema format:
+	 * [{"name": "paramName", "type": "string", "description": "param description"}]
 	 * @param planTemplateId Plan template ID
 	 * @return JSON string representation of input schema array
 	 */
