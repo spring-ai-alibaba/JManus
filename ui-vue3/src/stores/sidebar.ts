@@ -332,11 +332,11 @@ export class SidebarStore {
     this.errorMessage = ''
     try {
       console.log('[SidebarStore] Starting to load plan template list...')
-      const response = await PlanActApiService.getAllPlanTemplates()
+      const response = await PlanActApiService.getAllPlanTemplates() as { templates?: PlanTemplate[] }
       if (response?.templates && Array.isArray(response.templates)) {
-        this.planTemplateList = response.templates as PlanTemplate[]
+        this.planTemplateList = response.templates
         console.log(
-          `[SidebarStore] Successfully loaded ${(response.templates as PlanTemplate[]).length} plan templates`
+          `[SidebarStore] Successfully loaded ${response.templates.length} plan templates`
         )
         // Load service group information for each template
         await this.loadTemplateServiceGroups()
@@ -386,7 +386,7 @@ export class SidebarStore {
   async loadTemplateData(template: PlanTemplate) {
     try {
       const versionsResponse = await PlanActApiService.getPlanVersions(template.id)
-      this.planVersions = (versionsResponse as { versions?: PlanVersion[] }).versions || []
+      this.planVersions = (versionsResponse as { versions?: string[] }).versions || []
       if (this.planVersions.length > 0) {
         const latestContent = this.planVersions[this.planVersions.length - 1]
         this.jsonContent = latestContent

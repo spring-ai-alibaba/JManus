@@ -626,18 +626,18 @@ const handleChatSendMessage = async (query: InputMessage) => {
       chatRef.value?.updateMessage(assistantMessage.id, {
         thinking: t('chat.planningExecution'),
         planExecution: {
-          currentPlanId: response.planId,
-          rootPlanId: response.planId,
+          currentPlanId: typedResponse.planId,
+          rootPlanId: typedResponse.planId,
           status: 'running',
         },
       })
 
       // Set current root plan ID for the new plan execution
-      currentRootPlanId.value = response.planId
-      console.log('[DirectView] Set currentRootPlanId to:', response.planId)
+      currentRootPlanId.value = typedResponse.planId || null
+      console.log('[DirectView] Set currentRootPlanId to:', typedResponse.planId)
 
       // Start polling for plan updates
-      planExecutionManager.handlePlanExecutionRequested(response.planId, query.input)
+      planExecutionManager.handlePlanExecutionRequested(typedResponse.planId!, query.input)
       console.log('[DirectView] Started polling for plan execution updates')
     } else if (assistantMessage) {
       // Direct mode: Show the response
@@ -822,26 +822,27 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
     console.log('[Direct] Plan execution API response:', response)
 
     // Use the returned planId to start the plan execution process
-    if (response.planId && assistantMessage) {
-      console.log('[Direct] Got planId from response:', response.planId, 'starting plan execution')
+    const executionResponse = response as { planId?: string }
+    if (executionResponse.planId && assistantMessage) {
+      console.log('[Direct] Got planId from response:', executionResponse.planId, 'starting plan execution')
 
       // Update assistant message with plan execution info
       chatRef.value?.updateMessage(assistantMessage.id, {
         thinking: t('chat.planningExecution'),
         planExecution: {
-          currentPlanId: response.planId,
-          rootPlanId: response.planId,
+          currentPlanId: executionResponse.planId,
+          rootPlanId: executionResponse.planId,
           status: 'running',
         },
       })
 
       // Set current root plan ID for the new plan execution
-      currentRootPlanId.value = typedResponse.planId
-      console.log('[Direct] Set currentRootPlanId to:', typedResponse.planId)
+      currentRootPlanId.value = executionResponse.planId || null
+      console.log('[Direct] Set currentRootPlanId to:', executionResponse.planId)
 
       // Use planExecutionManager to handle plan execution
       console.log('[Direct] Delegating plan execution to planExecutionManager')
-      planExecutionManager.handlePlanExecutionRequested(typedResponse.planId!, payload.title)
+      planExecutionManager.handlePlanExecutionRequested(executionResponse.planId!, payload.title)
     } else {
       console.error('[Direct] No planId in response:', response)
       throw new Error(t('direct.executionFailedNoPlanId'))
