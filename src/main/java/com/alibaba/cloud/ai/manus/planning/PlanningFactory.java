@@ -81,7 +81,8 @@ import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.ParallelExecutionTool;
 import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
-import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileOperator;
+import com.alibaba.cloud.ai.manus.tool.textOperator.GlobalFileOperator;
+import com.alibaba.cloud.ai.manus.tool.textOperator.LocalFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -226,7 +227,9 @@ public class PlanningFactory {
 			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper));
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
-			toolDefinitions.add(new TextFileOperator(textFileService, innerStorageService, objectMapper));
+			
+			toolDefinitions.add(new LocalFileOperator(textFileService, innerStorageService, objectMapper));
+			toolDefinitions.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper));
 			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager,
 			// applicationContext));
