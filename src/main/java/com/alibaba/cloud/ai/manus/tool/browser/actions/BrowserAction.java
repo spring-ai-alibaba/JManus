@@ -146,30 +146,64 @@ public abstract class BrowserAction {
 		String name = node.name;
 
 		try {
+			// First, try to use id from props if available (most specific selector)
+			String id = node.props != null ? node.props.get("id") : null;
+			if (id != null && !id.isEmpty()) {
+				try {
+					Locator idLocator = page.locator("#" + id);
+					// Verify the element exists and has the correct role
+					if (idLocator.count() > 0) {
+						return idLocator;
+					}
+				}
+				catch (Exception e) {
+					log.debug("Failed to use id selector for element: {}", e.getMessage());
+				}
+			}
+
 			// Use getByRole with name if available
 			if (name != null && !name.isEmpty()) {
-				switch (role) {
-					case "button":
-						return page.getByRole(com.microsoft.playwright.options.AriaRole.BUTTON,
-								new Page.GetByRoleOptions().setName(name));
-					case "link":
-						return page.getByRole(com.microsoft.playwright.options.AriaRole.LINK,
-								new Page.GetByRoleOptions().setName(name));
-					case "textbox":
-						return page.getByRole(com.microsoft.playwright.options.AriaRole.TEXTBOX,
-								new Page.GetByRoleOptions().setName(name));
-					case "checkbox":
-						return page.getByRole(com.microsoft.playwright.options.AriaRole.CHECKBOX,
-								new Page.GetByRoleOptions().setName(name));
-					case "radio":
-						return page.getByRole(com.microsoft.playwright.options.AriaRole.RADIO,
-								new Page.GetByRoleOptions().setName(name));
-					case "combobox":
-						return page.getByRole(com.microsoft.playwright.options.AriaRole.COMBOBOX,
-								new Page.GetByRoleOptions().setName(name));
-					default:
-						// Fallback: try to get by role without name
-						return getByRoleWithoutName(page, role);
+				try {
+					Locator locator = null;
+					switch (role) {
+						case "button":
+							locator = page.getByRole(com.microsoft.playwright.options.AriaRole.BUTTON,
+									new Page.GetByRoleOptions().setName(name));
+							break;
+						case "link":
+							locator = page.getByRole(com.microsoft.playwright.options.AriaRole.LINK,
+									new Page.GetByRoleOptions().setName(name));
+							break;
+						case "textbox":
+							locator = page.getByRole(com.microsoft.playwright.options.AriaRole.TEXTBOX,
+									new Page.GetByRoleOptions().setName(name));
+							break;
+						case "checkbox":
+							locator = page.getByRole(com.microsoft.playwright.options.AriaRole.CHECKBOX,
+									new Page.GetByRoleOptions().setName(name));
+							break;
+						case "radio":
+							locator = page.getByRole(com.microsoft.playwright.options.AriaRole.RADIO,
+									new Page.GetByRoleOptions().setName(name));
+							break;
+						case "combobox":
+							locator = page.getByRole(com.microsoft.playwright.options.AriaRole.COMBOBOX,
+									new Page.GetByRoleOptions().setName(name));
+							break;
+						default:
+							// Fallback: try to get by role without name
+							return getByRoleWithoutName(page, role);
+					}
+					// If we get here, locator was created successfully (no strict mode violation)
+					return locator;
+				}
+				catch (Exception e) {
+					// Strict mode violation or other error - try to handle multiple matches
+					if (e.getMessage() != null && e.getMessage().contains("strict mode violation")) {
+						log.debug("Strict mode violation for role={}, name={}, trying alternative selector", role, name);
+						return handleMultipleMatches(page, node, role, name);
+					}
+					throw e;
 				}
 			}
 			else {
@@ -180,6 +214,86 @@ public abstract class BrowserAction {
 		catch (Exception e) {
 			log.warn("Failed to create locator from ARIA node (role: {}, name: {}): {}", role, name, e.getMessage());
 			return null;
+		}
+	}
+
+	/**
+	 * Handle case when multiple elements match the same role and name
+	 * @param page The page
+	 * @param node The ARIA node we're looking for
+	 * @param role The role
+	 * @param name The name
+	 * @return A more specific locator
+	 */
+	private Locator handleMultipleMatches(Page page, AriaElementHolder.AriaNode node, String role, String name) {
+		try {
+			// Try to use placeholder with CSS selector to narrow down
+			String placeholder = node.props != null ? node.props.get("placeholder") : null;
+			if (placeholder != null && !placeholder.isEmpty()) {
+				try {
+					// Use CSS selector with placeholder as additional filter
+					Locator placeholderLocator = page.locator(
+							"input[placeholder*='" + placeholder.replace("'", "\\'") + "']");
+					if (placeholderLocator.count() == 1) {
+						return placeholderLocator;
+					}
+				}
+				catch (Exception e) {
+					log.debug("Failed to use placeholder CSS selector: {}", e.getMessage());
+				}
+			}
+
+			// Get all elements with same role and name, then select by position
+			// We'll use the index from the ARIA snapshot to determine which one
+			DriverWrapper driverWrapper = getDriverWrapper();
+			AriaElementHolder holder = driverWrapper.getAriaElementHolder();
+			int nodeIndex = -1;
+			if (holder != null) {
+				// Get all nodes with same role and name
+				List<AriaElementHolder.AriaNode> matchingNodes = holder.getByRoleAndName(role, name);
+				if (matchingNodes.size() > 1) {
+					// Find the index of our node in the list
+					for (int i = 0; i < matchingNodes.size(); i++) {
+						if (matchingNodes.get(i).ref != null && matchingNodes.get(i).ref.equals(node.ref)) {
+							nodeIndex = i;
+							break;
+						}
+					}
+				}
+			}
+
+			// Last resort: use getByRole without name, then filter or select by index
+			// We can't use getByRole with name because it throws strict mode violation
+			try {
+				com.microsoft.playwright.options.AriaRole ariaRole = mapRoleToAriaRole(role);
+				if (ariaRole != null) {
+					// Get all elements with this role (without name filter to avoid strict mode)
+					Locator allRoleElements = page.getByRole(ariaRole);
+					// Note: count() doesn't have timeout option, but it should be fast
+					// If it hangs, it's likely a page loading issue
+					int totalCount = allRoleElements.count();
+					
+					// If we found the index and it's valid, use nth()
+					if (nodeIndex >= 0 && nodeIndex < totalCount) {
+						log.debug("Using nth({}) for role={}, name={}", nodeIndex, role, name);
+						return allRoleElements.nth(nodeIndex);
+					}
+					// Fallback: use first() if we can't determine the index
+					log.warn("Multiple elements match role={}, name={}, using first() as fallback", role, name);
+					return allRoleElements.first();
+				}
+			}
+			catch (Exception e) {
+				log.debug("Failed to use role-only selector with index: {}", e.getMessage());
+			}
+
+			// Final fallback: use role without name
+			log.warn("Multiple elements match role={}, name={}, using role-only selector as fallback", role, name);
+			return getByRoleWithoutName(page, role);
+		}
+		catch (Exception e) {
+			log.warn("Failed to handle multiple matches for role={}, name={}: {}", role, name, e.getMessage());
+			return getByRoleWithoutName(page, role);
 		}
 	}
 

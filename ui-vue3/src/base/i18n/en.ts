@@ -832,6 +832,8 @@ const words: I18nType = {
     ungroupedMethods: 'Ungrouped Methods',
     collapseGroup: 'Collapse Group',
     expandGroup: 'Expand Group',
+    searchPlaceholder: 'Search plans...',
+    clearSearch: 'Clear search',
     internalCallUsage:
       'After adding this tool in agent configuration, you can directly call this method in the agent',
     internalCallExample:

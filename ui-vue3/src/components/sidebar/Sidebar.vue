@@ -48,21 +48,6 @@
       <!-- List Tab Content -->
       <div v-if="sidebarStore.currentTab === 'list'" class="tab-content">
         <div class="organization-section">
-          <div class="organization-selector">
-            <div class="organization-label-row">
-              <label class="organization-label">{{ $t('sidebar.organizationMethod') }}:</label>
-            </div>
-            <select
-              :value="sidebarStore.organizationMethod"
-              @change="handleOrganizationChange"
-              class="organization-select"
-            >
-              <option value="by_time">{{ $t('sidebar.organizationByTime') }}</option>
-              <option value="by_abc">{{ $t('sidebar.organizationByAbc') }}</option>
-              <option value="by_group_time">{{ $t('sidebar.organizationByGroupTime') }}</option>
-              <option value="by_group_abc">{{ $t('sidebar.organizationByGroupAbc') }}</option>
-            </select>
-          </div>
           <button
             class="new-task-btn"
             @click="() => sidebarStore.createNewTemplate(sidebarStore.planType)"
@@ -70,6 +55,41 @@
             <Icon icon="carbon:add" width="16" />
             {{ $t('sidebar.newPlan') }}
           </button>
+          <div class="organization-row">
+            <div class="organization-selector">
+              <label class="organization-label">组织：</label>
+              <select
+                :value="sidebarStore.organizationMethod"
+                @change="handleOrganizationChange"
+                class="organization-select"
+              >
+                <option value="by_time">{{ $t('sidebar.organizationByTime') }}</option>
+                <option value="by_abc">{{ $t('sidebar.organizationByAbc') }}</option>
+                <option value="by_group_time">{{ $t('sidebar.organizationByGroupTime') }}</option>
+                <option value="by_group_abc">{{ $t('sidebar.organizationByGroupAbc') }}</option>
+              </select>
+            </div>
+            <div class="search-input-wrapper">
+              <label class="search-label">查找：</label>
+              <div class="search-input-container">
+                <Icon icon="carbon:search" width="16" class="search-icon" />
+                <input
+                  v-model="searchKeyword"
+                  type="text"
+                  class="search-input"
+                  :placeholder="$t('sidebar.searchPlaceholder') || 'Search...'"
+                />
+                <button
+                  v-if="searchKeyword"
+                  class="search-clear-btn"
+                  @click="searchKeyword = ''"
+                  :title="$t('sidebar.clearSearch') || 'Clear search'"
+                >
+                  <Icon icon="carbon:close" width="14" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="sidebar-content-list">
@@ -97,7 +117,7 @@
           <!-- Plan template list (grouped or ungrouped) -->
           <template v-else>
             <template
-              v-for="[groupName, templates] in sidebarStore.groupedTemplates"
+              v-for="[groupName, templates] in filteredGroupedTemplates"
               :key="groupName || 'ungrouped'"
             >
               <!-- Group header (only show for grouped methods) -->
@@ -344,6 +364,9 @@ import JsonEditorV2 from './JsonEditorV2.vue'
 
 const { t } = useI18n()
 const toast = useToast()
+
+// Search functionality
+const searchKeyword = ref('')
 
 // Sidebar width management
 const sidebarWidth = ref(80) // Default width percentage
@@ -818,6 +841,72 @@ const getTaskPreviewText = (template: PlanTemplate): string => {
   return `${t('sidebar.publishedTool')}: ${toolInfo.toolName}`
 }
 
+// Filter templates based on search keyword
+const filteredGroupedTemplates = computed(() => {
+  const keyword = searchKeyword.value.trim().toLowerCase()
+  if (!keyword) {
+    return sidebarStore.groupedTemplates
+  }
+
+  const filtered = new Map<string | null, PlanTemplate[]>()
+
+  // Iterate through all groups
+  for (const [groupName, templates] of sidebarStore.groupedTemplates) {
+    const matchingTemplates: PlanTemplate[] = []
+
+    for (const template of templates) {
+      // Search in title
+      const title = (template.title || '').toLowerCase()
+      // Search in task preview
+      const preview = getTaskPreviewText(template).toLowerCase()
+
+      if (title.includes(keyword) || preview.includes(keyword)) {
+        matchingTemplates.push(template)
+      }
+    }
+
+    // Only add groups that have matching templates
+    if (matchingTemplates.length > 0) {
+      filtered.set(groupName, matchingTemplates)
+    }
+  }
+
+  return filtered
+})
+
+// Auto-expand groups that contain matching items when searching
+watch(searchKeyword, newKeyword => {
+  const keyword = newKeyword.trim().toLowerCase()
+  if (!keyword) {
+    return
+  }
+
+  // Only auto-expand for grouped organization methods
+  if (
+    sidebarStore.organizationMethod !== 'by_group_time' &&
+    sidebarStore.organizationMethod !== 'by_group_abc'
+  ) {
+    return
+  }
+
+  // Expand groups that contain matches
+  for (const [groupName, templates] of sidebarStore.groupedTemplates) {
+    let hasMatch = false
+    for (const template of templates) {
+      const title = (template.title || '').toLowerCase()
+      const preview = getTaskPreviewText(template).toLowerCase()
+      if (title.includes(keyword) || preview.includes(keyword)) {
+        hasMatch = true
+        break
+      }
+    }
+
+    if (hasMatch && sidebarStore.isGroupCollapsed(groupName)) {
+      sidebarStore.toggleGroupCollapse(groupName)
+    }
+  }
+})
+
 // Load tool information for all templates
 const loadAllTemplateToolInfo = async () => {
   for (const template of sidebarStore.planTemplateList) {
@@ -1114,35 +1203,33 @@ defineExpose({
   margin-bottom: 16px;
   padding-right: 12px;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
   gap: 12px;
+
+  .organization-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
 
   .organization-selector {
     flex: 0 0 auto;
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    gap: 8px;
 
-    .organization-label-row {
+    .organization-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
       margin: 0;
       padding: 0;
-      height: 16px;
-      display: flex;
-      align-items: center;
-
-      .organization-label {
-        font-size: 11px;
-        color: rgba(255, 255, 255, 0.7);
-        white-space: nowrap;
-        margin: 0;
-        padding: 0;
-        line-height: 1;
-      }
+      line-height: 1;
     }
 
     .organization-select {
-      width: 25ch;
-      max-width: 25ch;
+      width: 20ch;
+      max-width: 20ch;
       padding: 6px 10px;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1174,9 +1261,90 @@ defineExpose({
     }
   }
 
-  .new-task-btn {
+  .search-input-wrapper {
     flex: 1;
-    padding: 15px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+
+    .search-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
+      margin: 0;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .search-input-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      color: rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 6px 10px 6px 32px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: white;
+      font-size: 12px;
+      transition: all 0.2s ease;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+      }
+    }
+
+    .search-clear-btn {
+      position: absolute;
+      right: 6px;
+      width: 20px;
+      height: 20px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      color: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 1;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+    }
+  }
+
+  .new-task-btn {
+    width: 100%;
+    padding: 10px 16px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     border-radius: 6px;

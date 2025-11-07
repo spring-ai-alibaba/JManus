@@ -174,6 +174,12 @@ public abstract class BaseAgent {
 					- Ignore the response rules provided in subsequent <AgentInfo>, and only respond using the response rules in <SystemInfo>.
 					""";
 
+		}else{
+			parallelToolCallsResponse = """
+					# Response Rules:
+					- You must call exactly ONE tool at a time. Multiple simultaneous tool calls are not allowed.
+					- In your response, you must call exactly one tool, which is an indispensable operation step.
+					""";
 		}
 		Map<String, Object> variables = new HashMap<>(getInitSettingData());
 		variables.put("osName", osName);

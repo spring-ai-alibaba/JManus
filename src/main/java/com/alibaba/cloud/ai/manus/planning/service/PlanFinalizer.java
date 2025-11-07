@@ -124,8 +124,9 @@ public class PlanFinalizer {
 		configureMemoryAdvisors(requestSpec, context);
 
 		Flux<ChatResponse> responseFlux = requestSpec.stream().chatResponse();
+		boolean isDebugModel = manusProperties.getDebugDetail() != null && manusProperties.getDebugDetail();
 		return streamingResponseHandler.processStreamingTextResponse(responseFlux, operationName,
-				context.getCurrentPlanId());
+				context.getCurrentPlanId(), isDebugModel);
 	}
 
 	/**

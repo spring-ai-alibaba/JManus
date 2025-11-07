@@ -787,6 +787,8 @@ const words: I18nType = {
     ungroupedMethods: '未分组方法',
     collapseGroup: '折叠分组',
     expandGroup: '展开分组',
+    searchPlaceholder: '搜索计划...',
+    clearSearch: '清除搜索',
     internalCallUsage: '在代理配置中添加此工具后，您可以直接在代理中调用此方法',
     internalCallExample: '在代理配置的"添加工具"部分中，搜索并添加此工具，然后在代理中直接调用它',
 
