@@ -57,7 +57,7 @@
           </button>
           <div class="organization-row">
             <div class="organization-selector">
-              <label class="organization-label">组织：</label>
+              <label class="organization-label">{{ $t('sidebar.organizationLabel') }}</label>
               <select
                 :value="sidebarStore.organizationMethod"
                 @change="handleOrganizationChange"
@@ -70,7 +70,7 @@
               </select>
             </div>
             <div class="search-input-wrapper">
-              <label class="search-label">查找：</label>
+              <label class="search-label">{{ $t('sidebar.searchLabel') }}</label>
               <div class="search-input-container">
                 <Icon icon="carbon:search" width="16" class="search-icon" />
                 <input
