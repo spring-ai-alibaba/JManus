@@ -567,6 +567,13 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 				agentRecord.setResult(step.getResult());
 			}
 
+			// Set error message if available
+			if (step.getErrorMessage() != null && !step.getErrorMessage().isEmpty()) {
+				agentRecord.setErrorMessage(step.getErrorMessage());
+				logger.debug("Set errorMessage for stepId: {}, errorMessage: {}", step.getStepId(),
+						step.getErrorMessage());
+			}
+
 			// Set step requirement as agent request if available
 			if (step.getStepRequirement() != null && !step.getStepRequirement().isEmpty()) {
 				agentRecord.setAgentRequest(step.getStepRequirement());

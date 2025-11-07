@@ -15,12 +15,12 @@
  */
 package com.alibaba.cloud.ai.manus.runtime.entity.vo;
 
+import java.util.List;
+import java.util.UUID;
+
 import com.alibaba.cloud.ai.manus.agent.AgentState;
 import com.alibaba.cloud.ai.manus.agent.BaseAgent;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.util.List;
-import java.util.UUID;
 
 /**
  * The result of a single step execution
@@ -58,6 +58,9 @@ public class ExecutionStep {
 	private String result;
 
 	@JsonIgnore
+	private String errorMessage;
+
+	@JsonIgnore
 	private BaseAgent agent;
 
 	private String terminateColumns;
@@ -76,6 +79,14 @@ public class ExecutionStep {
 
 	public void setResult(String result) {
 		this.result = result;
+	}
+
+	public String getErrorMessage() {
+		return errorMessage;
+	}
+
+	public void setErrorMessage(String errorMessage) {
+		this.errorMessage = errorMessage;
 	}
 
 	@JsonIgnore

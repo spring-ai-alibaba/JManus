@@ -15,7 +15,8 @@
  */
 package com.alibaba.cloud.ai.manus.llm;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -23,7 +24,7 @@ import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class LlmTraceRecorder {
@@ -52,6 +53,30 @@ public class LlmTraceRecorder {
 		}
 		catch (Throwable e) {
 			selfLogger.error("Failed to serialize chat response", e);
+		}
+	}
+
+	/**
+	 * Record error response from API
+	 * @param error The exception that occurred
+	 */
+	public void recordError(Throwable error) {
+		try {
+			if (error instanceof org.springframework.web.reactive.function.client.WebClientResponseException webClientException) {
+				String errorDetails = String.format(
+						"Error[%s]: Status=%s, ResponseBody=%s, URL=%s",
+						REQUEST_ID.get(),
+						webClientException.getStatusCode(),
+						webClientException.getResponseBodyAsString(),
+						webClientException.getRequest() != null ? webClientException.getRequest().getURI() : "N/A");
+				logger.error(errorDetails);
+			}
+			else {
+				logger.error("Error[{}]: {}", REQUEST_ID.get(), error.getMessage());
+			}
+		}
+		catch (Throwable e) {
+			selfLogger.error("Failed to record error", e);
 		}
 	}
 

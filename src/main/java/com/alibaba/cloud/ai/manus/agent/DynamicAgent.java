@@ -59,6 +59,7 @@ import com.alibaba.cloud.ai.manus.runtime.service.ParallelToolExecutionService;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionCheckerService;
 import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
+import com.alibaba.cloud.ai.manus.tool.ErrorReportTool;
 import com.alibaba.cloud.ai.manus.tool.FormInputTool;
 import com.alibaba.cloud.ai.manus.tool.TerminableTool;
 import com.alibaba.cloud.ai.manus.tool.ToolCallBiFunctionDef;
@@ -106,6 +107,16 @@ public class DynamicAgent extends ReActAgent {
 	private AgentInterruptionHelper agentInterruptionHelper;
 
 	private ParallelToolExecutionService parallelToolExecutionService;
+
+	/**
+	 * List to record all exceptions from LLM calls during retry attempts
+	 */
+	private final List<Exception> llmCallExceptions = new ArrayList<>();
+
+	/**
+	 * Latest exception from LLM calls, used when max retries are reached
+	 */
+	private Exception latestLlmException = null;
 
 	public void clearUp(String planId) {
 		Map<String, ToolCallBackContext> toolCallBackContext = toolCallbackProvider.getToolCallBackContext();
@@ -166,7 +177,10 @@ public class DynamicAgent extends ReActAgent {
 		collectAndSetEnvDataForTools();
 
 		try {
-			return executeWithRetry(3);
+			boolean result = executeWithRetry(3);
+			// If retries exhausted and we have exceptions, the result will be false
+			// and latestLlmException will be set
+			return result;
 		}
 		catch (TaskInterruptionCheckerService.TaskInterruptedException e) {
 			log.info("Agent {} thinking process interrupted: {}", getName(), e.getMessage());
@@ -175,6 +189,9 @@ public class DynamicAgent extends ReActAgent {
 		catch (Exception e) {
 			log.error(String.format("🚨 Oops! The %s's thinking process hit a snag: %s", getName(), e.getMessage()), e);
 			log.info("Exception occurred", e);
+			// Record this exception as well
+			latestLlmException = e;
+			llmCallExceptions.add(e);
 			return false;
 		}
 	}
@@ -182,6 +199,9 @@ public class DynamicAgent extends ReActAgent {
 	private boolean executeWithRetry(int maxRetries) throws Exception {
 		int attempt = 0;
 		Exception lastException = null;
+		// Clear exception list at the start of retry cycle
+		llmCallExceptions.clear();
+		latestLlmException = null;
 
 		while (attempt < maxRetries) {
 			attempt++;
@@ -284,7 +304,11 @@ public class DynamicAgent extends ReActAgent {
 			}
 			catch (Exception e) {
 				lastException = e;
+				latestLlmException = e;
+				// Record exception to the list (record all exceptions, even non-retryable ones)
+				llmCallExceptions.add(e);
 				log.warn("Attempt {} failed: {}", attempt, e.getMessage());
+				log.debug("Exception details for attempt {}: {}", attempt, e.getMessage(), e);
 
 				// Check if this is a network-related error that should be retried
 				if (isRetryableException(e)) {
@@ -302,7 +326,9 @@ public class DynamicAgent extends ReActAgent {
 					}
 				}
 				else {
-					// Non-retryable error, throw immediately
+					// Non-retryable error - still record it, but throw immediately
+					log.error("Non-retryable error encountered at attempt {}/{}: {}", attempt, maxRetries,
+							e.getMessage());
 					throw e;
 				}
 			}
@@ -310,7 +336,11 @@ public class DynamicAgent extends ReActAgent {
 
 		// All retries exhausted
 		if (lastException != null) {
-			throw new Exception("All retry attempts failed. Last error: " + lastException.getMessage(), lastException);
+			log.error("All {} retry attempts failed. Total exceptions recorded: {}. Latest exception: {}",
+					maxRetries, llmCallExceptions.size(), latestLlmException != null ? latestLlmException.getMessage() : "N/A");
+			// Store the latest exception for use in step() method
+			// Don't throw exception here, let think() return false and step() handle it
+			return false;
 		}
 		return false;
 	}
@@ -339,11 +369,84 @@ public class DynamicAgent extends ReActAgent {
 	}
 
 	@Override
+	public AgentExecResult step() {
+		try {
+			boolean shouldAct = think();
+			if (!shouldAct) {
+				// Check if we have a latest exception from LLM calls (max retries reached)
+				if (latestLlmException != null) {
+					String errorMessage = buildErrorMessageFromLatestException();
+					log.error("Agent {} thinking failed after all retries. Returning error result: {}", getName(),
+							errorMessage);
+					return new AgentExecResult(errorMessage, AgentState.COMPLETED);
+				}
+				// Normal case: thinking complete, no action needed
+				return new AgentExecResult("Thinking complete - no action needed", AgentState.IN_PROGRESS);
+			}
+			return act();
+		}
+		catch (TaskInterruptionCheckerService.TaskInterruptedException e) {
+			// Agent was interrupted, return INTERRUPTED state to stop execution
+			return new AgentExecResult("Agent execution interrupted: " + e.getMessage(), AgentState.INTERRUPTED);
+		}
+	}
+
+	/**
+	 * Get the list of all exceptions recorded during LLM calls
+	 * @return List of exceptions (may be empty if no exceptions occurred)
+	 */
+	public List<Exception> getLlmCallExceptions() {
+		return new ArrayList<>(llmCallExceptions); // Return a copy to prevent external modification
+	}
+
+	/**
+	 * Get the latest exception from LLM calls
+	 * @return Latest exception, or null if no exceptions occurred
+	 */
+	public Exception getLatestLlmException() {
+		return latestLlmException;
+	}
+
+	/**
+	 * Build error message from the latest exception
+	 * @return Formatted error message with exception details
+	 */
+	private String buildErrorMessageFromLatestException() {
+		if (latestLlmException == null) {
+			return "Unknown error occurred during LLM call";
+		}
+
+		StringBuilder errorMessage = new StringBuilder();
+		errorMessage.append("LLM call failed after all retry attempts. ");
+
+		// Add exception type and message
+		String exceptionType = latestLlmException.getClass().getSimpleName();
+		String exceptionMessage = latestLlmException.getMessage();
+
+		errorMessage.append("Latest error: [").append(exceptionType).append("] ").append(exceptionMessage);
+
+		// Add exception count information
+		if (!llmCallExceptions.isEmpty()) {
+			errorMessage.append(" (Total attempts: ").append(llmCallExceptions.size()).append(")");
+		}
+
+		// Add detailed error information for WebClientResponseException
+		if (latestLlmException instanceof org.springframework.web.reactive.function.client.WebClientResponseException webClientException) {
+			String responseBody = webClientException.getResponseBodyAsString();
+			if (responseBody != null && !responseBody.isEmpty()) {
+				errorMessage.append(". API Response: ").append(responseBody);
+			}
+		}
+
+		return errorMessage.toString();
+	}
+
+	@Override
 	protected AgentExecResult act() {
 		// Check for interruption before starting action process
 		if (agentInterruptionHelper != null && !agentInterruptionHelper.checkInterruptionAndContinue(getRootPlanId())) {
 			log.info("Agent {} action process interrupted for rootPlanId: {}", getName(), getRootPlanId());
-			return new AgentExecResult("Action interrupted by user", AgentState.FAILED);
+			return new AgentExecResult("Action interrupted by user", AgentState.INTERRUPTED);
 		}
 
 		try {
@@ -378,7 +481,7 @@ public class DynamicAgent extends ReActAgent {
 			if (rootPlanId != null) {
 				userInputService.removeFormInputTool(rootPlanId);
 			}
-			return new AgentExecResult(e.getMessage(), AgentState.FAILED);
+			return new AgentExecResult(e.getMessage(), AgentState.COMPLETED);
 		}
 	}
 
@@ -395,7 +498,7 @@ public class DynamicAgent extends ReActAgent {
 			if (agentInterruptionHelper != null
 					&& !agentInterruptionHelper.checkInterruptionAndContinue(getRootPlanId())) {
 				log.info("Agent {} tool execution interrupted for rootPlanId: {}", getName(), getRootPlanId());
-				return new AgentExecResult("Tool execution interrupted by user", AgentState.FAILED);
+				return new AgentExecResult("Tool execution interrupted by user", AgentState.INTERRUPTED);
 			}
 
 			// Execute tool call
@@ -430,6 +533,26 @@ public class DynamicAgent extends ReActAgent {
 				result = processToolResult(toolCallResponse.responseData());
 				param.setResult(result);
 
+				// Handle ErrorReportTool specifically to extract errorMessage
+				if (toolInstance instanceof ErrorReportTool) {
+					try {
+						ObjectMapper objectMapper = new ObjectMapper();
+						@SuppressWarnings("unchecked")
+						Map<String, Object> errorData = objectMapper.readValue(result, Map.class);
+						String errorMessage = (String) errorData.get("errorMessage");
+						if (errorMessage != null && !errorMessage.isEmpty()) {
+							step.setErrorMessage(errorMessage);
+							log.info("ErrorReportTool extracted errorMessage for stepId: {}, errorMessage: {}",
+									step.getStepId(), errorMessage);
+						}
+					}
+					catch (Exception e) {
+						log.warn("Failed to parse errorMessage from ErrorReportTool result: {}", result, e);
+						// Fallback: use the result as errorMessage
+						step.setErrorMessage(result);
+					}
+				}
+
 				if (terminableTool.canTerminate()) {
 					log.info("TerminableTool can terminate for planId: {}", getCurrentPlanId());
 					String rootPlanId = getRootPlanId();
@@ -458,7 +581,7 @@ public class DynamicAgent extends ReActAgent {
 		catch (Exception e) {
 			log.error("Error executing single tool: {}", e.getMessage(), e);
 			processMemory(toolExecutionResult); // Process memory even on error
-			return new AgentExecResult("Error executing tool: " + e.getMessage(), AgentState.FAILED);
+			return new AgentExecResult("Error executing tool: " + e.getMessage(), AgentState.COMPLETED);
 		}
 	}
 
@@ -475,7 +598,7 @@ public class DynamicAgent extends ReActAgent {
 				&& !agentInterruptionHelper.checkInterruptionAndContinue(getRootPlanId())) {
 			log.info("Agent {} tool execution interrupted before starting for rootPlanId: {}", getName(),
 					getRootPlanId());
-			return new AgentExecResult("Tool execution interrupted by user", AgentState.FAILED);
+			return new AgentExecResult("Tool execution interrupted by user", AgentState.INTERRUPTED);
 		}
 
 		try {
@@ -506,7 +629,7 @@ public class DynamicAgent extends ReActAgent {
 			// Execute all tools in parallel
 			if (parallelToolExecutionService == null) {
 				log.error("ParallelToolExecutionService is not available");
-				return new AgentExecResult("Parallel execution service is not available", AgentState.FAILED);
+				return new AgentExecResult("Parallel execution service is not available", AgentState.COMPLETED);
 			}
 
 			Map<String, ToolCallBackContext> toolCallbackMap = toolCallbackProvider.getToolCallBackContext();
@@ -568,7 +691,7 @@ public class DynamicAgent extends ReActAgent {
 		}
 		catch (Exception e) {
 			log.error("Error executing multiple tools: {}", e.getMessage(), e);
-			return new AgentExecResult("Error executing tools: " + e.getMessage(), AgentState.FAILED);
+			return new AgentExecResult("Error executing tools: " + e.getMessage(), AgentState.COMPLETED);
 		}
 	}
 
@@ -593,7 +716,7 @@ public class DynamicAgent extends ReActAgent {
 			if (!stored) {
 				log.error("Failed to store form for sub-plan {} due to lock timeout or interruption", currentPlanId);
 				param.setResult("Failed to store form due to system timeout");
-				return new AgentExecResult("Failed to store form due to system timeout", AgentState.FAILED);
+				return new AgentExecResult("Failed to store form due to system timeout", AgentState.COMPLETED);
 			}
 
 			// Wait for user input or timeout

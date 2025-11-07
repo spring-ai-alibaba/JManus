@@ -111,7 +111,7 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 			step.setResult(stepResultStr);
 
 			// Check if agent was interrupted
-			if (executor.getState() == AgentState.FAILED && stepResultStr.contains("interrupted")) {
+			if (executor.getState() == AgentState.INTERRUPTED) {
 				logger.info("Agent {} was interrupted during step execution", executor.getName());
 				// Don't return null, return the executor so interruption can be handled
 				// at plan

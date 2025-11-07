@@ -258,7 +258,8 @@ public abstract class BaseAgent {
 		try {
 			state = AgentState.IN_PROGRESS;
 
-			while (currentStep < maxSteps && !state.equals(AgentState.COMPLETED) && !state.equals(AgentState.FAILED)) {
+			while (currentStep < maxSteps && !state.equals(AgentState.COMPLETED)
+					&& !state.equals(AgentState.INTERRUPTED)) {
 				currentStep++;
 				log.info("Executing round {}/{}", currentStep, maxSteps);
 
@@ -273,7 +274,7 @@ public abstract class BaseAgent {
 					state = stepResult.getState();
 
 					// Check if agent was interrupted and should stop
-					if (state.equals(AgentState.FAILED)) {
+					if (state.equals(AgentState.INTERRUPTED)) {
 						log.info("Agent execution interrupted at round {}/{}", currentStep, maxSteps);
 						results.add("Execution interrupted by user");
 						break; // Exit the loop immediately

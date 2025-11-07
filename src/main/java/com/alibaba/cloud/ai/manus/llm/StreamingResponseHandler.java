@@ -159,7 +159,7 @@ public class StreamingResponseHandler {
 				});
 			}
 
-			processedFlux.doOnSubscribe(subscription -> {
+			Flux<ChatResponse> finalFlux = processedFlux.doOnSubscribe(subscription -> {
 				messageTextContentRef.set(new StringBuilder());
 				messageMetadataMapRef.set(new HashMap<>());
 				metadataIdRef.set("");
@@ -272,16 +272,68 @@ public class StreamingResponseHandler {
 				metadataRateLimitRef.set(new EmptyRateLimit());
 
 			}).doOnError(e -> {
-				log.error("Aggregation Error", e);
+				// Record error in trace logger
+				llmTraceRecorder.recordError(e);
+
+				// Enhanced error logging for API errors
+				if (e instanceof org.springframework.web.reactive.function.client.WebClientResponseException webClientException) {
+					String responseBody = webClientException.getResponseBodyAsString();
+					log.error(
+							"❌ API Error - Status: {}, Response Body: {}, Request URL: {}, Request Method: {}. Check LLM_REQUEST_LOGGER for full request details.",
+							webClientException.getStatusCode(),
+							responseBody != null && !responseBody.isEmpty() ? responseBody : "(empty)",
+							webClientException.getRequest() != null ? webClientException.getRequest().getURI() : "N/A",
+							webClientException.getRequest() != null ? webClientException.getRequest().getMethod() : "N/A",
+							webClientException);
+				}
+				else {
+					log.error("Aggregation Error: {}", e.getMessage(), e);
+				}
 				jmanusEventPublisher.publish(new PlanExceptionEvent(planId, e));
 			}).doOnCancel(() -> {
 				if (shouldEarlyTerminate.get()) {
 					log.info("Stream cancelled due to early termination (thinking-only response detected)");
 				}
-			}).blockLast();
+			});
+
+			try {
+				finalFlux.blockLast();
+			}
+			catch (Exception e) {
+				// Record error in trace logger
+				llmTraceRecorder.recordError(e);
+
+				// Enhanced error logging for API errors
+				if (e instanceof org.springframework.web.reactive.function.client.WebClientResponseException webClientException) {
+					String responseBody = webClientException.getResponseBodyAsString();
+					log.error(
+							"❌ API Error during blockLast() - Status: {}, Response Body: {}, Request URL: {}. Check LLM_REQUEST_LOGGER for full request details.",
+							webClientException.getStatusCode(),
+							responseBody != null && !responseBody.isEmpty() ? responseBody : "(empty)",
+							webClientException.getRequest() != null ? webClientException.getRequest().getURI() : "N/A",
+							webClientException);
+				}
+				else {
+					log.error("Error during blockLast(): {}", e.getMessage(), e);
+				}
+				// Re-throw to be handled by outer try-catch
+				throw e;
+			}
 
 			llmTraceRecorder.recordResponse(finalChatResponseRef.get());
 			return new StreamingResult(finalChatResponseRef.get());
+		}
+		catch (Exception e) {
+			// Final error handling - log and re-throw
+			if (e instanceof org.springframework.web.reactive.function.client.WebClientResponseException webClientException) {
+				String responseBody = webClientException.getResponseBodyAsString();
+				log.error(
+						"❌ Final API Error - Status: {}, Response Body: {}. Full request details logged in LLM_REQUEST_LOGGER.",
+						webClientException.getStatusCode(),
+						responseBody != null && !responseBody.isEmpty() ? responseBody : "(empty)",
+						webClientException);
+			}
+			throw e;
 		}
 		finally {
 			LlmTraceRecorder.clearRequest();

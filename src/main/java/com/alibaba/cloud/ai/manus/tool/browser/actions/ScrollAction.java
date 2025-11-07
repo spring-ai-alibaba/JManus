@@ -15,10 +15,9 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
-import com.microsoft.playwright.Page;
-
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.microsoft.playwright.Page;
 
 public class ScrollAction extends BrowserAction {
 
@@ -29,17 +28,32 @@ public class ScrollAction extends BrowserAction {
 	@Override
 	public ToolExecuteResult execute(BrowserRequestVO request) throws Exception {
 		Integer scrollAmount = request.getScrollAmount();
+		String direction = request.getDirection();
 
+		// If scrollAmount is not provided, use direction to determine scroll amount
 		if (scrollAmount == null) {
-			return new ToolExecuteResult("Scroll amount is required for 'scroll' action");
+			if (direction == null || direction.trim().isEmpty()) {
+				return new ToolExecuteResult("Either 'scroll_amount' or 'direction' is required for 'scroll' action");
+			}
+			// Default scroll amount: 500 pixels
+			int defaultScrollAmount = 500;
+			if ("up".equalsIgnoreCase(direction)) {
+				scrollAmount = -defaultScrollAmount;
+			}
+			else if ("down".equalsIgnoreCase(direction)) {
+				scrollAmount = defaultScrollAmount;
+			}
+			else {
+				return new ToolExecuteResult("Direction must be 'up' or 'down', got: " + direction);
+			}
 		}
 
 		Page page = getCurrentPage(); // Get Playwright Page instance
-		page.evaluate("window.scrollBy(0, arguments[0])", scrollAmount); // Use Playwright
-		// Execute scroll
+		// Use arrow function to pass scrollAmount as parameter
+		page.evaluate("(amount) => window.scrollBy(0, amount)", scrollAmount);
 
-		String direction = scrollAmount > 0 ? "down" : "up";
-		return new ToolExecuteResult("Scrolled " + direction + " by " + Math.abs(scrollAmount) + " pixels");
+		String scrollDirection = scrollAmount > 0 ? "down" : "up";
+		return new ToolExecuteResult("Scrolled " + scrollDirection + " by " + Math.abs(scrollAmount) + " pixels");
 	}
 
 }

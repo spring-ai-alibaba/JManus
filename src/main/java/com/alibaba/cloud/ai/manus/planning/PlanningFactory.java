@@ -55,6 +55,7 @@ import com.alibaba.cloud.ai.manus.planning.service.PlanFinalizer;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
 import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
 import com.alibaba.cloud.ai.manus.tool.FormInputTool;
 import com.alibaba.cloud.ai.manus.tool.TerminateTool;
@@ -134,6 +135,10 @@ public class PlanningFactory {
 	@Autowired
 	private SubplanToolService subplanToolService;
 
+	@Autowired
+	@Lazy
+	private TaskInterruptionManager taskInterruptionManager;
+
 	@SuppressWarnings("unused")
 	@Autowired
 	private PptGeneratorOperator pptGeneratorOperator;
@@ -173,7 +178,7 @@ public class PlanningFactory {
 	 * @return configured PlanFinalizer instance
 	 */
 	public PlanFinalizer createPlanFinalizer() {
-		return new PlanFinalizer(llmService, recorder, manusProperties, streamingResponseHandler);
+		return new PlanFinalizer(llmService, recorder, manusProperties, streamingResponseHandler, taskInterruptionManager);
 	}
 
 	public static class ToolCallBackContext {

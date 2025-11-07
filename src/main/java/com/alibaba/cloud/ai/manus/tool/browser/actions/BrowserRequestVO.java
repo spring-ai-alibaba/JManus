@@ -57,6 +57,12 @@ public class BrowserRequestVO {
 	private Integer scrollAmount;
 
 	/**
+	 * Scroll direction, used for scroll operations when scroll_amount is not provided
+	 * "up" or "down"
+	 */
+	private String direction;
+
+	/**
 	 * Tab ID, used for switch_tab operations
 	 */
 	@JsonProperty("tab_id")
@@ -158,6 +164,14 @@ public class BrowserRequestVO {
 
 	public void setPositionY(Double positionY) {
 		this.positionY = positionY;
+	}
+
+	public String getDirection() {
+		return direction;
+	}
+
+	public void setDirection(String direction) {
+		this.direction = direction;
 	}
 
 }

@@ -268,7 +268,6 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				- 'input_text': Input text in element
 				- 'key_enter': Press Enter key
 				- 'screenshot': Capture screenshot
-				// - 'get_html': Get HTML content of current page
 				- 'get_text': Get text content of current page
 				- 'execute_js': Execute JavaScript code
 				- 'scroll': Scroll page up/down
@@ -276,8 +275,6 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				- 'new_tab': Open new tab
 				- 'close_tab': Close current tab
 				- 'switch_tab': Switch to specific tab
-				- 'get_element_position_by_name': Get element position by name
-				- 'move_to_and_click': Move to coordinates and click
 
 				Note: Browser operations have timeout configuration, default is 30 seconds.
 				""";
@@ -397,10 +394,14 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                    "type": "string",
 				                    "const": "scroll"
 				                },
+				                "scroll_amount": {
+				                    "type": "integer",
+				                    "description": "Scroll amount in pixels. Positive values scroll down, negative values scroll up. If not provided, 'direction' will be used with default 500 pixels."
+				                },
 				                "direction": {
 				                    "type": "string",
 				                    "enum": ["up", "down"],
-				                    "description": "Scroll direction"
+				                    "description": "Scroll direction. Used when 'scroll_amount' is not provided. Defaults to 500 pixels."
 				                }
 				            },
 				            "required": ["action", "direction"],
@@ -456,40 +457,6 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                }
 				            },
 				            "required": ["action"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "get_element_position"
-				                },
-				                "element_name": {
-				                    "type": "string",
-				                    "description": "Element name to get position"
-				                }
-				            },
-				            "required": ["action", "element_name"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "move_to_and_click"
-				                },
-				                "position_x": {
-				                    "type": "integer",
-				                    "description": "X coordinate to move to and click"
-				                },
-				                "position_y": {
-				                    "type": "integer",
-				                    "description": "Y coordinate to move to and click"
-				                }
-				            },
-				            "required": ["action", "position_x", "position_y"],
 				            "additionalProperties": false
 				        }
 				    ]
