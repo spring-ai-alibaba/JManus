@@ -385,6 +385,7 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 	}
 
 	@Override
+	@Transactional
 	public Long recordThinkingAndAction(ExecutionStep step, ThinkActRecordParams params) {
 		try {
 			if (step == null || step.getStepId() == null || params == null) {

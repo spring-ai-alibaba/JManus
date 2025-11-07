@@ -48,6 +48,8 @@ public class DriverWrapper {
 
 	private Browser browser;
 
+	private BrowserContextImpl browserContext;
+
 	private AriaElementHolder ariaElementHolder;
 
 	private final Path cookiePath;
@@ -88,6 +90,11 @@ public class DriverWrapper {
 		this.browser = browser;
 		this.ariaElementHolder = null; // Will be initialized on first use
 		this.objectMapper = objectMapper;
+		
+		// Initialize browser context wrapper if page is available
+		if (currentPage != null) {
+			this.browserContext = new BrowserContextImpl(currentPage.context());
+		}
 		// Configure ObjectMapper
 		this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 		this.objectMapper.addMixIn(Cookie.class, PlaywrightCookieMixin.class);
@@ -214,6 +221,12 @@ public class DriverWrapper {
 
 	public void setCurrentPage(Page currentPage) {
 		this.currentPage = currentPage;
+		// Update browser context wrapper when page changes
+		if (currentPage != null) {
+			this.browserContext = new BrowserContextImpl(currentPage.context());
+		} else {
+			this.browserContext = null;
+		}
 		// Refresh ARIA element holder when page changes
 		this.ariaElementHolder = null;
 		// Potentially load cookies if page context changes and it's desired
@@ -228,8 +241,27 @@ public class DriverWrapper {
 		this.browser = browser;
 	}
 
+	public BrowserContextImpl getBrowserContext() {
+		return browserContext;
+	}
+
+	public void setBrowserContext(BrowserContextImpl browserContext) {
+		this.browserContext = browserContext;
+	}
+
 	public void close() {
 		saveCookies();
+		
+		// Close browser context first
+		if (this.browserContext != null) {
+			try {
+				this.browserContext.close("DriverWrapper closing");
+			}
+			catch (Exception e) {
+				log.info("Error closing browser context: {}", e.getMessage());
+			}
+		}
+		
 		if (this.currentPage != null) {
 			try {
 				this.currentPage.close();
