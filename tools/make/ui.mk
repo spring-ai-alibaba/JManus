@@ -18,31 +18,31 @@
 .PHONY: ui-build
 ui-build: ## Build the UI
 	@$(LOG_TARGET)
-	cd ui-vue3 && pnpm install && pnpm run build
+	@bash -c "if [ -s \"$$HOME/.nvm/nvm.sh\" ]; then export NVM_DIR=\"$$HOME/.nvm\" && [ -s \"$$NVM_DIR/nvm.sh\" ] && \. \"$$NVM_DIR/nvm.sh\" && nvm use 22 > /dev/null 2>&1 || true; fi; cd ui-vue3 && pnpm install && pnpm run build"
 
 # Run ui
 .PHONY: ui-run
 ui-run: ## Run the UI
 	@$(LOG_TARGET)
-	@cd ui-vue3 && pnpm install && pnpm run dev
+	@bash -c "if [ -s \"$$HOME/.nvm/nvm.sh\" ]; then export NVM_DIR=\"$$HOME/.nvm\" && [ -s \"$$NVM_DIR/nvm.sh\" ] && \. \"$$NVM_DIR/nvm.sh\" && nvm use 22 > /dev/null 2>&1 || true; fi; cd ui-vue3 && pnpm install && pnpm run dev"
 
 # Rebuild ui
 .PHONY: ui-rebuild
 ui-rebuild: ## Rebuild the UI
 	@$(LOG_TARGET)
-	cd ui-vue3 && pnpm install && pnpm run build
+	@bash -c "if [ -s \"$$HOME/.nvm/nvm.sh\" ]; then export NVM_DIR=\"$$HOME/.nvm\" && [ -s \"$$NVM_DIR/nvm.sh\" ] && \. \"$$NVM_DIR/nvm.sh\" && nvm use 22 > /dev/null 2>&1 || true; fi; cd ui-vue3 && pnpm install && pnpm run build"
 
 # UI lint
 .PHONY: ui-lint
 ui-lint: ## Lint the UI code
 	@$(LOG_TARGET)
-	cd ui-vue3 && pnpm install --no-frozen-lockfile && pnpm run lint
+	@bash -c "if [ -s \"$$HOME/.nvm/nvm.sh\" ]; then export NVM_DIR=\"$$HOME/.nvm\" && [ -s \"$$NVM_DIR/nvm.sh\" ] && \. \"$$NVM_DIR/nvm.sh\" && nvm use 22 > /dev/null 2>&1 || true; fi; cd ui-vue3 && pnpm install --no-frozen-lockfile && pnpm run lint"
 
 # Deploy UI to static directory
 .PHONY: ui-deploy
 ui-deploy: ## Build UI and deploy to static directory
 	@$(LOG_TARGET)
-	cd ui-vue3 && pnpm install && pnpm run build
+	@bash -c "if [ -s \"$$HOME/.nvm/nvm.sh\" ]; then export NVM_DIR=\"$$HOME/.nvm\" && [ -s \"$$NVM_DIR/nvm.sh\" ] && \. \"$$NVM_DIR/nvm.sh\" && nvm use 22 > /dev/null 2>&1 || true; fi; cd ui-vue3 && pnpm install && pnpm run build"
 	@echo "Removing existing static UI directory..."
 	rm -rf src/main/resources/static/ui
 	@echo "Copying built UI to static directory..."
