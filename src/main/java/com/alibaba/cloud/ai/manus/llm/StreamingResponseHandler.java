@@ -114,8 +114,8 @@ public class StreamingResponseHandler {
 	 * responses. Should be false for text-only generation tasks (e.g., summaries)
 	 * @return StreamingResult containing merged content and the last response
 	 */
-	public StreamingResult processStreamingResponse(Flux<ChatResponse> responseFlux, String contextName,
-			String planId, boolean isDebugModel, boolean enableEarlyTermination) {
+	public StreamingResult processStreamingResponse(Flux<ChatResponse> responseFlux, String contextName, String planId,
+			boolean isDebugModel, boolean enableEarlyTermination) {
 		try {
 			LlmTraceRecorder.initRequest();
 			AtomicReference<Long> lastLogTime = new AtomicReference<>(System.currentTimeMillis());
@@ -149,12 +149,14 @@ public class StreamingResponseHandler {
 			AtomicReference<Boolean> shouldEarlyTerminate = new AtomicReference<>(false);
 
 			// Apply early termination logic for non-debug mode using takeUntil
-			// Only enable if both isDebugModel is false AND enableEarlyTermination is true
+			// Only enable if both isDebugModel is false AND enableEarlyTermination is
+			// true
 			Flux<ChatResponse> processedFlux = responseFlux;
 			if (!isDebugModel && enableEarlyTermination) {
 				processedFlux = responseFlux.takeUntil(chatResponse -> {
 					// This predicate will be evaluated for each response
-					// The actual termination logic is in doOnNext, but we use this to stop the stream
+					// The actual termination logic is in doOnNext, but we use this to
+					// stop the stream
 					return shouldEarlyTerminate.get();
 				});
 			}
@@ -185,7 +187,8 @@ public class StreamingResponseHandler {
 					messageMetadataMapRef.get().putAll(chatResponse.getResult().getOutput().getMetadata());
 				}
 
-				// Early termination check for non-debug mode: detect thinking-only response
+				// Early termination check for non-debug mode: detect thinking-only
+				// response
 				// Check after updating accumulated state to use latest data
 				// Only check if early termination is enabled
 				if (!isDebugModel && enableEarlyTermination && !shouldEarlyTerminate.get()) {
@@ -199,7 +202,13 @@ public class StreamingResponseHandler {
 						if (accumulatedHasText && !accumulatedHasToolCalls) {
 							shouldEarlyTerminate.set(true);
 							String textContent = messageTextContentRef.get().toString();
-							String preview = getTextPreviewWithHeadAndTail(textContent, 200); // Show first 200 and last 200 chars
+							String preview = getTextPreviewWithHeadAndTail(textContent, 200); // Show
+																								// first
+																								// 200
+																								// and
+																								// last
+																								// 200
+																								// chars
 							log.info(
 									"🛑 Early termination detected: thinking-only response ({} characters, no tool calls) in non-debug mode. Stopping stream. Content preview: '{}'",
 									textContent.length(), preview);
@@ -283,7 +292,8 @@ public class StreamingResponseHandler {
 							webClientException.getStatusCode(),
 							responseBody != null && !responseBody.isEmpty() ? responseBody : "(empty)",
 							webClientException.getRequest() != null ? webClientException.getRequest().getURI() : "N/A",
-							webClientException.getRequest() != null ? webClientException.getRequest().getMethod() : "N/A",
+							webClientException.getRequest() != null ? webClientException.getRequest().getMethod()
+									: "N/A",
 							webClientException);
 				}
 				else {
@@ -330,8 +340,7 @@ public class StreamingResponseHandler {
 				log.error(
 						"❌ Final API Error - Status: {}, Response Body: {}. Full request details logged in LLM_REQUEST_LOGGER.",
 						webClientException.getStatusCode(),
-						responseBody != null && !responseBody.isEmpty() ? responseBody : "(empty)",
-						webClientException);
+						responseBody != null && !responseBody.isEmpty() ? responseBody : "(empty)", webClientException);
 			}
 			throw e;
 		}
@@ -341,9 +350,9 @@ public class StreamingResponseHandler {
 	}
 
 	/**
-	 * Process a streaming chat response flux for text-only content (e.g., summaries)
-	 * This method does NOT enable early termination since text-only generation doesn't
-	 * require tool calls
+	 * Process a streaming chat response flux for text-only content (e.g., summaries) This
+	 * method does NOT enable early termination since text-only generation doesn't require
+	 * tool calls
 	 * @param responseFlux The streaming chat response flux
 	 * @param contextName A descriptive name for logging context
 	 * @param planId The plan ID for event publishing

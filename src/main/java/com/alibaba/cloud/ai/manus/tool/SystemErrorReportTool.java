@@ -25,9 +25,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Tool for reporting system execution errors and storing error messages in the execution record.
- * This tool does NOT implement TerminableTool, so it will not terminate execution.
- * It is used internally by the system to report errors while allowing execution to continue.
+ * Tool for reporting system execution errors and storing error messages in the execution
+ * record. This tool does NOT implement TerminableTool, so it will not terminate
+ * execution. It is used internally by the system to report errors while allowing
+ * execution to continue.
  */
 public class SystemErrorReportTool extends AbstractBaseTool<Map<String, Object>> {
 
@@ -90,7 +91,8 @@ public class SystemErrorReportTool extends AbstractBaseTool<Map<String, Object>>
 		this.currentPlanId = planId;
 		if (objectMapper != null) {
 			this.objectMapper = objectMapper;
-		} else {
+		}
+		else {
 			this.objectMapper = new ObjectMapper();
 			this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		}
@@ -115,10 +117,10 @@ public class SystemErrorReportTool extends AbstractBaseTool<Map<String, Object>>
 
 		// Format the error message as JSON for storage
 		try {
-			Map<String, Object> errorData = Map.of("errorMessage", errorMessage, "timestamp",
-					errorReportTimestamp);
+			Map<String, Object> errorData = Map.of("errorMessage", errorMessage, "timestamp", errorReportTimestamp);
 			String jsonString = objectMapper.writeValueAsString(errorData);
-			log.info("System error reported successfully for planId: {}, errorMessage: {}", currentPlanId, errorMessage);
+			log.info("System error reported successfully for planId: {}, errorMessage: {}", currentPlanId,
+					errorMessage);
 			return new ToolExecuteResult(jsonString);
 		}
 		catch (Exception e) {
@@ -173,4 +175,3 @@ public class SystemErrorReportTool extends AbstractBaseTool<Map<String, Object>>
 	}
 
 }
-

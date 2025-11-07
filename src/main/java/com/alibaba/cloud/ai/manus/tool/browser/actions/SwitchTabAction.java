@@ -34,12 +34,13 @@ public class SwitchTabAction extends BrowserAction {
 
 		Page page = getCurrentPage(); // Get Playwright Page instance
 		java.util.List<Page> pages = page.context().pages();
-		
+
 		// Check if tabId is within valid range
 		if (tabId >= pages.size()) {
-			return new ToolExecuteResult("Tab ID " + tabId + " is out of range. Available tabs: 0 to " + (pages.size() - 1));
+			return new ToolExecuteResult(
+					"Tab ID " + tabId + " is out of range. Available tabs: 0 to " + (pages.size() - 1));
 		}
-		
+
 		Page targetPage = pages.get(tabId); // Switch to specified tab
 		if (targetPage == null) {
 			return new ToolExecuteResult("Tab ID " + tabId + " does not exist");

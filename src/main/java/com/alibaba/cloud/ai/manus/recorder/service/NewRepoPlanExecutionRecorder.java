@@ -427,11 +427,13 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 			// 4. Save the think-act record
 			ThinkActRecordEntity savedThinkActRecord = thinkActRecordRepository.save(thinkActRecord);
 
-			// 5. Add the think-act record to the agent execution record's list to maintain the relationship
+			// 5. Add the think-act record to the agent execution record's list to
+			// maintain the relationship
 			agentRecord.addThinkActStep(savedThinkActRecord);
 			agentExecutionRecordRepository.save(agentRecord);
 
-			logger.info("Successfully recorded thinking and action for stepId: {}, thinkActRecordId: {}, added to agentRecord.thinkActSteps",
+			logger.info(
+					"Successfully recorded thinking and action for stepId: {}, thinkActRecordId: {}, added to agentRecord.thinkActSteps",
 					step.getStepId(), savedThinkActRecord.getId());
 
 			return savedThinkActRecord.getId();

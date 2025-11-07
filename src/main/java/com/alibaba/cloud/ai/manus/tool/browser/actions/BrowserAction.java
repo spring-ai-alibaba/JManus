@@ -168,7 +168,8 @@ public abstract class BrowserAction {
 					String href = node.props != null ? node.props.get("url") : null;
 					if (href != null && !href.isEmpty()) {
 						try {
-							// Use CSS selector with href attribute for more specific matching
+							// Use CSS selector with href attribute for more specific
+							// matching
 							Locator hrefLocator = page.locator("a[href*='" + href.replace("'", "\\'") + "']");
 							if (hrefLocator.count() == 1) {
 								return hrefLocator;
@@ -180,7 +181,7 @@ public abstract class BrowserAction {
 						}
 					}
 				}
-				
+
 				try {
 					Locator locator = null;
 					switch (role) {
@@ -212,16 +213,19 @@ public abstract class BrowserAction {
 							// Fallback: try to get by role without name
 							return getByRoleWithoutName(page, role);
 					}
-					
+
 					// Check if locator matches multiple elements (proactive check)
-					// This helps avoid strict mode violations during waitFor/click operations
+					// This helps avoid strict mode violations during waitFor/click
+					// operations
 					try {
 						int count = locator.count();
 						if (count > 1) {
-							log.debug("Locator for role={}, name={} matches {} elements, using handleMultipleMatches", role, name, count);
+							log.debug("Locator for role={}, name={} matches {} elements, using handleMultipleMatches",
+									role, name, count);
 							return handleMultipleMatches(page, node, role, name);
 						}
-						// If count is 1 or 0, the locator is fine (0 will fail later, but that's expected)
+						// If count is 1 or 0, the locator is fine (0 will fail later, but
+						// that's expected)
 						return locator;
 					}
 					catch (Exception countException) {
@@ -232,9 +236,11 @@ public abstract class BrowserAction {
 					}
 				}
 				catch (Exception e) {
-					// Strict mode violation or other error - try to handle multiple matches
+					// Strict mode violation or other error - try to handle multiple
+					// matches
 					if (e.getMessage() != null && e.getMessage().contains("strict mode violation")) {
-						log.debug("Strict mode violation for role={}, name={}, trying alternative selector", role, name);
+						log.debug("Strict mode violation for role={}, name={}, trying alternative selector", role,
+								name);
 						return handleMultipleMatches(page, node, role, name);
 					}
 					throw e;
@@ -266,8 +272,8 @@ public abstract class BrowserAction {
 			if (placeholder != null && !placeholder.isEmpty()) {
 				try {
 					// Use CSS selector with placeholder as additional filter
-					Locator placeholderLocator = page.locator(
-							"input[placeholder*='" + placeholder.replace("'", "\\'") + "']");
+					Locator placeholderLocator = page
+						.locator("input[placeholder*='" + placeholder.replace("'", "\\'") + "']");
 					if (placeholderLocator.count() == 1) {
 						return placeholderLocator;
 					}
@@ -299,41 +305,45 @@ public abstract class BrowserAction {
 			}
 
 			// Try to use getByRole with name and filter by index
-			// We need to use a workaround since getByRole with name throws strict mode violation
+			// We need to use a workaround since getByRole with name throws strict mode
+			// violation
 			try {
 				com.microsoft.playwright.options.AriaRole ariaRole = mapRoleToAriaRole(role);
 				if (ariaRole != null) {
 					// Get all elements with this role and name using filter
 					// First, get all elements with the role
 					Locator allRoleElements = page.getByRole(ariaRole);
-					
+
 					// Filter by name using a filter function
-					// This avoids strict mode violation by not using getByRole with name directly
+					// This avoids strict mode violation by not using getByRole with name
+					// directly
 					Locator filteredByName = allRoleElements.filter(new Locator.FilterOptions().setHasText(name));
-					
+
 					int filteredCount = filteredByName.count();
 					log.debug("Found {} elements with role={} and name={}", filteredCount, role, name);
-					
+
 					// If we found the index and it's valid, use nth()
 					if (nodeIndex >= 0 && nodeIndex < filteredCount) {
 						log.debug("Using nth({}) for role={}, name={} (ref={})", nodeIndex, role, name, node.ref);
 						return filteredByName.nth(nodeIndex);
 					}
-					
+
 					// If filtered count matches expected, use the filtered locator
 					if (filteredCount > 0 && filteredCount <= matchingNodes.size()) {
 						// Use first() as fallback if we can't determine exact index
-						log.debug("Using first() from {} filtered elements for role={}, name={}", filteredCount, role, name);
+						log.debug("Using first() from {} filtered elements for role={}, name={}", filteredCount, role,
+								name);
 						return filteredByName.first();
 					}
-					
+
 					// Fallback: use all role elements without name filter
 					int totalCount = allRoleElements.count();
 					if (nodeIndex >= 0 && nodeIndex < totalCount) {
-						log.debug("Using nth({}) from all {} role elements for role={}, name={}", nodeIndex, totalCount, role, name);
+						log.debug("Using nth({}) from all {} role elements for role={}, name={}", nodeIndex, totalCount,
+								role, name);
 						return allRoleElements.nth(nodeIndex);
 					}
-					
+
 					// Final fallback: use first() if we can't determine the index
 					log.warn("Multiple elements match role={}, name={}, using first() as fallback", role, name);
 					return allRoleElements.first();

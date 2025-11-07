@@ -33,8 +33,8 @@ import com.alibaba.cloud.ai.manus.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
 /**
- * Service for executing multiple tools in parallel
- * Extracted from ParallelExecutionTool to provide reusable parallel execution functionality
+ * Service for executing multiple tools in parallel Extracted from ParallelExecutionTool
+ * to provide reusable parallel execution functionality
  */
 @Service
 public class ParallelToolExecutionService {
@@ -45,8 +45,11 @@ public class ParallelToolExecutionService {
 	 * Result of a single tool execution
 	 */
 	public static class ToolExecutionResult {
+
 		private final String toolName;
+
 		private final ToolExecuteResult result;
+
 		private final boolean success;
 
 		public ToolExecutionResult(String toolName, ToolExecuteResult result, boolean success) {
@@ -66,6 +69,7 @@ public class ParallelToolExecutionService {
 		public boolean isSuccess() {
 			return success;
 		}
+
 	}
 
 	/**
@@ -73,7 +77,8 @@ public class ParallelToolExecutionService {
 	 * @param toolCalls List of tool calls to execute
 	 * @param toolCallbackMap Map of tool names to their callback contexts
 	 * @param planIdDispatcher Plan ID dispatcher for generating tool call IDs
-	 * @param parentToolContext Parent tool context (for propagating toolCallId and planDepth)
+	 * @param parentToolContext Parent tool context (for propagating toolCallId and
+	 * planDepth)
 	 * @return List of execution results for each tool
 	 */
 	public List<ToolExecutionResult> executeToolsInParallel(List<ToolCall> toolCalls,
@@ -99,8 +104,8 @@ public class ParallelToolExecutionService {
 
 			if (toolContext == null) {
 				log.warn("Tool not found in callback map: {}", toolName);
-				futures.add(CompletableFuture.completedFuture(
-						new ToolExecutionResult(toolName, new ToolExecuteResult("Tool not found: " + toolName), false)));
+				futures.add(CompletableFuture.completedFuture(new ToolExecutionResult(toolName,
+						new ToolExecuteResult("Tool not found: " + toolName), false)));
 				continue;
 			}
 
@@ -126,8 +131,8 @@ public class ParallelToolExecutionService {
 
 					// Execute the tool using apply method
 					@SuppressWarnings("unchecked")
-					ToolExecuteResult result = ((AbstractBaseTool<Map<String, Object>>) functionInstance)
-							.apply(input, toolContextForExecution);
+					ToolExecuteResult result = ((AbstractBaseTool<Map<String, Object>>) functionInstance).apply(input,
+							toolContextForExecution);
 
 					log.debug("Completed execution for tool: {}", toolName);
 					return new ToolExecutionResult(toolName, result, true);
@@ -228,4 +233,3 @@ public class ParallelToolExecutionService {
 	}
 
 }
-

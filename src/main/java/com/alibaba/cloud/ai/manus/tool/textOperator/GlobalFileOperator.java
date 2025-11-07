@@ -34,14 +34,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Global file operator that performs operations within the shared directory (rootPlanId/shared/).
- * This operator provides access to shared files that can be accessed across all sub-plans
- * within the same execution context. All files are stored in the rootPlanId/shared/ directory.
+ * Global file operator that performs operations within the shared directory
+ * (rootPlanId/shared/). This operator provides access to shared files that can be
+ * accessed across all sub-plans within the same execution context. All files are stored
+ * in the rootPlanId/shared/ directory.
  *
  * Keywords: global files, root directory, root folder, shared files, root plan directory,
  * global file operations, root file access, shared storage, cross-plan files.
  *
- * Use this tool for operations on global files, root directory files, or root folder files.
+ * Use this tool for operations on global files, root directory files, or root folder
+ * files.
  */
 public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.GlobalFileInput> {
 
@@ -52,8 +54,10 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 	/**
 	 * Set of supported text file extensions
 	 */
-	private static final Set<String> SUPPORTED_EXTENSIONS = new HashSet<>(Set.of(
-			".txt", ".md", ".markdown", // Plain text and Markdown
+	private static final Set<String> SUPPORTED_EXTENSIONS = new HashSet<>(Set.of(".txt", ".md", ".markdown", // Plain
+																												// text
+																												// and
+																												// Markdown
 			".java", ".py", ".js", ".ts", ".jsx", ".tsx", // Common programming languages
 			".html", ".htm", ".css", ".scss", ".sass", ".less", // Web-related
 			".xml", ".json", ".yaml", ".yml", ".properties", // Configuration files
@@ -61,7 +65,9 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			".log", ".conf", ".ini", // Logs and configuration
 			".gradle", ".pom", ".mvn", // Build tools
 			".csv", ".rst", ".adoc", // Documentation and data
-			".cpp", ".c", ".h", ".go", ".rs", ".php", ".rb", ".swift", ".kt", ".scala" // Additional programming languages
+			".cpp", ".c", ".h", ".go", ".rs", ".php", ".rb", ".swift", ".kt", ".scala" // Additional
+																						// programming
+																						// languages
 	));
 
 	/**
@@ -177,10 +183,13 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		public void setWholeWord(Boolean wholeWord) {
 			this.wholeWord = wholeWord;
 		}
+
 	}
 
 	private final TextFileService textFileService;
+
 	private final SmartContentSavingService innerStorageService;
+
 	private final ObjectMapper objectMapper;
 
 	public GlobalFileOperator(TextFileService textFileService, SmartContentSavingService innerStorageService,
@@ -363,7 +372,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		// Get the root plan directory and resolve to shared subdirectory
 		Path rootPlanDirectory = textFileService.getRootPlanDirectory(this.rootPlanId);
 		Path sharedDirectory = rootPlanDirectory.resolve("shared");
-		
+
 		// Resolve file path within the shared directory
 		Path absolutePath = sharedDirectory.resolve(filePath).normalize();
 
@@ -464,12 +473,12 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			// Get the shared directory
 			Path rootPlanDirectory = textFileService.getRootPlanDirectory(this.rootPlanId);
 			Path sharedDirectory = rootPlanDirectory.resolve("shared");
-			
+
 			// If a subdirectory path is provided, resolve it within shared directory
 			Path targetDirectory = sharedDirectory;
 			if (directoryPath != null && !directoryPath.isEmpty()) {
 				targetDirectory = sharedDirectory.resolve(directoryPath).normalize();
-				
+
 				// Ensure the target directory stays within shared directory
 				if (!targetDirectory.startsWith(sharedDirectory)) {
 					return new ToolExecuteResult("Error: Directory path must be within the shared directory");
@@ -486,12 +495,13 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			}
 
 			StringBuilder result = new StringBuilder();
-			String displayPath = directoryPath == null || directoryPath.isEmpty() ? "shared/" : "shared/" + directoryPath;
+			String displayPath = directoryPath == null || directoryPath.isEmpty() ? "shared/"
+					: "shared/" + directoryPath;
 			result.append(String.format("Files in shared directory: %s\n", displayPath));
 			result.append("=".repeat(50)).append("\n");
 
 			java.util.List<Path> files = Files.list(targetDirectory).sorted().toList();
-			
+
 			if (files.isEmpty()) {
 				result.append("(empty directory)\n");
 			}
@@ -526,9 +536,12 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 	 * Format file size in human-readable format
 	 */
 	private String formatFileSize(long size) {
-		if (size < 1024) return size + " B";
-		if (size < 1024 * 1024) return String.format("%.1f KB", size / 1024.0);
-		if (size < 1024 * 1024 * 1024) return String.format("%.1f MB", size / (1024.0 * 1024));
+		if (size < 1024)
+			return size + " B";
+		if (size < 1024 * 1024)
+			return String.format("%.1f KB", size / 1024.0);
+		if (size < 1024 * 1024 * 1024)
+			return String.format("%.1f MB", size / (1024.0 * 1024));
 		return String.format("%.1f GB", size / (1024.0 * 1024 * 1024));
 	}
 
@@ -604,8 +617,8 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			int actualEndLine = Math.min(endLine, lines.size());
 
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("Shared File: %s (Lines %d-%d, Total %d lines)\n", filePath, startLine, actualEndLine,
-					lines.size()));
+			result.append(String.format("Shared File: %s (Lines %d-%d, Total %d lines)\n", filePath, startLine,
+					actualEndLine, lines.size()));
 			result.append("=".repeat(50)).append("\n");
 
 			for (int i = startLine - 1; i < actualEndLine; i++) {
@@ -836,7 +849,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				Keywords: global files, root directory, root folder, shared files, root plan directory,
 				global file operations, root file access, shared storage, cross-plan files.
 
-			
+
 				Supported operations:
 				- create: Create a new shared file with optional content, requires file_path and optional content parameter
 				- delete: Delete an existing shared file, requires file_path parameter
@@ -853,7 +866,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 				Shared Directory Features:
 				- Files created here are accessible by all sub-plans within the execution context
-				
+
 				""";
 	}
 

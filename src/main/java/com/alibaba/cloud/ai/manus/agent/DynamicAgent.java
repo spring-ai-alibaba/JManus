@@ -229,7 +229,7 @@ public class DynamicAgent extends ReActAgent {
 				List<Message> thinkMessages = Arrays.asList(systemMessage, currentStepEnvMessage);
 				String thinkInput = thinkMessages.toString();
 
-				//log.debug("Messages prepared for the prompt: {}", thinkMessages);
+				// log.debug("Messages prepared for the prompt: {}", thinkMessages);
 				// Build current prompt. System message is the first message
 				List<Message> messages = new ArrayList<>(Collections.singletonList(systemMessage));
 				// Add history message.
@@ -263,8 +263,7 @@ public class DynamicAgent extends ReActAgent {
 					.toolCallbacks(callbacks)
 					.stream()
 					.chatResponse();
-				boolean isDebugModel = manusProperties.getDebugDetail() != null
-						&& manusProperties.getDebugDetail();
+				boolean isDebugModel = manusProperties.getDebugDetail() != null && manusProperties.getDebugDetail();
 				// Enable early termination for agent thinking (should have tool calls)
 				streamResult = streamingResponseHandler.processStreamingResponse(responseFlux,
 						"Agent " + getName() + " thinking", getCurrentPlanId(), isDebugModel, true);
@@ -309,7 +308,8 @@ public class DynamicAgent extends ReActAgent {
 			catch (Exception e) {
 				lastException = e;
 				latestLlmException = e;
-				// Record exception to the list (record all exceptions, even non-retryable ones)
+				// Record exception to the list (record all exceptions, even non-retryable
+				// ones)
 				llmCallExceptions.add(e);
 				log.warn("Attempt {} failed: {}", attempt, e.getMessage());
 				log.debug("Exception details for attempt {}: {}", attempt, e.getMessage(), e);
@@ -340,8 +340,8 @@ public class DynamicAgent extends ReActAgent {
 
 		// All retries exhausted
 		if (lastException != null) {
-			log.error("All {} retry attempts failed. Total exceptions recorded: {}. Latest exception: {}",
-					maxRetries, llmCallExceptions.size(), latestLlmException != null ? latestLlmException.getMessage() : "N/A");
+			log.error("All {} retry attempts failed. Total exceptions recorded: {}. Latest exception: {}", maxRetries,
+					llmCallExceptions.size(), latestLlmException != null ? latestLlmException.getMessage() : "N/A");
 			// Store the latest exception for use in step() method
 			// Don't throw exception here, let think() return false and step() handle it
 			return false;
@@ -377,9 +377,12 @@ public class DynamicAgent extends ReActAgent {
 		try {
 			boolean shouldAct = think();
 			if (!shouldAct) {
-				// Check if we have a latest exception from LLM calls (max retries reached)
+				// Check if we have a latest exception from LLM calls (max retries
+				// reached)
 				if (latestLlmException != null) {
-					log.error("Agent {} thinking failed after all retries. Simulating full flow with SystemErrorReportTool", getName());
+					log.error(
+							"Agent {} thinking failed after all retries. Simulating full flow with SystemErrorReportTool",
+							getName());
 					return handleLlmTimeoutWithSystemErrorReport();
 				}
 				// Normal case: thinking complete, no action needed
@@ -402,7 +405,8 @@ public class DynamicAgent extends ReActAgent {
 	 * @return List of exceptions (may be empty if no exceptions occurred)
 	 */
 	public List<Exception> getLlmCallExceptions() {
-		return new ArrayList<>(llmCallExceptions); // Return a copy to prevent external modification
+		return new ArrayList<>(llmCallExceptions); // Return a copy to prevent external
+													// modification
 	}
 
 	/**
@@ -467,7 +471,7 @@ public class DynamicAgent extends ReActAgent {
 				return processSingleTool(toolCalls.get(0));
 			}
 			else {
-				// Multiple tools execution 
+				// Multiple tools execution
 				return processMultipleTools(toolCalls);
 			}
 		}
@@ -492,8 +496,7 @@ public class DynamicAgent extends ReActAgent {
 	}
 
 	/**
-	 * Process a single tool execution
-	 * This is the core logic for tool execution
+	 * Process a single tool execution This is the core logic for tool execution
 	 * @param toolCall The tool call to execute
 	 * @return AgentExecResult containing the execution result
 	 */
@@ -594,16 +597,15 @@ public class DynamicAgent extends ReActAgent {
 	}
 
 	/**
-	 * Process multiple tools execution using parallel execution service
-	 * Multiple tools execution does not support TerminableTool and FormInputTool.
-	 * If these tools are present, return error message asking LLM to retry without them.
+	 * Process multiple tools execution using parallel execution service Multiple tools
+	 * execution does not support TerminableTool and FormInputTool. If these tools are
+	 * present, return error message asking LLM to retry without them.
 	 * @param toolCalls List of tool calls to execute
 	 * @return AgentExecResult containing the execution results
 	 */
 	private AgentExecResult processMultipleTools(List<ToolCall> toolCalls) {
 		// Check for interruption before starting
-		if (agentInterruptionHelper != null
-				&& !agentInterruptionHelper.checkInterruptionAndContinue(getRootPlanId())) {
+		if (agentInterruptionHelper != null && !agentInterruptionHelper.checkInterruptionAndContinue(getRootPlanId())) {
 			log.info("Agent {} tool execution interrupted before starting for rootPlanId: {}", getName(),
 					getRootPlanId());
 			return new AgentExecResult("Tool execution interrupted by user", AgentState.INTERRUPTED);
@@ -644,11 +646,10 @@ public class DynamicAgent extends ReActAgent {
 			Map<String, Object> toolContextMap = new HashMap<>();
 			toolContextMap.put("toolcallId", planIdDispatcher.generateToolCallId());
 			toolContextMap.put("planDepth", getPlanDepth());
-			ToolContext parentToolContext = new ToolContext(
-					toolContextMap);
+			ToolContext parentToolContext = new ToolContext(toolContextMap);
 
 			List<ParallelToolExecutionService.ToolExecutionResult> parallelResults = parallelToolExecutionService
-					.executeToolsInParallel(toolCalls, toolCallbackMap, planIdDispatcher, parentToolContext);
+				.executeToolsInParallel(toolCalls, toolCallbackMap, planIdDispatcher, parentToolContext);
 			log.info("Executed {} tools in parallel", parallelResults.size());
 
 			// Process results and update actToolInfoList
@@ -846,17 +847,15 @@ public class DynamicAgent extends ReActAgent {
 	}
 
 	/**
-	 * Execute shared post-tool flow - record action result
-	 * This method is called after tool execution to perform common post-processing
+	 * Execute shared post-tool flow - record action result This method is called after
+	 * tool execution to perform common post-processing
 	 * @param toolInstance The tool instance that was executed
 	 * @param toolCallResponse The tool call response
 	 * @param result The processed result string
 	 * @param actToolParams The action tool parameters
 	 */
-	private void executePostToolFlow(ToolCallBiFunctionDef<?> toolInstance, 
-			ToolResponseMessage.ToolResponse toolCallResponse, 
-			String result, 
-			List<ActToolParam> actToolParams) {
+	private void executePostToolFlow(ToolCallBiFunctionDef<?> toolInstance,
+			ToolResponseMessage.ToolResponse toolCallResponse, String result, List<ActToolParam> actToolParams) {
 		// Record the result
 		recordActionResult(actToolParams);
 	}
@@ -874,8 +873,8 @@ public class DynamicAgent extends ReActAgent {
 			String errorMessage = (String) errorData.get("errorMessage");
 			if (errorMessage != null && !errorMessage.isEmpty()) {
 				step.setErrorMessage(errorMessage);
-				log.info("{} extracted errorMessage for stepId: {}, errorMessage: {}",
-						toolName, step.getStepId(), errorMessage);
+				log.info("{} extracted errorMessage for stepId: {}, errorMessage: {}", toolName, step.getStepId(),
+						errorMessage);
 				return errorMessage;
 			}
 		}
@@ -888,21 +887,22 @@ public class DynamicAgent extends ReActAgent {
 	}
 
 	/**
-	 * Record thinking and action for error reporting tools to make them visible in frontend
+	 * Record thinking and action for error reporting tools to make them visible in
+	 * frontend
 	 * @param param The ActToolParam containing tool information
 	 * @param thinkInput Description of the error context
 	 * @param thinkOutput Description of what tool was called
 	 * @param errorMessage The actual error message
 	 */
-	private void recordErrorToolThinkingAndAction(ActToolParam param, String thinkInput, 
-			String thinkOutput, String errorMessage) {
+	private void recordErrorToolThinkingAndAction(ActToolParam param, String thinkInput, String thinkOutput,
+			String errorMessage) {
 		try {
 			String stepId = step.getStepId();
 			String thinkActId = planIdDispatcher.generateThinkActId();
 			String finalErrorMessage = step.getErrorMessage() != null ? step.getErrorMessage() : errorMessage;
-			
-			ThinkActRecordParams errorParams = new ThinkActRecordParams(thinkActId, stepId, thinkInput,
-					thinkOutput, finalErrorMessage, List.of(param));
+
+			ThinkActRecordParams errorParams = new ThinkActRecordParams(thinkActId, stepId, thinkInput, thinkOutput,
+					finalErrorMessage, List.of(param));
 			planExecutionRecorder.recordThinkingAndAction(step, errorParams);
 			log.info("Recorded thinking and action for error tool, stepId: {}", stepId);
 		}
@@ -912,28 +912,29 @@ public class DynamicAgent extends ReActAgent {
 	}
 
 	/**
-	 * Handle LLM timeout (3 retries exhausted) by simulating full flow with SystemErrorReportTool
+	 * Handle LLM timeout (3 retries exhausted) by simulating full flow with
+	 * SystemErrorReportTool
 	 * @return AgentExecResult with error information
 	 */
 	private AgentExecResult handleLlmTimeoutWithSystemErrorReport() {
 		log.error("Handling LLM timeout with SystemErrorReportTool");
-		
+
 		try {
 			// Create SystemErrorReportTool instance
 			SystemErrorReportTool errorTool = new SystemErrorReportTool(getCurrentPlanId(), objectMapper);
-			
+
 			// Build error message from latest exception
 			String errorMessage = buildErrorMessageFromLatestException();
-			
+
 			// Create tool input
 			Map<String, Object> errorInput = Map.of("errorMessage", errorMessage);
-			
+
 			// Execute the error report tool
 			ToolExecuteResult toolResult = errorTool.run(errorInput);
-			
+
 			// Simulate post-tool flow (memory processing, recording, etc.)
 			String result = simulatePostToolFlow(errorTool, toolResult, errorMessage);
-			
+
 			// Extract error message for step
 			try {
 				@SuppressWarnings("unchecked")
@@ -947,16 +948,17 @@ public class DynamicAgent extends ReActAgent {
 				log.warn("Failed to parse errorMessage from SystemErrorReportTool result", e);
 				step.setErrorMessage(errorMessage);
 			}
-			
-			// Record thinking and action for SystemErrorReportTool to make it visible in frontend
+
+			// Record thinking and action for SystemErrorReportTool to make it visible in
+			// frontend
 			String toolCallId = planIdDispatcher.generateToolCallId();
 			String parametersJson = objectMapper.writeValueAsString(errorInput);
-			ActToolParam param = new ActToolParam(SystemErrorReportTool.name, parametersJson, 
-					toolResult.getOutput(), toolCallId);
+			ActToolParam param = new ActToolParam(SystemErrorReportTool.name, parametersJson, toolResult.getOutput(),
+					toolCallId);
 			String finalErrorMessage = step.getErrorMessage() != null ? step.getErrorMessage() : errorMessage;
 			recordErrorToolThinkingAndAction(param, "LLM timeout after 3 retries",
 					"SystemErrorReportTool called to report LLM timeout error", finalErrorMessage);
-			
+
 			return new AgentExecResult(result, AgentState.COMPLETED);
 		}
 		catch (Exception e) {
@@ -973,15 +975,15 @@ public class DynamicAgent extends ReActAgent {
 		// This simulates what normally happens after tool execution:
 		// 1. Process memory (if applicable)
 		// 2. Record action result
-		
+
 		// For SystemErrorReportTool, we need to create a mock ActToolParam for recording
 		if (tool instanceof SystemErrorReportTool) {
 			try {
 				String toolCallId = planIdDispatcher.generateToolCallId();
 				String parametersJson = objectMapper.writeValueAsString(Map.of("errorMessage", errorMessage));
-				ActToolParam param = new ActToolParam(SystemErrorReportTool.name, parametersJson, 
+				ActToolParam param = new ActToolParam(SystemErrorReportTool.name, parametersJson,
 						toolResult.getOutput(), toolCallId);
-				
+
 				// Record the action result
 				recordActionResult(List.of(param));
 			}
@@ -989,7 +991,7 @@ public class DynamicAgent extends ReActAgent {
 				log.warn("Failed to record SystemErrorReportTool result", e);
 			}
 		}
-		
+
 		return toolResult.getOutput();
 	}
 
@@ -1157,7 +1159,7 @@ public class DynamicAgent extends ReActAgent {
 			String envData = collectEnvData(toolKey);
 			toolEnvDataMap.put(toolKey, envData);
 		}
-		//log.debug("Collected tool environment data: {}", toolEnvDataMap);
+		// log.debug("Collected tool environment data: {}", toolEnvDataMap);
 
 		setEnvData(toolEnvDataMap);
 	}

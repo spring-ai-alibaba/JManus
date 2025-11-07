@@ -179,7 +179,8 @@ public class PlanningFactory {
 	 * @return configured PlanFinalizer instance
 	 */
 	public PlanFinalizer createPlanFinalizer() {
-		return new PlanFinalizer(llmService, recorder, manusProperties, streamingResponseHandler, taskInterruptionManager);
+		return new PlanFinalizer(llmService, recorder, manusProperties, streamingResponseHandler,
+				taskInterruptionManager);
 	}
 
 	public static class ToolCallBackContext {
@@ -227,7 +228,7 @@ public class PlanningFactory {
 			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper));
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
-			
+
 			toolDefinitions.add(new LocalFileOperator(textFileService, innerStorageService, objectMapper));
 			toolDefinitions.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper));
 			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper));

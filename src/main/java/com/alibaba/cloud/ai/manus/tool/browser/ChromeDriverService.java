@@ -19,27 +19,31 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.alibaba.cloud.ai.manus.config.ManusProperties;
-import com.alibaba.cloud.ai.manus.config.IManusProperties;
-import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.microsoft.playwright.Playwright;
-import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.BrowserType;
-import com.microsoft.playwright.Page;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+
+import com.alibaba.cloud.ai.manus.config.IManusProperties;
+import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
+import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.PlaywrightException;
+import com.microsoft.playwright.TimeoutError;
+
+import jakarta.annotation.PreDestroy;
 
 @Service
 @Primary
@@ -154,31 +158,48 @@ public class ChromeDriverService implements IChromeDriverService {
 
 		DriverWrapper currentDriver = drivers.get(planId);
 		if (currentDriver != null) {
-			return currentDriver;
+			// Check if the existing driver is still healthy
+			if (isDriverHealthy(currentDriver)) {
+				return currentDriver;
+			}
+			else {
+				log.warn("Existing driver for planId {} is unhealthy, recreating", planId);
+				closeDriverForPlan(planId);
+				currentDriver = null;
+			}
 		}
 
 		try {
-			driverLock.lock();
-			currentDriver = drivers.get(planId);
-			if (currentDriver != null) {
-				return currentDriver;
+			if (!driverLock.tryLock(30, TimeUnit.SECONDS)) {
+				throw new RuntimeException("Failed to acquire driver lock within 30 seconds for planId: " + planId);
 			}
-			log.info("Creating new Playwright Browser instance for planId: {}", planId);
-			currentDriver = createNewDriver(); // createNewDriver will now pass sharedDir
-			if (currentDriver != null) { // Check if driver creation was successful
-				drivers.put(planId, currentDriver);
+			try {
+				currentDriver = drivers.get(planId);
+				if (currentDriver != null && isDriverHealthy(currentDriver)) {
+					return currentDriver;
+				}
+				log.info("Creating new Playwright Browser instance for planId: {}", planId);
+				currentDriver = createNewDriverWithRetry(planId);
+				if (currentDriver != null) {
+					drivers.put(planId, currentDriver);
+					log.info("Successfully created and cached new driver for planId: {}", planId);
+				}
+				else {
+					log.error("Failed to create new driver for planId: {}. All retry attempts failed.", planId);
+					throw new RuntimeException("Failed to create new driver for planId: " + planId);
+				}
 			}
-			else {
-				// Handle the case where driver creation failed, e.g., log an error or
-				// throw an exception
-				log.error("Failed to create new driver for planId: {}. createNewDriver returned null.", planId);
-				// Optionally throw an exception to indicate failure to the caller
-				// throw new RuntimeException("Failed to create new driver for planId: " +
-				// planId);
+			finally {
+				driverLock.unlock();
 			}
 		}
-		finally {
-			driverLock.unlock();
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new RuntimeException("Interrupted while waiting for driver lock for planId: " + planId, e);
+		}
+		catch (Exception e) {
+			log.error("Unexpected error while getting driver for planId: {}", planId, e);
+			throw new RuntimeException("Failed to get driver for planId: " + planId, e);
 		}
 
 		return currentDriver;
@@ -207,76 +228,382 @@ public class ChromeDriverService implements IChromeDriverService {
 	}
 
 	/**
-	 * Create browser driver instance
+	 * Create new driver with retry mechanism
 	 */
-	private DriverWrapper createDriverInstance() {
-		// Set system properties for Playwright configuration
-		System.setProperty("playwright.browsers.path", System.getProperty("user.home") + "/.cache/ms-playwright");
+	private DriverWrapper createNewDriverWithRetry(String planId) {
+		int maxRetries = 3;
+		int retryDelay = 2000; // 2 seconds
 
-		// Set custom driver temp directory to avoid classpath issues
-		System.setProperty("playwright.driver.tmpdir", System.getProperty("java.io.tmpdir"));
+		for (int attempt = 1; attempt <= maxRetries; attempt++) {
+			try {
+				log.info("Creating new browser driver for planId: {} (attempt {}/{})", planId, attempt, maxRetries);
+				DriverWrapper driver = createDriverInstance();
+				if (driver != null && isDriverHealthy(driver)) {
+					log.info("Successfully created healthy driver for planId: {} on attempt {}", planId, attempt);
+					return driver;
+				}
+				else {
+					log.warn("Created driver for planId: {} is not healthy on attempt {}", planId, attempt);
+					if (driver != null) {
+						try {
+							driver.close();
+						}
+						catch (Exception e) {
+							log.warn("Error closing unhealthy driver: {}", e.getMessage());
+						}
+					}
+				}
+			}
+			catch (PlaywrightException e) {
+				log.error("Playwright error on attempt {} for planId: {}: {}", attempt, planId, e.getMessage());
+			}
+			catch (Exception e) {
+				log.error("Unexpected error on attempt {} for planId: {}: {}", attempt, planId, e.getMessage(), e);
+			}
 
-		// Skip browser download if browsers are already installed
-		System.setProperty("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1");
+			if (attempt < maxRetries) {
+				try {
+					log.info("Waiting {} ms before retry attempt {} for planId: {}", retryDelay, attempt + 1, planId);
+					Thread.sleep(retryDelay);
+					retryDelay *= 2; // Exponential backoff
+				}
+				catch (InterruptedException ie) {
+					Thread.currentThread().interrupt();
+					log.error("Interrupted during retry delay for planId: {}", planId);
+					break;
+				}
+			}
+		}
 
-		// Try to create Playwright instance using Spring Boot initializer
-		Playwright playwright = null;
+		log.error("Failed to create driver for planId: {} after {} attempts", planId, maxRetries);
+		return null;
+	}
+
+	/**
+	 * Check if driver is healthy and responsive
+	 */
+	private boolean isDriverHealthy(DriverWrapper driver) {
+		if (driver == null) {
+			return false;
+		}
+
 		try {
-			if (playwrightInitializer != null && playwrightInitializer.canInitialize()) {
-				log.info("Using SpringBootPlaywrightInitializer");
-				playwright = playwrightInitializer.createPlaywright();
-			}
-			else {
-				log.info("Using standard Playwright initialization");
-				playwright = Playwright.create();
+			// Check if browser is connected
+			Browser browser = driver.getBrowser();
+			if (browser == null || !browser.isConnected()) {
+				log.debug("Driver health check failed: browser not connected");
+				return false;
 			}
 
-			// Get browser type
-			BrowserType browserType = getBrowserTypeFromEnv(playwright);
-			log.info("Using browser type: {}", browserType.name());
-
-			BrowserType.LaunchOptions options = new BrowserType.LaunchOptions();
-
-			// Basic configuration
-			options.setArgs(Arrays.asList("--remote-allow-origins=*", "--disable-blink-features=AutomationControlled",
-					"--disable-infobars", "--disable-notifications", "--disable-dev-shm-usage",
-					"--lang=zh-CN,zh,en-US,en", "--user-agent=" + getRandomUserAgent(), "--window-size=1920,1080"));
-
-			// Decide whether to use headless mode based on configuration
-			if (manusProperties.getBrowserHeadless()) {
-				log.info("Enable Playwright headless mode");
-				options.setHeadless(true);
-			}
-			else {
-				log.info("Enable Playwright non-headless mode");
-				options.setHeadless(false);
+			// Check if current page is accessible
+			Page page = driver.getCurrentPage();
+			if (page == null || page.isClosed()) {
+				log.debug("Driver health check failed: page is null or closed");
+				return false;
 			}
 
-			Browser browser = browserType.launch(options);
-			log.info("Created new Playwright Browser instance");
-
-			// Create new page and configure timeout
-			Page page = browser.newPage();
-
-			// Set default timeout based on configuration
-			Integer timeout = manusProperties.getBrowserRequestTimeout();
-			if (timeout != null && timeout > 0) {
-				log.info("Setting browser page timeout to {} seconds", timeout);
-				page.setDefaultTimeout(timeout * 1000); // Convert to milliseconds
+			// Try a simple operation with timeout
+			try {
+				page.evaluate("() => document.readyState");
+				return true;
+			}
+			catch (TimeoutError e) {
+				log.debug("Driver health check failed: page evaluation timeout");
+				return false;
+			}
+			catch (PlaywrightException e) {
+				log.debug("Driver health check failed: playwright exception: {}", e.getMessage());
+				return false;
 			}
 
-			return new DriverWrapper(playwright, browser, page, this.sharedDir, objectMapper);
 		}
 		catch (Exception e) {
+			log.debug("Driver health check failed with exception: {}", e.getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * Create browser driver instance with comprehensive error handling Uses
+	 * browser.newContext() for better isolation and resource management
+	 */
+	private DriverWrapper createDriverInstance() {
+		Playwright playwright = null;
+		Browser browser = null;
+		BrowserContext browserContext = null;
+		Page page = null;
+
+		try {
+			// Set system properties for Playwright configuration
+			System.setProperty("playwright.browsers.path", System.getProperty("user.home") + "/.cache/ms-playwright");
+			System.setProperty("playwright.driver.tmpdir", System.getProperty("java.io.tmpdir"));
+			System.setProperty("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1");
+
+			// Create Playwright instance with error handling
+			try {
+				if (playwrightInitializer != null && playwrightInitializer.canInitialize()) {
+					log.info("Using SpringBootPlaywrightInitializer");
+					playwright = playwrightInitializer.createPlaywright();
+				}
+				else {
+					log.info("Using standard Playwright initialization");
+					playwright = Playwright.create();
+				}
+				log.info("Successfully created Playwright instance");
+			}
+			catch (PlaywrightException e) {
+				log.error("Playwright initialization failed: {}", e.getMessage(), e);
+				throw new RuntimeException("Failed to initialize Playwright: " + e.getMessage(), e);
+			}
+			catch (Exception e) {
+				log.error("Unexpected error during Playwright initialization: {}", e.getMessage(), e);
+				throw new RuntimeException("Unexpected error during Playwright initialization", e);
+			}
+
+			// Get browser type with error handling
+			BrowserType browserType;
+			try {
+				browserType = getBrowserTypeFromEnv(playwright);
+				log.info("Using browser type: {}", browserType.name());
+			}
+			catch (Exception e) {
+				log.error("Failed to get browser type: {}", e.getMessage(), e);
+				throw new RuntimeException("Failed to get browser type", e);
+			}
+
+			// Configure browser launch options
+			BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions();
+			try {
+				// Basic configuration with error handling for user agent
+				String userAgent;
+				try {
+					userAgent = getRandomUserAgent();
+				}
+				catch (Exception e) {
+					log.warn("Failed to get random user agent, using default: {}", e.getMessage());
+					userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+				}
+
+				launchOptions
+					.setArgs(Arrays.asList("--remote-allow-origins=*", "--disable-blink-features=AutomationControlled",
+							"--disable-infobars", "--disable-notifications", "--disable-dev-shm-usage", "--no-sandbox", // Add
+																														// for
+																														// better
+																														// stability
+							"--disable-gpu", // Add for headless stability
+							"--lang=zh-CN,zh,en-US,en", "--user-agent=" + userAgent, "--window-size=1920,1080"));
+
+				// Set headless mode based on configuration
+				if (manusProperties.getBrowserHeadless()) {
+					log.info("Enable Playwright headless mode");
+					launchOptions.setHeadless(true);
+				}
+				else {
+					log.info("Enable Playwright non-headless mode");
+					launchOptions.setHeadless(false);
+				}
+
+				// Set timeout for browser launch
+				launchOptions.setTimeout(60000); // 60 seconds timeout for browser launch
+
+			}
+			catch (Exception e) {
+				log.error("Failed to configure browser launch options: {}", e.getMessage(), e);
+				throw new RuntimeException("Failed to configure browser launch options", e);
+			}
+
+			// Launch browser with error handling
+			try {
+				browser = browserType.launch(launchOptions);
+				log.info("Successfully launched Playwright Browser instance");
+
+				// Verify browser connection
+				if (!browser.isConnected()) {
+					throw new RuntimeException("Browser launched but is not connected");
+				}
+
+			}
+			catch (PlaywrightException e) {
+				log.error("Failed to launch browser: {}", e.getMessage(), e);
+				throw new RuntimeException("Failed to launch browser: " + e.getMessage(), e);
+			}
+			catch (Exception e) {
+				log.error("Unexpected error during browser launch: {}", e.getMessage(), e);
+				throw new RuntimeException("Unexpected error during browser launch", e);
+			}
+
+			// Create browser context with error handling
+			// Using browser.newContext() provides better isolation and resource
+			// management
+			try {
+				// Check browser is still connected before creating context
+				if (!browser.isConnected()) {
+					throw new RuntimeException("Browser is not connected, cannot create context");
+				}
+
+				// Configure context options
+				Browser.NewContextOptions contextOptions = new Browser.NewContextOptions();
+
+				// Set viewport size
+				contextOptions.setViewportSize(1920, 1080);
+
+				// Set user agent
+				try {
+					String userAgent = getRandomUserAgent();
+					contextOptions.setUserAgent(userAgent);
+				}
+				catch (Exception e) {
+					log.warn("Failed to set user agent in context options: {}", e.getMessage());
+				}
+
+				// Set locale
+				contextOptions.setLocale("zh-CN");
+
+				// Set timezone if needed
+				// contextOptions.setTimezoneId("Asia/Shanghai");
+
+				// Create context with timeout
+				browserContext = browser.newContext(contextOptions);
+				log.info("Successfully created browser context");
+
+				// Verify context is valid
+				if (browserContext == null) {
+					throw new RuntimeException("Browser context was created but is null");
+				}
+
+			}
+			catch (PlaywrightException e) {
+				log.error("Failed to create browser context: {}", e.getMessage(), e);
+				// Check if it's a connection issue
+				if (e.getMessage() != null && (e.getMessage().contains("Target closed")
+						|| e.getMessage().contains("Browser has been closed")
+						|| e.getMessage().contains("Connection closed"))) {
+					throw new RuntimeException("Browser connection lost while creating context: " + e.getMessage(), e);
+				}
+				throw new RuntimeException("Failed to create browser context: " + e.getMessage(), e);
+			}
+			catch (Exception e) {
+				log.error("Unexpected error during browser context creation: {}", e.getMessage(), e);
+				throw new RuntimeException("Unexpected error during browser context creation", e);
+			}
+
+			// Create new page from context with error handling
+			try {
+				// browserContext is guaranteed to be non-null here due to previous
+				// validation
+				page = browserContext.newPage();
+				log.info("Successfully created new page from context");
+
+				// Verify page is not closed
+				if (page.isClosed()) {
+					throw new RuntimeException("Page was created but is already closed");
+				}
+
+			}
+			catch (PlaywrightException e) {
+				log.error("Failed to create new page from context: {}", e.getMessage(), e);
+				// Check if context was closed
+				if (e.getMessage() != null && (e.getMessage().contains("Target closed")
+						|| e.getMessage().contains("Context has been closed"))) {
+					throw new RuntimeException("Browser context was closed while creating page: " + e.getMessage(), e);
+				}
+				throw new RuntimeException("Failed to create new page: " + e.getMessage(), e);
+			}
+			catch (Exception e) {
+				log.error("Unexpected error during page creation: {}", e.getMessage(), e);
+				throw new RuntimeException("Unexpected error during page creation", e);
+			}
+
+			// Configure page timeouts with error handling
+			try {
+				Integer timeout = manusProperties.getBrowserRequestTimeout();
+				if (timeout != null && timeout > 0) {
+					log.info("Setting browser page timeout to {} seconds", timeout);
+					page.setDefaultTimeout(timeout * 1000); // Convert to milliseconds
+					page.setDefaultNavigationTimeout(timeout * 1000);
+					// Also set context-level timeout
+					browserContext.setDefaultTimeout(timeout * 1000);
+					browserContext.setDefaultNavigationTimeout(timeout * 1000);
+				}
+				else {
+					// Set reasonable default timeouts
+					log.info("Setting default browser timeouts (30 seconds)");
+					page.setDefaultTimeout(30000);
+					page.setDefaultNavigationTimeout(30000);
+					browserContext.setDefaultTimeout(30000);
+					browserContext.setDefaultNavigationTimeout(30000);
+				}
+			}
+			catch (Exception e) {
+				log.warn("Failed to set page/context timeouts, continuing with defaults: {}", e.getMessage());
+			}
+
+			// Create and return DriverWrapper with error handling
+			try {
+				DriverWrapper wrapper = new DriverWrapper(playwright, browser, page, this.sharedDir, objectMapper);
+				log.info("Successfully created DriverWrapper instance with browser context");
+				return wrapper;
+			}
+			catch (Exception e) {
+				log.error("Failed to create DriverWrapper: {}", e.getMessage(), e);
+				throw new RuntimeException("Failed to create DriverWrapper", e);
+			}
+
+		}
+		catch (Exception e) {
+			// Comprehensive cleanup on any error
+			log.error("Driver creation failed, performing cleanup: {}", e.getMessage(), e);
+
+			// Close page if created
+			if (page != null && !page.isClosed()) {
+				try {
+					page.close();
+					log.debug("Cleaned up page after error");
+				}
+				catch (Exception ex) {
+					log.warn("Failed to close page during cleanup: {}", ex.getMessage());
+				}
+			}
+
+			// Close browser context if created
+			if (browserContext != null) {
+				try {
+					browserContext.close();
+					log.debug("Cleaned up browser context after error");
+				}
+				catch (Exception ex) {
+					log.warn("Failed to close browser context during cleanup: {}", ex.getMessage());
+				}
+			}
+
+			// Close browser if created
+			if (browser != null && browser.isConnected()) {
+				try {
+					browser.close();
+					log.debug("Cleaned up browser after error");
+				}
+				catch (Exception ex) {
+					log.warn("Failed to close browser during cleanup: {}", ex.getMessage());
+				}
+			}
+
+			// Close playwright if created
 			if (playwright != null) {
 				try {
 					playwright.close();
+					log.debug("Cleaned up playwright after error");
 				}
 				catch (Exception ex) {
-					log.warn("Failed to close failed Playwright instance", ex);
+					log.warn("Failed to close playwright during cleanup: {}", ex.getMessage());
 				}
 			}
-			throw new RuntimeException("Failed to initialize Playwright Browser", e);
+
+			if (e instanceof RuntimeException) {
+				throw (RuntimeException) e;
+			}
+			else {
+				throw new RuntimeException("Failed to initialize Playwright Browser", e);
+			}
 		}
 	}
 

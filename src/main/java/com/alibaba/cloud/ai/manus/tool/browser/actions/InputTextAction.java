@@ -52,18 +52,17 @@ public class InputTextAction extends BrowserAction {
 		if (elementLocator == null) {
 			return new ToolExecuteResult("Failed to create locator for element with index " + index);
 		}
-		
+
 		// Set timeout for element operations to prevent hanging
 		Integer timeoutMs = getElementTimeoutMs();
-		
+
 		// Try fill with timeout
 		try {
 			Locator.FillOptions fillOptions = new Locator.FillOptions().setTimeout(timeoutMs);
 			elementLocator.fill("", fillOptions); // Clear first
 			// Set character input delay to 100ms, adjustable as needed
-			Locator.PressSequentiallyOptions options = new Locator.PressSequentiallyOptions()
-					.setDelay(100)
-					.setTimeout(timeoutMs);
+			Locator.PressSequentiallyOptions options = new Locator.PressSequentiallyOptions().setDelay(100)
+				.setTimeout(timeoutMs);
 			elementLocator.pressSequentially(text, options);
 		}
 		catch (Exception e) {

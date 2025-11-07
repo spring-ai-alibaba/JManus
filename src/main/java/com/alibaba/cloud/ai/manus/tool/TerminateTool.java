@@ -43,7 +43,7 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 	private static String getDescriptions(String expectedReturnInfo) {
 		// Simple description to avoid generating overly long content
 		return "Terminate the current execution step with structured data. "
-				+ "Provide data in JSON format with 'message' field and optional 'fileList' array containing file information.";
+				+ "Provide data in JSON format with 'message' field.";
 	}
 
 	private static String generateMessageField(String expectedReturnInfo) {
@@ -128,43 +128,7 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 				{
 				  "type": "object",
 				  "properties": {
-				    %s,
-				    "fileList": {
-				      "type": "array",
-				      "items": {
-				        "type": "object",
-				        "properties": {
-				          "fileName": {
-				            "type": "string",
-				            "description": "Name of the file"
-				          },
-				          "fileDescription": {
-				            "type": "string",
-				            "description": "Detailed description of what the file contains. This should include a comprehensive summary of all content generated during this agent execution cycle. Every file created during this execution must be listed here with complete and accurate information about its contents."
-				          }
-				        },
-				        "required": ["fileName", "fileDescription"]
-				      },
-				      "description": "Complete list of all files generated during this agent execution cycle. Every file created must be included with its name and a detailed description of its contents. This is mandatory for full transparency and auditing purposes."
-				    },
-				    "folderList": {
-				      "type": "array",
-				      "items": {
-				        "type": "object",
-				        "properties": {
-				          "folderName": {
-				            "type": "string",
-				            "description": "Name of the folder"
-				          },
-				          "folderDescription": {
-				            "type": "string",
-				            "description": "Detailed description of what the folder contains. This should include a comprehensive summary of all content within this folder generated during this agent execution cycle."
-				          }
-				        },
-				        "required": ["folderName", "folderDescription"]
-				      },
-				      "description": "Complete list of all folders generated during this agent execution cycle. Every folder created must be included with its name and a detailed description of its contents."
-				    }
+				    %s
 				  },
 				  "required": ["message"]
 				}
@@ -203,7 +167,8 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 		this.expectedReturnInfo = expectedReturnInfo;
 		if (objectMapper != null) {
 			this.objectMapper = objectMapper;
-		} else {
+		}
+		else {
 			this.objectMapper = new ObjectMapper();
 			this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		}

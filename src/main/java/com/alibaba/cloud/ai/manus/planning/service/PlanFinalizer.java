@@ -277,7 +277,8 @@ public class PlanFinalizer {
 			return false;
 		}
 
-		// First, check the actual database state to verify if task was marked for interruption
+		// First, check the actual database state to verify if task was marked for
+		// interruption
 		if (context != null && context.getRootPlanId() != null && taskInterruptionManager != null) {
 			try {
 				boolean shouldInterrupt = taskInterruptionManager.shouldInterruptTask(context.getRootPlanId());
@@ -305,7 +306,7 @@ public class PlanFinalizer {
 					|| lowerErrorMessage.contains("action interrupted by user")
 					|| lowerErrorMessage.contains("agent thinking interrupted")
 					|| lowerErrorMessage.contains("task execution was interrupted by user")) {
-			return true;
+				return true;
 			}
 		}
 

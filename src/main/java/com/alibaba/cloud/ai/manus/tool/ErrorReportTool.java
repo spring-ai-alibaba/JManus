@@ -89,7 +89,8 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 		this.currentPlanId = planId;
 		if (objectMapper != null) {
 			this.objectMapper = objectMapper;
-		} else {
+		}
+		else {
 			this.objectMapper = new ObjectMapper();
 			this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		}
@@ -114,8 +115,7 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 
 		// Format the error message as JSON for storage
 		try {
-			Map<String, Object> errorData = Map.of("errorMessage", errorMessage, "timestamp",
-					errorReportTimestamp);
+			Map<String, Object> errorData = Map.of("errorMessage", errorMessage, "timestamp", errorReportTimestamp);
 			String jsonString = objectMapper.writeValueAsString(errorData);
 			log.info("Error reported successfully for planId: {}, errorMessage: {}", currentPlanId, errorMessage);
 			return new ToolExecuteResult(jsonString);
@@ -170,7 +170,8 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 
 	@Override
 	public boolean canTerminate() {
-		// ErrorReportTool can always terminate as its purpose is to report errors and stop execution
+		// ErrorReportTool can always terminate as its purpose is to report errors and
+		// stop execution
 		return true;
 	}
 
@@ -180,4 +181,3 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 	}
 
 }
-

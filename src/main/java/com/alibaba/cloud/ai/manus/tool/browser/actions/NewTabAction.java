@@ -34,16 +34,16 @@ public class NewTabAction extends BrowserAction {
 
 		// Get current page to access browser context
 		Page currentPage = getCurrentPage();
-		
+
 		// Create a new page (new tab) in the same browser context
 		Page newPage = currentPage.context().newPage();
-		
+
 		// Navigate the new page to the specified URL
 		newPage.navigate(url);
-		
+
 		// Set the new page as the current page in DriverWrapper
 		getDriverWrapper().setCurrentPage(newPage);
-		
+
 		return new ToolExecuteResult("Opened new tab with URL " + url);
 	}
 

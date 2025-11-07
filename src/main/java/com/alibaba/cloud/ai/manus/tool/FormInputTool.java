@@ -514,8 +514,8 @@ public class FormInputTool extends AbstractBaseTool<FormInputTool.UserFormInput>
 
 	/**
 	 * Custom deserializer for inputs field that handles both string and array formats
-	 * This fixes the issue where LLM sometimes returns inputs as a JSON string
-	 * instead of a JSON array
+	 * This fixes the issue where LLM sometimes returns inputs as a JSON string instead of
+	 * a JSON array
 	 */
 	public static class InputsListDeserializer extends JsonDeserializer<List<InputItem>> {
 

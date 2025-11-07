@@ -47,8 +47,10 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 	/**
 	 * Set of supported text file extensions
 	 */
-	private static final Set<String> SUPPORTED_EXTENSIONS = new HashSet<>(Set.of(
-			".txt", ".md", ".markdown", // Plain text and Markdown
+	private static final Set<String> SUPPORTED_EXTENSIONS = new HashSet<>(Set.of(".txt", ".md", ".markdown", // Plain
+																												// text
+																												// and
+																												// Markdown
 			".java", ".py", ".js", ".ts", ".jsx", ".tsx", // Common programming languages
 			".html", ".htm", ".css", ".scss", ".sass", ".less", // Web-related
 			".xml", ".json", ".yaml", ".yml", ".properties", // Configuration files
@@ -56,7 +58,9 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 			".log", ".conf", ".ini", // Logs and configuration
 			".gradle", ".pom", ".mvn", // Build tools
 			".csv", ".rst", ".adoc", // Documentation and data
-			".cpp", ".c", ".h", ".go", ".rs", ".php", ".rb", ".swift", ".kt", ".scala" // Additional programming languages
+			".cpp", ".c", ".h", ".go", ".rs", ".php", ".rb", ".swift", ".kt", ".scala" // Additional
+																						// programming
+																						// languages
 	));
 
 	/**
@@ -172,10 +176,13 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 		public void setWholeWord(Boolean wholeWord) {
 			this.wholeWord = wholeWord;
 		}
+
 	}
 
 	private final TextFileService textFileService;
+
 	private final SmartContentSavingService innerStorageService;
+
 	private final ObjectMapper objectMapper;
 
 	public LocalFileOperator(TextFileService textFileService, SmartContentSavingService innerStorageService,
@@ -707,22 +714,19 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				return "Current Local File Operation State:\n- Error: No current plan ID available";
 			}
 
-			return String.format(
-					"""
-							Current Local File Operation State:
-							- Scope: Current plan directory only (no hierarchical access)
-							- Operations are automatically handled (no manual file opening/closing required)
-							- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, grep
-							""");
+			return String.format("""
+					Current Local File Operation State:
+					- Scope: Current plan directory only (no hierarchical access)
+					- Operations are automatically handled (no manual file opening/closing required)
+					- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, grep
+					""");
 		}
 		catch (Exception e) {
-			return String.format(
-					"""
-							Current Local File Operation State:
-							- Error getting working directory: %s
-							- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, grep
-							""",
-					e.getMessage());
+			return String.format("""
+					Current Local File Operation State:
+					- Error getting working directory: %s
+					- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, grep
+					""", e.getMessage());
 		}
 	}
 

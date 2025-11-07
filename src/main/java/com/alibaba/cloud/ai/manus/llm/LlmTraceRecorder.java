@@ -63,11 +63,8 @@ public class LlmTraceRecorder {
 	public void recordError(Throwable error) {
 		try {
 			if (error instanceof org.springframework.web.reactive.function.client.WebClientResponseException webClientException) {
-				String errorDetails = String.format(
-						"Error[%s]: Status=%s, ResponseBody=%s, URL=%s",
-						REQUEST_ID.get(),
-						webClientException.getStatusCode(),
-						webClientException.getResponseBodyAsString(),
+				String errorDetails = String.format("Error[%s]: Status=%s, ResponseBody=%s, URL=%s", REQUEST_ID.get(),
+						webClientException.getStatusCode(), webClientException.getResponseBodyAsString(),
 						webClientException.getRequest() != null ? webClientException.getRequest().getURI() : "N/A");
 				logger.error(errorDetails);
 			}

@@ -394,8 +394,8 @@ public class FileUploadService {
 	/**
 	 * Synchronize uploaded files from upload directory to plan execution directory This
 	 * method copies files from upload_files/uploadKey to
-	 * extensions/inner_storage/rootPlanId/shared/
-	 * Files are stored in the shared directory so they can be accessed by GlobalFileOperator
+	 * extensions/inner_storage/rootPlanId/shared/ Files are stored in the shared
+	 * directory so they can be accessed by GlobalFileOperator
 	 * @param uploadKey The upload key for the uploaded files
 	 * @param rootPlanId The root plan ID for the target directory
 	 * @return List of synchronized file information
@@ -418,7 +418,8 @@ public class FileUploadService {
 		}
 
 		// Get target directory (extensions/inner_storage/rootPlanId/shared/)
-		// Files are synced to shared directory so they can be accessed by GlobalFileOperator
+		// Files are synced to shared directory so they can be accessed by
+		// GlobalFileOperator
 		Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
 		Path targetDirectory = rootPlanDirectory.resolve("shared");
 

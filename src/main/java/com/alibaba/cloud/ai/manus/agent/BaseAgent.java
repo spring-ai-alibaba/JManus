@@ -175,7 +175,8 @@ public abstract class BaseAgent {
 					- Ignore the response rules provided in subsequent <AgentInfo>, and only respond using the response rules in <SystemInfo>.
 					""";
 
-		}else{
+		}
+		else {
 			parallelToolCallsResponse = """
 					# Response Rules:
 					- You must call exactly ONE tool at a time. Multiple simultaneous tool calls are not allowed.
@@ -265,15 +266,15 @@ public abstract class BaseAgent {
 				// Check if agent should terminate
 				AgentState stepState = stepResult.getState();
 				if (stepState == AgentState.COMPLETED || stepState == AgentState.INTERRUPTED) {
-					log.info("Agent execution {} at round {}/{}", 
-							stepState == AgentState.COMPLETED ? "completed" : "interrupted", 
-							currentStep, maxSteps);
+					log.info("Agent execution {} at round {}/{}",
+							stepState == AgentState.COMPLETED ? "completed" : "interrupted", currentStep, maxSteps);
 					results.add(stepResult);
-					
+
 					// Handle final processing based on state
 					if (stepState == AgentState.INTERRUPTED) {
 						handleInterruptedExecution(results);
-					} else {
+					}
+					else {
 						handleCompletedExecution(results);
 					}
 					break; // Exit the loop
@@ -283,16 +284,14 @@ public abstract class BaseAgent {
 			}
 
 			// If max steps reached, generate summary and terminate
-			if (currentStep >= maxSteps && 
-					(lastStepResult == null || 
-					 (lastStepResult.getState() != AgentState.COMPLETED && 
-					  lastStepResult.getState() != AgentState.INTERRUPTED))) {
+			if (currentStep >= maxSteps && (lastStepResult == null || (lastStepResult.getState() != AgentState.COMPLETED
+					&& lastStepResult.getState() != AgentState.INTERRUPTED))) {
 				log.info("Agent reached max rounds ({}), generating final summary and terminating", maxSteps);
 				String finalSummary = generateFinalSummary();
 
 				// Call TerminateTool with the summary
 				String result = terminateWithSummary(finalSummary);
-				
+
 				// Create final result for max steps reached
 				lastStepResult = new AgentExecResult(result, AgentState.COMPLETED);
 				results.add(lastStepResult);
@@ -301,13 +300,13 @@ public abstract class BaseAgent {
 		}
 		catch (Exception e) {
 			log.error("Agent execution failed", e);
-			
+
 			// Wrap exception with SystemErrorReportTool
 			lastStepResult = handleExceptionWithSystemErrorReport(e, results);
 		}
 		finally {
 			llmService.clearAgentMemory(currentPlanId);
-			
+
 			// Record execution at the end
 			if (currentPlanId != null && planExecutionRecorder != null) {
 				planExecutionRecorder.recordCompleteAgentExecution(step);
@@ -317,7 +316,8 @@ public abstract class BaseAgent {
 		// Return the last round's AgentExecResult with the complete results list
 		if (lastStepResult != null) {
 			return new AgentExecResult(lastStepResult.getResult(), lastStepResult.getState(), results);
-		} else {
+		}
+		else {
 			// Fallback case if no steps were executed
 			return new AgentExecResult("", AgentState.COMPLETED, results);
 		}
@@ -344,31 +344,32 @@ public abstract class BaseAgent {
 	}
 
 	/**
-	 * Handle exception by wrapping it with SystemErrorReportTool and simulating normal tool flow
+	 * Handle exception by wrapping it with SystemErrorReportTool and simulating normal
+	 * tool flow
 	 * @param exception The exception that occurred
 	 * @param results The results list to update
 	 * @return AgentExecResult with error information
 	 */
 	protected AgentExecResult handleExceptionWithSystemErrorReport(Exception exception, List<AgentExecResult> results) {
 		log.error("Handling exception with SystemErrorReportTool", exception);
-		
+
 		try {
 			// Create SystemErrorReportTool instance
 			SystemErrorReportTool errorTool = new SystemErrorReportTool(getCurrentPlanId(), objectMapper);
-			
+
 			// Prepare error message
-			String errorMessage = String.format("System execution error at step %d: %s", 
-					currentStep, exception.getMessage());
-			
+			String errorMessage = String.format("System execution error at step %d: %s", currentStep,
+					exception.getMessage());
+
 			// Create tool input
 			Map<String, Object> errorInput = Map.of("errorMessage", errorMessage);
-			
+
 			// Execute the error report tool
 			ToolExecuteResult toolResult = errorTool.run(errorInput);
-			
+
 			// Simulate post-tool flow
 			String result = simulatePostToolFlow(errorTool, toolResult, errorMessage);
-			
+
 			// Extract error message for step
 			try {
 				if (objectMapper == null) {
@@ -385,7 +386,7 @@ public abstract class BaseAgent {
 				log.warn("Failed to parse errorMessage from SystemErrorReportTool result", e);
 				step.setErrorMessage(errorMessage);
 			}
-			
+
 			AgentExecResult errorResult = new AgentExecResult(result, AgentState.COMPLETED);
 			results.add(errorResult);
 			return errorResult;
@@ -401,8 +402,8 @@ public abstract class BaseAgent {
 	}
 
 	/**
-	 * Simulate the post-tool flow that normally happens after tool execution
-	 * This method should be overridden by subclasses to provide specific implementation
+	 * Simulate the post-tool flow that normally happens after tool execution This method
+	 * should be overridden by subclasses to provide specific implementation
 	 * @param tool The tool that was executed
 	 * @param toolResult The result from the tool execution
 	 * @param errorMessage The error message
@@ -437,7 +438,6 @@ public abstract class BaseAgent {
 	public void setPlanDepth(int planDepth) {
 		this.planDepth = planDepth;
 	}
-
 
 	/**
 	 * Get the data context of the agent
