@@ -38,6 +38,8 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 
 	private String terminationTimestamp = "";
 
+	private final ObjectMapper objectMapper;
+
 	private static String getDescriptions(String expectedReturnInfo) {
 		// Simple description to avoid generating overly long content
 		return "Terminate the current execution step with structured data. "
@@ -192,6 +194,19 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 		this.currentPlanId = planId;
 		// If expectedReturnInfo is null or empty, use "message" as default
 		this.expectedReturnInfo = expectedReturnInfo;
+		this.objectMapper = new ObjectMapper();
+		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+	}
+
+	public TerminateTool(String planId, String expectedReturnInfo, ObjectMapper objectMapper) {
+		this.currentPlanId = planId;
+		this.expectedReturnInfo = expectedReturnInfo;
+		if (objectMapper != null) {
+			this.objectMapper = objectMapper;
+		} else {
+			this.objectMapper = new ObjectMapper();
+			this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		}
 	}
 
 	@Override
@@ -213,8 +228,6 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 		// properly
 		// by Jackson when included in other JSON objects
 		try {
-			ObjectMapper objectMapper = new ObjectMapper();
-			objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 			// Note: NON_EMPTY is set by default, so we don't need to set it twice
 			String jsonString = objectMapper.writeValueAsString(input);
 			// Return the JSON string - when this is later serialized as a field value,

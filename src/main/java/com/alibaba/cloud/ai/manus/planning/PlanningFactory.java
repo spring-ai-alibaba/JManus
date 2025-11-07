@@ -223,7 +223,7 @@ public class PlanningFactory {
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(UuidGenerateTool.getInstance(objectMapper));
-			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo));
+			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper));
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
 			toolDefinitions.add(new TextFileOperator(textFileService, innerStorageService, objectMapper));
@@ -250,7 +250,7 @@ public class PlanningFactory {
 			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
 		}
 		else {
-			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo));
+			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper));
 		}
 
 		List<McpServiceEntity> functionCallbacks = mcpService.getFunctionCallbacks(planId);

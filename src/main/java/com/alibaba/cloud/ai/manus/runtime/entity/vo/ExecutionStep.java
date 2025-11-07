@@ -63,6 +63,8 @@ public class ExecutionStep {
 	@JsonIgnore
 	private BaseAgent agent;
 
+	private AgentState status;
+
 	private String terminateColumns;
 
 	public Integer getStepIndex() {
@@ -104,7 +106,11 @@ public class ExecutionStep {
 
 	@JsonIgnore
 	public AgentState getStatus() {
-		return agent == null ? AgentState.NOT_STARTED : agent.getState();
+		return status != null ? status : (agent == null ? AgentState.NOT_STARTED : AgentState.NOT_STARTED);
+	}
+
+	public void setStatus(AgentState status) {
+		this.status = status;
 	}
 
 	public void setAgent(BaseAgent agent) {
@@ -150,8 +156,11 @@ public class ExecutionStep {
 	@JsonIgnore
 	public String getStepInStr() {
 		String agentState = null;
-		if (agent != null) {
-			agentState = agent.getState().toString();
+		if (status != null) {
+			agentState = status.toString();
+		}
+		else if (agent != null) {
+			agentState = AgentState.NOT_STARTED.toString();
 		}
 		else {
 			agentState = AgentState.NOT_STARTED.toString();

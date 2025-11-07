@@ -227,8 +227,8 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 			}
 
 			// Set additional fields
-			if (step.getAgent() != null) {
-				agentRecord.setStatus(convertAgentStateToExecutionStatus(step.getAgent().getState()));
+			if (step.getStatus() != null) {
+				agentRecord.setStatus(convertAgentStateToExecutionStatus(step.getStatus()));
 			}
 
 			// Set step index
@@ -262,6 +262,7 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 			case IN_PROGRESS:
 				return ExecutionStatusEntity.RUNNING;
 			case COMPLETED:
+			case INTERRUPTED:
 				return ExecutionStatusEntity.FINISHED;
 			case BLOCKED:
 			case FAILED:
@@ -425,7 +426,11 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 			// 4. Save the think-act record
 			ThinkActRecordEntity savedThinkActRecord = thinkActRecordRepository.save(thinkActRecord);
 
-			logger.info("Successfully recorded thinking and action for stepId: {}, thinkActRecordId: {}",
+			// 5. Add the think-act record to the agent execution record's list to maintain the relationship
+			agentRecord.addThinkActStep(savedThinkActRecord);
+			agentExecutionRecordRepository.save(agentRecord);
+
+			logger.info("Successfully recorded thinking and action for stepId: {}, thinkActRecordId: {}, added to agentRecord.thinkActSteps",
 					step.getStepId(), savedThinkActRecord.getId());
 
 			return savedThinkActRecord.getId();
@@ -533,8 +538,8 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 			// 3. Update the entity with complete execution information
 
 			// Set completion status based on agent state
-			if (step.getAgent() != null) {
-				ExecutionStatusEntity finalStatus = convertAgentStateToExecutionStatus(step.getAgent().getState());
+			if (step.getStatus() != null) {
+				ExecutionStatusEntity finalStatus = convertAgentStateToExecutionStatus(step.getStatus());
 				agentRecord.setStatus(finalStatus);
 
 				// Update agent information

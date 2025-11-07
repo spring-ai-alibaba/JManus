@@ -24,7 +24,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -38,8 +37,10 @@ import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.manus.tool.SystemErrorReportTool;
 import com.alibaba.cloud.ai.manus.tool.TerminateTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * An abstract base class for implementing AI agents that can execute multi-step tasks.
@@ -80,11 +81,11 @@ public abstract class BaseAgent {
 
 	private int planDepth = 0;
 
-	private AgentState state = AgentState.NOT_STARTED;
-
 	protected LlmService llmService;
 
 	protected final ManusProperties manusProperties;
+
+	protected ObjectMapper objectMapper;
 
 	protected final ExecutionStep step;
 
@@ -250,78 +251,67 @@ public abstract class BaseAgent {
 
 	public AgentExecResult run() {
 		currentStep = 0;
-		if (state != AgentState.IN_PROGRESS) {
-			throw new IllegalStateException("Cannot run agent from state: " + state);
-		}
-		List<String> results = new ArrayList<>();
+		List<AgentExecResult> results = new ArrayList<>();
 		AgentExecResult lastStepResult = null;
 
 		try {
-			state = AgentState.IN_PROGRESS;
-
-			while (currentStep < maxSteps && !state.equals(AgentState.COMPLETED)
-					&& !state.equals(AgentState.INTERRUPTED)) {
+			while (currentStep < maxSteps) {
 				currentStep++;
 				log.info("Executing round {}/{}", currentStep, maxSteps);
 
 				AgentExecResult stepResult = step();
 				lastStepResult = stepResult;
 
-				if (isStuck()) {
-					handleStuckState();
-				}
-				else {
-					// Update global state for consistency
-					log.info("Agent state: {}", stepResult.getState());
-					state = stepResult.getState();
-
-					// Check if agent was interrupted and should stop
-					if (state.equals(AgentState.INTERRUPTED)) {
-						log.info("Agent execution interrupted at round {}/{}", currentStep, maxSteps);
-						results.add("Execution interrupted by user");
-						break; // Exit the loop immediately
+				// Check if agent should terminate
+				AgentState stepState = stepResult.getState();
+				if (stepState == AgentState.COMPLETED || stepState == AgentState.INTERRUPTED) {
+					log.info("Agent execution {} at round {}/{}", 
+							stepState == AgentState.COMPLETED ? "completed" : "interrupted", 
+							currentStep, maxSteps);
+					results.add(stepResult);
+					
+					// Handle final processing based on state
+					if (stepState == AgentState.INTERRUPTED) {
+						handleInterruptedExecution(results);
+					} else {
+						handleCompletedExecution(results);
 					}
+					break; // Exit the loop
 				}
 
-				results.add(stepResult.getResult());
+				results.add(stepResult);
 			}
 
-			if (currentStep >= maxSteps) {
+			// If max steps reached, generate summary and terminate
+			if (currentStep >= maxSteps && 
+					(lastStepResult == null || 
+					 (lastStepResult.getState() != AgentState.COMPLETED && 
+					  lastStepResult.getState() != AgentState.INTERRUPTED))) {
 				log.info("Agent reached max rounds ({}), generating final summary and terminating", maxSteps);
 				String finalSummary = generateFinalSummary();
-				results.add("Terminated: Reached max rounds (" + maxSteps + ")");
 
 				// Call TerminateTool with the summary
 				String result = terminateWithSummary(finalSummary);
-				results.add(result);
 				
 				// Create final result for max steps reached
-				lastStepResult = new AgentExecResult(result, AgentState.COMPLETED, results);
+				lastStepResult = new AgentExecResult(result, AgentState.COMPLETED);
+				results.add(lastStepResult);
 			}
 
 		}
 		catch (Exception e) {
 			log.error("Agent execution failed", e);
-
-			results.add("Execution failed: " + e.getMessage());
-
-			// Record execution at the end - even for failures
+			
+			// Wrap exception with SystemErrorReportTool
+			lastStepResult = handleExceptionWithSystemErrorReport(e, results);
+		}
+		finally {
+			llmService.clearAgentMemory(currentPlanId);
+			
+			// Record execution at the end
 			if (currentPlanId != null && planExecutionRecorder != null) {
 				planExecutionRecorder.recordCompleteAgentExecution(step);
 			}
-
-			throw e; // Re-throw the exception to let the caller know that an error
-						// occurred
-		}
-		finally {
-			state = AgentState.COMPLETED; // Reset state after execution
-			llmService.clearAgentMemory(currentPlanId);
-		}
-
-		// Record execution at the end - only once
-		if (currentPlanId != null && planExecutionRecorder != null) {
-
-			planExecutionRecorder.recordCompleteAgentExecution(step);
 		}
 
 		// Return the last round's AgentExecResult with the complete results list
@@ -335,44 +325,93 @@ public abstract class BaseAgent {
 
 	protected abstract AgentExecResult step();
 
-	private void handleStuckState() {
-		log.warn("Agent stuck detected - Missing tool calls");
-
-		// End current step
-		setState(AgentState.COMPLETED);
-
-		String stuckPrompt = """
-				Agent response detected missing required tool calls.
-				Please ensure each response includes at least one tool call to progress the task.
-				Current step: %d
-				Execution status: Force terminated
-				""".formatted(currentStep);
-
-		log.error(stuckPrompt);
+	/**
+	 * Handle interrupted execution - perform final cleanup and recording
+	 * @param results The results list to update
+	 */
+	protected void handleInterruptedExecution(List<AgentExecResult> results) {
+		log.info("Handling interrupted execution");
+		// Additional cleanup for interrupted execution if needed
 	}
 
 	/**
-	 * Check if the agent is stuck
-	 * @return true if the agent is stuck, false otherwise
+	 * Handle completed execution - perform final cleanup and recording
+	 * @param results The results list to update
 	 */
-	protected boolean isStuck() {
-		// Currently, if the agent does not call the tool three times, it is considered
-		// stuck and the current step is exited.
-		List<Message> memoryEntries = llmService.getAgentMemory(manusProperties.getMaxMemory()).get(getCurrentPlanId());
-		int zeroToolCallCount = 0;
-		for (Message msg : memoryEntries) {
-			if (msg instanceof AssistantMessage) {
-				AssistantMessage assistantMsg = (AssistantMessage) msg;
-				if (assistantMsg.getToolCalls() == null || assistantMsg.getToolCalls().isEmpty()) {
-					zeroToolCallCount++;
-				}
-			}
-		}
-		return zeroToolCallCount >= 3;
+	protected void handleCompletedExecution(List<AgentExecResult> results) {
+		log.info("Handling completed execution");
+		// Additional cleanup for completed execution if needed
 	}
 
-	public void setState(AgentState state) {
-		this.state = state;
+	/**
+	 * Handle exception by wrapping it with SystemErrorReportTool and simulating normal tool flow
+	 * @param exception The exception that occurred
+	 * @param results The results list to update
+	 * @return AgentExecResult with error information
+	 */
+	protected AgentExecResult handleExceptionWithSystemErrorReport(Exception exception, List<AgentExecResult> results) {
+		log.error("Handling exception with SystemErrorReportTool", exception);
+		
+		try {
+			// Create SystemErrorReportTool instance
+			SystemErrorReportTool errorTool = new SystemErrorReportTool(getCurrentPlanId(), objectMapper);
+			
+			// Prepare error message
+			String errorMessage = String.format("System execution error at step %d: %s", 
+					currentStep, exception.getMessage());
+			
+			// Create tool input
+			Map<String, Object> errorInput = Map.of("errorMessage", errorMessage);
+			
+			// Execute the error report tool
+			ToolExecuteResult toolResult = errorTool.run(errorInput);
+			
+			// Simulate post-tool flow
+			String result = simulatePostToolFlow(errorTool, toolResult, errorMessage);
+			
+			// Extract error message for step
+			try {
+				if (objectMapper == null) {
+					objectMapper = new ObjectMapper();
+				}
+				@SuppressWarnings("unchecked")
+				Map<String, Object> errorData = objectMapper.readValue(toolResult.getOutput(), Map.class);
+				String extractedErrorMessage = (String) errorData.get("errorMessage");
+				if (extractedErrorMessage != null && !extractedErrorMessage.isEmpty()) {
+					step.setErrorMessage(extractedErrorMessage);
+				}
+			}
+			catch (Exception e) {
+				log.warn("Failed to parse errorMessage from SystemErrorReportTool result", e);
+				step.setErrorMessage(errorMessage);
+			}
+			
+			AgentExecResult errorResult = new AgentExecResult(result, AgentState.COMPLETED);
+			results.add(errorResult);
+			return errorResult;
+		}
+		catch (Exception e) {
+			log.error("Failed to handle exception with SystemErrorReportTool", e);
+			String fallbackError = "System error: " + exception.getMessage();
+			step.setErrorMessage(fallbackError);
+			AgentExecResult fallbackResult = new AgentExecResult(fallbackError, AgentState.COMPLETED);
+			results.add(fallbackResult);
+			return fallbackResult;
+		}
+	}
+
+	/**
+	 * Simulate the post-tool flow that normally happens after tool execution
+	 * This method should be overridden by subclasses to provide specific implementation
+	 * @param tool The tool that was executed
+	 * @param toolResult The result from the tool execution
+	 * @param errorMessage The error message
+	 * @return The processed result string
+	 */
+	protected String simulatePostToolFlow(Object tool, ToolExecuteResult toolResult, String errorMessage) {
+		// Default implementation - just return the tool result output
+		// Subclasses can override to add memory processing, recording, etc.
+		return toolResult.getOutput();
 	}
 
 	public String getCurrentPlanId() {
@@ -399,9 +438,6 @@ public abstract class BaseAgent {
 		this.planDepth = planDepth;
 	}
 
-	public AgentState getState() {
-		return state;
-	}
 
 	/**
 	 * Get the data context of the agent
@@ -429,7 +465,7 @@ public abstract class BaseAgent {
 
 		private AgentState state;
 
-		private List<String> results;
+		private List<AgentExecResult> results;
 
 		public AgentExecResult(String result, AgentState state) {
 			this.result = result;
@@ -437,7 +473,7 @@ public abstract class BaseAgent {
 			this.results = new ArrayList<>();
 		}
 
-		public AgentExecResult(String result, AgentState state, List<String> results) {
+		public AgentExecResult(String result, AgentState state, List<AgentExecResult> results) {
 			this.result = result;
 			this.state = state;
 			this.results = results != null ? new ArrayList<>(results) : new ArrayList<>();
@@ -451,7 +487,7 @@ public abstract class BaseAgent {
 			return state;
 		}
 
-		public List<String> getResults() {
+		public List<AgentExecResult> getResults() {
 			return results;
 		}
 
@@ -519,7 +555,7 @@ public abstract class BaseAgent {
 			log.info("Terminating agent execution with summary");
 
 			// Create TerminateTool instance
-			TerminateTool terminateTool = new TerminateTool(getCurrentPlanId(), "message");
+			TerminateTool terminateTool = new TerminateTool(getCurrentPlanId(), "message", objectMapper);
 			// Prepare termination data
 			Map<String, Object> terminationData = new HashMap<>();
 			terminationData.put("message", "Agent execution terminated due to max rounds reached. Summary: " + summary);

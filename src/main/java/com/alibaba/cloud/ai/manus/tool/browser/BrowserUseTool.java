@@ -268,11 +268,11 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				- 'input_text': Input text in element
 				- 'key_enter': Press Enter key
 				- 'screenshot': Capture screenshot
-				- 'get_text': Get text content of current page
+				- 'get_text': Get text content of current whole page text content, including all frames and nested elements.
 				- 'execute_js': Execute JavaScript code
 				- 'scroll': Scroll page up/down
 				- 'refresh': Refresh current page
-				- 'new_tab': Open new tab
+				- 'new_tab': Open new tab with specified URL
 				- 'close_tab': Close current tab
 				- 'switch_tab': Switch to specific tab
 

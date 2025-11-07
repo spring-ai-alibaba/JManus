@@ -15,13 +15,25 @@
  */
 package com.alibaba.cloud.ai.manus.recorder.entity.po;
 
-import jakarta.persistence.*;
-
-import com.alibaba.cloud.ai.manus.agent.BaseAgent;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.alibaba.cloud.ai.manus.agent.BaseAgent;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 /**
  * Agent execution record class for tracking and recording detailed information about
@@ -90,7 +102,7 @@ public class AgentExecutionRecordEntity {
 
 	// Record list of think-act steps, existing as sub-steps
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-	@JoinColumn(name = "agent_execution_id")
+	@JoinColumn(name = "parent_execution_id")
 	private List<ThinkActRecordEntity> thinkActSteps;
 
 	// Request content for agent execution

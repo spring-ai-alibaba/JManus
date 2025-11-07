@@ -25,14 +25,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Tool for reporting execution errors and storing error messages in the execution record.
- * This tool implements TerminableTool to stop execution when an error is reported.
+ * Tool for reporting system execution errors and storing error messages in the execution record.
+ * This tool does NOT implement TerminableTool, so it will not terminate execution.
+ * It is used internally by the system to report errors while allowing execution to continue.
  */
-public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> implements TerminableTool {
+public class SystemErrorReportTool extends AbstractBaseTool<Map<String, Object>> {
 
-	private static final Logger log = LoggerFactory.getLogger(ErrorReportTool.class);
+	private static final Logger log = LoggerFactory.getLogger(SystemErrorReportTool.class);
 
-	public static final String name = "error_report";
+	public static final String name = "system_error_report";
 
 	private String lastErrorMessage = "";
 
@@ -43,9 +44,9 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 	private final ObjectMapper objectMapper;
 
 	private static String getDescriptionText() {
-		return "Report execution errors and store error messages in the execution record. "
-				+ "This tool should be used when an error occurs during execution that needs to be displayed in the execution details view. "
-				+ "The error message will be stored and displayed to the user.";
+		return "Report system execution errors and store error messages in the execution record. "
+				+ "This tool is used internally by the system to report errors that occur during execution. "
+				+ "The error message will be stored and displayed to the user in the execution details view.";
 	}
 
 	private static String generateParametersJson() {
@@ -55,7 +56,7 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 				  "properties": {
 				    "errorMessage": {
 				      "type": "string",
-				      "description": "Detailed error message describing what went wrong during execution. This message will be displayed in the execution details view."
+				      "description": "Detailed error message describing what went wrong during system execution. This message will be displayed in the execution details view."
 				    }
 				  },
 				  "required": ["errorMessage"]
@@ -66,7 +67,7 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 	@Override
 	public String getCurrentToolStateString() {
 		return String.format("""
-				Error Report Tool Status:
+				System Error Report Tool Status:
 				- Current State: %s
 				- Last Error: %s
 				- Error Message: %s
@@ -79,13 +80,13 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 				currentPlanId != null ? currentPlanId : "N/A");
 	}
 
-	public ErrorReportTool(String planId) {
+	public SystemErrorReportTool(String planId) {
 		this.currentPlanId = planId;
 		this.objectMapper = new ObjectMapper();
 		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 	}
 
-	public ErrorReportTool(String planId, ObjectMapper objectMapper) {
+	public SystemErrorReportTool(String planId, ObjectMapper objectMapper) {
 		this.currentPlanId = planId;
 		if (objectMapper != null) {
 			this.objectMapper = objectMapper;
@@ -97,15 +98,15 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 
 	@Override
 	public ToolExecuteResult run(Map<String, Object> input) {
-		log.info("ErrorReportTool called with input: {}", input);
+		log.info("SystemErrorReportTool called with input: {}", input);
 
 		// Extract error message from input
 		Object errorMessageObj = input.get("errorMessage");
 		String errorMessage = errorMessageObj != null ? errorMessageObj.toString() : "";
 
 		if (errorMessage.isEmpty()) {
-			log.warn("ErrorReportTool called without errorMessage, using default message");
-			errorMessage = "An error occurred during execution";
+			log.warn("SystemErrorReportTool called without errorMessage, using default message");
+			errorMessage = "A system error occurred during execution";
 		}
 
 		this.lastErrorMessage = errorMessage;
@@ -117,7 +118,7 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 			Map<String, Object> errorData = Map.of("errorMessage", errorMessage, "timestamp",
 					errorReportTimestamp);
 			String jsonString = objectMapper.writeValueAsString(errorData);
-			log.info("Error reported successfully for planId: {}, errorMessage: {}", currentPlanId, errorMessage);
+			log.info("System error reported successfully for planId: {}, errorMessage: {}", currentPlanId, errorMessage);
 			return new ToolExecuteResult(jsonString);
 		}
 		catch (Exception e) {
@@ -134,7 +135,7 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 
 	@Override
 	public String getDescription() {
-		return ErrorReportTool.getDescriptionText();
+		return SystemErrorReportTool.getDescriptionText();
 	}
 
 	@Override
@@ -166,17 +167,9 @@ public class ErrorReportTool extends AbstractBaseTool<Map<String, Object>> imple
 		return "default-service-group";
 	}
 
-	// ==================== TerminableTool interface implementation ====================
-
-	@Override
-	public boolean canTerminate() {
-		// ErrorReportTool can always terminate as its purpose is to report errors and stop execution
-		return true;
-	}
-
 	@Override
 	public boolean isSelectable() {
-		return true;
+		return false; // System tool, not selectable by users
 	}
 
 }

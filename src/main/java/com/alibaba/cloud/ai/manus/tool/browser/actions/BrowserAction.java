@@ -163,6 +163,24 @@ public abstract class BrowserAction {
 
 			// Use getByRole with name if available
 			if (name != null && !name.isEmpty()) {
+				// For links, try using href from props first (more specific)
+				if ("link".equals(role)) {
+					String href = node.props != null ? node.props.get("url") : null;
+					if (href != null && !href.isEmpty()) {
+						try {
+							// Use CSS selector with href attribute for more specific matching
+							Locator hrefLocator = page.locator("a[href*='" + href.replace("'", "\\'") + "']");
+							if (hrefLocator.count() == 1) {
+								return hrefLocator;
+							}
+							// If multiple or none, fall through to role-based selector
+						}
+						catch (Exception e) {
+							log.debug("Failed to use href CSS selector: {}", e.getMessage());
+						}
+					}
+				}
+				
 				try {
 					Locator locator = null;
 					switch (role) {
@@ -194,8 +212,24 @@ public abstract class BrowserAction {
 							// Fallback: try to get by role without name
 							return getByRoleWithoutName(page, role);
 					}
-					// If we get here, locator was created successfully (no strict mode violation)
-					return locator;
+					
+					// Check if locator matches multiple elements (proactive check)
+					// This helps avoid strict mode violations during waitFor/click operations
+					try {
+						int count = locator.count();
+						if (count > 1) {
+							log.debug("Locator for role={}, name={} matches {} elements, using handleMultipleMatches", role, name, count);
+							return handleMultipleMatches(page, node, role, name);
+						}
+						// If count is 1 or 0, the locator is fine (0 will fail later, but that's expected)
+						return locator;
+					}
+					catch (Exception countException) {
+						// If count() fails, try to use the locator anyway
+						// It might work if the exception is due to timing
+						log.debug("Failed to get count for locator, using it anyway: {}", countException.getMessage());
+						return locator;
+					}
 				}
 				catch (Exception e) {
 					// Strict mode violation or other error - try to handle multiple matches
@@ -248,43 +282,65 @@ public abstract class BrowserAction {
 			DriverWrapper driverWrapper = getDriverWrapper();
 			AriaElementHolder holder = driverWrapper.getAriaElementHolder();
 			int nodeIndex = -1;
-			if (holder != null) {
+			List<AriaElementHolder.AriaNode> matchingNodes = new java.util.ArrayList<>();
+			if (holder != null && node.ref != null) {
 				// Get all nodes with same role and name
-				List<AriaElementHolder.AriaNode> matchingNodes = holder.getByRoleAndName(role, name);
+				matchingNodes = holder.getByRoleAndName(role, name);
 				if (matchingNodes.size() > 1) {
-					// Find the index of our node in the list
+					// Find the index of our node in the list (sorted by document order)
 					for (int i = 0; i < matchingNodes.size(); i++) {
 						if (matchingNodes.get(i).ref != null && matchingNodes.get(i).ref.equals(node.ref)) {
 							nodeIndex = i;
+							log.debug("Found node index {} for ref {} in matching nodes", i, node.ref);
 							break;
 						}
 					}
 				}
 			}
 
-			// Last resort: use getByRole without name, then filter or select by index
-			// We can't use getByRole with name because it throws strict mode violation
+			// Try to use getByRole with name and filter by index
+			// We need to use a workaround since getByRole with name throws strict mode violation
 			try {
 				com.microsoft.playwright.options.AriaRole ariaRole = mapRoleToAriaRole(role);
 				if (ariaRole != null) {
-					// Get all elements with this role (without name filter to avoid strict mode)
+					// Get all elements with this role and name using filter
+					// First, get all elements with the role
 					Locator allRoleElements = page.getByRole(ariaRole);
-					// Note: count() doesn't have timeout option, but it should be fast
-					// If it hangs, it's likely a page loading issue
-					int totalCount = allRoleElements.count();
+					
+					// Filter by name using a filter function
+					// This avoids strict mode violation by not using getByRole with name directly
+					Locator filteredByName = allRoleElements.filter(new Locator.FilterOptions().setHasText(name));
+					
+					int filteredCount = filteredByName.count();
+					log.debug("Found {} elements with role={} and name={}", filteredCount, role, name);
 					
 					// If we found the index and it's valid, use nth()
+					if (nodeIndex >= 0 && nodeIndex < filteredCount) {
+						log.debug("Using nth({}) for role={}, name={} (ref={})", nodeIndex, role, name, node.ref);
+						return filteredByName.nth(nodeIndex);
+					}
+					
+					// If filtered count matches expected, use the filtered locator
+					if (filteredCount > 0 && filteredCount <= matchingNodes.size()) {
+						// Use first() as fallback if we can't determine exact index
+						log.debug("Using first() from {} filtered elements for role={}, name={}", filteredCount, role, name);
+						return filteredByName.first();
+					}
+					
+					// Fallback: use all role elements without name filter
+					int totalCount = allRoleElements.count();
 					if (nodeIndex >= 0 && nodeIndex < totalCount) {
-						log.debug("Using nth({}) for role={}, name={}", nodeIndex, role, name);
+						log.debug("Using nth({}) from all {} role elements for role={}, name={}", nodeIndex, totalCount, role, name);
 						return allRoleElements.nth(nodeIndex);
 					}
-					// Fallback: use first() if we can't determine the index
+					
+					// Final fallback: use first() if we can't determine the index
 					log.warn("Multiple elements match role={}, name={}, using first() as fallback", role, name);
 					return allRoleElements.first();
 				}
 			}
 			catch (Exception e) {
-				log.debug("Failed to use role-only selector with index: {}", e.getMessage());
+				log.debug("Failed to use role selector with filter: {}", e.getMessage());
 			}
 
 			// Final fallback: use role without name
