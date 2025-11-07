@@ -248,12 +248,13 @@ public abstract class BaseAgent {
 		this.initSettingData = Collections.unmodifiableMap(new HashMap<>(initialAgentSetting));
 	}
 
-	public String run() {
+	public AgentExecResult run() {
 		currentStep = 0;
 		if (state != AgentState.IN_PROGRESS) {
 			throw new IllegalStateException("Cannot run agent from state: " + state);
 		}
 		List<String> results = new ArrayList<>();
+		AgentExecResult lastStepResult = null;
 
 		try {
 			state = AgentState.IN_PROGRESS;
@@ -264,6 +265,7 @@ public abstract class BaseAgent {
 				log.info("Executing round {}/{}", currentStep, maxSteps);
 
 				AgentExecResult stepResult = step();
+				lastStepResult = stepResult;
 
 				if (isStuck()) {
 					handleStuckState();
@@ -292,6 +294,9 @@ public abstract class BaseAgent {
 				// Call TerminateTool with the summary
 				String result = terminateWithSummary(finalSummary);
 				results.add(result);
+				
+				// Create final result for max steps reached
+				lastStepResult = new AgentExecResult(result, AgentState.COMPLETED, results);
 			}
 
 		}
@@ -319,7 +324,13 @@ public abstract class BaseAgent {
 			planExecutionRecorder.recordCompleteAgentExecution(step);
 		}
 
-		return results.isEmpty() ? "" : results.get(results.size() - 1);
+		// Return the last round's AgentExecResult with the complete results list
+		if (lastStepResult != null) {
+			return new AgentExecResult(lastStepResult.getResult(), lastStepResult.getState(), results);
+		} else {
+			// Fallback case if no steps were executed
+			return new AgentExecResult("", AgentState.COMPLETED, results);
+		}
 	}
 
 	protected abstract AgentExecResult step();
@@ -418,9 +429,18 @@ public abstract class BaseAgent {
 
 		private AgentState state;
 
+		private List<String> results;
+
 		public AgentExecResult(String result, AgentState state) {
 			this.result = result;
 			this.state = state;
+			this.results = new ArrayList<>();
+		}
+
+		public AgentExecResult(String result, AgentState state, List<String> results) {
+			this.result = result;
+			this.state = state;
+			this.results = results != null ? new ArrayList<>(results) : new ArrayList<>();
 		}
 
 		public String getResult() {
@@ -429,6 +449,10 @@ public abstract class BaseAgent {
 
 		public AgentState getState() {
 			return state;
+		}
+
+		public List<String> getResults() {
+			return results;
 		}
 
 	}

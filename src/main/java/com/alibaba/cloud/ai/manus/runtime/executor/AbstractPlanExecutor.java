@@ -107,8 +107,8 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 			executor.setState(AgentState.IN_PROGRESS);
 
 			recorder.recordStepStart(step, context.getCurrentPlanId());
-			String stepResultStr = executor.run();
-			step.setResult(stepResultStr);
+			BaseAgent.AgentExecResult agentResult = executor.run();
+			step.setResult(agentResult.getResult());
 
 			// Check if agent was interrupted
 			if (executor.getState() == AgentState.INTERRUPTED) {
