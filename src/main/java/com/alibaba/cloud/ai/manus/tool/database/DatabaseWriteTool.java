@@ -62,9 +62,19 @@ public class DatabaseWriteTool extends AbstractBaseTool<DatabaseRequest> {
 				Use this tool when you need to modify database data or structure.
 
 				Operations:
-				- 'execute_write_sql': Execute INSERT, UPDATE, DELETE, or DDL statements
+				- 'execute_write_sql': Execute INSERT, UPDATE, DELETE, or DDL statements using prepared statements
 
-				Important: When inserting NULL values, use NULL keyword explicitly (e.g., VALUES ('name', NULL, NULL)).
+				Features:
+				- Uses prepared statements with parameterized queries for SQL injection prevention
+				- Use ? placeholders in query and provide parameters array for safe parameter binding
+				- Supports all data types including strings, numbers, booleans, and null values
+
+				Examples:
+				- INSERT: query="INSERT INTO users (name, email) VALUES (?, ?)", parameters=["John", "john@example.com"]
+				- UPDATE: query="UPDATE users SET email = ? WHERE id = ?", parameters=["newemail@example.com", 123]
+				- DELETE: query="DELETE FROM users WHERE id = ?", parameters=[456]
+
+				Important: Always use ? placeholders and provide corresponding parameters array for data values.
 				""";
 	}
 
@@ -75,7 +85,12 @@ public class DatabaseWriteTool extends AbstractBaseTool<DatabaseRequest> {
 				    "type": "object",
 				    "properties": {
 				        "action": { "type": "string", "const": "execute_write_sql" },
-				        "query": { "type": "string", "description": "SQL statement for write operations (INSERT, UPDATE, DELETE, ALTER, etc.)" },
+				        "query": { "type": "string", "description": "SQL statement for write operations (INSERT, UPDATE, DELETE, ALTER, etc.). Use ? placeholders for parameterized queries." },
+				        "parameters": { 
+				            "type": "array", 
+				            "description": "Optional array of parameter values for prepared statements. Values will be bound to ? placeholders in the query.",
+				            "items": { "type": ["string", "number", "boolean", "null"] }
+				        },
 				        "datasourceName": { "type": "string", "description": "Data source name, optional" }
 				    },
 				    "required": ["action", "query"],

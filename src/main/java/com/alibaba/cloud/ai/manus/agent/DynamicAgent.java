@@ -418,54 +418,6 @@ public class DynamicAgent extends ReActAgent {
 	}
 
 	/**
-	 * Check if an exception is a JSON parsing error that should not terminate the agent
-	 * @param e The exception to check
-	 * @return true if this is a JSON parsing error, false otherwise
-	 */
-	private boolean isJsonParsingError(Exception e) {
-		if (e == null) {
-			return false;
-		}
-
-		// Check if the exception itself is a JSON parsing error
-		String exceptionName = e.getClass().getSimpleName();
-		if (exceptionName.contains("Json") && exceptionName.contains("Exception")) {
-			return true;
-		}
-
-		// Check if the exception message indicates JSON parsing error
-		String message = e.getMessage();
-		if (message != null) {
-			if (message.contains("Conversion from JSON") && message.contains("failed")) {
-				return true;
-			}
-			if (message.contains("Unexpected end-of-input") && message.contains("expecting closing quote")) {
-				return true;
-			}
-			if (message.contains("JsonEOFException")) {
-				return true;
-			}
-		}
-
-		// Check the cause chain for JSON parsing errors
-		Throwable cause = e.getCause();
-		while (cause != null) {
-			String causeName = cause.getClass().getSimpleName();
-			if (causeName.contains("Json") && causeName.contains("Exception")) {
-				return true;
-			}
-			String causeMessage = cause.getMessage();
-			if (causeMessage != null && (causeMessage.contains("Unexpected end-of-input")
-					|| causeMessage.contains("expecting closing quote"))) {
-				return true;
-			}
-			cause = cause.getCause();
-		}
-
-		return false;
-	}
-
-	/**
 	 * Build error message from the latest exception
 	 * @return Formatted error message with exception details
 	 */
@@ -638,17 +590,6 @@ public class DynamicAgent extends ReActAgent {
 		catch (Exception e) {
 			log.error("Error executing single tool: {}", e.getMessage(), e);
 			processMemory(toolExecutionResult); // Process memory even on error
-
-			// Check if this is a JSON parsing error that should not terminate the agent
-			if (isJsonParsingError(e)) {
-				log.warn("JSON parsing error detected - allowing agent to continue: {}", e.getMessage());
-				String errorMessage = String.format(
-						"JSON parsing error occurred while executing tool. The tool parameters may be malformed. Error: %s. Please retry with corrected parameters.",
-						e.getMessage());
-				// Return IN_PROGRESS state so agent can retry instead of terminating
-				return new AgentExecResult(errorMessage, AgentState.IN_PROGRESS);
-			}
-
 			// For other errors, wrap exception with SystemErrorReportTool
 			List<AgentExecResult> emptyResults = new ArrayList<>();
 			return handleExceptionWithSystemErrorReport(e, emptyResults);
