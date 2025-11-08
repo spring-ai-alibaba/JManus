@@ -206,8 +206,12 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 			if (action == null) {
 				return new ToolExecuteResult("Error: action parameter is required");
 			}
+<<<<<<< HEAD
 			// file_path is optional for list_files action
 			if (filePath == null && !"list_files".equals(action)) {
+=======
+			if (filePath == null) {
+>>>>>>> upstream/main
 				return new ToolExecuteResult("Error: file_path parameter is required");
 			}
 
@@ -250,7 +254,10 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				}
 				case "delete" -> deleteFile(filePath);
 				case "count_words" -> countWords(filePath);
+<<<<<<< HEAD
 				case "list_files" -> listFiles(filePath != null ? filePath : "");
+=======
+>>>>>>> upstream/main
 				case "grep" -> {
 					String pattern = (String) toolInputMap.get("pattern");
 					Boolean caseSensitive = (Boolean) toolInputMap.get("case_sensitive");
@@ -264,7 +271,11 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 							wholeWord != null ? wholeWord : false);
 				}
 				default -> new ToolExecuteResult("Unknown operation: " + action
+<<<<<<< HEAD
 						+ ". Supported operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep");
+=======
+						+ ". Supported operations: replace, get_text, get_all_text, append, create, delete, count_words, grep");
+>>>>>>> upstream/main
 			};
 		}
 		catch (Exception e) {
@@ -284,8 +295,12 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 			if (action == null) {
 				return new ToolExecuteResult("Error: action parameter is required");
 			}
+<<<<<<< HEAD
 			// file_path is optional for list_files action
 			if (filePath == null && !"list_files".equals(action)) {
+=======
+			if (filePath == null) {
+>>>>>>> upstream/main
 				return new ToolExecuteResult("Error: file_path parameter is required");
 			}
 
@@ -328,7 +343,10 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				}
 				case "delete" -> deleteFile(filePath);
 				case "count_words" -> countWords(filePath);
+<<<<<<< HEAD
 				case "list_files" -> listFiles(filePath != null ? filePath : "");
+=======
+>>>>>>> upstream/main
 				case "grep" -> {
 					String pattern = input.getPattern();
 					Boolean caseSensitive = input.getCaseSensitive();
@@ -342,7 +360,11 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 							wholeWord != null ? wholeWord : false);
 				}
 				default -> new ToolExecuteResult("Unknown operation: " + action
+<<<<<<< HEAD
 						+ ". Supported operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep");
+=======
+						+ ". Supported operations: replace, get_text, get_all_text, append, create, delete, count_words, grep");
+>>>>>>> upstream/main
 			};
 		}
 		catch (Exception e) {
@@ -711,6 +733,7 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 		}
 	}
 
+<<<<<<< HEAD
 	/**
 	 * List files in the current plan directory
 	 */
@@ -793,6 +816,8 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 		return String.format("%.1f GB", size / (1024.0 * 1024 * 1024));
 	}
 
+=======
+>>>>>>> upstream/main
 	@Override
 	public String getCurrentToolStateString() {
 		try {
@@ -800,6 +825,7 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				return "Current Local File Operation State:\n- Error: No current plan ID available";
 			}
 
+<<<<<<< HEAD
 			return String
 				.format("""
 						Current Local File Operation State:
@@ -816,6 +842,21 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 							- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep
 							""",
 					e.getMessage());
+=======
+			return String.format("""
+					Current Local File Operation State:
+					- Scope: Current plan directory only (no hierarchical access)
+					- Operations are automatically handled (no manual file opening/closing required)
+					- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, grep
+					""");
+		}
+		catch (Exception e) {
+			return String.format("""
+					Current Local File Operation State:
+					- Error getting working directory: %s
+					- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, grep
+					""", e.getMessage());
+>>>>>>> upstream/main
 		}
 	}
 
@@ -840,7 +881,10 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				  Note: If file content is too long, it will be automatically stored in temporary file and return file path
 				- append: Append content to file, requires content parameter
 				- count_words: Count words in current file
+<<<<<<< HEAD
 				- list_files: List files and directories in the current plan directory, optional file_path parameter (defaults to current plan root)
+=======
+>>>>>>> upstream/main
 				- grep: Search for text patterns in file, similar to Linux grep command
 				  Parameters: pattern (required), case_sensitive (optional, default false), whole_word (optional, default false)
 
@@ -999,6 +1043,7 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				            "properties": {
 				                "action": {
 				                    "type": "string",
+<<<<<<< HEAD
 				                    "const": "list_files"
 				                },
 				                "file_path": {
@@ -1014,6 +1059,8 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				            "properties": {
 				                "action": {
 				                    "type": "string",
+=======
+>>>>>>> upstream/main
 				                    "const": "grep"
 				                },
 				                "file_path": {

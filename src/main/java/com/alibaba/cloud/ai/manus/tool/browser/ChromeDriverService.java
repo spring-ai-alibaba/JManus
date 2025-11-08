@@ -462,6 +462,7 @@ public class ChromeDriverService implements IChromeDriverService {
 				// Set timezone if needed
 				// contextOptions.setTimezoneId("Asia/Shanghai");
 
+<<<<<<< HEAD
 				// Try to load storage state (cookies, localStorage, etc.) for persistence
 				// This provides better cookie persistence than manual cookie loading
 				try {
@@ -479,6 +480,8 @@ public class ChromeDriverService implements IChromeDriverService {
 					log.warn("Failed to set storage state path, continuing without it: {}", e.getMessage());
 				}
 
+=======
+>>>>>>> upstream/main
 				// Create context with timeout
 				browserContext = browser.newContext(contextOptions);
 				log.info("Successfully created browser context");
