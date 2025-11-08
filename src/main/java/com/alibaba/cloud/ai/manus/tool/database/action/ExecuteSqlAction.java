@@ -59,6 +59,18 @@ public class ExecuteSqlAction extends AbstractDatabaseAction {
 	 * Execute SQL using prepared statements with parameters
 	 */
 	private ToolExecuteResult executePreparedStatement(String query, List<Object> parameters, String datasourceName, DataSourceService dataSourceService) {
+		// Validate parameter count matches placeholder count
+		int placeholderCount = countPlaceholders(query);
+		if (placeholderCount != parameters.size()) {
+			String errorMsg = String.format(
+					"Parameter count mismatch: SQL query has %d placeholder(s) (?), but %d parameter(s) provided. "
+							+ "Query: %s",
+					placeholderCount, parameters.size(), query);
+			log.error("ExecuteSqlAction parameter validation failed: {}", errorMsg);
+			return new ToolExecuteResult("Datasource: " + (datasourceName != null ? datasourceName : "default")
+					+ "\nError: " + errorMsg);
+		}
+
 		List<String> results = new ArrayList<>();
 		try (Connection conn = datasourceName != null && !datasourceName.trim().isEmpty()
 				? dataSourceService.getConnection(datasourceName) : dataSourceService.getConnection();
@@ -205,6 +217,25 @@ public class ExecuteSqlAction extends AbstractDatabaseAction {
 		}
 		// Replace pipe characters and newlines to prevent markdown table breakage
 		return cell.replace("|", "\\|").replace("\n", "\\n").replace("\r", "\\r");
+	}
+
+	/**
+	 * Count the number of ? placeholders in SQL query
+	 * Note: This is a simple implementation that counts all ? characters.
+	 * For production use, a more sophisticated parser would be needed to handle
+	 * question marks inside string literals, comments, etc.
+	 */
+	private int countPlaceholders(String query) {
+		if (query == null || query.trim().isEmpty()) {
+			return 0;
+		}
+		int count = 0;
+		for (int i = 0; i < query.length(); i++) {
+			if (query.charAt(i) == '?') {
+				count++;
+			}
+		}
+		return count;
 	}
 
 }

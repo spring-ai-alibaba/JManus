@@ -15,21 +15,24 @@
  */
 package com.alibaba.cloud.ai.manus.config;
 
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.WebClient;
+
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import io.netty.resolver.DefaultAddressResolverGroup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
-
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 /**
  * DNS cache and network configuration to resolve DNS resolution timeout issues in VPN
@@ -40,12 +43,28 @@ public class DnsCacheConfig {
 
 	private static final Logger log = LoggerFactory.getLogger(DnsCacheConfig.class);
 
+	@Lazy
+	@Autowired(required = false)
+	private ManusProperties manusProperties;
+
+	/**
+	 * Get configured LLM read timeout from ManusProperties, defaulting to 120 seconds if not configured
+	 */
+	private int getLlmReadTimeoutSeconds() {
+		if (manusProperties != null && manusProperties.getLlmReadTimeout() != null) {
+			return manusProperties.getLlmReadTimeout();
+		}
+		return 120; // Default 120 seconds (2 minutes)
+	}
+
 	/**
 	 * Configure WebClient with DNS cache
 	 */
 	@Bean
 	public WebClient webClientWithDnsCache() {
-		log.info("Configuring WebClient with DNS cache and extended timeouts");
+		int readTimeoutSeconds = getLlmReadTimeoutSeconds();
+		log.info("Configuring WebClient with DNS cache and extended timeouts (read timeout: {} seconds)",
+				readTimeoutSeconds);
 
 		// Create connection provider with increased connection pool size and timeout
 		ConnectionProvider connectionProvider = ConnectionProvider.builder("dns-cache-pool")
@@ -62,9 +81,9 @@ public class DnsCacheConfig {
 			.resolver(DefaultAddressResolverGroup.INSTANCE)
 			// Set connection timeout
 			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000) // 30 seconds
-			// Set read timeout
-			.doOnConnected(conn -> conn.addHandlerLast(new ReadTimeoutHandler(60, TimeUnit.SECONDS))
-				.addHandlerLast(new WriteTimeoutHandler(60, TimeUnit.SECONDS)))
+			// Set read and write timeout from configuration
+			.doOnConnected(conn -> conn.addHandlerLast(new ReadTimeoutHandler(readTimeoutSeconds, TimeUnit.SECONDS))
+				.addHandlerLast(new WriteTimeoutHandler(readTimeoutSeconds, TimeUnit.SECONDS)))
 			// Enable TCP keep-alive
 			.option(ChannelOption.SO_KEEPALIVE, true)
 			// Set TCP_NODELAY

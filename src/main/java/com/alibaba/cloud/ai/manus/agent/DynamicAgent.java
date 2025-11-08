@@ -367,8 +367,8 @@ public class DynamicAgent extends ReActAgent {
 	 * Calculate exponential backoff delay
 	 */
 	private long calculateBackoffDelay(int attempt) {
-		// Exponential backoff: 2^attempt * 1000ms, max 30 seconds
-		long delay = Math.min(1000L * (1L << (attempt - 1)), 30000L);
+		// Exponential backoff: 2^attempt * 2000ms, max 60 seconds
+		long delay = Math.min(2000L * (1L << (attempt - 1)), 60000L);
 		return delay;
 	}
 
