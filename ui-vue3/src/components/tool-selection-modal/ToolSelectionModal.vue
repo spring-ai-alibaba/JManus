@@ -153,6 +153,8 @@ const searchQuery = ref('')
 const sortBy = ref<'group' | 'name' | 'enabled'>('group')
 const collapsedGroups = ref(new Set<string>())
 const selectedTools = ref<string[]>([])
+// Store the collapsed state before search to restore when search is cleared
+const collapsedGroupsBeforeSearch = ref<Set<string> | null>(null)
 
 // Set group checkbox indeterminate state
 const updateGroupCheckboxState = (groupName: string, tools: Tool[]) => {
@@ -221,7 +223,23 @@ const filteredTools = computed(() => {
   return filtered
 })
 
-// Tools grouped by service group
+// All tools grouped by service group (for checking which groups have matches)
+const allGroupedTools = computed(() => {
+  const groups = new Map<string, Tool[]>()
+  const allTools = props.tools.filter(tool => tool.key && tool.selectable === true)
+
+  allTools.forEach(tool => {
+    const groupName = tool.serviceGroup || 'Ungrouped'
+    if (!groups.has(groupName)) {
+      groups.set(groupName, [])
+    }
+    groups.get(groupName)!.push(tool)
+  })
+
+  return groups
+})
+
+// Tools grouped by service group (filtered)
 const groupedTools = computed(() => {
   const groups = new Map<string, Tool[]>()
 
@@ -336,10 +354,44 @@ const handleCancel = () => {
   emit('update:modelValue', false)
 }
 
+// Auto-expand groups that contain matching tools when searching
+watch(searchQuery, newQuery => {
+  const query = newQuery.trim().toLowerCase()
+  
+  if (query) {
+    // Save current collapsed state before search if not already saved
+    if (collapsedGroupsBeforeSearch.value === null) {
+      collapsedGroupsBeforeSearch.value = new Set(collapsedGroups.value)
+    }
+    
+    // Expand all groups that contain matching tools (check all original tools, not just filtered)
+    for (const [groupName, tools] of allGroupedTools.value) {
+      const hasMatchingTool = tools.some(
+        tool =>
+          tool.name.toLowerCase().includes(query) ||
+          (tool.description && tool.description.toLowerCase().includes(query)) ||
+          (tool.serviceGroup && tool.serviceGroup.toLowerCase().includes(query))
+      )
+      
+      if (hasMatchingTool) {
+        // Expand the group if it contains matching tools
+        collapsedGroups.value.delete(groupName)
+      }
+    }
+  } else {
+    // Restore previous collapsed state when search is cleared
+    if (collapsedGroupsBeforeSearch.value !== null) {
+      collapsedGroups.value = new Set(collapsedGroupsBeforeSearch.value)
+      collapsedGroupsBeforeSearch.value = null
+    }
+  }
+})
+
 // When the modal opens, expand the first group by default and collapse the others
 watch(visible, newVisible => {
   if (newVisible) {
     collapsedGroups.value.clear()
+    collapsedGroupsBeforeSearch.value = null
     const groupNames = Array.from(groupedTools.value.keys())
     if (groupNames.length > 1) {
       // Collapse all groups except the first one by default

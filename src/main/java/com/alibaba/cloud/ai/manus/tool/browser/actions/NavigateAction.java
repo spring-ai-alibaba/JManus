@@ -46,6 +46,16 @@ public class NavigateAction extends BrowserAction {
 		// Before calling page.content(), ensure the page is fully loaded
 		page.waitForLoadState(LoadState.DOMCONTENTLOADED, new WaitForLoadStateOptions().setTimeout(timeoutMs));
 
+		// Save cookies after navigation to persist them
+		try {
+			getBrowserUseTool().getDriver().persistCookies();
+		}
+		catch (Exception e) {
+			// Log but don't fail the navigation if cookie saving fails
+			org.slf4j.LoggerFactory.getLogger(NavigateAction.class)
+				.debug("Failed to save cookies after navigation: {}", e.getMessage());
+		}
+
 		return new ToolExecuteResult("successfully navigated to " + url);
 	}
 

@@ -462,6 +462,23 @@ public class ChromeDriverService implements IChromeDriverService {
 				// Set timezone if needed
 				// contextOptions.setTimezoneId("Asia/Shanghai");
 
+				// Try to load storage state (cookies, localStorage, etc.) for persistence
+				// This provides better cookie persistence than manual cookie loading
+				try {
+					java.nio.file.Path storageStatePath = java.nio.file.Paths.get(sharedDir, "storage-state.json");
+					if (java.nio.file.Files.exists(storageStatePath)) {
+						contextOptions.setStorageStatePath(storageStatePath);
+						log.info("Loading browser storage state from: {}", storageStatePath);
+					}
+					else {
+						log.debug("Storage state file not found, creating new context without storage state: {}",
+								storageStatePath);
+					}
+				}
+				catch (Exception e) {
+					log.warn("Failed to set storage state path, continuing without it: {}", e.getMessage());
+				}
+
 				// Create context with timeout
 				browserContext = browser.newContext(contextOptions);
 				log.info("Successfully created browser context");
