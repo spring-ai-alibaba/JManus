@@ -86,8 +86,8 @@ public class DatabaseWriteTool extends AbstractBaseTool<DatabaseRequest> {
 				    "properties": {
 				        "action": { "type": "string", "const": "execute_write_sql" },
 				        "query": { "type": "string", "description": "SQL statement for write operations (INSERT, UPDATE, DELETE, ALTER, etc.). Use ? placeholders for parameterized queries." },
-				        "parameters": { 
-				            "type": "array", 
+				        "parameters": {
+				            "type": "array",
 				            "description": "Optional array of parameter values for prepared statements. Values will be bound to ? placeholders in the query.",
 				            "items": { "type": ["string", "number", "boolean", "null"] }
 				        },

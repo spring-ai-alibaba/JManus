@@ -209,7 +209,8 @@ public class DriverWrapper {
 	 */
 	public void persistCookies() {
 		saveCookies();
-		// Also save storage state for better persistence (includes cookies, localStorage, etc.)
+		// Also save storage state for better persistence (includes cookies, localStorage,
+		// etc.)
 		saveStorageState();
 	}
 
@@ -230,11 +231,10 @@ public class DriverWrapper {
 			}
 
 			// Save storage state to file (includes cookies, localStorage, sessionStorage)
-			java.nio.file.Path storageStatePath = this.cookiePath.getParent()
-				.resolve("storage-state.json");
+			java.nio.file.Path storageStatePath = this.cookiePath.getParent().resolve("storage-state.json");
 			// Playwright storageState method uses StorageStateOptions
-			context.storageState(new com.microsoft.playwright.BrowserContext.StorageStateOptions()
-				.setPath(storageStatePath));
+			context.storageState(
+					new com.microsoft.playwright.BrowserContext.StorageStateOptions().setPath(storageStatePath));
 			log.debug("Storage state saved successfully to: {}", storageStatePath.toAbsolutePath());
 		}
 		catch (Exception e) {

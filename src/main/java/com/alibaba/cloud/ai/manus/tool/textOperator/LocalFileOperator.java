@@ -744,8 +744,7 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 			}
 
 			StringBuilder result = new StringBuilder();
-			String displayPath = directoryPath == null || directoryPath.isEmpty() ? "."
-					: directoryPath;
+			String displayPath = directoryPath == null || directoryPath.isEmpty() ? "." : directoryPath;
 			result.append(String.format("Files in current plan directory: %s\n", displayPath));
 			result.append("=".repeat(50)).append("\n");
 
@@ -801,19 +800,22 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				return "Current Local File Operation State:\n- Error: No current plan ID available";
 			}
 
-			return String.format("""
-					Current Local File Operation State:
-					- Scope: Current plan directory only (no hierarchical access)
-					- Operations are automatically handled (no manual file opening/closing required)
-					- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep
-					""");
+			return String
+				.format("""
+						Current Local File Operation State:
+						- Scope: Current plan directory only (no hierarchical access)
+						- Operations are automatically handled (no manual file opening/closing required)
+						- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep
+						""");
 		}
 		catch (Exception e) {
-			return String.format("""
-					Current Local File Operation State:
-					- Error getting working directory: %s
-					- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep
-					""", e.getMessage());
+			return String.format(
+					"""
+							Current Local File Operation State:
+							- Error getting working directory: %s
+							- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep
+							""",
+					e.getMessage());
 		}
 	}
 

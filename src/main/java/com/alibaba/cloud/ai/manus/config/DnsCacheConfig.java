@@ -48,7 +48,8 @@ public class DnsCacheConfig {
 	private ManusProperties manusProperties;
 
 	/**
-	 * Get configured LLM read timeout from ManusProperties, defaulting to 120 seconds if not configured
+	 * Get configured LLM read timeout from ManusProperties, defaulting to 120 seconds if
+	 * not configured
 	 */
 	private int getLlmReadTimeoutSeconds() {
 		if (manusProperties != null && manusProperties.getLlmReadTimeout() != null) {

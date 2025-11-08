@@ -189,7 +189,8 @@ public class LevelBasedExecutorPool {
 	}
 
 	/**
-	 * Get the configured pool size from ManusProperties, defaulting to 5 if not configured
+	 * Get the configured pool size from ManusProperties, defaulting to 5 if not
+	 * configured
 	 */
 	private int getConfiguredPoolSize() {
 		if (manusProperties != null && manusProperties.getExecutorPoolSize() != null) {

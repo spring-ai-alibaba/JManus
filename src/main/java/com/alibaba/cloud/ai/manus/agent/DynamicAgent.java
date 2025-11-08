@@ -554,7 +554,7 @@ public class DynamicAgent extends ReActAgent {
 							"ErrorReportTool called to report error", errorMessage);
 				}
 
- 					if (terminableTool.canTerminate()) {
+				if (terminableTool.canTerminate()) {
 					log.info("TerminableTool can terminate for planId: {}", getCurrentPlanId());
 					String rootPlanId = getRootPlanId();
 					if (rootPlanId != null) {

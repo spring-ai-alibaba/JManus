@@ -42,8 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Standalone tool to export H2 database data to Excel file.
- * Usage: java -cp ... H2ToExcelExporter [dbPath] [outputPath]
+ * Standalone tool to export H2 database data to Excel file. Usage: java -cp ...
+ * H2ToExcelExporter [dbPath] [outputPath]
  */
 public class H2ToExcelExporter {
 
@@ -56,14 +56,13 @@ public class H2ToExcelExporter {
 
 	private static final String DRIVER_CLASS = "org.h2.Driver";
 
-    private static final String targetTable = "reddit_research";
+	private static final String targetTable = "reddit_research";
+
 	/**
 	 * Main method to run the export tool
-	 * @param args Command line arguments: [dbPath] [outputPath]
-	 *             - dbPath: Path to H2 database file (optional, defaults to
-	 *             ./h2-data/openmanus_db)
-	 *             - outputPath: Output Excel file path (optional, defaults to
-	 *             h2-export-{timestamp}.xlsx)
+	 * @param args Command line arguments: [dbPath] [outputPath] - dbPath: Path to H2
+	 * database file (optional, defaults to ./h2-data/openmanus_db) - outputPath: Output
+	 * Excel file path (optional, defaults to h2-export-{timestamp}.xlsx)
 	 */
 	public static void main(String[] args) {
 		String dbPath = args.length > 0 ? args[0] : "./h2-data/openmanus_db";
@@ -132,10 +131,10 @@ public class H2ToExcelExporter {
 				// Export each table to a separate sheet
 				for (String tableName : tableNames) {
 					log.info("Exporting table: {}", tableName);
-                    if(targetTable.equals(tableName)){
-                        exportTable(conn, tableName, workbook);
-                    }
-					
+					if (targetTable.equals(tableName)) {
+						exportTable(conn, tableName, workbook);
+					}
+
 				}
 			}
 
@@ -264,8 +263,8 @@ public class H2ToExcelExporter {
 	}
 
 	/**
-	 * Normalize newline characters in string values
-	 * Replaces literal \n with actual newline characters for proper Excel formatting
+	 * Normalize newline characters in string values Replaces literal \n with actual
+	 * newline characters for proper Excel formatting
 	 */
 	private String normalizeNewlines(String value) {
 		if (value == null) {
@@ -301,4 +300,3 @@ public class H2ToExcelExporter {
 	}
 
 }
-

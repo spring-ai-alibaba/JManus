@@ -50,7 +50,8 @@ public class ExecuteSqlAction extends AbstractDatabaseAction {
 		// Check if we should use prepared statements (parameters provided)
 		if (parameters != null && !parameters.isEmpty()) {
 			return executePreparedStatement(query, parameters, datasourceName, dataSourceService);
-		} else {
+		}
+		else {
 			return executeRegularStatement(query, datasourceName, dataSourceService);
 		}
 	}
@@ -58,42 +59,44 @@ public class ExecuteSqlAction extends AbstractDatabaseAction {
 	/**
 	 * Execute SQL using prepared statements with parameters
 	 */
-	private ToolExecuteResult executePreparedStatement(String query, List<Object> parameters, String datasourceName, DataSourceService dataSourceService) {
+	private ToolExecuteResult executePreparedStatement(String query, List<Object> parameters, String datasourceName,
+			DataSourceService dataSourceService) {
 		// Validate parameter count matches placeholder count
 		int placeholderCount = countPlaceholders(query);
 		if (placeholderCount != parameters.size()) {
-			String errorMsg = String.format(
-					"Parameter count mismatch: SQL query has %d placeholder(s) (?), but %d parameter(s) provided. "
-							+ "Query: %s",
-					placeholderCount, parameters.size(), query);
+			String errorMsg = String
+				.format("Parameter count mismatch: SQL query has %d placeholder(s) (?), but %d parameter(s) provided. "
+						+ "Query: %s", placeholderCount, parameters.size(), query);
 			log.error("ExecuteSqlAction parameter validation failed: {}", errorMsg);
-			return new ToolExecuteResult("Datasource: " + (datasourceName != null ? datasourceName : "default")
-					+ "\nError: " + errorMsg);
+			return new ToolExecuteResult(
+					"Datasource: " + (datasourceName != null ? datasourceName : "default") + "\nError: " + errorMsg);
 		}
 
 		List<String> results = new ArrayList<>();
 		try (Connection conn = datasourceName != null && !datasourceName.trim().isEmpty()
 				? dataSourceService.getConnection(datasourceName) : dataSourceService.getConnection();
 				PreparedStatement pstmt = conn.prepareStatement(query)) {
-			
+
 			// Set parameters
 			for (int i = 0; i < parameters.size(); i++) {
 				Object param = parameters.get(i);
 				if (param == null) {
 					pstmt.setNull(i + 1, java.sql.Types.NULL);
-				} else {
+				}
+				else {
 					pstmt.setObject(i + 1, param);
 				}
 			}
 
 			log.info("Executing prepared statement with {} parameters", parameters.size());
 			boolean hasResultSet = pstmt.execute();
-			
+
 			if (hasResultSet) {
 				try (ResultSet rs = pstmt.getResultSet()) {
 					results.add(formatResultSet(rs));
 				}
-			} else {
+			}
+			else {
 				int updateCount = pstmt.getUpdateCount();
 				results.add("Execution successful. Affected rows: " + updateCount);
 			}
@@ -104,8 +107,8 @@ public class ExecuteSqlAction extends AbstractDatabaseAction {
 			return new ToolExecuteResult(resultContent);
 		}
 		catch (SQLException e) {
-			log.error("ExecuteSqlAction (prepared) failed with SQLException, datasourceName={}, error={}", datasourceName,
-					e.getMessage(), e);
+			log.error("ExecuteSqlAction (prepared) failed with SQLException, datasourceName={}, error={}",
+					datasourceName, e.getMessage(), e);
 			return new ToolExecuteResult("Datasource: " + (datasourceName != null ? datasourceName : "default")
 					+ "\nPrepared SQL execution failed: " + e.getMessage());
 		}
@@ -114,7 +117,8 @@ public class ExecuteSqlAction extends AbstractDatabaseAction {
 	/**
 	 * Execute SQL using regular statements (backward compatibility)
 	 */
-	private ToolExecuteResult executeRegularStatement(String query, String datasourceName, DataSourceService dataSourceService) {
+	private ToolExecuteResult executeRegularStatement(String query, String datasourceName,
+			DataSourceService dataSourceService) {
 		String[] statements = query.split(";");
 		List<String> results = new ArrayList<>();
 		try (Connection conn = datasourceName != null && !datasourceName.trim().isEmpty()
@@ -135,15 +139,15 @@ public class ExecuteSqlAction extends AbstractDatabaseAction {
 					results.add("Execution successful. Affected rows: " + updateCount);
 				}
 			}
-			log.info("ExecuteSqlAction (regular) completed successfully, datasourceName={}, statements={}", datasourceName,
-					statements.length);
+			log.info("ExecuteSqlAction (regular) completed successfully, datasourceName={}, statements={}",
+					datasourceName, statements.length);
 			String resultContent = "Datasource: " + (datasourceName != null ? datasourceName : "default") + "\n"
 					+ String.join("\n---\n", results);
 			return new ToolExecuteResult(resultContent);
 		}
 		catch (SQLException e) {
-			log.error("ExecuteSqlAction (regular) failed with SQLException, datasourceName={}, error={}", datasourceName,
-					e.getMessage(), e);
+			log.error("ExecuteSqlAction (regular) failed with SQLException, datasourceName={}, error={}",
+					datasourceName, e.getMessage(), e);
 			return new ToolExecuteResult("Datasource: " + (datasourceName != null ? datasourceName : "default")
 					+ "\nSQL execution failed: " + e.getMessage());
 		}
@@ -220,10 +224,10 @@ public class ExecuteSqlAction extends AbstractDatabaseAction {
 	}
 
 	/**
-	 * Count the number of ? placeholders in SQL query
-	 * Note: This is a simple implementation that counts all ? characters.
-	 * For production use, a more sophisticated parser would be needed to handle
-	 * question marks inside string literals, comments, etc.
+	 * Count the number of ? placeholders in SQL query Note: This is a simple
+	 * implementation that counts all ? characters. For production use, a more
+	 * sophisticated parser would be needed to handle question marks inside string
+	 * literals, comments, etc.
 	 */
 	private int countPlaceholders(String query) {
 		if (query == null || query.trim().isEmpty()) {

@@ -231,9 +231,9 @@ public class ManusProperties implements IManusProperties {
 		this.executorPoolSize = executorPoolSize;
 	}
 
-	@ConfigProperty(group = "manus", subGroup = "agent", key = "llmReadTimeout",
-			path = "manus.agent.llmReadTimeout", description = "manus.agent.llmReadTimeout.description",
-			defaultValue = "120", inputType = ConfigInputType.NUMBER)
+	@ConfigProperty(group = "manus", subGroup = "agent", key = "llmReadTimeout", path = "manus.agent.llmReadTimeout",
+			description = "manus.agent.llmReadTimeout.description", defaultValue = "120",
+			inputType = ConfigInputType.NUMBER)
 	private volatile Integer llmReadTimeout;
 
 	public Integer getLlmReadTimeout() {

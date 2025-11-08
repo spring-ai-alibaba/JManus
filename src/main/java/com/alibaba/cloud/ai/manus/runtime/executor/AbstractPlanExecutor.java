@@ -287,7 +287,8 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 								result.setSuccess(false);
 								if (step.getErrorMessage() != null && !step.getErrorMessage().isEmpty()) {
 									result.setErrorMessage(step.getErrorMessage());
-								} else {
+								}
+								else {
 									result.setErrorMessage("Agent execution failed: " + step.getResult());
 								}
 								break; // Stop executing remaining steps
@@ -297,9 +298,8 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 				}
 
 				// Only set success if no interruption or failure occurred
-				if (result.getErrorMessage() == null 
-						|| (!result.getErrorMessage().contains("interrupted") 
-							&& !result.getErrorMessage().contains("failed"))) {
+				if (result.getErrorMessage() == null || (!result.getErrorMessage().contains("interrupted")
+						&& !result.getErrorMessage().contains("failed"))) {
 					context.setSuccess(true);
 					result.setSuccess(true);
 					result.setFinalResult(context.getPlan().getResult());

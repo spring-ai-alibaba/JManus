@@ -165,7 +165,8 @@ public class DatabaseRequest {
 
 	/**
 	 * Set SQL parameters for prepared statements
-	 * @param parameters List of parameter values to be bound to prepared statement placeholders
+	 * @param parameters List of parameter values to be bound to prepared statement
+	 * placeholders
 	 */
 	public void setParameters(List<Object> parameters) {
 		this.parameters = parameters;
