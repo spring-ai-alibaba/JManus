@@ -16,8 +16,14 @@
 package com.alibaba.cloud.ai.manus.tool;
 
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.openai.api.OpenAiApi;
@@ -291,6 +297,7 @@ public class FormInputTool extends AbstractBaseTool<FormInputTool.UserFormInput>
 	 */
 	public static class UserFormInput {
 
+		@JsonDeserialize(using = InputsListDeserializer.class)
 		private List<InputItem> inputs;
 
 		private String description;
@@ -503,6 +510,67 @@ public class FormInputTool extends AbstractBaseTool<FormInputTool.UserFormInput>
 	@Override
 	public boolean isSelectable() {
 		return true;
+	}
+
+	/**
+	 * Custom deserializer for inputs field that handles both string and array formats
+	 * This fixes the issue where LLM sometimes returns inputs as a JSON string instead of
+	 * a JSON array
+	 */
+	public static class InputsListDeserializer extends JsonDeserializer<List<InputItem>> {
+
+		private static final Logger log = LoggerFactory.getLogger(InputsListDeserializer.class);
+
+		private static final ObjectMapper objectMapper = new ObjectMapper();
+
+		@Override
+		public List<InputItem> deserialize(JsonParser p, DeserializationContext ctxt) throws java.io.IOException {
+			JsonToken currentToken = p.getCurrentToken();
+
+			// If it's already an array, deserialize normally
+			if (currentToken == JsonToken.START_ARRAY) {
+				return objectMapper.readValue(p, new TypeReference<List<InputItem>>() {
+				});
+			}
+
+			// If it's a string, parse it as JSON first
+			if (currentToken == JsonToken.VALUE_STRING) {
+				String stringValue = p.getText();
+				try {
+					// Try to parse the string as a JSON array
+					// Create a new parser from the string value
+					JsonParser stringParser = objectMapper.getFactory().createParser(stringValue);
+					return objectMapper.readValue(stringParser, new TypeReference<List<InputItem>>() {
+					});
+				}
+				catch (Exception e) {
+					log.warn("Failed to parse inputs from JSON string: {}", stringValue, e);
+					// Return empty list instead of null to avoid NPE
+					return List.of();
+				}
+			}
+
+			// If it's a single object (START_OBJECT), wrap it in a list
+			if (currentToken == JsonToken.START_OBJECT) {
+				try {
+					InputItem item = objectMapper.readValue(p, InputItem.class);
+					return List.of(item);
+				}
+				catch (Exception e) {
+					log.warn("Failed to parse single object as InputItem", e);
+					return List.of();
+				}
+			}
+
+			// For null or other token types, return empty list
+			if (currentToken == JsonToken.VALUE_NULL) {
+				return null;
+			}
+
+			log.warn("Unexpected token type for inputs field: {}", currentToken);
+			return List.of();
+		}
+
 	}
 
 }

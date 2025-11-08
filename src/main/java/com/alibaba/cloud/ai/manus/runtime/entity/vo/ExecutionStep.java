@@ -15,12 +15,12 @@
  */
 package com.alibaba.cloud.ai.manus.runtime.entity.vo;
 
+import java.util.List;
+import java.util.UUID;
+
 import com.alibaba.cloud.ai.manus.agent.AgentState;
 import com.alibaba.cloud.ai.manus.agent.BaseAgent;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.util.List;
-import java.util.UUID;
 
 /**
  * The result of a single step execution
@@ -58,7 +58,12 @@ public class ExecutionStep {
 	private String result;
 
 	@JsonIgnore
+	private String errorMessage;
+
+	@JsonIgnore
 	private BaseAgent agent;
+
+	private AgentState status;
 
 	private String terminateColumns;
 
@@ -78,6 +83,14 @@ public class ExecutionStep {
 		this.result = result;
 	}
 
+	public String getErrorMessage() {
+		return errorMessage;
+	}
+
+	public void setErrorMessage(String errorMessage) {
+		this.errorMessage = errorMessage;
+	}
+
 	@JsonIgnore
 	public String getStepId() {
 		return stepId;
@@ -93,7 +106,11 @@ public class ExecutionStep {
 
 	@JsonIgnore
 	public AgentState getStatus() {
-		return agent == null ? AgentState.NOT_STARTED : agent.getState();
+		return status != null ? status : (agent == null ? AgentState.NOT_STARTED : AgentState.NOT_STARTED);
+	}
+
+	public void setStatus(AgentState status) {
+		this.status = status;
 	}
 
 	public void setAgent(BaseAgent agent) {
@@ -139,8 +156,11 @@ public class ExecutionStep {
 	@JsonIgnore
 	public String getStepInStr() {
 		String agentState = null;
-		if (agent != null) {
-			agentState = agent.getState().toString();
+		if (status != null) {
+			agentState = status.toString();
+		}
+		else if (agent != null) {
+			agentState = AgentState.NOT_STARTED.toString();
 		}
 		else {
 			agentState = AgentState.NOT_STARTED.toString();

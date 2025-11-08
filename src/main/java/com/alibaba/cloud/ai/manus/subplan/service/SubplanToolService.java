@@ -210,7 +210,7 @@ public class SubplanToolService {
 	private String convertParametersToSchema(SubplanToolDef subplanTool) {
 		try {
 			if (subplanTool.getInputSchema() == null || subplanTool.getInputSchema().isEmpty()) {
-				return "{}";
+				return "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}";
 			}
 
 			// Convert List<SubplanParamDef> to JSON schema format
@@ -242,7 +242,7 @@ public class SubplanToolService {
 		}
 		catch (Exception e) {
 			logger.error("Error converting parameters to schema for tool: {}", subplanTool.getToolName(), e);
-			return "{}";
+			return "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}";
 		}
 	}
 

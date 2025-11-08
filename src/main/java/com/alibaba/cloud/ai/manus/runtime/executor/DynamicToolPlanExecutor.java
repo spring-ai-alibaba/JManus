@@ -37,6 +37,7 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.service.AgentInterruptionHelper;
 import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
+import com.alibaba.cloud.ai.manus.runtime.service.ParallelToolExecutionService;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
 
@@ -72,13 +73,16 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 
 	private final ObjectMapper objectMapper;
 
+	private final ParallelToolExecutionService parallelToolExecutionService;
+
 	public DynamicToolPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			LlmService llmService, ManusProperties manusProperties, LevelBasedExecutorPool levelBasedExecutorPool,
 			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
 			AgentInterruptionHelper agentInterruptionHelper, PlanningFactory planningFactory,
 			ToolCallingManager toolCallingManager, UserInputService userInputService,
 			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
-			JmanusEventPublisher jmanusEventPublisher, ObjectMapper objectMapper) {
+			JmanusEventPublisher jmanusEventPublisher, ObjectMapper objectMapper,
+			ParallelToolExecutionService parallelToolExecutionService) {
 		super(agents, recorder, llmService, manusProperties, levelBasedExecutorPool, fileUploadService,
 				agentInterruptionHelper);
 		this.planningFactory = planningFactory;
@@ -88,6 +92,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 		this.planIdDispatcher = planIdDispatcher;
 		this.jmanusEventPublisher = jmanusEventPublisher;
 		this.objectMapper = objectMapper;
+		this.parallelToolExecutionService = parallelToolExecutionService;
 	}
 
 	protected String getStepFromStepReq(String stepRequirement) {
@@ -140,7 +145,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 		ConfigurableDynaAgent agent = new ConfigurableDynaAgent(llmService, getRecorder(), manusProperties, name,
 				description, nextStepPrompt, selectedToolKeys, toolCallingManager, initialAgentSetting,
 				userInputService, modelName, streamingResponseHandler, step, planIdDispatcher, jmanusEventPublisher,
-				agentInterruptionHelper, objectMapper);
+				agentInterruptionHelper, objectMapper, parallelToolExecutionService);
 
 		agent.setCurrentPlanId(planId);
 		agent.setRootPlanId(rootPlanId);

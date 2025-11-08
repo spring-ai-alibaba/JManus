@@ -825,6 +825,7 @@ const words: I18nType = {
     publishedTool: 'Published Tool',
     serviceGroup: 'Service Group',
     organizationMethod: 'Organization',
+    organizationLabel: 'Organization:',
     organizationByTime: 'By Modify Time',
     organizationByAbc: 'By ABC',
     organizationByGroupTime: 'By Service Group & Time',
@@ -832,6 +833,9 @@ const words: I18nType = {
     ungroupedMethods: 'Ungrouped Methods',
     collapseGroup: 'Collapse Group',
     expandGroup: 'Expand Group',
+    searchLabel: 'Search:',
+    searchPlaceholder: 'Search plans...',
+    clearSearch: 'Clear search',
     internalCallUsage:
       'After adding this tool in agent configuration, you can directly call this method in the agent',
     internalCallExample:

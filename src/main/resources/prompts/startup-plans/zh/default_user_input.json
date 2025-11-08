@@ -10,5 +10,22 @@
   ],
   "directResponse": false,
   "planType": "dynamic_agent",
-  "planTemplateId": "default-plan-id-001000222"
+  "planTemplateId": "default-plan-id-001000222",
+  "readOnly": true,
+  "toolConfig": {
+    "toolName": "默认的用户输入(不要删除这个计划)",
+    "toolDescription": "这是一个默认的用户输入计划，不要删除这个计划",
+    "serviceGroup": "inited-toolcall",
+    "enableInternalToolcall": true,
+    "enableHttpService": false,
+    "enableMcpService": false,
+    "publishStatus": "PUBLISHED",
+    "inputSchema": [
+      {
+        "name": "userRequirement",
+        "description": "用户输入的问题",
+        "type": "string"
+      }
+    ]
+  }
 }

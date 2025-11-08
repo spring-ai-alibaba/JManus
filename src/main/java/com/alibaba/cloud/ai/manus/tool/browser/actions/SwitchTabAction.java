@@ -15,10 +15,9 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
-import com.microsoft.playwright.Page;
-
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.microsoft.playwright.Page;
 
 public class SwitchTabAction extends BrowserAction {
 
@@ -34,7 +33,15 @@ public class SwitchTabAction extends BrowserAction {
 		}
 
 		Page page = getCurrentPage(); // Get Playwright Page instance
-		Page targetPage = page.context().pages().get(tabId); // Switch to specified tab
+		java.util.List<Page> pages = page.context().pages();
+
+		// Check if tabId is within valid range
+		if (tabId >= pages.size()) {
+			return new ToolExecuteResult(
+					"Tab ID " + tabId + " is out of range. Available tabs: 0 to " + (pages.size() - 1));
+		}
+
+		Page targetPage = pages.get(tabId); // Switch to specified tab
 		if (targetPage == null) {
 			return new ToolExecuteResult("Tab ID " + tabId + " does not exist");
 		}

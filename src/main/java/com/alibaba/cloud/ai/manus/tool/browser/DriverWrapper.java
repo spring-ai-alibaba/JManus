@@ -121,8 +121,17 @@ public class DriverWrapper {
 			List<Cookie> cookies = objectMapper.readValue(jsonData, new TypeReference<List<Cookie>>() {
 			});
 			if (cookies != null && !cookies.isEmpty()) {
-				this.currentPage.context().addCookies(cookies);
-				log.info("Cookies loaded successfully from: {}", this.cookiePath.toAbsolutePath());
+				// Filter out expired cookies before loading
+				List<Cookie> validCookies = filterExpiredCookies(cookies);
+				if (!validCookies.isEmpty()) {
+					this.currentPage.context().addCookies(validCookies);
+					log.info("Loaded {} valid cookies (filtered {} expired) from: {}", validCookies.size(),
+							cookies.size() - validCookies.size(), this.cookiePath.toAbsolutePath());
+				}
+				else {
+					log.info("All cookies in file are expired, skipping cookie loading: {}",
+							this.cookiePath.toAbsolutePath());
+				}
 			}
 			else {
 				log.info("No cookies found in file or cookies list was empty: {}", this.cookiePath.toAbsolutePath());
@@ -137,6 +146,31 @@ public class DriverWrapper {
 		}
 	}
 
+	/**
+	 * Filter out expired cookies
+	 * @param cookies List of cookies to filter
+	 * @return List of valid (non-expired) cookies
+	 */
+	private List<Cookie> filterExpiredCookies(List<Cookie> cookies) {
+		if (cookies == null || cookies.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		long currentTimeSeconds = System.currentTimeMillis() / 1000;
+
+		return cookies.stream().filter(cookie -> {
+			// Cookies without expiration (session cookies) are always valid
+			if (cookie.expires == null || cookie.expires == -1) {
+				return true;
+			}
+
+			// Check if cookie expiration time is in the future
+			// expires is in seconds since epoch
+			double expiresValue = cookie.expires.doubleValue();
+			return expiresValue > currentTimeSeconds;
+		}).toList();
+	}
+
 	private void saveCookies() {
 		if (this.currentPage == null) {
 			log.info("Cannot save cookies: currentPage is null.");
@@ -148,14 +182,18 @@ public class DriverWrapper {
 				cookies = Collections.emptyList();
 			}
 
+			// Filter out expired cookies before saving
+			List<Cookie> validCookies = filterExpiredCookies(cookies);
+
 			Path parentDir = this.cookiePath.getParent();
 			if (parentDir != null && !Files.exists(parentDir)) {
 				Files.createDirectories(parentDir);
 			}
 
-			byte[] jsonData = objectMapper.writeValueAsBytes(cookies);
+			byte[] jsonData = objectMapper.writeValueAsBytes(validCookies);
 			Files.write(this.cookiePath, jsonData);
-			log.info("Cookies saved successfully to: {}", this.cookiePath.toAbsolutePath());
+			log.info("Saved {} valid cookies (filtered {} expired) to: {}", validCookies.size(),
+					cookies.size() - validCookies.size(), this.cookiePath.toAbsolutePath());
 		}
 		catch (IOException e) {
 			log.info("Failed to save cookies to {}: {}", this.cookiePath.toAbsolutePath(), e.getMessage());
@@ -163,6 +201,44 @@ public class DriverWrapper {
 		catch (Exception e) {
 			log.info("An unexpected error occurred while saving cookies to {}: {}", this.cookiePath.toAbsolutePath(),
 					e.getMessage());
+		}
+	}
+
+	/**
+	 * Public method to save cookies (can be called after operations)
+	 */
+	public void persistCookies() {
+		saveCookies();
+		// Also save storage state for better persistence (includes cookies, localStorage,
+		// etc.)
+		saveStorageState();
+	}
+
+	/**
+	 * Save browser context storage state (cookies, localStorage, sessionStorage, etc.)
+	 * This provides better persistence than just saving cookies
+	 */
+	private void saveStorageState() {
+		if (this.currentPage == null) {
+			log.debug("Cannot save storage state: currentPage is null.");
+			return;
+		}
+		try {
+			com.microsoft.playwright.BrowserContext context = this.currentPage.context();
+			if (context == null) {
+				log.debug("Cannot save storage state: browser context is null.");
+				return;
+			}
+
+			// Save storage state to file (includes cookies, localStorage, sessionStorage)
+			java.nio.file.Path storageStatePath = this.cookiePath.getParent().resolve("storage-state.json");
+			// Playwright storageState method uses StorageStateOptions
+			context.storageState(
+					new com.microsoft.playwright.BrowserContext.StorageStateOptions().setPath(storageStatePath));
+			log.debug("Storage state saved successfully to: {}", storageStatePath.toAbsolutePath());
+		}
+		catch (Exception e) {
+			log.debug("Failed to save storage state: {}", e.getMessage());
 		}
 	}
 
@@ -229,33 +305,80 @@ public class DriverWrapper {
 	}
 
 	public void close() {
-		saveCookies();
+		log.info("Closing DriverWrapper and all associated resources");
+
+		// Save cookies first, before closing anything
+		try {
+			saveCookies();
+		}
+		catch (Exception e) {
+			log.warn("Failed to save cookies during close: {}", e.getMessage());
+		}
+
+		// Close current page first
 		if (this.currentPage != null) {
 			try {
-				this.currentPage.close();
+				if (!this.currentPage.isClosed()) {
+					this.currentPage.close();
+					log.debug("Successfully closed current page");
+				}
+				else {
+					log.debug("Current page was already closed");
+				}
 			}
 			catch (Exception e) {
-				log.info("Error closing current page: {}", e.getMessage());
+				log.warn("Error closing current page: {}", e.getMessage());
+			}
+			finally {
+				this.currentPage = null;
 			}
 		}
+
+		// Close browser context (if using browser.newContext())
+		// Get context from page if available, or close all contexts from browser
 		if (this.browser != null) {
 			try {
-				this.browser.close();
+				// If we have a page, try to get its context and close it
+				// Otherwise, close all contexts from the browser
+				if (this.currentPage != null && !this.currentPage.isClosed()) {
+					try {
+						com.microsoft.playwright.BrowserContext context = this.currentPage.context();
+						if (context != null) {
+							context.close();
+							log.debug("Successfully closed browser context");
+						}
+					}
+					catch (Exception e) {
+						log.warn("Error closing browser context from page: {}", e.getMessage());
+					}
+				}
+
+				// Close browser if still connected
+				if (this.browser.isConnected()) {
+					this.browser.close();
+					log.debug("Successfully closed browser");
+				}
+				else {
+					log.debug("Browser was already disconnected");
+				}
 			}
 			catch (Exception e) {
-				log.info("Error closing browser: {}", e.getMessage());
+				log.warn("Error closing browser: {}", e.getMessage());
+			}
+			finally {
+				this.browser = null;
 			}
 		}
-		// Playwright instance itself is usually managed by the service that created it.
+
+		// Clean up ARIA element holder
+		this.ariaElementHolder = null;
+
+		log.info("DriverWrapper close operation completed");
+
+		// Note: Playwright instance itself is usually managed by the service that created
+		// it.
 		// Closing it here might be premature if other DriverWrappers use the same
-		// Playwright instance.
-		// if (this.playwright != null) {
-		// try {
-		// this.playwright.close();
-		// } catch (Exception e) {
-		// log.info("Error closing playwright: {}", e.getMessage());
-		// }
-		// }
+		// Playwright instance, so we leave it to the service to manage.
 	}
 
 }

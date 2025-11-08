@@ -15,6 +15,8 @@
  */
 package com.alibaba.cloud.ai.manus.tool.database;
 
+import java.util.List;
+
 /**
  * Database tool request object for encapsulating database operation request parameters
  *
@@ -76,6 +78,17 @@ public class DatabaseRequest {
 	 * </p>
 	 */
 	private String datasourceName;
+
+	/**
+	 * SQL parameters for prepared statements
+	 *
+	 * <p>
+	 * Used when operation type is {@code execute_sql} or {@code execute_write_sql} with
+	 * parameterized queries. Contains the parameter values to be bound to the prepared
+	 * statement placeholders (?).
+	 * </p>
+	 */
+	private List<Object> parameters;
 
 	/**
 	 * Get database operation type
@@ -140,6 +153,23 @@ public class DatabaseRequest {
 	 */
 	public void setDatasourceName(String datasourceName) {
 		this.datasourceName = datasourceName;
+	}
+
+	/**
+	 * Get SQL parameters for prepared statements
+	 * @return List of parameter values, may be null
+	 */
+	public List<Object> getParameters() {
+		return parameters;
+	}
+
+	/**
+	 * Set SQL parameters for prepared statements
+	 * @param parameters List of parameter values to be bound to prepared statement
+	 * placeholders
+	 */
+	public void setParameters(List<Object> parameters) {
+		this.parameters = parameters;
 	}
 
 }

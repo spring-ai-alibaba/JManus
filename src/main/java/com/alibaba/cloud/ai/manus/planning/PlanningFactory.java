@@ -55,6 +55,7 @@ import com.alibaba.cloud.ai.manus.planning.service.PlanFinalizer;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
 import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
 import com.alibaba.cloud.ai.manus.tool.FormInputTool;
 import com.alibaba.cloud.ai.manus.tool.TerminateTool;
@@ -80,7 +81,8 @@ import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.ParallelExecutionTool;
 import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
-import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileOperator;
+import com.alibaba.cloud.ai.manus.tool.textOperator.GlobalFileOperator;
+import com.alibaba.cloud.ai.manus.tool.textOperator.LocalFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -134,6 +136,10 @@ public class PlanningFactory {
 	@Autowired
 	private SubplanToolService subplanToolService;
 
+	@Autowired
+	@Lazy
+	private TaskInterruptionManager taskInterruptionManager;
+
 	@SuppressWarnings("unused")
 	@Autowired
 	private PptGeneratorOperator pptGeneratorOperator;
@@ -173,7 +179,8 @@ public class PlanningFactory {
 	 * @return configured PlanFinalizer instance
 	 */
 	public PlanFinalizer createPlanFinalizer() {
-		return new PlanFinalizer(llmService, recorder, manusProperties, streamingResponseHandler);
+		return new PlanFinalizer(llmService, recorder, manusProperties, streamingResponseHandler,
+				taskInterruptionManager);
 	}
 
 	public static class ToolCallBackContext {
@@ -218,10 +225,12 @@ public class PlanningFactory {
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(UuidGenerateTool.getInstance(objectMapper));
-			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo));
+			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper));
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
-			toolDefinitions.add(new TextFileOperator(textFileService, innerStorageService, objectMapper));
+
+			toolDefinitions.add(new LocalFileOperator(textFileService, innerStorageService, objectMapper));
+			toolDefinitions.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper));
 			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager,
 			// applicationContext));
@@ -245,7 +254,7 @@ public class PlanningFactory {
 			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
 		}
 		else {
-			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo));
+			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper));
 		}
 
 		List<McpServiceEntity> functionCallbacks = mcpService.getFunctionCallbacks(planId);

@@ -15,10 +15,9 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
-import com.microsoft.playwright.Page;
-
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.microsoft.playwright.Page;
 
 public class NewTabAction extends BrowserAction {
 
@@ -29,12 +28,22 @@ public class NewTabAction extends BrowserAction {
 	@Override
 	public ToolExecuteResult execute(BrowserRequestVO request) throws Exception {
 		String url = request.getUrl();
-		if (url == null) {
+		if (url == null || url.trim().isEmpty()) {
 			return new ToolExecuteResult("URL is required for 'new_tab' action");
 		}
 
-		Page page = getCurrentPage(); // Open new tab
-		page.navigate(url); // Navigate to specified URL
+		// Get current page to access browser context
+		Page currentPage = getCurrentPage();
+
+		// Create a new page (new tab) in the same browser context
+		Page newPage = currentPage.context().newPage();
+
+		// Navigate the new page to the specified URL
+		newPage.navigate(url);
+
+		// Set the new page as the current page in DriverWrapper
+		getDriverWrapper().setCurrentPage(newPage);
+
 		return new ToolExecuteResult("Opened new tab with URL " + url);
 	}
 

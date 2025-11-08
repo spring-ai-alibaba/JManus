@@ -18,7 +18,7 @@ package com.alibaba.cloud.ai.manus.agent;
 public enum AgentState {
 
 	NOT_STARTED("not_started"), IN_PROGRESS("in_progress"), COMPLETED("completed"), BLOCKED("blocked"),
-	FAILED("failed");
+	FAILED("failed"), INTERRUPTED("interrupted");
 
 	private final String state;
 

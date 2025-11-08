@@ -16,16 +16,26 @@
 
 package com.alibaba.cloud.ai.manus.runtime.executor;
 
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PreDestroy;
+import com.alibaba.cloud.ai.manus.config.ManusProperties;
 
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import jakarta.annotation.PreDestroy;
 
 /**
  * Level-based executor common pool that manages thread pools by depth level. Each depth
@@ -39,10 +49,6 @@ public class LevelBasedExecutorPool {
 
 	private static final int MAX_DEPTH_LEVEL = 10;
 
-	private static final int DEFAULT_CORE_POOL_SIZE = 5;
-
-	private static final int DEFAULT_MAX_POOL_SIZE = 20;
-
 	private static final int DEFAULT_QUEUE_CAPACITY = 100;
 
 	private static final long DEFAULT_KEEP_ALIVE_TIME = 60L;
@@ -50,6 +56,9 @@ public class LevelBasedExecutorPool {
 	private final Map<Integer, ExecutorService> levelPools = new ConcurrentHashMap<>();
 
 	private final AtomicInteger poolCounter = new AtomicInteger(0);
+
+	@Autowired(required = false)
+	private ManusProperties manusProperties;
 
 	/**
 	 * Get or create an executor for the specified depth level
@@ -180,19 +189,40 @@ public class LevelBasedExecutorPool {
 	}
 
 	/**
+	 * Get the configured pool size from ManusProperties, defaulting to 5 if not
+	 * configured
+	 */
+	private int getConfiguredPoolSize() {
+		if (manusProperties != null && manusProperties.getExecutorPoolSize() != null) {
+			return manusProperties.getExecutorPoolSize();
+		}
+		return 5; // Default value
+	}
+
+	/**
 	 * Create a new thread pool for the specified depth level with default configuration
 	 */
 	private ExecutorService createLevelPool(int depthLevel) {
-		return createLevelPool(depthLevel, DEFAULT_CORE_POOL_SIZE, DEFAULT_MAX_POOL_SIZE, DEFAULT_QUEUE_CAPACITY);
+		int poolSize = getConfiguredPoolSize();
+		// Unify core and max pool size to the same value
+		return createLevelPool(depthLevel, poolSize, poolSize, DEFAULT_QUEUE_CAPACITY);
 	}
 
 	/**
 	 * Create a new thread pool for the specified depth level with custom configuration
+	 * Note: corePoolSize and maxPoolSize are unified to the same value for consistency
 	 */
 	private ExecutorService createLevelPool(int depthLevel, int corePoolSize, int maxPoolSize, int queueCapacity) {
 		String poolName = "level-" + depthLevel + "-executor-" + poolCounter.getAndIncrement();
 
-		ThreadPoolExecutor executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, DEFAULT_KEEP_ALIVE_TIME,
+		// Unify core and max pool size to the same value
+		int unifiedPoolSize = corePoolSize;
+		if (corePoolSize != maxPoolSize) {
+			log.warn("Pool size mismatch detected (core: {}, max: {}). Unifying to core size: {} for level {}",
+					corePoolSize, maxPoolSize, unifiedPoolSize, depthLevel);
+		}
+
+		ThreadPoolExecutor executor = new ThreadPoolExecutor(unifiedPoolSize, unifiedPoolSize, DEFAULT_KEEP_ALIVE_TIME,
 				TimeUnit.SECONDS, new LinkedBlockingQueue<>(queueCapacity), new ThreadFactory() {
 					private final AtomicInteger threadCounter = new AtomicInteger(1);
 
@@ -204,8 +234,8 @@ public class LevelBasedExecutorPool {
 					}
 				}, new ThreadPoolExecutor.CallerRunsPolicy());
 
-		log.info("Created executor pool for depth level {}: {} (core: {}, max: {}, queue: {})", depthLevel, poolName,
-				corePoolSize, maxPoolSize, queueCapacity);
+		log.info("Created executor pool for depth level {}: {} (pool size: {}, queue: {})", depthLevel, poolName,
+				unifiedPoolSize, queueCapacity);
 
 		return executor;
 	}

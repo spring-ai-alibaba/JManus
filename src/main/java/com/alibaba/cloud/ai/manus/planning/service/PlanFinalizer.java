@@ -35,6 +35,7 @@ import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
+import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
 import com.alibaba.cloud.ai.manus.workspace.conversation.advisor.CustomMessageChatMemoryAdvisor;
 
 import reactor.core.publisher.Flux;
@@ -55,12 +56,15 @@ public class PlanFinalizer {
 
 	private final StreamingResponseHandler streamingResponseHandler;
 
+	private final TaskInterruptionManager taskInterruptionManager;
+
 	public PlanFinalizer(LlmService llmService, PlanExecutionRecorder recorder, ManusProperties manusProperties,
-			StreamingResponseHandler streamingResponseHandler) {
+			StreamingResponseHandler streamingResponseHandler, TaskInterruptionManager taskInterruptionManager) {
 		this.llmService = llmService;
 		this.recorder = recorder;
 		this.manusProperties = manusProperties;
 		this.streamingResponseHandler = streamingResponseHandler;
+		this.taskInterruptionManager = taskInterruptionManager;
 	}
 
 	/**
@@ -124,8 +128,9 @@ public class PlanFinalizer {
 		configureMemoryAdvisors(requestSpec, context);
 
 		Flux<ChatResponse> responseFlux = requestSpec.stream().chatResponse();
+		boolean isDebugModel = manusProperties.getDebugDetail() != null && manusProperties.getDebugDetail();
 		return streamingResponseHandler.processStreamingTextResponse(responseFlux, operationName,
-				context.getCurrentPlanId());
+				context.getCurrentPlanId(), isDebugModel);
 	}
 
 	/**
@@ -179,7 +184,7 @@ public class PlanFinalizer {
 
 		try {
 			// Check if the task was interrupted
-			if (isTaskInterrupted(result)) {
+			if (isTaskInterrupted(context, result)) {
 				log.debug("Task was interrupted for plan: {}", context.getCurrentPlanId());
 				handleInterruptedTask(context, result);
 				return result;
@@ -263,18 +268,46 @@ public class PlanFinalizer {
 
 	/**
 	 * Check if the task execution was interrupted
+	 * @param context Execution context containing root plan ID
 	 * @param result The execution result to check
 	 * @return true if the task was interrupted, false otherwise
 	 */
-	private boolean isTaskInterrupted(PlanExecutionResult result) {
+	private boolean isTaskInterrupted(ExecutionContext context, PlanExecutionResult result) {
 		if (result == null) {
 			return false;
 		}
 
-		// Check if errorMessage indicates interruption
+		// First, check the actual database state to verify if task was marked for
+		// interruption
+		if (context != null && context.getRootPlanId() != null && taskInterruptionManager != null) {
+			try {
+				boolean shouldInterrupt = taskInterruptionManager.shouldInterruptTask(context.getRootPlanId());
+				if (shouldInterrupt) {
+					log.debug("Task {} is marked for interruption in database", context.getRootPlanId());
+					return true;
+				}
+			}
+			catch (Exception e) {
+				log.warn("Error checking interruption status for planId: {}, falling back to error message check",
+						context.getRootPlanId(), e);
+				// Fall through to error message check
+			}
+		}
+
+		// Fallback: Check if errorMessage indicates interruption with specific patterns
+		// Only match specific interruption messages to avoid false positives
 		String errorMessage = result.getErrorMessage();
-		if (errorMessage != null && (errorMessage.contains("interrupted") || errorMessage.contains("interruption"))) {
-			return true;
+		if (errorMessage != null) {
+			String lowerErrorMessage = errorMessage.toLowerCase();
+			// Match specific interruption patterns that are set by the system
+			if (lowerErrorMessage.contains("plan execution interrupted by user")
+					|| lowerErrorMessage.contains("execution interrupted by user")
+					|| lowerErrorMessage.contains("tool execution interrupted by user")
+					|| lowerErrorMessage.contains("action interrupted by user")
+					|| lowerErrorMessage.contains("agent thinking interrupted")
+					|| lowerErrorMessage.contains("task execution was interrupted by user")) {
+				return true;
+			}
 		}
 
 		return false;

@@ -44,6 +44,8 @@ import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
+import com.microsoft.playwright.TimeoutError;
 
 public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
@@ -63,7 +65,17 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 	}
 
 	public DriverWrapper getDriver() {
-		return chromeDriverService.getDriver(currentPlanId);
+		try {
+			DriverWrapper driver = chromeDriverService.getDriver(currentPlanId);
+			if (driver == null) {
+				throw new RuntimeException("Failed to get driver for planId: " + currentPlanId);
+			}
+			return driver;
+		}
+		catch (Exception e) {
+			log.error("Error getting driver for planId {}: {}", currentPlanId, e.getMessage(), e);
+			throw new RuntimeException("Failed to get driver for planId: " + currentPlanId, e);
+		}
 	}
 
 	/**
@@ -87,120 +99,282 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 	}
 
 	public ToolExecuteResult run(BrowserRequestVO requestVO) {
-		log.info("BrowserUseTool requestVO: action={}", requestVO.getAction());
-
-		// Mark that run has been called at least once
-		hasRunAtLeastOnce = true;
-
-		// Get parameters from RequestVO
-		String action = requestVO.getAction();
+		String action = null;
 		try {
-			if (action == null) {
-				return new ToolExecuteResult("Action parameter is required");
+			log.info("BrowserUseTool requestVO: action={}", requestVO.getAction());
+
+			// Mark that run has been called at least once
+			hasRunAtLeastOnce = true;
+
+			// Get parameters from RequestVO
+			action = requestVO.getAction();
+			if (action == null || action.trim().isEmpty()) {
+				return new ToolExecuteResult("Action parameter is required and cannot be empty");
+			}
+
+			// Validate driver availability before executing any action
+			try {
+				DriverWrapper driver = getDriver();
+				if (driver == null) {
+					return new ToolExecuteResult("Browser driver is not available");
+				}
+
+				// Check if browser is still connected
+				if (driver.getBrowser() == null || !driver.getBrowser().isConnected()) {
+					return new ToolExecuteResult("Browser is not connected. Please try again or restart the browser.");
+				}
+
+				// Check if current page is valid
+				Page currentPage = driver.getCurrentPage();
+				if (currentPage == null || currentPage.isClosed()) {
+					return new ToolExecuteResult("Current page is not available. Please navigate to a page first.");
+				}
+			}
+			catch (Exception e) {
+				log.error("Driver validation failed for action '{}': {}", action, e.getMessage(), e);
+				return new ToolExecuteResult("Browser driver validation failed: " + e.getMessage());
 			}
 
 			ToolExecuteResult result;
-			switch (action) {
-				case "navigate": {
-					result = new NavigateAction(this).execute(requestVO);
-					break;
+			try {
+				switch (action) {
+					case "navigate": {
+						result = executeActionWithRetry(() -> new NavigateAction(this).execute(requestVO), action);
+						break;
+					}
+					case "click": {
+						result = executeActionWithRetry(() -> new ClickByElementAction(this).execute(requestVO),
+								action);
+						break;
+					}
+					case "input_text": {
+						result = executeActionWithRetry(() -> new InputTextAction(this).execute(requestVO), action);
+						break;
+					}
+					case "key_enter": {
+						result = executeActionWithRetry(() -> new KeyEnterAction(this).execute(requestVO), action);
+						break;
+					}
+					case "screenshot": {
+						result = executeActionWithRetry(() -> new ScreenShotAction(this).execute(requestVO), action);
+						break;
+					}
+					case "get_text": {
+						result = executeActionWithRetry(() -> new GetTextAction(this).execute(requestVO), action);
+						// Text content may be long, use intelligent processing
+						try {
+							SmartContentSavingService.SmartProcessResult processedResult = innerStorageService
+								.processContent(currentPlanId, result.getOutput(), "get_text");
+							return new ToolExecuteResult(processedResult.getSummary());
+						}
+						catch (Exception e) {
+							log.warn("Failed to process get_text content intelligently: {}", e.getMessage());
+							return result; // Return original result if processing fails
+						}
+					}
+					case "execute_js": {
+						result = executeActionWithRetry(() -> new ExecuteJsAction(this).execute(requestVO), action);
+						// JS execution results may be long, use intelligent processing
+						try {
+							SmartContentSavingService.SmartProcessResult processedResult = innerStorageService
+								.processContent(currentPlanId, result.getOutput(), "execute_js");
+							return new ToolExecuteResult(processedResult.getSummary());
+						}
+						catch (Exception e) {
+							log.warn("Failed to process execute_js content intelligently: {}", e.getMessage());
+							return result; // Return original result if processing fails
+						}
+					}
+					case "scroll": {
+						result = executeActionWithRetry(() -> new ScrollAction(this).execute(requestVO), action);
+						break;
+					}
+					case "new_tab": {
+						result = executeActionWithRetry(() -> new NewTabAction(this).execute(requestVO), action);
+						break;
+					}
+					case "close_tab": {
+						result = executeActionWithRetry(() -> new CloseTabAction(this).execute(requestVO), action);
+						break;
+					}
+					case "switch_tab": {
+						result = executeActionWithRetry(() -> new SwitchTabAction(this).execute(requestVO), action);
+						break;
+					}
+					case "refresh": {
+						result = executeActionWithRetry(() -> new RefreshAction(this).execute(requestVO), action);
+						break;
+					}
+					case "get_element_position": {
+						result = executeActionWithRetry(
+								() -> new GetElementPositionByNameAction(this, objectMapper).execute(requestVO),
+								action);
+						break;
+					}
+					case "move_to_and_click": {
+						result = executeActionWithRetry(() -> new MoveToAndClickAction(this).execute(requestVO),
+								action);
+						break;
+					}
+					default:
+						return new ToolExecuteResult("Unknown action: " + action);
 				}
-				case "click": {
-					result = new ClickByElementAction(this).execute(requestVO);
-					break;
-				}
-				case "input_text": {
-					result = new InputTextAction(this).execute(requestVO);
-					break;
-				}
-				case "key_enter": {
-					result = new KeyEnterAction(this).execute(requestVO);
-					break;
-				}
-				case "screenshot": {
-					result = new ScreenShotAction(this).execute(requestVO);
-					break;
-				}
-				// case "get_html": {
-				// result = new GetHtmlAction(this).execute(requestVO);
-				// // HTML content is usually long, use intelligent processing
-				// SmartContentSavingService.SmartProcessResult processedResult =
-				// innerStorageService
-				// .processContent(currentPlanId, result.getOutput(), "get_html");
-				// return new ToolExecuteResult(processedResult.getSummary());
-				// }
-				case "get_text": {
-					result = new GetTextAction(this).execute(requestVO);
-					// Text content may be long, use intelligent processing
-					SmartContentSavingService.SmartProcessResult processedResult = innerStorageService
-						.processContent(currentPlanId, result.getOutput(), "get_text");
-					return new ToolExecuteResult(processedResult.getSummary());
-				}
-				case "execute_js": {
-					result = new ExecuteJsAction(this).execute(requestVO);
-					// JS execution results may be long, use intelligent processing
-					SmartContentSavingService.SmartProcessResult processedResult = innerStorageService
-						.processContent(currentPlanId, result.getOutput(), "execute_js");
-					return new ToolExecuteResult(processedResult.getSummary());
-				}
-				case "scroll": {
-					result = new ScrollAction(this).execute(requestVO);
-					break;
-				}
-				case "new_tab": {
-					result = new NewTabAction(this).execute(requestVO);
-					break;
-				}
-				case "close_tab": {
-					result = new CloseTabAction(this).execute(requestVO);
-					break;
-				}
-				case "switch_tab": {
-					result = new SwitchTabAction(this).execute(requestVO);
-					break;
-				}
-				case "refresh": {
-					result = new RefreshAction(this).execute(requestVO);
-					break;
-				}
-				case "get_element_position": {
-					result = new GetElementPositionByNameAction(this, objectMapper).execute(requestVO);
-					break;
-				}
-				case "move_to_and_click": {
-					result = new MoveToAndClickAction(this).execute(requestVO);
-					break;
-				}
-				default:
-					return new ToolExecuteResult("Unknown action: " + action);
+			}
+			catch (TimeoutError e) {
+				log.error("Timeout error executing action '{}': {}", action, e.getMessage(), e);
+				return new ToolExecuteResult("Browser action '" + action + "' timed out: " + e.getMessage());
+			}
+			catch (PlaywrightException e) {
+				log.error("Playwright error executing action '{}': {}", action, e.getMessage(), e);
+				return new ToolExecuteResult(
+						"Browser action '" + action + "' failed due to Playwright error: " + e.getMessage());
+			}
+			catch (Exception e) {
+				log.error("Unexpected error executing action '{}': {}", action, e.getMessage(), e);
+				return new ToolExecuteResult("Browser action '" + action + "' failed: " + e.getMessage());
 			}
 
 			// For other operations, also perform intelligent processing (but thresholds
 			// usually won't be exceeded)
-			SmartContentSavingService.SmartProcessResult processedResult = innerStorageService
-				.processContent(currentPlanId, result.getOutput(), action);
-			return new ToolExecuteResult(processedResult.getSummary());
+			try {
+				SmartContentSavingService.SmartProcessResult processedResult = innerStorageService
+					.processContent(currentPlanId, result.getOutput(), action);
+				return new ToolExecuteResult(processedResult.getSummary());
+			}
+			catch (Exception e) {
+				log.warn("Failed to process content intelligently for action '{}': {}", action, e.getMessage());
+				return result; // Return original result if processing fails
+			}
+
+		}
+		catch (TimeoutError e) {
+			log.error("Timeout error in browser tool for action '{}': {}", action, e.getMessage(), e);
+			return new ToolExecuteResult("Browser operation timed out: " + e.getMessage());
+		}
+		catch (PlaywrightException e) {
+			log.error("Playwright error in browser tool for action '{}': {}", action, e.getMessage(), e);
+			return new ToolExecuteResult("Browser operation failed due to Playwright error: " + e.getMessage());
 		}
 		catch (Exception e) {
-			log.error("Browser action '" + action + "' failed", e);
-			return new ToolExecuteResult("Browser action '" + action + "' failed: " + e.getMessage());
+			log.error("Unexpected error in browser tool for action '{}': {}", action, e.getMessage(), e);
+			return new ToolExecuteResult("Browser operation failed: " + e.getMessage());
 		}
 	}
 
-	private List<Map<String, Object>> getTabsInfo(Page page) {
-		return page.context().pages().stream().map(p -> {
-			Map<String, Object> tabInfo = new HashMap<>();
-			tabInfo.put("url", p.url());
-			tabInfo.put("title", p.title());
+	/**
+	 * Execute action with retry mechanism for better reliability
+	 */
+	private ToolExecuteResult executeActionWithRetry(ActionExecutor executor, String actionName) {
+		int maxRetries = 2;
+		int retryDelay = 1000; // 1 second
 
-			return tabInfo;
-		}).toList();
+		for (int attempt = 1; attempt <= maxRetries; attempt++) {
+			try {
+				return executor.execute();
+			}
+			catch (TimeoutError e) {
+				if (attempt == maxRetries) {
+					log.error("Action '{}' timed out after {} attempts: {}", actionName, maxRetries, e.getMessage());
+					throw e;
+				}
+				log.warn("Action '{}' timed out on attempt {}, retrying: {}", actionName, attempt, e.getMessage());
+			}
+			catch (PlaywrightException e) {
+				// Some Playwright exceptions are not worth retrying
+				if (e.getMessage().contains("Target page, context or browser has been closed")
+						|| e.getMessage().contains("Browser has been closed")
+						|| e.getMessage().contains("Context has been closed")) {
+					log.error("Action '{}' failed due to closed browser/context: {}", actionName, e.getMessage());
+					throw e;
+				}
+
+				if (attempt == maxRetries) {
+					log.error("Action '{}' failed after {} attempts: {}", actionName, maxRetries, e.getMessage());
+					throw e;
+				}
+				log.warn("Action '{}' failed on attempt {}, retrying: {}", actionName, attempt, e.getMessage());
+			}
+			catch (RuntimeException e) {
+				// For runtime exceptions, don't retry
+				log.error("Action '{}' failed with non-retryable error: {}", actionName, e.getMessage());
+				throw e;
+			}
+			catch (Exception e) {
+				// For checked exceptions, wrap and don't retry
+				log.error("Action '{}' failed with non-retryable error: {}", actionName, e.getMessage());
+				throw new RuntimeException("Action failed: " + actionName, e);
+			}
+
+			// Wait before retry
+			try {
+				Thread.sleep(retryDelay);
+			}
+			catch (InterruptedException ie) {
+				Thread.currentThread().interrupt();
+				throw new RuntimeException("Interrupted during retry delay for action: " + actionName, ie);
+			}
+		}
+
+		// Should never reach here
+		throw new RuntimeException("Unexpected end of retry loop for action: " + actionName);
+	}
+
+	/**
+	 * Functional interface for action execution
+	 */
+	@FunctionalInterface
+	private interface ActionExecutor {
+
+		ToolExecuteResult execute() throws Exception;
+
+	}
+
+	private List<Map<String, Object>> getTabsInfo(Page page) {
+		try {
+			return page.context().pages().stream().map(p -> {
+				Map<String, Object> tabInfo = new HashMap<>();
+				try {
+					tabInfo.put("url", p.url());
+					tabInfo.put("title", p.title());
+				}
+				catch (PlaywrightException e) {
+					log.warn("Failed to get tab info: {}", e.getMessage());
+					tabInfo.put("url", "error: " + e.getMessage());
+					tabInfo.put("title", "error: " + e.getMessage());
+				}
+				catch (Exception e) {
+					log.warn("Unexpected error getting tab info: {}", e.getMessage());
+					tabInfo.put("url", "error: " + e.getMessage());
+					tabInfo.put("title", "error: " + e.getMessage());
+				}
+				return tabInfo;
+			}).toList();
+		}
+		catch (PlaywrightException e) {
+			log.warn("Failed to get pages from context: {}", e.getMessage());
+			return List.of(Map.of("error", "Failed to get tabs: " + e.getMessage()));
+		}
+		catch (Exception e) {
+			log.warn("Unexpected error getting tabs info: {}", e.getMessage());
+			return List.of(Map.of("error", "Failed to get tabs: " + e.getMessage()));
+		}
 	}
 
 	public Map<String, Object> getCurrentState(Page page) {
 		Map<String, Object> state = new HashMap<>();
 
 		try {
+			// Validate page first
+			if (page == null) {
+				state.put("error", "Page is null");
+				return state;
+			}
+
+			if (page.isClosed()) {
+				state.put("error", "Page is closed");
+				return state;
+			}
+
 			// Wait for page to load completely to avoid context destruction errors when
 			// getting information during navigation
 			try {
@@ -208,40 +382,83 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				page.waitForLoadState(com.microsoft.playwright.options.LoadState.DOMCONTENTLOADED,
 						new Page.WaitForLoadStateOptions().setTimeout(timeout * 1000));
 			}
+			catch (TimeoutError e) {
+				log.warn("Page load state wait timeout, continuing anyway: {}", e.getMessage());
+			}
+			catch (PlaywrightException e) {
+				log.warn("Playwright error waiting for load state, continuing anyway: {}", e.getMessage());
+			}
 			catch (Exception loadException) {
-				log.warn("Page load state wait timeout or failed, continuing anyway: {}", loadException.getMessage());
+				log.warn("Unexpected error waiting for load state, continuing anyway: {}", loadException.getMessage());
 			}
 
-			// Get basic information
-			String currentUrl = page.url();
-			String title = page.title();
-			state.put("url", currentUrl);
-			state.put("title", title);
+			// Get basic information with error handling
+			try {
+				String currentUrl = page.url();
+				String title = page.title();
+				state.put("url", currentUrl != null ? currentUrl : "unknown");
+				state.put("title", title != null ? title : "unknown");
+			}
+			catch (PlaywrightException e) {
+				log.warn("Failed to get page URL/title: {}", e.getMessage());
+				state.put("url", "error: " + e.getMessage());
+				state.put("title", "error: " + e.getMessage());
+			}
+			catch (Exception e) {
+				log.warn("Unexpected error getting page URL/title: {}", e.getMessage());
+				state.put("url", "error: " + e.getMessage());
+				state.put("title", "error: " + e.getMessage());
+			}
 
-			// Get tab information
-			List<Map<String, Object>> tabs = getTabsInfo(page);
-			state.put("tabs", tabs);
+			// Get tab information with error handling
+			try {
+				List<Map<String, Object>> tabs = getTabsInfo(page);
+				state.put("tabs", tabs);
+			}
+			catch (PlaywrightException e) {
+				log.warn("Failed to get tabs info: {}", e.getMessage());
+				state.put("tabs", List.of(Map.of("error", "Failed to get tabs: " + e.getMessage())));
+			}
+			catch (Exception e) {
+				log.warn("Unexpected error getting tabs info: {}", e.getMessage());
+				state.put("tabs", List.of(Map.of("error", "Failed to get tabs: " + e.getMessage())));
+			}
 
-			// Generate ARIA snapshot using the new AriaSnapshot utility
-			AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
-				.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
-			DriverWrapper driver = getDriver();
-			AriaElementHolder ariaElementHolder = driver.getAriaElementHolder();
-			if (ariaElementHolder != null) {
-				String snapshot = ariaElementHolder.parsePageAndAssignRefs(page, snapshotOptions);
-				if (snapshot != null) {
-					state.put("interactive_elements", snapshot);
+			// Generate ARIA snapshot using the new AriaSnapshot utility with error
+			// handling
+			try {
+				AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
+					.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
+				DriverWrapper driver = getDriver();
+				AriaElementHolder ariaElementHolder = driver.getAriaElementHolder();
+				if (ariaElementHolder != null) {
+					String snapshot = ariaElementHolder.parsePageAndAssignRefs(page, snapshotOptions);
+					if (snapshot != null && !snapshot.trim().isEmpty()) {
+						state.put("interactive_elements", snapshot);
+					}
+					else {
+						state.put("interactive_elements", "No interactive elements found or snapshot is empty");
+					}
+				}
+				else {
+					log.warn("ARIA element holder is not available");
+					state.put("interactive_elements", "ARIA element holder not available");
 				}
 			}
-			else {
-				throw new RuntimeException("Failed to get ARIA element holder");
+			catch (PlaywrightException e) {
+				log.warn("Playwright error getting ARIA snapshot: {}", e.getMessage());
+				state.put("interactive_elements", "Error getting interactive elements: " + e.getMessage());
+			}
+			catch (Exception e) {
+				log.warn("Unexpected error getting ARIA snapshot: {}", e.getMessage());
+				state.put("interactive_elements", "Error getting interactive elements: " + e.getMessage());
 			}
 
 			return state;
 
 		}
 		catch (Exception e) {
-			log.error("Failed to get browser state", e);
+			log.error("Failed to get browser state: {}", e.getMessage(), e);
 			state.put("error", "Failed to get browser state: " + e.getMessage());
 			return state;
 		}
@@ -268,16 +485,13 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				- 'input_text': Input text in element
 				- 'key_enter': Press Enter key
 				- 'screenshot': Capture screenshot
-				// - 'get_html': Get HTML content of current page
-				- 'get_text': Get text content of current page
+				- 'get_text': Get text content of current whole page text content, including all frames and nested elements.
 				- 'execute_js': Execute JavaScript code
 				- 'scroll': Scroll page up/down
 				- 'refresh': Refresh current page
-				- 'new_tab': Open new tab
+				- 'new_tab': Open new tab with specified URL
 				- 'close_tab': Close current tab
 				- 'switch_tab': Switch to specific tab
-				- 'get_element_position_by_name': Get element position by name
-				- 'move_to_and_click': Move to coordinates and click
 
 				Note: Browser operations have timeout configuration, default is 30 seconds.
 				""";
@@ -397,10 +611,14 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                    "type": "string",
 				                    "const": "scroll"
 				                },
+				                "scroll_amount": {
+				                    "type": "integer",
+				                    "description": "Scroll amount in pixels. Positive values scroll down, negative values scroll up. If not provided, 'direction' will be used with default 500 pixels."
+				                },
 				                "direction": {
 				                    "type": "string",
 				                    "enum": ["up", "down"],
-				                    "description": "Scroll direction"
+				                    "description": "Scroll direction. Used when 'scroll_amount' is not provided. Defaults to 500 pixels."
 				                }
 				            },
 				            "required": ["action", "direction"],
@@ -456,40 +674,6 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                }
 				            },
 				            "required": ["action"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "get_element_position"
-				                },
-				                "element_name": {
-				                    "type": "string",
-				                    "description": "Element name to get position"
-				                }
-				            },
-				            "required": ["action", "element_name"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "move_to_and_click"
-				                },
-				                "position_x": {
-				                    "type": "integer",
-				                    "description": "X coordinate to move to and click"
-				                },
-				                "position_y": {
-				                    "type": "integer",
-				                    "description": "Y coordinate to move to and click"
-				                }
-				            },
-				            "required": ["action", "position_x", "position_y"],
 				            "additionalProperties": false
 				        }
 				    ]

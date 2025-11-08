@@ -252,12 +252,41 @@ public class PlanHierarchyReaderService {
 		vo.setCurrentStep(entity.getCurrentStep());
 		vo.setAgentRequest(entity.getAgentRequest());
 		vo.setResult(entity.getResult());
-		vo.setErrorMessage(entity.getErrorMessage());
 		vo.setModelName(entity.getModelName());
 
 		// Convert execution status
 		if (entity.getStatus() != null) {
 			vo.setStatus(convertExecutionStatus(entity.getStatus()));
+		}
+
+		// Clear error message if execution completed successfully
+		// If status is FINISHED and there's a result, it indicates successful completion
+		// Transient errors that occurred during execution but were recovered should not
+		// be shown
+		String errorMessage = entity.getErrorMessage();
+		if (errorMessage != null && !errorMessage.trim().isEmpty()) {
+			ExecutionStatusEntity status = entity.getStatus();
+			String result = entity.getResult();
+
+			// Clear error message if:
+			// 1. Status is FINISHED (execution completed)
+			// 2. There's a non-empty result (indicates successful completion)
+			// 3. Error message is a system execution error (transient error that was
+			// recovered)
+			if (status == ExecutionStatusEntity.FINISHED && result != null && !result.trim().isEmpty()
+					&& errorMessage.startsWith("System execution error at step")) {
+				logger.debug(
+						"Clearing transient error message for successfully completed execution, stepId: {}, errorMessage: {}",
+						entity.getStepId(), errorMessage);
+				vo.setErrorMessage(null);
+			}
+			else {
+				// Keep error message for actual failures
+				vo.setErrorMessage(errorMessage);
+			}
+		}
+		else {
+			vo.setErrorMessage(null);
 		}
 
 		// Note: subPlanExecutionRecords will be populated later when building hierarchy

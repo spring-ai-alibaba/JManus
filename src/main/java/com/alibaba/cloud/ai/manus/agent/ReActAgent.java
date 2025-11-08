@@ -88,8 +88,8 @@ public abstract class ReActAgent extends BaseAgent {
 			return act();
 		}
 		catch (com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionCheckerService.TaskInterruptedException e) {
-			// Agent was interrupted, return FAILED state to stop execution
-			return new AgentExecResult("Agent execution interrupted: " + e.getMessage(), AgentState.FAILED);
+			// Agent was interrupted, return INTERRUPTED state to stop execution
+			return new AgentExecResult("Agent execution interrupted: " + e.getMessage(), AgentState.INTERRUPTED);
 		}
 	}
 

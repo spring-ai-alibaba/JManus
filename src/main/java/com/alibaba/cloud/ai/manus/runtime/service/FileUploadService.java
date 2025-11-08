@@ -15,15 +15,6 @@
  */
 package com.alibaba.cloud.ai.manus.runtime.service;
 
-import com.alibaba.cloud.ai.manus.config.FileTypeConfiguration;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.FileUploadResult;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,6 +23,16 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.alibaba.cloud.ai.manus.config.FileTypeConfiguration;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.FileUploadResult;
+import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 
 /**
  * Service for handling file upload operations
@@ -393,7 +394,8 @@ public class FileUploadService {
 	/**
 	 * Synchronize uploaded files from upload directory to plan execution directory This
 	 * method copies files from upload_files/uploadKey to
-	 * extensions/inner_storage/rootPlanId
+	 * extensions/inner_storage/rootPlanId/shared/ Files are stored in the shared
+	 * directory so they can be accessed by GlobalFileOperator
 	 * @param uploadKey The upload key for the uploaded files
 	 * @param rootPlanId The root plan ID for the target directory
 	 * @return List of synchronized file information
@@ -415,8 +417,11 @@ public class FileUploadService {
 			return new ArrayList<>();
 		}
 
-		// Get target directory (extensions/inner_storage/rootPlanId)
-		Path targetDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
+		// Get target directory (extensions/inner_storage/rootPlanId/shared/)
+		// Files are synced to shared directory so they can be accessed by
+		// GlobalFileOperator
+		Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
+		Path targetDirectory = rootPlanDirectory.resolve("shared");
 
 		// Ensure target directory exists
 		directoryManager.ensureDirectoryExists(targetDirectory);
@@ -539,10 +544,12 @@ public class FileUploadService {
 			throw new IllegalArgumentException("Root plan ID cannot be null or empty");
 		}
 
-		Path planDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
+		// Get files from shared directory where they are synced
+		Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
+		Path planDirectory = rootPlanDirectory.resolve("shared");
 
 		if (!Files.exists(planDirectory)) {
-			logger.info("Plan directory not found for rootPlanId: {}", rootPlanId);
+			logger.info("Shared directory not found for rootPlanId: {}", rootPlanId);
 			return new ArrayList<>();
 		}
 
