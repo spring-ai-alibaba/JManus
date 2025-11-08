@@ -264,15 +264,17 @@ public abstract class BaseAgent {
 
 				// Check if agent should terminate
 				AgentState stepState = stepResult.getState();
-				if (stepState == AgentState.COMPLETED || stepState == AgentState.INTERRUPTED) {
-					log.info("Agent execution {} at round {}/{}", 
-							stepState == AgentState.COMPLETED ? "completed" : "interrupted", 
-							currentStep, maxSteps);
+				if (stepState == AgentState.COMPLETED || stepState == AgentState.INTERRUPTED || stepState == AgentState.FAILED) {
+					String stateDescription = stepState == AgentState.COMPLETED ? "completed" 
+							: stepState == AgentState.INTERRUPTED ? "interrupted" : "failed";
+					log.info("Agent execution {} at round {}/{}", stateDescription, currentStep, maxSteps);
 					results.add(stepResult);
 					
 					// Handle final processing based on state
 					if (stepState == AgentState.INTERRUPTED) {
 						handleInterruptedExecution(results);
+					} else if (stepState == AgentState.FAILED) {
+						handleFailedExecution(results);
 					} else {
 						handleCompletedExecution(results);
 					}
@@ -283,10 +285,12 @@ public abstract class BaseAgent {
 			}
 
 			// If max steps reached, generate summary and terminate
+			// Skip if already in a terminal state (COMPLETED, INTERRUPTED, or FAILED)
 			if (currentStep >= maxSteps && 
 					(lastStepResult == null || 
 					 (lastStepResult.getState() != AgentState.COMPLETED && 
-					  lastStepResult.getState() != AgentState.INTERRUPTED))) {
+					  lastStepResult.getState() != AgentState.INTERRUPTED &&
+					  lastStepResult.getState() != AgentState.FAILED))) {
 				log.info("Agent reached max rounds ({}), generating final summary and terminating", maxSteps);
 				String finalSummary = generateFinalSummary();
 
@@ -335,12 +339,25 @@ public abstract class BaseAgent {
 	}
 
 	/**
+	 * Handle failed execution - perform final cleanup and recording
+	 * @param results The results list to update
+	 */
+	protected void handleFailedExecution(List<AgentExecResult> results) {
+		log.info("Handling failed execution");
+	}
+
+	/**
 	 * Handle completed execution - perform final cleanup and recording
 	 * @param results The results list to update
 	 */
 	protected void handleCompletedExecution(List<AgentExecResult> results) {
 		log.info("Handling completed execution");
-		// Additional cleanup for completed execution if needed
+		// Clear error message if execution completed successfully
+		// This prevents showing transient errors that occurred during execution but were recovered
+		if (step != null && step.getErrorMessage() != null) {
+			log.info("Clearing error message for successfully completed execution");
+			step.setErrorMessage(null);
+		}
 	}
 
 	/**

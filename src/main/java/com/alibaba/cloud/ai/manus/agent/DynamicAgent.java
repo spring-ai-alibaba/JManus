@@ -959,13 +959,13 @@ public class DynamicAgent extends ReActAgent {
 			recordErrorToolThinkingAndAction(param, "LLM timeout after 3 retries",
 					"SystemErrorReportTool called to report LLM timeout error", finalErrorMessage);
 
-			return new AgentExecResult(result, AgentState.COMPLETED);
+			return new AgentExecResult(result, AgentState.FAILED);
 		}
 		catch (Exception e) {
 			log.error("Failed to handle LLM timeout with SystemErrorReportTool", e);
 			String fallbackError = "LLM timeout error: " + buildErrorMessageFromLatestException();
 			step.setErrorMessage(fallbackError);
-			return new AgentExecResult(fallbackError, AgentState.COMPLETED);
+			return new AgentExecResult(fallbackError, AgentState.FAILED);
 		}
 	}
 

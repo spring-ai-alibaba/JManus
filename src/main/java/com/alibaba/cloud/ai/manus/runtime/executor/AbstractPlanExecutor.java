@@ -110,7 +110,7 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 			step.setResult(agentResult.getResult());
 			step.setStatus(agentResult.getState());
 
-			// Check if agent was interrupted or completed
+			// Check if agent was interrupted, completed, or failed
 			if (agentResult.getState() == AgentState.INTERRUPTED) {
 				logger.info("Agent {} was interrupted during step execution", executor.getName());
 				// Don't return null, return the executor so interruption can be handled
@@ -118,6 +118,11 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 			}
 			else if (agentResult.getState() == AgentState.COMPLETED) {
 				logger.info("Agent {} completed step execution", executor.getName());
+			}
+			else if (agentResult.getState() == AgentState.FAILED) {
+				logger.error("Agent {} failed during step execution", executor.getName());
+				// Set success to false for plan level handling
+				context.setSuccess(false);
 			}
 
 			recorder.recordStepEnd(step, context.getCurrentPlanId());
@@ -274,12 +279,27 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 								result.setErrorMessage("Plan execution interrupted by user");
 								break; // Stop executing remaining steps
 							}
+
+							// Check if this step failed
+							if (step.getStatus() == AgentState.FAILED) {
+								logger.error("Step execution failed, stopping plan execution");
+								context.setSuccess(false);
+								result.setSuccess(false);
+								if (step.getErrorMessage() != null && !step.getErrorMessage().isEmpty()) {
+									result.setErrorMessage(step.getErrorMessage());
+								} else {
+									result.setErrorMessage("Agent execution failed: " + step.getResult());
+								}
+								break; // Stop executing remaining steps
+							}
 						}
 					}
 				}
 
-				// Only set success if no interruption occurred
-				if (result.getErrorMessage() == null || !result.getErrorMessage().contains("interrupted")) {
+				// Only set success if no interruption or failure occurred
+				if (result.getErrorMessage() == null 
+						|| (!result.getErrorMessage().contains("interrupted") 
+							&& !result.getErrorMessage().contains("failed"))) {
 					context.setSuccess(true);
 					result.setSuccess(true);
 					result.setFinalResult(context.getPlan().getResult());
