@@ -52,7 +52,7 @@ public class H2ToExcelExporter {
 	// Default H2 database configuration
 	private static final String DEFAULT_USERNAME = "sa";
 
-	private static final String DEFAULT_PASSWORD = "$FSD#@!@#!#$!12341234";
+	private static final String DEFAULT_PASSWORD = "";
 
 	private static final String DRIVER_CLASS = "org.h2.Driver";
 
