@@ -213,12 +213,8 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			if (action == null) {
 				return new ToolExecuteResult("Error: action parameter is required");
 			}
-<<<<<<< HEAD
 			// file_path is optional for list_files action
 			if (filePath == null && !"list_files".equals(action)) {
-=======
-			if (filePath == null) {
->>>>>>> upstream/main
 				return new ToolExecuteResult("Error: file_path parameter is required");
 			}
 
@@ -261,11 +257,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				}
 				case "delete" -> deleteFile(filePath);
 				case "count_words" -> countWords(filePath);
-<<<<<<< HEAD
 				case "list_files" -> listFiles(filePath != null ? filePath : "");
-=======
-				case "list_files" -> listFiles(filePath);
->>>>>>> upstream/main
 				case "grep" -> {
 					String pattern = (String) toolInputMap.get("pattern");
 					Boolean caseSensitive = (Boolean) toolInputMap.get("case_sensitive");
@@ -299,12 +291,8 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			if (action == null) {
 				return new ToolExecuteResult("Error: action parameter is required");
 			}
-<<<<<<< HEAD
 			// file_path is optional for list_files action
 			if (filePath == null && !"list_files".equals(action)) {
-=======
-			if (filePath == null) {
->>>>>>> upstream/main
 				return new ToolExecuteResult("Error: file_path parameter is required");
 			}
 
@@ -347,11 +335,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				}
 				case "delete" -> deleteFile(filePath);
 				case "count_words" -> countWords(filePath);
-<<<<<<< HEAD
 				case "list_files" -> listFiles(filePath != null ? filePath : "");
-=======
-				case "list_files" -> listFiles(filePath);
->>>>>>> upstream/main
 				case "grep" -> {
 					String pattern = input.getPattern();
 					Boolean caseSensitive = input.getCaseSensitive();

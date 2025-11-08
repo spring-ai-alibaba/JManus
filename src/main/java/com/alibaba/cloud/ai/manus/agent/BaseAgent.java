@@ -265,29 +265,20 @@ public abstract class BaseAgent {
 
 				// Check if agent should terminate
 				AgentState stepState = stepResult.getState();
-<<<<<<< HEAD
 				if (stepState == AgentState.COMPLETED || stepState == AgentState.INTERRUPTED
 						|| stepState == AgentState.FAILED) {
 					String stateDescription = stepState == AgentState.COMPLETED ? "completed"
 							: stepState == AgentState.INTERRUPTED ? "interrupted" : "failed";
 					log.info("Agent execution {} at round {}/{}", stateDescription, currentStep, maxSteps);
-=======
-				if (stepState == AgentState.COMPLETED || stepState == AgentState.INTERRUPTED) {
-					log.info("Agent execution {} at round {}/{}",
-							stepState == AgentState.COMPLETED ? "completed" : "interrupted", currentStep, maxSteps);
->>>>>>> upstream/main
 					results.add(stepResult);
 
 					// Handle final processing based on state
 					if (stepState == AgentState.INTERRUPTED) {
 						handleInterruptedExecution(results);
 					}
-<<<<<<< HEAD
 					else if (stepState == AgentState.FAILED) {
 						handleFailedExecution(results);
 					}
-=======
->>>>>>> upstream/main
 					else {
 						handleCompletedExecution(results);
 					}
@@ -298,15 +289,10 @@ public abstract class BaseAgent {
 			}
 
 			// If max steps reached, generate summary and terminate
-<<<<<<< HEAD
 			// Skip if already in a terminal state (COMPLETED, INTERRUPTED, or FAILED)
 			if (currentStep >= maxSteps && (lastStepResult == null || (lastStepResult.getState() != AgentState.COMPLETED
 					&& lastStepResult.getState() != AgentState.INTERRUPTED
 					&& lastStepResult.getState() != AgentState.FAILED))) {
-=======
-			if (currentStep >= maxSteps && (lastStepResult == null || (lastStepResult.getState() != AgentState.COMPLETED
-					&& lastStepResult.getState() != AgentState.INTERRUPTED))) {
->>>>>>> upstream/main
 				log.info("Agent reached max rounds ({}), generating final summary and terminating", maxSteps);
 				String finalSummary = generateFinalSummary();
 
@@ -356,7 +342,6 @@ public abstract class BaseAgent {
 	}
 
 	/**
-<<<<<<< HEAD
 	 * Handle failed execution - perform final cleanup and recording
 	 * @param results The results list to update
 	 */
@@ -380,17 +365,6 @@ public abstract class BaseAgent {
 	}
 
 	/**
-=======
-	 * Handle completed execution - perform final cleanup and recording
-	 * @param results The results list to update
-	 */
-	protected void handleCompletedExecution(List<AgentExecResult> results) {
-		log.info("Handling completed execution");
-		// Additional cleanup for completed execution if needed
-	}
-
-	/**
->>>>>>> upstream/main
 	 * Handle exception by wrapping it with SystemErrorReportTool and simulating normal
 	 * tool flow
 	 * @param exception The exception that occurred
@@ -434,11 +408,7 @@ public abstract class BaseAgent {
 				step.setErrorMessage(errorMessage);
 			}
 
-<<<<<<< HEAD
 			AgentExecResult errorResult = new AgentExecResult(result, AgentState.IN_PROGRESS);
-=======
-			AgentExecResult errorResult = new AgentExecResult(result, AgentState.COMPLETED);
->>>>>>> upstream/main
 			results.add(errorResult);
 			return errorResult;
 		}
@@ -446,11 +416,7 @@ public abstract class BaseAgent {
 			log.error("Failed to handle exception with SystemErrorReportTool", e);
 			String fallbackError = "System error: " + exception.getMessage();
 			step.setErrorMessage(fallbackError);
-<<<<<<< HEAD
 			AgentExecResult fallbackResult = new AgentExecResult(fallbackError, AgentState.IN_PROGRESS);
-=======
-			AgentExecResult fallbackResult = new AgentExecResult(fallbackError, AgentState.COMPLETED);
->>>>>>> upstream/main
 			results.add(fallbackResult);
 			return fallbackResult;
 		}

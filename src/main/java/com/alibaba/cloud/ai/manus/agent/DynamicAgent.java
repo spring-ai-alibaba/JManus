@@ -590,11 +590,7 @@ public class DynamicAgent extends ReActAgent {
 		catch (Exception e) {
 			log.error("Error executing single tool: {}", e.getMessage(), e);
 			processMemory(toolExecutionResult); // Process memory even on error
-<<<<<<< HEAD
 			// For other errors, wrap exception with SystemErrorReportTool
-=======
-			// Wrap exception with SystemErrorReportTool
->>>>>>> upstream/main
 			List<AgentExecResult> emptyResults = new ArrayList<>();
 			return handleExceptionWithSystemErrorReport(e, emptyResults);
 		}
@@ -704,11 +700,7 @@ public class DynamicAgent extends ReActAgent {
 		}
 		catch (Exception e) {
 			log.error("Error executing multiple tools: {}", e.getMessage(), e);
-<<<<<<< HEAD
 			return new AgentExecResult("Error executing tools: " + e.getMessage(), AgentState.IN_PROGRESS);
-=======
-			return new AgentExecResult("Error executing tools: " + e.getMessage(), AgentState.COMPLETED);
->>>>>>> upstream/main
 		}
 	}
 
@@ -967,21 +959,13 @@ public class DynamicAgent extends ReActAgent {
 			recordErrorToolThinkingAndAction(param, "LLM timeout after 3 retries",
 					"SystemErrorReportTool called to report LLM timeout error", finalErrorMessage);
 
-<<<<<<< HEAD
 			return new AgentExecResult(result, AgentState.FAILED);
-=======
-			return new AgentExecResult(result, AgentState.COMPLETED);
->>>>>>> upstream/main
 		}
 		catch (Exception e) {
 			log.error("Failed to handle LLM timeout with SystemErrorReportTool", e);
 			String fallbackError = "LLM timeout error: " + buildErrorMessageFromLatestException();
 			step.setErrorMessage(fallbackError);
-<<<<<<< HEAD
 			return new AgentExecResult(fallbackError, AgentState.FAILED);
-=======
-			return new AgentExecResult(fallbackError, AgentState.COMPLETED);
->>>>>>> upstream/main
 		}
 	}
 
