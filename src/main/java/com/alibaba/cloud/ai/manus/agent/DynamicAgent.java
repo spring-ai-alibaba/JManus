@@ -257,6 +257,18 @@ public class DynamicAgent extends ReActAgent {
 				else {
 					chatClient = llmService.getDynamicAgentChatClient(modelName);
 				}
+				// Calculate and log word count for userPrompt
+				int wordCount = messages.stream()
+					.mapToInt(message -> {
+						String text = message.getText();
+						if (text == null || text.trim().isEmpty()) {
+							return 0;
+						}
+						return text.length();
+					})
+					.sum();
+				log.info("User prompt word count: {}", wordCount);
+
 				// Use streaming response handler for better user experience and content
 				// merging
 				Flux<ChatResponse> responseFlux = chatClient.prompt(userPrompt)

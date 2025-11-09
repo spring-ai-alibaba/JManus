@@ -36,7 +36,6 @@ import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
-import com.alibaba.cloud.ai.manus.workspace.conversation.advisor.CustomMessageChatMemoryAdvisor;
 
 import reactor.core.publisher.Flux;
 
@@ -142,11 +141,6 @@ public class PlanFinalizer {
 		}
 
 		requestSpec.advisors(memoryAdvisor -> memoryAdvisor.param(CONVERSATION_ID, context.getConversationId()));
-		requestSpec.advisors(
-				CustomMessageChatMemoryAdvisor
-					.builder(llmService.getConversationMemory(manusProperties.getMaxMemory()), context.getUserRequest(),
-							CustomMessageChatMemoryAdvisor.AdvisorType.AFTER)
-					.build());
 	}
 
 	/**
