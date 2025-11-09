@@ -84,6 +84,16 @@ public class InputTextAction extends BrowserAction {
 				}
 			}
 		}
+
+		// Wait 500ms after input to allow page to update and JavaScript events to process
+		try {
+			Thread.sleep(500);
+		}
+		catch (InterruptedException ie) {
+			Thread.currentThread().interrupt();
+			// Continue execution even if interrupted
+		}
+
 		return new ToolExecuteResult(
 				"Successfully input: '" + text + "' to the specified element with index: " + index);
 	}

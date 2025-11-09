@@ -203,7 +203,7 @@ public abstract class BaseAgent {
 				{planStatus}
 
 				- Current step requirements :
-				STEP {currentStepIndex}: {stepText}
+				{stepText}
 
 				- Operation step instructions:
 				{extraParams}

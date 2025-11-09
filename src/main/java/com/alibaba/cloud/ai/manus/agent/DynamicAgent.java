@@ -239,7 +239,8 @@ public class DynamicAgent extends ReActAgent {
 				List<Message> messages = new ArrayList<>();
 				// Add history message from agent memory
 				ChatMemory chatMemory = llmService.getAgentMemory(manusProperties.getMaxMemory());
-				List<Message> historyMem = chatMemory.get(getRootPlanId());
+				List<Message> historyMem = chatMemory.get(getCurrentPlanId());
+				// List<Message> subAgentMem = chatMemory.get(getCurrentPlanId());
 				
 				// Add conversation history from MemoryService if conversationId is available
 				if (memoryService != null && getConversationId() != null && !getConversationId().trim().isEmpty()) {
@@ -260,8 +261,8 @@ public class DynamicAgent extends ReActAgent {
 								getConversationId(), e);
 					}
 				}
-				messages.addAll(historyMem);
 				messages.addAll(Collections.singletonList(systemMessage));
+				messages.addAll(historyMem);
 				messages.add(currentStepEnvMessage);
 
 				// Save user request (stepText) to conversation memory after building messages

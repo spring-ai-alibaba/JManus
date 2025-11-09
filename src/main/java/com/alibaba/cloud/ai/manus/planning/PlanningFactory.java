@@ -58,6 +58,7 @@ import com.alibaba.cloud.ai.manus.runtime.executor.LevelBasedExecutorPool;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
 import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
+import com.alibaba.cloud.ai.manus.tool.DebugTool;
 import com.alibaba.cloud.ai.manus.tool.FormInputTool;
 import com.alibaba.cloud.ai.manus.tool.TerminateTool;
 import com.alibaba.cloud.ai.manus.tool.ToolCallBiFunctionDef;
@@ -228,12 +229,14 @@ public class PlanningFactory {
 		}
 		if (agentInit) {
 			// Add all tool definitions
-			toolDefinitions.add(BrowserUseTool.getInstance(chromeDriverService, innerStorageService, objectMapper));
+			toolDefinitions.add(BrowserUseTool.getInstance(chromeDriverService, innerStorageService, objectMapper,
+					textFileService));
 			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(UuidGenerateTool.getInstance(objectMapper));
 			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper));
+			toolDefinitions.add(new DebugTool());
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
 
