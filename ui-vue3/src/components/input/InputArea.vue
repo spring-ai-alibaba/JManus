@@ -142,6 +142,19 @@ const selectedOption = ref('')
 const innerToolOptions = ref<InnerToolOption[]>([])
 const isLoadingTools = ref(false)
 
+// History management
+const HISTORY_STORAGE_KEY = 'chatInputHistory'
+const MAX_HISTORY_SIZE = 20
+const inputHistory = ref<string[]>([])
+const historyIndex = ref(-1) // -1 means not browsing history
+const originalInputBeforeHistory = ref('') // Store original input when starting to browse history
+
+// Detect operating system for platform-specific shortcuts
+const isMac = computed(() => {
+  if (typeof window === 'undefined') return false
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform) || /Mac/.test(navigator.userAgent)
+})
+
 // Load inner tools with single parameter
 const loadInnerTools = async () => {
   isLoadingTools.value = true
@@ -219,9 +232,82 @@ watch(selectedOption, newValue => {
   localStorage.setItem('inputAreaSelectedTool', newValue || '')
 })
 
+// History management functions
+const loadHistory = () => {
+  try {
+    const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
+    if (stored) {
+      inputHistory.value = JSON.parse(stored)
+    }
+  } catch (error) {
+    console.error('[InputArea] Failed to load history:', error)
+    inputHistory.value = []
+  }
+}
+
+const saveHistory = () => {
+  try {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(inputHistory.value))
+  } catch (error) {
+    console.error('[InputArea] Failed to save history:', error)
+  }
+}
+
+const saveToHistory = (input: string) => {
+  if (!input.trim()) return
+
+  // Remove duplicate if exists
+  const index = inputHistory.value.indexOf(input)
+  if (index !== -1) {
+    inputHistory.value.splice(index, 1)
+  }
+
+  // Add to the beginning
+  inputHistory.value.unshift(input)
+
+  // Keep only the last MAX_HISTORY_SIZE items
+  if (inputHistory.value.length > MAX_HISTORY_SIZE) {
+    inputHistory.value = inputHistory.value.slice(0, MAX_HISTORY_SIZE)
+  }
+
+  saveHistory()
+}
+
+const navigateHistory = (direction: number) => {
+  if (inputHistory.value.length === 0) return
+
+  // If starting to browse history, save current input
+  if (historyIndex.value === -1) {
+    originalInputBeforeHistory.value = currentInput.value
+  }
+
+  // Calculate new index
+  let newIndex = historyIndex.value + direction
+
+  if (newIndex < -1) {
+    newIndex = -1
+  } else if (newIndex >= inputHistory.value.length) {
+    newIndex = inputHistory.value.length - 1
+  }
+
+  historyIndex.value = newIndex
+
+  // Update input based on history index
+  if (historyIndex.value === -1) {
+    // Restore original input
+    currentInput.value = originalInputBeforeHistory.value
+    originalInputBeforeHistory.value = ''
+  } else {
+    currentInput.value = inputHistory.value[historyIndex.value]
+  }
+
+  adjustInputHeight()
+}
+
 // Load inner tools on mount
 onMounted(() => {
   loadInnerTools()
+  loadHistory()
 })
 
 // Function to reset session when starting a new conversation session
@@ -288,9 +374,36 @@ const adjustInputHeight = () => {
 }
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter' && !event.shiftKey) {
+  // Ctrl+Enter (Windows/Linux) or Cmd+Enter (Mac) to send
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault()
     handleSend()
+    return
+  }
+
+  // Platform-specific history navigation:
+  // Mac: Option+ArrowUp/Down
+  // Windows/Linux: Ctrl+ArrowUp/Down
+  // ArrowUp: go to newer (index 0, 1, 2...)
+  // ArrowDown: go to older (index -1, then older items)
+  const historyModifier = isMac.value ? event.altKey : event.ctrlKey
+
+  if (event.key === 'ArrowUp' && historyModifier) {
+    event.preventDefault()
+    navigateHistory(1) // Go to newer (next in history array)
+    return
+  }
+
+  if (event.key === 'ArrowDown' && historyModifier) {
+    event.preventDefault()
+    navigateHistory(-1) // Go to older (previous in history array)
+    return
+  }
+
+  // If user starts typing while browsing history, reset history index
+  if (historyIndex.value !== -1 && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    historyIndex.value = -1
+    originalInputBeforeHistory.value = ''
   }
 }
 
@@ -298,6 +411,13 @@ const handleSend = async () => {
   if (!currentInput.value.trim() || isDisabled.value) return
 
   const finalInput = currentInput.value.trim()
+
+  // Save to history before sending
+  saveToHistory(finalInput)
+
+  // Reset history browsing state
+  historyIndex.value = -1
+  originalInputBeforeHistory.value = ''
 
   // Prepare query with tool information if selected
   const query: InputMessage = {

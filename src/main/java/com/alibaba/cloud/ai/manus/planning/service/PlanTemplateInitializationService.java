@@ -196,38 +196,6 @@ public class PlanTemplateInitializationService {
 	}
 
 	/**
-	 * Load configuration content from file
-	 * @param configPath Configuration file path
-	 * @return Configuration content
-	 */
-	private String loadConfigContent(String configPath) {
-		try {
-			ClassPathResource resource = new ClassPathResource(configPath);
-			if (!resource.exists()) {
-				log.warn("Configuration file does not exist: {}", configPath);
-				return "";
-			}
-
-			StringBuilder content = new StringBuilder();
-			try (BufferedReader reader = new BufferedReader(
-					new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
-				String line;
-				while ((line = reader.readLine()) != null) {
-					content.append(line).append("\n");
-				}
-			}
-
-			log.debug("Successfully loaded configuration file: {} ({} characters)", configPath, content.length());
-			return content.toString().trim();
-
-		}
-		catch (IOException e) {
-			log.error("Failed to load configuration file: {}", configPath, e);
-			return "";
-		}
-	}
-	
-	/**
 	 * Get supported languages
 	 * @return List of supported language codes
 	 */

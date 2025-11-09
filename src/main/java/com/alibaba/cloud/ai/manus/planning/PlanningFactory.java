@@ -54,6 +54,7 @@ import com.alibaba.cloud.ai.manus.mcp.service.McpService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanFinalizer;
 import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
+import com.alibaba.cloud.ai.manus.runtime.executor.LevelBasedExecutorPool;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
 import com.alibaba.cloud.ai.manus.subplan.service.SubplanToolService;
@@ -84,6 +85,7 @@ import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
 import com.alibaba.cloud.ai.manus.tool.textOperator.GlobalFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.LocalFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
+import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -158,6 +160,12 @@ public class PlanningFactory {
 	@Autowired
 	private ApplicationContext applicationContext;
 
+	@Autowired
+	private MemoryService memoryService;
+
+	@Autowired(required = false)
+	private LevelBasedExecutorPool levelBasedExecutorPool;
+
 	public PlanningFactory(ChromeDriverService chromeDriverService, PlanExecutionRecorder recorder,
 			ManusProperties manusProperties, TextFileService textFileService, McpService mcpService,
 			SmartContentSavingService innerStorageService, UnifiedDirectoryManager unifiedDirectoryManager,
@@ -180,7 +188,7 @@ public class PlanningFactory {
 	 */
 	public PlanFinalizer createPlanFinalizer() {
 		return new PlanFinalizer(llmService, recorder, manusProperties, streamingResponseHandler,
-				taskInterruptionManager);
+				taskInterruptionManager, memoryService);
 	}
 
 	public static class ToolCallBackContext {
@@ -241,7 +249,8 @@ public class PlanningFactory {
 			// toolDefinitions.add(new GoogleSearch());
 			// toolDefinitions.add(new PythonExecute());
 			toolDefinitions.add(new FormInputTool(objectMapper));
-			toolDefinitions.add(new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher));
+			toolDefinitions.add(new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher,
+					levelBasedExecutorPool));
 			if (infiniteContextEnabled) {
 
 			}

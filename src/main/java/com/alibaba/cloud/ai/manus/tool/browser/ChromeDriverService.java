@@ -222,11 +222,6 @@ public class ChromeDriverService implements IChromeDriverService {
 		}
 	}
 
-	private DriverWrapper createNewDriver() {
-		log.info("Creating new browser driver");
-		return createDriverInstance();
-	}
-
 	/**
 	 * Create new driver with retry mechanism
 	 */
