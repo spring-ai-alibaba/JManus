@@ -272,7 +272,7 @@
               <div class="form-row">
                 <AssignedTools
                   :title="$t('sidebar.selectedTools')"
-                  :selected-tool-ids="step.selectedToolKeys"
+                  :selected-tool-ids="step.selectedToolKeys || []"
                   :available-tools="sidebarStore.availableTools"
                   :add-button-text="$t('sidebar.addRemoveTools')"
                   :empty-text="$t('sidebar.noTools')"

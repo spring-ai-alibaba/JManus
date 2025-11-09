@@ -89,6 +89,10 @@ watch(
   filteredSelectedToolIds,
   newFilteredTools => {
     // Only emit if there's a difference (some tools were filtered out)
+    // Check if selectedToolIds is defined and is an array
+    if (!Array.isArray(props.selectedToolIds)) {
+      return
+    }
     const selectedLength = props.selectedToolIds.length
     if (newFilteredTools.length !== selectedLength) {
       emit('tools-filtered', newFilteredTools)
