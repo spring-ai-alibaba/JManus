@@ -200,7 +200,7 @@ public abstract class BaseAgent {
 
 				{planStatus}
 
-				- Current step requirements (this step needs to be completed by you! Required by the user's original request, but if not required in the current step, no need to complete in this step):
+				- Current step requirements :
 				STEP {currentStepIndex}: {stepText}
 
 				- Operation step instructions:
