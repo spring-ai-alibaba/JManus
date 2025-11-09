@@ -15,6 +15,7 @@
  */
 
 import type { InputMessage } from '@/stores/memory'
+import { memoryStore } from '@/stores/memory'
 import { LlmCheckService } from '@/utils/llm-check'
 
 export class DirectApiService {
@@ -82,6 +83,15 @@ export class DirectApiService {
       const requestBody: Record<string, unknown> = {
         toolName: toolName,
         requestSource: requestSource,
+      }
+
+      // Include conversationId from memoryStore if available
+      if (memoryStore.conversationId) {
+        requestBody.conversationId = memoryStore.conversationId
+        console.log(
+          '[DirectApiService] Including conversationId from memoryStore:',
+          memoryStore.conversationId
+        )
       }
 
       // Include replacement parameters if present

@@ -27,7 +27,8 @@ import java.util.List;
  * @desc memory entity
  */
 @Entity
-@Table(name = "dynamic_memories")
+@Table(name = "dynamic_memories", indexes = {
+		@Index(name = "idx_create_time", columnList = "createTime") })
 public class MemoryEntity {
 
 	@Id

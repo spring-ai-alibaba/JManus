@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.AssistantMessage.ToolCall;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -237,11 +236,11 @@ public class DynamicAgent extends ReActAgent {
 
 				// log.debug("Messages prepared for the prompt: {}", thinkMessages);
 				// Build current prompt. System message is the first message
-				List<Message> messages = new ArrayList<>(Collections.singletonList(systemMessage));
+				List<Message> messages = new ArrayList<>();
 				// Add history message from agent memory
 				ChatMemory chatMemory = llmService.getAgentMemory(manusProperties.getMaxMemory());
 				List<Message> historyMem = chatMemory.get(getRootPlanId());
-				messages.addAll(historyMem);
+				
 				// Add conversation history from MemoryService if conversationId is available
 				if (memoryService != null && getConversationId() != null && !getConversationId().trim().isEmpty()) {
 					try {
@@ -261,7 +260,14 @@ public class DynamicAgent extends ReActAgent {
 								getConversationId(), e);
 					}
 				}
+				messages.addAll(historyMem);
+				messages.addAll(Collections.singletonList(systemMessage));
 				messages.add(currentStepEnvMessage);
+
+				// Save user request (stepText) to conversation memory after building messages
+				// This prevents duplicate messages in the conversation history
+				saveUserRequestToConversationMemory();
+
 				String toolcallId = planIdDispatcher.generateToolCallId();
 				// Call the LLM
 				Map<String, Object> toolContextMap = new HashMap<>();
@@ -1075,25 +1081,13 @@ public class DynamicAgent extends ReActAgent {
 
 	@Override
 	public AgentExecResult run() {
-		// Save user request (stepText) to conversation memory at the start of execution
-		saveUserRequestToConversationMemory();
-
 		return super.run();
 	}
 
 	@Override
 	protected void handleCompletedExecution(List<AgentExecResult> results) {
 		super.handleCompletedExecution(results);
-		// Save final result to conversation memory if available
-		if (results != null && !results.isEmpty()) {
-			AgentExecResult lastResult = results.get(results.size() - 1);
-			if (lastResult != null && lastResult.getState() == AgentState.COMPLETED) {
-				String finalResult = lastResult.getResult();
-				if (finalResult != null && !finalResult.trim().isEmpty()) {
-					saveResultToConversationMemory(finalResult);
-				}
-			}
-		}
+		// Note: Final result will be saved to conversation memory in PlanFinalizer.handlePostExecution()
 	}
 
 	@Override
@@ -1272,34 +1266,6 @@ public class DynamicAgent extends ReActAgent {
 		}
 		catch (Exception e) {
 			log.warn("Failed to save user request to conversation memory for conversationId: {}",
-					getConversationId(), e);
-		}
-	}
-
-	/**
-	 * Save agent execution result to conversation memory
-	 * @param result The execution result to save
-	 */
-	private void saveResultToConversationMemory(String result) {
-		if (getConversationId() == null || getConversationId().trim().isEmpty()) {
-			log.debug("No conversationId available, skipping conversation memory save");
-			return;
-		}
-
-		if (result == null || result.trim().isEmpty()) {
-			log.debug("Result is empty, skipping conversation memory save");
-			return;
-		}
-
-		try {
-			ChatMemory conversationMemory = llmService.getConversationMemory(manusProperties.getMaxMemory());
-			AssistantMessage assistantMessage = new AssistantMessage(result);
-			conversationMemory.add(getConversationId(), assistantMessage);
-			log.info("Saved agent execution result to conversation memory for conversationId: {}, result length: {}",
-					getConversationId(), result.length());
-		}
-		catch (Exception e) {
-			log.warn("Failed to save agent execution result to conversation memory for conversationId: {}",
 					getConversationId(), e);
 		}
 	}

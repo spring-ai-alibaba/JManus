@@ -30,6 +30,7 @@ export class MemoryStore {
   // Basic state
   isCollapsed = false
   selectMemoryId = ''
+  conversationId: string | null = null
   loadMessages = () => {}
   intervalId: number | undefined = undefined
 
@@ -60,6 +61,14 @@ export class MemoryStore {
 
   clearMemoryId() {
     this.selectMemoryId = ''
+  }
+
+  setConversationId(conversationId: string | null) {
+    this.conversationId = conversationId
+  }
+
+  clearConversationId() {
+    this.conversationId = null
   }
 
   generateRandomId(): string {

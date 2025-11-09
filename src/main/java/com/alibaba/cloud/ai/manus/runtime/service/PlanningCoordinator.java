@@ -77,11 +77,8 @@ public class PlanningCoordinator {
 
 			// Create execution context
 			ExecutionContext context = new ExecutionContext();
-			String userRequest = plan.getUserRequest();
-			if (userRequest == null) {
-				userRequest = plan.getTitle();
-			}
-			context.setUserRequest(userRequest);
+			String title = plan.getTitle();
+			context.setTitle(title);
 			context.setCurrentPlanId(currentPlanId);
 			context.setRootPlanId(rootPlanId);
 			context.setPlan(plan);

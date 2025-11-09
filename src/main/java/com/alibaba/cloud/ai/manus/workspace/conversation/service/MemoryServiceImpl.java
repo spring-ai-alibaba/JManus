@@ -15,6 +15,10 @@
  */
 package com.alibaba.cloud.ai.manus.workspace.conversation.service;
 
+import java.time.ZoneId;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -23,12 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.cloud.ai.manus.workspace.conversation.entity.po.MemoryEntity;
-import com.alibaba.cloud.ai.manus.workspace.conversation.repository.MemoryRepository;
 import com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo.Memory;
-
-import java.time.ZoneId;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.alibaba.cloud.ai.manus.workspace.conversation.repository.MemoryRepository;
 
 /**
  * @author dahua
@@ -89,12 +89,12 @@ public class MemoryServiceImpl implements MemoryService {
 
 	@Override
 	public List<Memory> getMemories() {
-		List<MemoryEntity> memoryEntities = memoryRepository.findAll();
+		// Query top 15 memories directly from database (sorted by createTime DESC, filtered for non-null)
+		List<MemoryEntity> memoryEntities = memoryRepository.findTop15Memories();
 
-		// Convert to Memory VO and sort by create time
+		// Convert to Memory VO
 		return memoryEntities.stream()
 			.map(this::convertToMemory)
-			.sorted((m1, m2) -> m1.getCreateTime().compareTo(m2.getCreateTime()))
 			.collect(Collectors.toList());
 	}
 

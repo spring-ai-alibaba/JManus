@@ -623,6 +623,16 @@ const handleChatSendMessage = async (query: InputMessage) => {
 
     console.log('[DirectView] API response received:', response)
 
+    // Save conversationId from response to memoryStore
+    const responseWithConversationId = response as { conversationId?: string }
+    if (responseWithConversationId.conversationId) {
+      memoryStore.setConversationId(responseWithConversationId.conversationId)
+      console.log(
+        '[DirectView] Saved conversationId to memoryStore:',
+        responseWithConversationId.conversationId
+      )
+    }
+
     // Handle the response
     const typedResponse = response as { planId?: string }
     if (typedResponse.planId && assistantMessage) {
@@ -902,11 +912,19 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
 }
 
 const memorySelected = () => {
-  chatRef.value.showMemory()
+  // Memory sidebar is already closed by selectMemory() calling toggleSidebar()
+  // Load conversation history if a memory is selected
+  if (memoryStore.selectMemoryId) {
+    console.log('[DirectView] Memory selected:', memoryStore.selectMemoryId)
+    // TODO: Load conversation history for the selected memory
+    // This can be implemented by fetching messages from the API
+    // and adding them to the chat container
+  }
 }
 
 const newChat = () => {
   memoryStore.clearMemoryId()
+  memoryStore.clearConversationId()
   chatRef.value.newChat()
 }
 </script>

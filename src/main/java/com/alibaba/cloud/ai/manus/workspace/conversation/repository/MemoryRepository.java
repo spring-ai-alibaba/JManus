@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.manus.workspace.conversation.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.alibaba.cloud.ai.manus.workspace.conversation.entity.po.MemoryEntity;
@@ -35,5 +36,13 @@ public interface MemoryRepository extends JpaRepository<MemoryEntity, Long> {
 	void deleteByConversationId(String conversationId);
 
 	MemoryEntity findByConversationId(String conversationId);
+
+	/**
+	 * Find top 15 memories ordered by create time descending (newest first)
+	 * Uses native query for better performance with LIMIT clause
+	 * @return List of top 15 most recent MemoryEntity records
+	 */
+	@Query(value = "SELECT * FROM dynamic_memories WHERE create_time IS NOT NULL ORDER BY create_time DESC LIMIT 15", nativeQuery = true)
+	List<MemoryEntity> findTop15Memories();
 
 }

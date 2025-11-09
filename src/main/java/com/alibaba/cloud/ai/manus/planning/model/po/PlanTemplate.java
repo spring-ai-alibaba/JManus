@@ -40,7 +40,7 @@ public class PlanTemplate {
 	@Column(name = "plan_template_id", length = 50, unique = true, nullable = false)
 	private String planTemplateId;
 
-	@Column(name = "title", length = 255)
+	@Column(name = "title", length = 5000)
 	private String title;
 
 	@Column(name = "create_time", nullable = false)
