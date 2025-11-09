@@ -38,6 +38,7 @@ import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
+import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
 
 import reactor.core.publisher.Flux;
 
@@ -59,13 +60,17 @@ public class PlanFinalizer {
 
 	private final TaskInterruptionManager taskInterruptionManager;
 
+	private final MemoryService memoryService;
+
 	public PlanFinalizer(LlmService llmService, PlanExecutionRecorder recorder, ManusProperties manusProperties,
-			StreamingResponseHandler streamingResponseHandler, TaskInterruptionManager taskInterruptionManager) {
+			StreamingResponseHandler streamingResponseHandler, TaskInterruptionManager taskInterruptionManager,
+			MemoryService memoryService) {
 		this.llmService = llmService;
 		this.recorder = recorder;
 		this.manusProperties = manusProperties;
 		this.streamingResponseHandler = streamingResponseHandler;
 		this.taskInterruptionManager = taskInterruptionManager;
+		this.memoryService = memoryService;
 	}
 
 	/**
@@ -203,6 +208,14 @@ public class PlanFinalizer {
 
 			// Save final result to conversation memory after all processing
 			saveResultToConversationMemory(context, result.getFinalResult());
+
+			// Add rootPlanId to conversation memory mapping (only for root plans)
+			if (context.getConversationId() != null && context.getRootPlanId() != null
+					&& context.getRootPlanId().equals(context.getCurrentPlanId())) {
+				log.debug("Adding rootPlanId {} to conversation {} in memory mappings", context.getRootPlanId(),
+						context.getConversationId());
+				memoryService.addRootPlanIdToConversation(context.getConversationId(), context.getRootPlanId());
+			}
 
 			return result;
 

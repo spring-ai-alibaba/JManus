@@ -231,22 +231,17 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			logger.info("🔍 [DEBUG] uploadedFiles is null: {}", uploadedFiles == null);
 			if (uploadedFiles != null) {
 				logger.info("🔍 [DEBUG] uploadedFiles size: {}", uploadedFiles.size());
-				logger.info("🔍 [DEBUG] uploadedFiles names: {}", uploadedFiles);
-			}
+			logger.info("🔍 [DEBUG] uploadedFiles names: {}", uploadedFiles);
+		}
 
-			String query = "Execute plan template: " + planTemplateId;
-			// Create Memory VO and save it
-			Memory memory = new Memory(conversationId, query);
-			memoryService.saveMemory(memory);
+		// Get replacement parameters for <<>> replacement
+		@SuppressWarnings("unchecked")
+		Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
 
-			// Get replacement parameters for <<>> replacement
-			@SuppressWarnings("unchecked")
-			Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
-
-			// Execute the plan template using the new unified method
-			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, conversationId,
-					replacementParams, requestSource, uploadKey);
-
+		// Execute the plan template using the new unified method
+		PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, conversationId,
+				replacementParams, requestSource, uploadKey);
+			
 			// Create or update task manager entity for database-driven interruption
 			if (wrapper.getRootPlanId() != null) {
 				rootTaskManagerService.createOrUpdateTask(wrapper.getRootPlanId(),
@@ -607,19 +602,22 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				}
 			}
 
-			// Log uploadKey if provided
-			if (uploadKey != null) {
-				logger.info("Executing plan with upload key: {}", uploadKey);
-			}
+		// Log uploadKey if provided
+		if (uploadKey != null) {
+			logger.info("Executing plan with upload key: {}", uploadKey);
+		}
 
-			// Log uploadKey if provided
-			if (uploadKey != null) {
-				logger.info("Executing plan with upload key: {}", uploadKey);
-			}
+		// Create Memory with step requirements as the name
+		if (conversationId != null && !conversationId.trim().isEmpty()) {
+			String memoryName = buildMemoryNameFromPlan(plan);
+			Memory memory = new Memory(conversationId, memoryName);
+			memoryService.saveMemory(memory);
+			logger.info("Created/updated memory with name: {}", memoryName);
+		}
 
-			// Execute using the PlanningCoordinator (root plan has depth = 0)
-			CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId, null,
-					currentPlanId, null, requestSource, uploadKey, 0, conversationId);
+		// Execute using the PlanningCoordinator (root plan has depth = 0)
+		CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId, null,
+				currentPlanId, null, requestSource, uploadKey, 0, conversationId);
 
 			// Return the wrapper containing both the future and rootPlanId
 			return new PlanExecutionWrapper(future, rootPlanId);
@@ -877,6 +875,53 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			logger.debug("Using provided conversation ID: {}", conversationId);
 		}
 		return conversationId;
+	}
+
+	/**
+	 * Build memory name from plan's step requirements
+	 * Extracts step requirements and joins them with newlines
+	 * @param plan The plan interface
+	 * @return Formatted memory name from step requirements
+	 */
+	private String buildMemoryNameFromPlan(PlanInterface plan) {
+		if (plan == null) {
+			return "Untitled Conversation";
+		}
+
+		// Otherwise, build from step requirements
+		List<ExecutionStep> steps = plan.getAllSteps();
+		if (steps == null || steps.isEmpty()) {
+			return "Empty Plan";
+		}
+
+		StringBuilder memoryName = new StringBuilder();
+		for (int i = 0; i < steps.size(); i++) {
+			ExecutionStep step = steps.get(i);
+			if (step.getStepRequirement() != null && !step.getStepRequirement().trim().isEmpty()) {
+				if (memoryName.length() > 0) {
+					memoryName.append("\n");
+				}
+				// Clean up the step requirement (remove uploaded files info if present)
+				String requirement = step.getStepRequirement();
+				int uploadedFilesIndex = requirement.indexOf("[Uploaded files:");
+				if (uploadedFilesIndex > 0) {
+					requirement = requirement.substring(0, uploadedFilesIndex).trim();
+				}
+				memoryName.append(requirement);
+			}
+		}
+
+		String result = memoryName.toString();
+		if (result.isEmpty()) {
+			return "Plan Execution";
+		}
+
+		// Limit length to avoid excessively long names
+		if (result.length() > 30) {
+			return result.substring(0, 30) + "...";
+		}
+
+		return result;
 	}
 
 }

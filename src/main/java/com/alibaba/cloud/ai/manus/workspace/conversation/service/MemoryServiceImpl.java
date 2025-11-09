@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.manus.workspace.conversation.service;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -64,6 +65,11 @@ public class MemoryServiceImpl implements MemoryService {
 			memory.setCreateTime(entity.getCreateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
 		}
 
+		// Copy root plan IDs
+		if (entity.getRootPlanIds() != null) {
+			memory.setRootPlanIds(new ArrayList<>(entity.getRootPlanIds()));
+		}
+
 		return memory;
 	}
 
@@ -82,6 +88,11 @@ public class MemoryServiceImpl implements MemoryService {
 		// Convert LocalDateTime to Date
 		if (memory.getCreateTime() != null) {
 			entity.setCreateTime(java.sql.Timestamp.valueOf(memory.getCreateTime()));
+		}
+
+		// Copy root plan IDs
+		if (memory.getRootPlanIds() != null) {
+			entity.setRootPlanIds(new ArrayList<>(memory.getRootPlanIds()));
 		}
 
 		return entity;
@@ -157,6 +168,38 @@ public class MemoryServiceImpl implements MemoryService {
 		logger.info("Generated unique conversation ID: {}", conversationId);
 
 		return conversationId;
+	}
+
+	@Override
+	public void addRootPlanIdToConversation(String conversationId, String rootPlanId) {
+		if (conversationId == null || conversationId.trim().isEmpty()) {
+			logger.warn("Cannot add rootPlanId to null or empty conversationId");
+			return;
+		}
+
+		if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
+			logger.warn("Cannot add null or empty rootPlanId to conversation {}", conversationId);
+			return;
+		}
+
+		try {
+			MemoryEntity memoryEntity = memoryRepository.findByConversationId(conversationId);
+			if (memoryEntity == null) {
+				// Create new memory if it doesn't exist
+				logger.info("Creating new memory for conversationId: {} with rootPlanId: {}", conversationId,
+						rootPlanId);
+				memoryEntity = new MemoryEntity(conversationId, "Conversation " + conversationId);
+			}
+
+			// Add the root plan ID
+			memoryEntity.addRootPlanId(rootPlanId);
+			memoryRepository.save(memoryEntity);
+
+			logger.info("Added rootPlanId {} to conversation {}", rootPlanId, conversationId);
+		}
+		catch (Exception e) {
+			logger.error("Failed to add rootPlanId {} to conversation {}", rootPlanId, conversationId, e);
+		}
 	}
 
 }

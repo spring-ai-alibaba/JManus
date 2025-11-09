@@ -34,6 +34,46 @@ export class MemoryStore {
   loadMessages = () => {}
   intervalId: number | undefined = undefined
 
+  // LocalStorage key for persisting conversationId
+  private readonly CONVERSATION_ID_KEY = 'currentConversationId'
+
+  constructor() {
+    // Load conversation ID from localStorage on initialization
+    this.loadConversationIdFromStorage()
+  }
+
+  /**
+   * Load conversation ID from localStorage
+   */
+  private loadConversationIdFromStorage() {
+    try {
+      const savedConversationId = localStorage.getItem(this.CONVERSATION_ID_KEY)
+      if (savedConversationId) {
+        this.conversationId = savedConversationId
+        console.log('[MemoryStore] Restored conversationId from localStorage:', savedConversationId)
+      }
+    } catch (error) {
+      console.warn('[MemoryStore] Failed to load conversationId from localStorage:', error)
+    }
+  }
+
+  /**
+   * Save conversation ID to localStorage
+   */
+  private saveConversationIdToStorage() {
+    try {
+      if (this.conversationId) {
+        localStorage.setItem(this.CONVERSATION_ID_KEY, this.conversationId)
+        console.log('[MemoryStore] Saved conversationId to localStorage:', this.conversationId)
+      } else {
+        localStorage.removeItem(this.CONVERSATION_ID_KEY)
+        console.log('[MemoryStore] Removed conversationId from localStorage')
+      }
+    } catch (error) {
+      console.warn('[MemoryStore] Failed to save conversationId to localStorage:', error)
+    }
+  }
+
   toggleSidebar() {
     this.isCollapsed = !this.isCollapsed
     if (this.isCollapsed) {
@@ -65,10 +105,21 @@ export class MemoryStore {
 
   setConversationId(conversationId: string | null) {
     this.conversationId = conversationId
+    // Persist to localStorage whenever conversationId changes
+    this.saveConversationIdToStorage()
   }
 
   clearConversationId() {
     this.conversationId = null
+    // Clear from localStorage
+    this.saveConversationIdToStorage()
+  }
+
+  /**
+   * Get the current conversation ID (from memory or localStorage)
+   */
+  getConversationId(): string | null {
+    return this.conversationId
   }
 
   generateRandomId(): string {

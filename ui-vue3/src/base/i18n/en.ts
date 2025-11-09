@@ -780,7 +780,7 @@ const words: I18nType = {
   sidebar: {
     title: 'Func-Agent Template Name',
     templateList: 'Template List',
-    configuration: 'Configuration',
+    configuration: 'Func-Agent Config',
     newPlan: 'New Func-Agent Plan',
     loading: 'Loading...',
     retry: 'Retry',
@@ -1353,6 +1353,7 @@ const words: I18nType = {
     selectMemory: 'Select Memory',
     clearMemory: 'Clear Memory',
     newChat: 'new chat',
+    loadHistoryFailed: 'Failed to load conversation history',
   },
   // Common placeholders
   selectCommon: {

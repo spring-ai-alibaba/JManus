@@ -42,4 +42,11 @@ public interface MemoryService {
 	 */
 	String generateConversationId();
 
+	/**
+	 * Add a root plan ID to a conversation's memory
+	 * @param conversationId The conversation ID
+	 * @param rootPlanId The root plan ID to add
+	 */
+	void addRootPlanIdToConversation(String conversationId, String rootPlanId);
+
 }

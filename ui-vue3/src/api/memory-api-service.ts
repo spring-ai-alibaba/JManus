@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import type { PlanExecutionRecord } from '@/types/plan-execution-record'
+
 export interface Memory {
   id: number
   conversation_id: string
@@ -149,6 +151,23 @@ export class MemoryApiService {
       return data.data
     } catch (error) {
       console.error('Failed to generate conversation ID:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get conversation history (plan execution records) for a specific conversation
+   * @param conversationId The conversation ID
+   * @returns Array of plan execution records
+   */
+  static async getConversationHistory(conversationId: string): Promise<PlanExecutionRecord[]> {
+    try {
+      const response = await fetch(`${this.BASE_URL}/${conversationId}/history`)
+      const result = await this.handleResponse(response)
+      const data: PlanExecutionRecord[] = await result.json()
+      return data || []
+    } catch (error) {
+      console.error('Failed to get conversation history:', error)
       throw error
     }
   }

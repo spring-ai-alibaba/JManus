@@ -15,8 +15,12 @@
  */
 package com.alibaba.cloud.ai.manus.workspace.conversation.controller;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -30,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord;
+import com.alibaba.cloud.ai.manus.recorder.service.PlanHierarchyReaderService;
 import com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo.Memory;
 import com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo.MemoryResponse;
 import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
@@ -44,8 +50,13 @@ import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
 @CrossOrigin(origins = "*") // Add cross-origin support
 public class MemoryController {
 
+	private static final Logger logger = LoggerFactory.getLogger(MemoryController.class);
+
 	@Autowired
 	private MemoryService memoryService;
+
+	@Autowired
+	private PlanHierarchyReaderService planHierarchyReaderService;
 
 	@GetMapping
 	public ResponseEntity<MemoryResponse> getAllMemories() {
@@ -125,6 +136,63 @@ public class MemoryController {
 		}
 		catch (Exception e) {
 			return ResponseEntity.ok(MemoryResponse.error("Failed to generate conversation ID: " + e.getMessage()));
+		}
+	}
+
+	/**
+	 * Get conversation history (plan execution records) for a specific conversation ID
+	 * @param conversationId The conversation ID
+	 * @return List of plan execution records for this conversation
+	 */
+	@GetMapping("/{conversationId}/history")
+	public ResponseEntity<?> getConversationHistory(@PathVariable String conversationId) {
+		try {
+			logger.info("Retrieving conversation history for conversationId: {}", conversationId);
+
+			// Get the memory entity to find all associated rootPlanIds
+			Memory memory = memoryService.singleMemory(conversationId);
+			if (memory == null) {
+				logger.warn("No memory found for conversationId: {}", conversationId);
+				return ResponseEntity.ok(new ArrayList<>());
+			}
+
+			List<String> rootPlanIds = memory.getRootPlanIds();
+			if (rootPlanIds == null || rootPlanIds.isEmpty()) {
+				logger.info("No plan execution records found for conversationId: {}", conversationId);
+				return ResponseEntity.ok(new ArrayList<>());
+			}
+
+			logger.info("Found {} rootPlanIds for conversationId: {}", rootPlanIds.size(), conversationId);
+
+			// Retrieve all plan execution records for these rootPlanIds
+			List<PlanExecutionRecord> planRecords = rootPlanIds.stream().map(rootPlanId -> {
+				try {
+					PlanExecutionRecord record = planHierarchyReaderService.readPlanTreeByRootId(rootPlanId);
+					if (record == null) {
+						logger.warn("No plan execution record found for rootPlanId: {}", rootPlanId);
+					}
+					return record;
+				}
+				catch (Exception e) {
+					logger.error("Error retrieving plan record for rootPlanId: {}", rootPlanId, e);
+					return null;
+				}
+			}).filter(record -> record != null) // Filter out null records
+				.collect(Collectors.toList());
+
+			logger.info("Successfully retrieved {} plan execution records for conversationId: {}", planRecords.size(),
+					conversationId);
+
+			return ResponseEntity.ok(planRecords);
+		}
+		catch (IllegalArgumentException e) {
+			logger.warn("Conversation not found: {}", conversationId);
+			return ResponseEntity.ok(new ArrayList<>());
+		}
+		catch (Exception e) {
+			logger.error("Error retrieving conversation history for conversationId: {}", conversationId, e);
+			return ResponseEntity.status(500)
+				.body("Failed to retrieve conversation history: " + e.getMessage());
 		}
 	}
 

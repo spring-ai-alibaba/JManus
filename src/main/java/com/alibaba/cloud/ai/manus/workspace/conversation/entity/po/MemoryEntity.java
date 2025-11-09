@@ -15,16 +15,26 @@
  */
 package com.alibaba.cloud.ai.manus.workspace.conversation.entity.po;
 
-import jakarta.persistence.*;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
+
 /**
  * @author dahua
  * @time 2025/8/5
- * @desc memory entity
+ * @desc memory entity - Stores conversation metadata and references to plan executions
  */
 @Entity
 @Table(name = "dynamic_memories", indexes = {
@@ -44,8 +54,22 @@ public class MemoryEntity {
 	@Column(nullable = false)
 	private Date createTime;
 
-	@OneToMany(mappedBy = "memoryEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-	private List<ConversationMessage> messages = new ArrayList<>();
+	/**
+	 * List of root plan IDs associated with this conversation Each rootPlanId
+	 * corresponds to a complete dialog round (user query + assistant response) The plan
+	 * execution records contain all the actual message content and execution details
+	 */
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(name = "memory_plan_mappings", joinColumns = @JoinColumn(name = "memory_id"))
+	@Column(name = "root_plan_id", nullable = false)
+	private List<String> rootPlanIds = new ArrayList<>();
+
+	/**
+	 * Note: The @OneToMany relationship to ConversationMessage has been removed.
+	 * This entity now only maintains references to root plan IDs. The actual conversation
+	 * content is retrieved through PlanExecutionRecords using the rootPlanIds list.
+	 * This design is more maintainable and avoids data duplication.
+	 */
 
 	public MemoryEntity() {
 		this.createTime = new Date();
@@ -89,22 +113,32 @@ public class MemoryEntity {
 		this.createTime = createTime;
 	}
 
-	public List<ConversationMessage> getMessages() {
-		return messages;
+	public List<String> getRootPlanIds() {
+		return rootPlanIds;
 	}
 
-	public void setMessages(List<ConversationMessage> messages) {
-		this.messages = messages;
+	public void setRootPlanIds(List<String> rootPlanIds) {
+		this.rootPlanIds = rootPlanIds;
 	}
 
-	public void addMessage(ConversationMessage message) {
-		this.messages.add(message);
-		message.setMemoryEntity(this);
+	/**
+	 * Add a root plan ID to this conversation
+	 * @param rootPlanId The root plan ID to add
+	 */
+	public void addRootPlanId(String rootPlanId) {
+		if (rootPlanId != null && !rootPlanId.trim().isEmpty()) {
+			if (!this.rootPlanIds.contains(rootPlanId)) {
+				this.rootPlanIds.add(rootPlanId);
+			}
+		}
 	}
 
-	public void removeMessage(ConversationMessage message) {
-		this.messages.remove(message);
-		message.setMemoryEntity(null);
+	/**
+	 * Remove a root plan ID from this conversation
+	 * @param rootPlanId The root plan ID to remove
+	 */
+	public void removeRootPlanId(String rootPlanId) {
+		this.rootPlanIds.remove(rootPlanId);
 	}
 
 }
