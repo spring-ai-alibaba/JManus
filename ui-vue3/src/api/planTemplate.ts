@@ -14,33 +14,6 @@
  * limitations under the License.
  */
 
-export interface PlanTemplateInitRequest {
-  language: string
-}
-
-export interface PlanTemplateInitResponse {
-  success: boolean
-  language: string
-  planNames: string[]
-  initResult: {
-    success: boolean
-    successCount: number
-    errorCount: number
-    successList: string[]
-    errorList: string[]
-    errors: Record<string, string>
-  }
-  registerResult: {
-    success: boolean
-    successCount: number
-    errorCount: number
-    successList: string[]
-    errorList: string[]
-    errors: Record<string, string>
-  }
-  message: string
-}
-
 export interface PlanTemplateRegisterRequest {
   planNames: string[]
 }
@@ -88,22 +61,6 @@ const handleResponse = async (response: Response) => {
     throw new Error(error.message || `HTTP error! status: ${response.status}`)
   }
   return response.json()
-}
-
-/**
- * Initialize and register plan templates as inner toolcalls
- */
-export const initAndRegisterPlanTemplates = async (
-  data: PlanTemplateInitRequest
-): Promise<PlanTemplateInitResponse> => {
-  const response = await fetch('/api/plan-template-publish/init-and-register', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  })
-  return handleResponse(response)
 }
 
 /**

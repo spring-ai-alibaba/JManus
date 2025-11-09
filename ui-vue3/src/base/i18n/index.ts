@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { createI18n } from 'vue-i18n'
 import { reactive } from 'vue'
+import { createI18n } from 'vue-i18n'
 import en from './en'
 import zh from './zh'
 
@@ -98,38 +98,6 @@ export const changeLanguageWithAgentReset = async (locale: string) => {
     }
   } catch (error) {
     console.error('Error initializing agents and prompts during language change:', error)
-    throw error
-  }
-}
-
-/**
- * Initialize plan templates with specific language (automatically discovers all plan names)
- * This function is used during the initial setup process
- */
-export const initializePlanTemplates = async (locale: string) => {
-  try {
-    // Initialize and register plan templates with the specified language
-    const planTemplateResponse = await fetch('/api/plan-template-publish/init-and-register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        language: locale,
-      }),
-    })
-
-    if (planTemplateResponse.ok) {
-      const result = await planTemplateResponse.json()
-      console.log(`Successfully initialized plan templates with language: ${locale}`, result)
-      return result
-    } else {
-      const error = await planTemplateResponse.json()
-      console.error(`Failed to initialize plan templates with language: ${locale}`, error)
-      throw new Error(error.error || 'Failed to initialize plan templates')
-    }
-  } catch (error) {
-    console.error('Error initializing plan templates during language change:', error)
     throw error
   }
 }
