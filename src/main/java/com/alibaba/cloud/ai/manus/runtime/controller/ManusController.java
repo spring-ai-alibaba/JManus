@@ -58,6 +58,7 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionWrapper;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.RequestSource;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.UserInputWaitState;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
@@ -126,33 +127,25 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		this.exceptionCache = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 	}
 
-	private boolean isVue(Map<String, Object> request) {
-
-		// Check if request is from Vue frontend
-		Boolean isVueRequest = (Boolean) request.get("isVueRequest");
-		if (isVueRequest != null) {
-			return isVueRequest;
+	/**
+	 * Get request source from request map, default to HTTP_REQUEST if not provided
+	 * @param request Request map
+	 * @return RequestSource enum
+	 */
+	private RequestSource getRequestSource(Map<String, Object> request) {
+		// Check for requestSource field (enum-based approach)
+		Object requestSourceObj = request.get("requestSource");
+		if (requestSourceObj != null) {
+			if (requestSourceObj instanceof String) {
+				return RequestSource.fromString((String) requestSourceObj);
+			}
+			else if (requestSourceObj instanceof RequestSource) {
+				return (RequestSource) requestSourceObj;
+			}
 		}
 
-		// Intelligent judgment: If isVueRequest is not explicitly set, judge by other
-		// features
-		// 1. Check if there are any Vue-specific field combinations
-		String toolName = (String) request.get("toolName");
-		@SuppressWarnings("unchecked")
-		List<String> uploadedFiles = (List<String>) request.get("uploadedFiles");
-
-		// If the plan template is executed and there is an uploaded file, it is likely
-		// to
-		// be the Vue front-end
-		if (toolName != null && toolName.startsWith("planTemplate-") && uploadedFiles != null) {
-			logger.info("🔍 [AUTO-DETECT] Detected Vue request pattern: toolName={}, hasFiles={}", toolName,
-					uploadedFiles != null ? uploadedFiles.size() : 0);
-			return true;
-		}
-
-		// By default, it is not a Vue request
-		return false;
-
+		// By default, it is an HTTP request
+		return RequestSource.HTTP_REQUEST;
 	}
 
 	/**
@@ -184,7 +177,8 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		logger.info("Execute tool '{}' synchronously with plan template ID '{}', parameters: {}, conversationId: {}",
 				toolName, planTemplateId, allParams, conversationId);
 		// Execute synchronously and return result directly
-		return executePlanSync(planTemplateId, null, null, false, null, conversationId);
+		RequestSource requestSource = RequestSource.HTTP_REQUEST; // GET requests default to HTTP_REQUEST
+		return executePlanSync(planTemplateId, null, null, requestSource, null, conversationId);
 	}
 
 	/**
@@ -199,15 +193,10 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		if (toolName == null || toolName.trim().isEmpty()) {
 			return ResponseEntity.badRequest().body(Map.of("error", "Tool name cannot be empty"));
 		}
-		boolean isVueRequest = isVue(request);
+		RequestSource requestSource = getRequestSource(request);
 
 		// Log request source
-		if (isVueRequest) {
-			logger.info("🌐 [VUE] Received query request from Vue frontend: ");
-		}
-		else {
-			logger.info("🔗 [HTTP] Received query request from HTTP client: ");
-		}
+		logger.info("📡 [{}] Received query request from: {}", requestSource, requestSource.name());
 
 		String planTemplateId = null;
 
@@ -256,7 +245,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 			// Execute the plan template using the new unified method
 			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, conversationId,
-					replacementParams, isVueRequest, uploadKey);
+					replacementParams, requestSource, uploadKey);
 
 			// Create or update task manager entity for database-driven interruption
 			if (wrapper.getRootPlanId() != null) {
@@ -315,15 +304,10 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			return ResponseEntity.badRequest().body(Map.of("error", "Tool name cannot be empty"));
 		}
 
-		boolean isVueRequest = isVue(request);
+		RequestSource requestSource = getRequestSource(request);
 
 		// Log request source
-		if (isVueRequest) {
-			logger.info("🌐 [VUE] Received query request from Vue frontend: ");
-		}
-		else {
-			logger.info("🔗 [HTTP] Received query request from HTTP client: ");
-		}
+		logger.info("📡 [{}] Received query request from: {}", requestSource, requestSource.name());
 
 		// Get plan template ID from coordinator tool
 		String planTemplateId = getPlanTemplateIdFromTool(toolName);
@@ -353,7 +337,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				toolName, planTemplateId, uploadedFiles != null ? uploadedFiles.size() : "null",
 				replacementParams != null ? replacementParams.size() : "null", uploadKey, conversationId);
 
-		return executePlanSync(planTemplateId, uploadedFiles, replacementParams, isVueRequest, uploadKey,
+		return executePlanSync(planTemplateId, uploadedFiles, replacementParams, requestSource, uploadKey,
 				conversationId);
 	}
 
@@ -488,18 +472,19 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	 * @param planTemplateId The plan template ID to execute
 	 * @param uploadedFiles List of uploaded file names (can be null)
 	 * @param replacementParams Parameters for <<>> replacement (can be null)
-	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
+	 * @param requestSource Request source (HTTP_REQUEST, VUE_SIDEBAR, or VUE_DIALOG)
 	 * @param uploadKey Optional uploadKey provided by frontend (can be null)
 	 * @param conversationId Conversation ID for the execution (validated/generated)
 	 * @return ResponseEntity with execution result
 	 */
 	private ResponseEntity<Map<String, Object>> executePlanSync(String planTemplateId, List<String> uploadedFiles,
-			Map<String, Object> replacementParams, boolean isVueRequest, String uploadKey, String conversationId) {
+			Map<String, Object> replacementParams, RequestSource requestSource, String uploadKey,
+			String conversationId) {
 		PlanExecutionWrapper wrapper = null;
 		try {
 			// Execute the plan template using the new unified method
 			wrapper = executePlanTemplate(planTemplateId, uploadedFiles, conversationId, replacementParams,
-					isVueRequest, uploadKey);
+					requestSource, uploadKey);
 
 			// Create or update task manager entity for database-driven interruption
 			if (wrapper.getRootPlanId() != null) {
@@ -546,12 +531,13 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	 * @param uploadedFiles List of uploaded file names (can be null)
 	 * @param conversationId Conversation ID for the execution (can be null)
 	 * @param replacementParams Parameters for <<>> replacement (can be null)
-	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
+	 * @param requestSource Request source (HTTP_REQUEST, VUE_SIDEBAR, or VUE_DIALOG)
 	 * @param uploadKey Optional uploadKey provided by frontend (can be null)
 	 * @return PlanExecutionWrapper containing both PlanExecutionResult and rootPlanId
 	 */
 	private PlanExecutionWrapper executePlanTemplate(String planTemplateId, List<String> uploadedFiles,
-			String conversationId, Map<String, Object> replacementParams, boolean isVueRequest, String uploadKey) {
+			String conversationId, Map<String, Object> replacementParams, RequestSource requestSource,
+			String uploadKey) {
 		if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
 			logger.error("Plan template ID is null or empty");
 			throw new IllegalArgumentException("Plan template ID cannot be null or empty");
@@ -633,7 +619,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 			// Execute using the PlanningCoordinator (root plan has depth = 0)
 			CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId, null,
-					currentPlanId, null, isVueRequest, uploadKey, 0, conversationId);
+					currentPlanId, null, requestSource, uploadKey, 0, conversationId);
 
 			// Return the wrapper containing both the future and rootPlanId
 			return new PlanExecutionWrapper(future, rootPlanId);
@@ -875,13 +861,17 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	/**
 	 * Validate or generate conversation ID
+	 * This method should ONLY be called for user-initiated requests (Vue requests).
+	 * Internal calls should not generate conversationId.
 	 * @param conversationId The conversation ID to validate (can be null)
 	 * @return Valid conversation ID (existing or newly generated)
 	 */
 	private String validateOrGenerateConversationId(String conversationId) {
 		if (!StringUtils.hasText(conversationId)) {
+			// Generate conversation ID ONLY when user sends message in chat box
+			// This ensures conversationId is not generated for internal calls
 			conversationId = memoryService.generateConversationId();
-			logger.info("Generated new conversation ID: {}", conversationId);
+			logger.info("Generated new conversation ID for user request: {}", conversationId);
 		}
 		else {
 			logger.debug("Using provided conversation ID: {}", conversationId);

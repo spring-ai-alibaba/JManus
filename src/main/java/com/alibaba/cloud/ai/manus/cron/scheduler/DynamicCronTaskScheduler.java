@@ -39,6 +39,7 @@ import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.RequestSource;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -276,9 +277,9 @@ public class DynamicCronTaskScheduler {
 
 			// Execute using the PlanningCoordinator's common execution logic (cron plans
 			// start at depth 0)
-			// Cron tasks don't have conversation context, pass null to generate new one
-			return planningCoordinator.executeByPlan(plan, rootPlanId, parentPlanId, currentPlanId, null, false, null,
-					0, null);
+			// Cron tasks don't have conversation context, use HTTP_REQUEST as they are internal calls
+			return planningCoordinator.executeByPlan(plan, rootPlanId, parentPlanId, currentPlanId, null,
+					RequestSource.HTTP_REQUEST, null, 0, null);
 
 		}
 		catch (Exception e) {

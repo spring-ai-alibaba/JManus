@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { LlmCheckService } from '@/utils/llm-check'
 import type { InputMessage } from '@/stores/memory'
+import { LlmCheckService } from '@/utils/llm-check'
 
 export class DirectApiService {
   private static readonly BASE_URL = '/api/executor'
@@ -23,10 +23,10 @@ export class DirectApiService {
   // Send task directly (direct execution mode)
   public static async sendMessage(query: InputMessage): Promise<unknown> {
     return LlmCheckService.withLlmCheck(async () => {
-      // Add Vue identification flag to distinguish from HTTP requests
+      // Add requestSource to distinguish from HTTP requests
       const requestBody = {
         ...query,
-        isVueRequest: true,
+        requestSource: 'VUE_DIALOG',
       }
 
       const response = await fetch(`${this.BASE_URL}/execute`, {
@@ -40,7 +40,10 @@ export class DirectApiService {
   }
 
   // Send task using executeByToolNameAsync with default plan template
-  public static async sendMessageWithDefaultPlan(query: InputMessage): Promise<unknown> {
+  public static async sendMessageWithDefaultPlan(
+    query: InputMessage,
+    requestSource: 'VUE_DIALOG' | 'VUE_SIDEBAR' = 'VUE_DIALOG'
+  ): Promise<unknown> {
     // Use default plan template ID as toolName
     const toolName = 'default-plan-id-001000222'
 
@@ -49,7 +52,14 @@ export class DirectApiService {
       userRequirement: query.input,
     }
 
-    return this.executeByToolName(toolName, replacementParams, query.uploadedFiles, query.uploadKey)
+    // Note: conversationId will be included from memoryStore in executeByToolName
+    return this.executeByToolName(
+      toolName,
+      replacementParams,
+      query.uploadedFiles,
+      query.uploadKey,
+      requestSource
+    )
   }
 
   // Unified method to execute by tool name (replaces both sendMessageWithDefaultPlan and PlanActApiService.executePlan)
@@ -57,7 +67,8 @@ export class DirectApiService {
     toolName: string,
     replacementParams?: Record<string, string>,
     uploadedFiles?: string[],
-    uploadKey?: string
+    uploadKey?: string,
+    requestSource: 'VUE_DIALOG' | 'VUE_SIDEBAR' = 'VUE_DIALOG'
   ): Promise<unknown> {
     return LlmCheckService.withLlmCheck(async () => {
       console.log('[DirectApiService] executeByToolName called with:', {
@@ -65,11 +76,12 @@ export class DirectApiService {
         replacementParams,
         uploadedFiles,
         uploadKey,
+        requestSource,
       })
 
       const requestBody: Record<string, unknown> = {
         toolName: toolName,
-        isVueRequest: true,
+        requestSource: requestSource,
       }
 
       // Include replacement parameters if present

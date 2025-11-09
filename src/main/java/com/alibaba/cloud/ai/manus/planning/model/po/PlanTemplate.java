@@ -43,9 +43,6 @@ public class PlanTemplate {
 	@Column(name = "title", length = 255)
 	private String title;
 
-	@Column(name = "user_request", length = 4000)
-	private String userRequest;
-
 	@Column(name = "create_time", nullable = false)
 	private LocalDateTime createTime;
 
@@ -59,10 +56,9 @@ public class PlanTemplate {
 	public PlanTemplate() {
 	}
 
-	public PlanTemplate(String planTemplateId, String title, String userRequest, boolean isInternalToolcall) {
+	public PlanTemplate(String planTemplateId, String title, boolean isInternalToolcall) {
 		this.planTemplateId = planTemplateId;
 		this.title = title;
-		this.userRequest = userRequest;
 		this.createTime = LocalDateTime.now();
 		this.updateTime = LocalDateTime.now();
 		this.isInternalToolcall = isInternalToolcall;
@@ -91,14 +87,6 @@ public class PlanTemplate {
 
 	public void setTitle(String title) {
 		this.title = title;
-	}
-
-	public String getUserRequest() {
-		return userRequest;
-	}
-
-	public void setUserRequest(String userRequest) {
-		this.userRequest = userRequest;
 	}
 
 	public LocalDateTime getCreateTime() {

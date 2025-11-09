@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +35,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
+import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
-import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -92,7 +93,7 @@ public class PlanTemplateController {
 			PlanTemplate template = planTemplateService.getPlanTemplate(planTemplateId);
 			if (template == null) {
 				// If it doesn't exist, create a new plan
-				planTemplateService.savePlanTemplate(planTemplateId, title, title, planJson, false);
+				planTemplateService.savePlanTemplate(planTemplateId, title, planJson, false);
 				logger.info("New plan created: {}", planTemplateId);
 				return new PlanTemplateService.VersionSaveResult(true, false, "New plan created", 0);
 			}
@@ -286,7 +287,7 @@ public class PlanTemplateController {
 				}
 				templateData.put("id", template.getPlanTemplateId());
 				templateData.put("title", template.getTitle());
-				templateData.put("description", template.getUserRequest());
+				templateData.put("description", template.getTitle());
 				templateData.put("createTime", template.getCreateTime());
 				templateData.put("updateTime", template.getUpdateTime());
 				templateList.add(templateData);

@@ -600,7 +600,7 @@ const handleChatSendMessage = async (query: InputMessage) => {
     let response: ApiResponse
 
     if (extendedQuery.toolName && extendedQuery.replacementParams) {
-      // Execute selected tool
+      // Execute selected tool (from dialog)
       console.log(
         '[DirectView] Calling DirectApiService.executeByToolName with tool:',
         extendedQuery.toolName
@@ -609,12 +609,16 @@ const handleChatSendMessage = async (query: InputMessage) => {
         extendedQuery.toolName,
         extendedQuery.replacementParams as Record<string, string>,
         query.uploadedFiles,
-        query.uploadKey
+        query.uploadKey,
+        'VUE_DIALOG'
       )) as ApiResponse
     } else {
-      // Use default plan template
+      // Use default plan template (from dialog)
       console.log('[DirectView] Calling DirectApiService.sendMessageWithDefaultPlan')
-      response = (await DirectApiService.sendMessageWithDefaultPlan(query)) as ApiResponse
+      response = (await DirectApiService.sendMessageWithDefaultPlan(
+        query,
+        'VUE_DIALOG'
+      )) as ApiResponse
     }
 
     console.log('[DirectView] API response received:', response)
@@ -806,7 +810,8 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
         payload.params.trim(),
         uploadedFiles,
         payload.replacementParams,
-        uploadKey
+        uploadKey,
+        'VUE_SIDEBAR' // Request from sidebar
       )
     } else {
       console.log('[Direct] Calling executePlan without rawParam')
@@ -815,7 +820,8 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
         undefined,
         uploadedFiles,
         payload.replacementParams,
-        uploadKey
+        uploadKey,
+        'VUE_SIDEBAR' // Request from sidebar
       )
     }
 

@@ -81,6 +81,8 @@ public abstract class BaseAgent {
 
 	private int planDepth = 0;
 
+	private String conversationId = null;
+
 	protected LlmService llmService;
 
 	protected final ManusProperties manusProperties;
@@ -458,6 +460,14 @@ public abstract class BaseAgent {
 
 	public void setPlanDepth(int planDepth) {
 		this.planDepth = planDepth;
+	}
+
+	public String getConversationId() {
+		return conversationId;
+	}
+
+	public void setConversationId(String conversationId) {
+		this.conversationId = conversationId;
 	}
 
 	/**

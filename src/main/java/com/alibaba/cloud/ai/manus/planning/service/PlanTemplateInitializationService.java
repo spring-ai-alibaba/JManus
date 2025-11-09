@@ -34,6 +34,9 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.alibaba.cloud.ai.manus.coordinator.entity.vo.PlanTemplateConfigVO;
+import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
+import com.alibaba.cloud.ai.manus.coordinator.service.CoordinatorToolServiceImpl;
 import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
 import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplateVersion;
 import com.alibaba.cloud.ai.manus.planning.repository.PlanTemplateRepository;
@@ -62,6 +65,9 @@ public class PlanTemplateInitializationService {
 	private PlanTemplateVersionRepository planTemplateVersionRepository;
 
 	@Autowired
+	private CoordinatorToolServiceImpl coordinatorToolService;
+
+	@Autowired
 	private ObjectMapper objectMapper;
 
 	@Value("${namespace.value}")
@@ -78,6 +84,7 @@ public class PlanTemplateInitializationService {
 
 	/**
 	 * Initialize plan templates for namespace with specific language
+	 * Only processes templates with toolConfig, throws error if toolConfig is missing
 	 * @param namespace Namespace
 	 * @param language Language code
 	 */
@@ -91,19 +98,44 @@ public class PlanTemplateInitializationService {
 
 			for (String planName : planNames) {
 				try {
-					String planTemplateId = initializePlanTemplate(planName, language);
-					if (planTemplateId != null) {
-						log.debug("Successfully initialized plan template: {} -> planTemplateId: {}", planName,
-								planTemplateId);
+					// Load and parse PlanTemplateConfigVO from JSON file
+					String configPath = buildConfigPath(planName, language);
+					PlanTemplateConfigVO configVO = loadPlanTemplateConfigFromFile(configPath);
+					if (configVO == null) {
+						log.warn("Failed to load PlanTemplateConfigVO from file: {}. Skipping.", configPath);
+						continue;
 					}
-					else {
-						log.warn("Failed to initialize plan template: {} - no planTemplateId returned", planName);
+
+					// Validate planTemplateId
+					String planTemplateId = configVO.getPlanTemplateId();
+					if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
+						log.warn("Plan template in file {} does not have planTemplateId. Skipping.", configPath);
+						continue;
+					}
+
+					// Only process templates with toolConfig, throw error if missing
+					if (configVO.getToolConfig() == null) {
+						throw new RuntimeException(
+								"Plan template " + planName + " (planTemplateId: " + planTemplateId
+										+ ") does not have toolConfig. toolConfig is required for startup initialization.");
+					}
+
+					// Create or update coordinator tool (this will also create PlanTemplate if it doesn't exist)
+					try {
+						coordinatorToolService.createOrUpdateCoordinatorToolFromPlanTemplateConfig(configVO);
+						log.info("Successfully initialized plan template and coordinator tool: {} -> planTemplateId: {}",
+								planName, planTemplateId);
+					}
+					catch (CoordinatorToolException e) {
+						log.error("Failed to create or update coordinator tool for plan template: {} (planTemplateId: {})",
+								planName, planTemplateId, e);
+						throw new RuntimeException("Failed to create or update coordinator tool: " + e.getMessage(), e);
 					}
 				}
 				catch (Exception e) {
 					log.error("Failed to initialize plan template: {} for namespace: {} with language: {}", planName,
 							namespace, language, e);
-					// Continue with other plans even if one fails
+					throw e; // Throw error instead of continuing
 				}
 			}
 
@@ -192,9 +224,8 @@ public class PlanTemplateInitializationService {
 
 			// Save to plan template service
 			String title = String.format("%s (%s)", executionPlan.getTitle(), language.toUpperCase());
-			String userRequest = String.format("Execute %s plan using %s language", planName, language);
 
-			savePlanTemplate(executionPlan.getPlanTemplateId(), title, userRequest, planJson, false);
+			savePlanTemplate(executionPlan.getPlanTemplateId(), title, planJson, false);
 
 			log.info("Successfully initialized plan template: {} (language: {}) -> planTemplateId: {}", planName,
 					language, executionPlan.getPlanTemplateId());
@@ -323,13 +354,11 @@ public class PlanTemplateInitializationService {
 	 * Save plan template to database
 	 * @param planTemplateId Plan template ID
 	 * @param title Title
-	 * @param userRequest User request
 	 * @param planJson Plan JSON
 	 * @param isInternalToolcall Is internal toolcall
 	 */
 	@Transactional
-	public void savePlanTemplate(String planTemplateId, String title, String userRequest, String planJson,
-			boolean isInternalToolcall) {
+	public void savePlanTemplate(String planTemplateId, String title, String planJson, boolean isInternalToolcall) {
 		try {
 			// Check if plan template already exists
 			Optional<PlanTemplate> existingTemplateOpt = planTemplateRepository.findByPlanTemplateId(planTemplateId);
@@ -337,14 +366,13 @@ public class PlanTemplateInitializationService {
 
 			if (existingTemplate == null) {
 				// Create new plan template
-				PlanTemplate template = new PlanTemplate(planTemplateId, title, userRequest, isInternalToolcall);
+				PlanTemplate template = new PlanTemplate(planTemplateId, title, isInternalToolcall);
 				planTemplateRepository.save(template);
 				log.debug("Created new plan template: {}", planTemplateId);
 			}
 			else {
 				// Update existing plan template
 				existingTemplate.setTitle(title);
-				existingTemplate.setUserRequest(userRequest);
 				existingTemplate.setInternalToolcall(isInternalToolcall);
 				planTemplateRepository.save(existingTemplate);
 				log.debug("Updated existing plan template: {}", planTemplateId);
@@ -516,14 +544,60 @@ public class PlanTemplateInitializationService {
 				}
 			}
 
-			log.info("Scanned {} plan template configurations for language {}: {}", planList.size(), language,
-					planList);
-			return planList;
+		log.info("Scanned {} plan template configurations for language {}: {}", planList.size(), language,
+				planList);
+		return planList;
+	}
+	catch (Exception e) {
+		log.error("Failed to scan plan template configuration directory for language: {}", language, e);
+		return List.of();
+	}
+}
+
+
+	/**
+	 * Load PlanTemplateConfigVO from JSON configuration file
+	 * @param configPath Configuration file path
+	 * @return PlanTemplateConfigVO if loaded successfully, null otherwise
+	 */
+	private PlanTemplateConfigVO loadPlanTemplateConfigFromFile(String configPath) {
+		try {
+			ClassPathResource resource = new ClassPathResource(configPath);
+			if (!resource.exists()) {
+				log.warn("Plan template configuration file does not exist: {}", configPath);
+				return null;
+			}
+
+			StringBuilder content = new StringBuilder();
+			try (BufferedReader reader = new BufferedReader(
+					new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					content.append(line).append("\n");
+				}
+			}
+
+			String jsonContent = content.toString().trim();
+			if (jsonContent.isEmpty()) {
+				log.warn("Plan template configuration file is empty: {}", configPath);
+				return null;
+			}
+
+			// Parse JSON to PlanTemplateConfigVO
+			PlanTemplateConfigVO configVO = objectMapper.readValue(jsonContent, PlanTemplateConfigVO.class);
+			log.debug("Successfully loaded PlanTemplateConfigVO from file: {}", configPath);
+			return configVO;
+
+		}
+		catch (IOException e) {
+			log.error("Failed to load plan template configuration file: {}", configPath, e);
+			return null;
 		}
 		catch (Exception e) {
-			log.error("Failed to scan plan template configuration directory for language: {}", language, e);
-			return List.of();
+			log.error("Failed to parse PlanTemplateConfigVO from file: {}", configPath, e);
+			return null;
 		}
 	}
+
 
 }

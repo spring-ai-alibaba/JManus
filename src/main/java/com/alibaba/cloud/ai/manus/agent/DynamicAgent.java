@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.AssistantMessage.ToolCall;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -66,6 +67,7 @@ import com.alibaba.cloud.ai.manus.tool.TerminableTool;
 import com.alibaba.cloud.ai.manus.tool.TerminateTool;
 import com.alibaba.cloud.ai.manus.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.micrometer.common.util.StringUtils;
@@ -111,6 +113,8 @@ public class DynamicAgent extends ReActAgent {
 
 	private ParallelToolExecutionService parallelToolExecutionService;
 
+	private MemoryService memoryService;
+
 	/**
 	 * List to record all exceptions from LLM calls during retry attempts
 	 */
@@ -146,7 +150,8 @@ public class DynamicAgent extends ReActAgent {
 			Map<String, Object> initialAgentSetting, UserInputService userInputService, String modelName,
 			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
 			JmanusEventPublisher jmanusEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
-			ObjectMapper objectMapper, ParallelToolExecutionService parallelToolExecutionService) {
+			ObjectMapper objectMapper, ParallelToolExecutionService parallelToolExecutionService,
+			MemoryService memoryService) {
 		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, step, planIdDispatcher);
 		this.objectMapper = objectMapper;
 		super.objectMapper = objectMapper; // Set parent's objectMapper as well
@@ -166,6 +171,7 @@ public class DynamicAgent extends ReActAgent {
 		this.jmanusEventPublisher = jmanusEventPublisher;
 		this.agentInterruptionHelper = agentInterruptionHelper;
 		this.parallelToolExecutionService = parallelToolExecutionService;
+		this.memoryService = memoryService;
 	}
 
 	@Override
@@ -232,10 +238,29 @@ public class DynamicAgent extends ReActAgent {
 				// log.debug("Messages prepared for the prompt: {}", thinkMessages);
 				// Build current prompt. System message is the first message
 				List<Message> messages = new ArrayList<>(Collections.singletonList(systemMessage));
-				// Add history message.
+				// Add history message from agent memory
 				ChatMemory chatMemory = llmService.getAgentMemory(manusProperties.getMaxMemory());
-				List<Message> historyMem = chatMemory.get(getCurrentPlanId());
+				List<Message> historyMem = chatMemory.get(getRootPlanId());
 				messages.addAll(historyMem);
+				// Add conversation history from MemoryService if conversationId is available
+				if (memoryService != null && getConversationId() != null && !getConversationId().trim().isEmpty()) {
+					try {
+						ChatMemory conversationMemory = llmService
+							.getConversationMemory(manusProperties.getMaxMemory());
+						List<Message> conversationHistory = conversationMemory.get(getConversationId());
+						if (conversationHistory != null && !conversationHistory.isEmpty()) {
+							log.debug("Adding {} conversation history messages for conversationId: {}",
+									conversationHistory.size(), getConversationId());
+							// Insert conversation history before current step env message
+							// to maintain chronological order
+							messages.addAll(conversationHistory);
+						}
+					}
+					catch (Exception e) {
+						log.warn("Failed to retrieve conversation history for conversationId: {}. Continuing without it.",
+								getConversationId(), e);
+					}
+				}
 				messages.add(currentStepEnvMessage);
 				String toolcallId = planIdDispatcher.generateToolCallId();
 				// Call the LLM
@@ -597,6 +622,7 @@ public class DynamicAgent extends ReActAgent {
 			executePostToolFlow(toolInstance, toolCallResponse, result, List.of(param));
 
 			// Return result with appropriate state
+			// Note: Final result will be saved to conversation memory in handleCompletedExecution()
 			return new AgentExecResult(result, shouldTerminate ? AgentState.COMPLETED : AgentState.IN_PROGRESS);
 		}
 		catch (Exception e) {
@@ -1048,6 +1074,29 @@ public class DynamicAgent extends ReActAgent {
 	}
 
 	@Override
+	public AgentExecResult run() {
+		// Save user request (stepText) to conversation memory at the start of execution
+		saveUserRequestToConversationMemory();
+
+		return super.run();
+	}
+
+	@Override
+	protected void handleCompletedExecution(List<AgentExecResult> results) {
+		super.handleCompletedExecution(results);
+		// Save final result to conversation memory if available
+		if (results != null && !results.isEmpty()) {
+			AgentExecResult lastResult = results.get(results.size() - 1);
+			if (lastResult != null && lastResult.getState() == AgentState.COMPLETED) {
+				String finalResult = lastResult.getResult();
+				if (finalResult != null && !finalResult.trim().isEmpty()) {
+					saveResultToConversationMemory(finalResult);
+				}
+			}
+		}
+	}
+
+	@Override
 	public String getName() {
 		return this.agentName;
 	}
@@ -1192,6 +1241,69 @@ public class DynamicAgent extends ReActAgent {
 	}
 
 	// Add a method to wait for user input or handle timeout.
+	/**
+	 * Save user request (stepText) to conversation memory
+	 */
+	private void saveUserRequestToConversationMemory() {
+		if (getConversationId() == null || getConversationId().trim().isEmpty()) {
+			log.debug("No conversationId available, skipping user request save");
+			return;
+		}
+
+		// Get stepText from initSettingData
+		Object stepTextObj = getInitSettingData().get(AbstractPlanExecutor.STEP_TEXT_KEY);
+		if (stepTextObj == null) {
+			log.debug("No stepText found in initSettingData, skipping user request save");
+			return;
+		}
+
+		String stepText = stepTextObj.toString();
+		if (stepText == null || stepText.trim().isEmpty()) {
+			log.debug("stepText is empty, skipping user request save");
+			return;
+		}
+
+		try {
+			ChatMemory conversationMemory = llmService.getConversationMemory(manusProperties.getMaxMemory());
+			UserMessage userMessage = new UserMessage(stepText);
+			conversationMemory.add(getConversationId(), userMessage);
+			log.info("Saved user request to conversation memory for conversationId: {}, request length: {}",
+					getConversationId(), stepText.length());
+		}
+		catch (Exception e) {
+			log.warn("Failed to save user request to conversation memory for conversationId: {}",
+					getConversationId(), e);
+		}
+	}
+
+	/**
+	 * Save agent execution result to conversation memory
+	 * @param result The execution result to save
+	 */
+	private void saveResultToConversationMemory(String result) {
+		if (getConversationId() == null || getConversationId().trim().isEmpty()) {
+			log.debug("No conversationId available, skipping conversation memory save");
+			return;
+		}
+
+		if (result == null || result.trim().isEmpty()) {
+			log.debug("Result is empty, skipping conversation memory save");
+			return;
+		}
+
+		try {
+			ChatMemory conversationMemory = llmService.getConversationMemory(manusProperties.getMaxMemory());
+			AssistantMessage assistantMessage = new AssistantMessage(result);
+			conversationMemory.add(getConversationId(), assistantMessage);
+			log.info("Saved agent execution result to conversation memory for conversationId: {}, result length: {}",
+					getConversationId(), result.length());
+		}
+		catch (Exception e) {
+			log.warn("Failed to save agent execution result to conversation memory for conversationId: {}",
+					getConversationId(), e);
+		}
+	}
+
 	private void waitForUserInputOrTimeout(FormInputTool formInputTool) {
 		log.info("Waiting for user input for planId: {}...", getCurrentPlanId());
 		long startTime = System.currentTimeMillis();

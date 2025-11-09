@@ -528,7 +528,7 @@ public class CoordinatorToolServiceImpl {
 				toolVO.setToolDescription(toolConfig.getToolDescription());
 			}
 			else {
-				String defaultDescription = planTemplate != null ? planTemplate.getUserRequest() : configVO.getTitle();
+				String defaultDescription = planTemplate != null ? planTemplate.getTitle() : configVO.getTitle();
 				toolVO.setToolDescription(defaultDescription);
 			}
 
@@ -552,7 +552,7 @@ public class CoordinatorToolServiceImpl {
 			// No toolConfig provided, use defaults
 			toolVO
 				.setToolName(planTemplate != null ? "tool_" + planTemplate.getTitle() : "tool_" + configVO.getTitle());
-			toolVO.setToolDescription(planTemplate != null ? planTemplate.getUserRequest() : configVO.getTitle());
+			toolVO.setToolDescription(planTemplate != null ? planTemplate.getTitle() : configVO.getTitle());
 			toolVO.setServiceGroup("inited-toolcall");
 			toolVO.setEnableInternalToolcall(true);
 			toolVO.setEnableHttpService(false);
@@ -642,24 +642,24 @@ public class CoordinatorToolServiceImpl {
 	 */
 	private PlanTemplate createPlanTemplateFromConfig(PlanTemplateConfigVO configVO) {
 		try {
-			String planTemplateId = configVO.getPlanTemplateId();
-			String title = configVO.getTitle() != null ? configVO.getTitle() : "Untitled Plan";
-			String userRequest = configVO.getTitle() != null ? configVO.getTitle() : "User request";
+		String planTemplateId = configVO.getPlanTemplateId();
+		String title = configVO.getTitle() != null ? configVO.getTitle() : "Untitled Plan";
 
-			// Convert PlanTemplateConfigVO to JSON string (excluding toolConfig)
-			// Create a copy without toolConfig for the plan JSON
-			PlanTemplateConfigVO planJsonConfig = new PlanTemplateConfigVO();
-			planJsonConfig.setTitle(configVO.getTitle());
-			planJsonConfig.setSteps(configVO.getSteps());
-			planJsonConfig.setDirectResponse(configVO.getDirectResponse());
-			planJsonConfig.setPlanType(configVO.getPlanType());
-			planJsonConfig.setPlanTemplateId(configVO.getPlanTemplateId());
-			// Explicitly do not set toolConfig
+		// Convert PlanTemplateConfigVO to JSON string (excluding toolConfig)
+		// Create a copy without toolConfig for the plan JSON
+		PlanTemplateConfigVO planJsonConfig = new PlanTemplateConfigVO();
+		planJsonConfig.setTitle(configVO.getTitle());
+		planJsonConfig.setSteps(configVO.getSteps());
+		planJsonConfig.setDirectResponse(configVO.getDirectResponse());
+		planJsonConfig.setPlanType(configVO.getPlanType());
+		planJsonConfig.setPlanTemplateId(configVO.getPlanTemplateId());
+		planJsonConfig.setReadOnly(configVO.getReadOnly());
+		// Explicitly do not set toolConfig
 
-			String planJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(planJsonConfig);
+		String planJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(planJsonConfig);
 
-			// Save plan template and its version
-			planTemplateService.savePlanTemplate(planTemplateId, title, userRequest, planJson, false);
+		// Save plan template and its version
+		planTemplateService.savePlanTemplate(planTemplateId, title, planJson, false);
 
 			// Retrieve the saved plan template
 			PlanTemplate savedTemplate = planTemplateRepository.findByPlanTemplateId(planTemplateId)

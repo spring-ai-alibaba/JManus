@@ -28,6 +28,7 @@ import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.RequestSource;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
 import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
@@ -241,9 +242,9 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 					planDepth);
 
 			// Sub-plans should use the same conversationId as parent, but it's not available in this context
-			// Pass null to let PlanningCoordinator generate one if needed (for backward compatibility)
+			// Use HTTP_REQUEST as subplans are internal calls
 			CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId,
-					currentPlanId, newPlanId, toolCallId, false, null, planDepth, null);
+					currentPlanId, newPlanId, toolCallId, RequestSource.HTTP_REQUEST, null, planDepth, null);
 
 			PlanExecutionResult result = future.get();
 
