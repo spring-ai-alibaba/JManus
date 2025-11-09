@@ -177,10 +177,14 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				.body(Map.of("error", "No plan template ID associated with tool: " + toolName));
 		}
 
-		logger.info("Execute tool '{}' synchronously with plan template ID '{}', parameters: {}", toolName,
-				planTemplateId, allParams);
+		// Extract conversationId from query params if present
+		String conversationId = allParams != null ? allParams.get("conversationId") : null;
+		conversationId = validateOrGenerateConversationId(conversationId);
+
+		logger.info("Execute tool '{}' synchronously with plan template ID '{}', parameters: {}, conversationId: {}",
+				toolName, planTemplateId, allParams, conversationId);
 		// Execute synchronously and return result directly
-		return executePlanSync(planTemplateId, null, null, false, null);
+		return executePlanSync(planTemplateId, null, null, false, null, conversationId);
 	}
 
 	/**
@@ -224,7 +228,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		}
 
 		try {
-			String conversationId = (String) request.get("conversationId");
+			String conversationId = validateOrGenerateConversationId((String) request.get("conversationId"));
 
 			// Handle uploaded files if present
 			@SuppressWarnings("unchecked")
@@ -239,11 +243,6 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			if (uploadedFiles != null) {
 				logger.info("🔍 [DEBUG] uploadedFiles size: {}", uploadedFiles.size());
 				logger.info("🔍 [DEBUG] uploadedFiles names: {}", uploadedFiles);
-			}
-
-			// Generate conversation ID if not provided
-			if (!StringUtils.hasText(conversationId)) {
-				conversationId = memoryService.generateConversationId();
 			}
 
 			String query = "Execute plan template: " + planTemplateId;
@@ -346,12 +345,16 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		@SuppressWarnings("unchecked")
 		Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
 
-		logger.info(
-				"Executing tool '{}' synchronously with plan template ID '{}', uploadedFiles: {}, replacementParams: {}, uploadKey: {}",
-				toolName, planTemplateId, uploadedFiles != null ? uploadedFiles.size() : "null",
-				replacementParams != null ? replacementParams.size() : "null", uploadKey);
+		// Validate or generate conversation ID
+		String conversationId = validateOrGenerateConversationId((String) request.get("conversationId"));
 
-		return executePlanSync(planTemplateId, uploadedFiles, replacementParams, isVueRequest, uploadKey);
+		logger.info(
+				"Executing tool '{}' synchronously with plan template ID '{}', uploadedFiles: {}, replacementParams: {}, uploadKey: {}, conversationId: {}",
+				toolName, planTemplateId, uploadedFiles != null ? uploadedFiles.size() : "null",
+				replacementParams != null ? replacementParams.size() : "null", uploadKey, conversationId);
+
+		return executePlanSync(planTemplateId, uploadedFiles, replacementParams, isVueRequest, uploadKey,
+				conversationId);
 	}
 
 	/**
@@ -487,15 +490,16 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	 * @param replacementParams Parameters for <<>> replacement (can be null)
 	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
 	 * @param uploadKey Optional uploadKey provided by frontend (can be null)
+	 * @param conversationId Conversation ID for the execution (validated/generated)
 	 * @return ResponseEntity with execution result
 	 */
 	private ResponseEntity<Map<String, Object>> executePlanSync(String planTemplateId, List<String> uploadedFiles,
-			Map<String, Object> replacementParams, boolean isVueRequest, String uploadKey) {
+			Map<String, Object> replacementParams, boolean isVueRequest, String uploadKey, String conversationId) {
 		PlanExecutionWrapper wrapper = null;
 		try {
 			// Execute the plan template using the new unified method
-			wrapper = executePlanTemplate(planTemplateId, uploadedFiles, null, replacementParams, isVueRequest,
-					uploadKey);
+			wrapper = executePlanTemplate(planTemplateId, uploadedFiles, conversationId, replacementParams,
+					isVueRequest, uploadKey);
 
 			// Create or update task manager entity for database-driven interruption
 			if (wrapper.getRootPlanId() != null) {
@@ -514,6 +518,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			Map<String, Object> response = new HashMap<>();
 			response.put("status", "completed");
 			response.put("result", planExecutionResult != null ? planExecutionResult.getFinalResult() : "No result");
+			response.put("conversationId", conversationId);
 
 			return ResponseEntity.ok(response);
 
@@ -559,11 +564,6 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			currentPlanId = planIdDispatcher.generatePlanId();
 			rootPlanId = currentPlanId;
 			logger.info("🆕 Generated new planId: {}", currentPlanId);
-
-			// Generate conversation ID if not provided
-			if (!StringUtils.hasText(conversationId)) {
-				conversationId = memoryService.generateConversationId();
-			}
 
 			// Get the latest plan version JSON string
 			planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
@@ -633,7 +633,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 			// Execute using the PlanningCoordinator (root plan has depth = 0)
 			CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId, null,
-					currentPlanId, null, isVueRequest, uploadKey, 0);
+					currentPlanId, null, isVueRequest, uploadKey, 0, conversationId);
 
 			// Return the wrapper containing both the future and rootPlanId
 			return new PlanExecutionWrapper(future, rootPlanId);
@@ -871,6 +871,22 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			return ResponseEntity.internalServerError()
 				.body(Map.of("error", "Failed to get task status: " + e.getMessage(), "planId", planId));
 		}
+	}
+
+	/**
+	 * Validate or generate conversation ID
+	 * @param conversationId The conversation ID to validate (can be null)
+	 * @return Valid conversation ID (existing or newly generated)
+	 */
+	private String validateOrGenerateConversationId(String conversationId) {
+		if (!StringUtils.hasText(conversationId)) {
+			conversationId = memoryService.generateConversationId();
+			logger.info("Generated new conversation ID: {}", conversationId);
+		}
+		else {
+			logger.debug("Using provided conversation ID: {}", conversationId);
+		}
+		return conversationId;
 	}
 
 }

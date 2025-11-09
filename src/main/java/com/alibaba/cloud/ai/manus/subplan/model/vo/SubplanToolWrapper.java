@@ -240,8 +240,10 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 			logger.info("Using provided toolCallId: {} for subplan execution: {} at depth: {}", toolCallId, newPlanId,
 					planDepth);
 
+			// Sub-plans should use the same conversationId as parent, but it's not available in this context
+			// Pass null to let PlanningCoordinator generate one if needed (for backward compatibility)
 			CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId,
-					currentPlanId, newPlanId, toolCallId, false, null, planDepth);
+					currentPlanId, newPlanId, toolCallId, false, null, planDepth, null);
 
 			PlanExecutionResult result = future.get();
 

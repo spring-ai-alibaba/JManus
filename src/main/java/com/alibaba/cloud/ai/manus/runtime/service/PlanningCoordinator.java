@@ -64,11 +64,13 @@ public class PlanningCoordinator {
 	 * @param uploadKey The upload key for file upload context (can be null)
 	 * @param planDepth The depth of the plan in the execution hierarchy (0 for root, 1
 	 * for first level, etc.)
+	 * @param conversationId The conversation ID for the execution (can be null, will be
+	 * generated if needed)
 	 * @return A CompletableFuture that completes with the execution result
 	 */
 	public CompletableFuture<PlanExecutionResult> executeByPlan(PlanInterface plan, String rootPlanId,
 			String parentPlanId, String currentPlanId, String toolcallId, boolean isVueRequest, String uploadKey,
-			int planDepth) {
+			int planDepth, String conversationId) {
 		try {
 			log.info("Starting direct plan execution for plan: {} at depth: {}", plan.getCurrentPlanId(), planDepth);
 
@@ -94,10 +96,15 @@ public class PlanningCoordinator {
 				log.debug("Setting needSummary=false for planId: {}, toolcallId: {}, isVueRequest: {}", currentPlanId,
 						toolcallId, isVueRequest);
 			}
-			// Generate a conversation ID if none exists, since we're using conversation
-			if (context.getConversationId() == null) {
+			// Set conversation ID (use provided or generate if null)
+			if (conversationId != null && !conversationId.trim().isEmpty()) {
+				context.setConversationId(conversationId);
+			}
+			else {
+				// Generate conversation ID only if not provided (for backward compatibility)
 				String generatedConversationId = memoryService.generateConversationId();
 				context.setConversationId(generatedConversationId);
+				log.debug("Generated conversation ID for plan execution: {}", generatedConversationId);
 			}
 			context.setUseConversation(true);
 			context.setParentPlanId(parentPlanId);
