@@ -224,7 +224,7 @@ public class ChromeDriverService implements IChromeDriverService {
 
 
 	/**
-	 * Create new driver with retry mechanism
+	 * Create new driver with retry mechanism 1
 	 */
 	private DriverWrapper createNewDriverWithRetry(String planId) {
 		int maxRetries = 3;
