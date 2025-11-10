@@ -103,7 +103,6 @@ public class WriteCurrentWebContentAction extends BrowserAction {
 			content.append("# Title: ").append(state.get("title")).append("\n");
 			content.append("\n");
 
-			测试 浏览器 下载 行为
 			// Add tabs information
 			@SuppressWarnings("unchecked")
 			List<Map<String, Object>> tabs = (List<Map<String, Object>>) state.get("tabs");
