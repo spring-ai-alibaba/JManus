@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,7 @@ import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
 import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -422,42 +424,11 @@ public class PlanTemplateController {
 			CoordinatorToolVO coordinatorToolVO = coordinatorToolService
 				.createOrUpdateCoordinatorToolFromPlanTemplateConfig(configVO);
 
-			// Get the plan template to return in response
-			PlanTemplate planTemplate = planTemplateService.getPlanTemplate(planTemplateId);
-
-			// Build response
+			// Build simple response
 			Map<String, Object> response = new HashMap<>();
 			response.put("success", true);
 			response.put("planTemplateId", planTemplateId);
-			response.put("message", "Plan template and coordinator tool created/updated successfully");
-
-			if (planTemplate != null) {
-				Map<String, Object> planTemplateInfo = new HashMap<>();
-				planTemplateInfo.put("id", planTemplate.getPlanTemplateId());
-				planTemplateInfo.put("title", planTemplate.getTitle());
-				planTemplateInfo.put("description", planTemplate.getUserRequest());
-				planTemplateInfo.put("createTime", planTemplate.getCreateTime());
-				planTemplateInfo.put("updateTime", planTemplate.getUpdateTime());
-				response.put("planTemplate", planTemplateInfo);
-			}
-
-			if (coordinatorToolVO != null) {
-				Map<String, Object> toolInfo = new HashMap<>();
-				toolInfo.put("id", coordinatorToolVO.getId());
-				toolInfo.put("toolName", coordinatorToolVO.getToolName());
-				toolInfo.put("toolDescription", coordinatorToolVO.getToolDescription());
-				toolInfo.put("serviceGroup", coordinatorToolVO.getServiceGroup());
-				toolInfo.put("enableInternalToolcall", coordinatorToolVO.getEnableInternalToolcall());
-				toolInfo.put("enableHttpService", coordinatorToolVO.getEnableHttpService());
-				toolInfo.put("enableMcpService", coordinatorToolVO.getEnableMcpService());
-				toolInfo.put("publishStatus", coordinatorToolVO.getPublishStatus());
-				response.put("coordinatorTool", toolInfo);
-				response.put("toolRegistered", true);
-			}
-			else {
-				response.put("toolRegistered", false);
-				response.put("toolMessage", "No toolConfig provided, plan template saved but not registered as tool");
-			}
+			response.put("toolRegistered", coordinatorToolVO != null);
 
 			return ResponseEntity.ok(response);
 
@@ -472,6 +443,120 @@ public class PlanTemplateController {
 			logger.error("Failed to create or update plan template with tool", e);
 			return ResponseEntity.internalServerError()
 				.body(Map.of("error", "Failed to create or update plan template with tool: " + e.getMessage()));
+		}
+	}
+
+	/**
+	 * Get plan template configuration VO by plan template ID
+	 * @param planTemplateId The plan template ID
+	 * @return PlanTemplateConfigVO containing plan template and tool configuration
+	 */
+	@GetMapping("/{planTemplateId}/config")
+	public ResponseEntity<PlanTemplateConfigVO> getPlanTemplateConfigVO(
+			@PathVariable("planTemplateId") String planTemplateId) {
+		try {
+			if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
+				return ResponseEntity.badRequest().build();
+			}
+
+			logger.info("Getting plan template configuration for planTemplateId: {}", planTemplateId);
+
+			// Get plan template from database
+			PlanTemplate planTemplate = planTemplateService.getPlanTemplate(planTemplateId);
+			if (planTemplate == null) {
+				logger.warn("Plan template not found for planTemplateId: {}", planTemplateId);
+				return ResponseEntity.notFound().build();
+			}
+
+			// Get latest plan JSON version
+			String planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
+			if (planJson == null || planJson.trim().isEmpty()) {
+				logger.warn("Plan JSON not found for planTemplateId: {}", planTemplateId);
+				return ResponseEntity.notFound().build();
+			}
+
+			// Parse plan JSON to PlanInterface
+			PlanInterface planInterface = objectMapper.readValue(planJson, PlanInterface.class);
+
+			// Create PlanTemplateConfigVO from plan template and plan JSON
+			PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
+			configVO.setPlanTemplateId(planTemplate.getPlanTemplateId());
+			configVO.setTitle(planTemplate.getTitle());
+			configVO.setPlanType(planInterface.getPlanType());
+			configVO.setServiceGroup(planTemplate.getServiceGroup());
+			configVO.setDirectResponse(planInterface.isDirectResponse());
+			configVO.setReadOnly(false); // Default to false, can be set based on business logic
+
+			// Convert ExecutionStep list to StepConfig list
+			if (planInterface.getAllSteps() != null) {
+				List<PlanTemplateConfigVO.StepConfig> stepConfigs = new ArrayList<>();
+				for (ExecutionStep step : planInterface.getAllSteps()) {
+					PlanTemplateConfigVO.StepConfig stepConfig = new PlanTemplateConfigVO.StepConfig();
+					stepConfig.setStepRequirement(step.getStepRequirement());
+					stepConfig.setAgentName(step.getAgentName());
+					stepConfig.setModelName(step.getModelName());
+					stepConfig.setTerminateColumns(step.getTerminateColumns());
+					stepConfigs.add(stepConfig);
+				}
+				configVO.setSteps(stepConfigs);
+			}
+
+			// Get coordinator tool if exists to populate toolConfig
+			Optional<CoordinatorToolVO> coordinatorToolOpt = coordinatorToolService
+				.getCoordinatorToolByPlanTemplateId(planTemplateId);
+			if (coordinatorToolOpt.isPresent()) {
+				CoordinatorToolVO toolVO = coordinatorToolOpt.get();
+				PlanTemplateConfigVO.ToolConfigVO toolConfig = new PlanTemplateConfigVO.ToolConfigVO();
+				toolConfig.setToolName(toolVO.getToolName());
+				toolConfig.setToolDescription(toolVO.getToolDescription());
+				toolConfig.setEnableInternalToolcall(toolVO.getEnableInternalToolcall());
+				toolConfig.setEnableHttpService(toolVO.getEnableHttpService());
+				toolConfig.setEnableMcpService(toolVO.getEnableMcpService());
+				toolConfig.setPublishStatus(toolVO.getPublishStatus());
+
+				// Parse inputSchema JSON string to InputSchemaParam list
+				if (toolVO.getInputSchema() != null && !toolVO.getInputSchema().trim().isEmpty()) {
+					try {
+						com.fasterxml.jackson.databind.JsonNode inputSchemaNode = objectMapper
+							.readTree(toolVO.getInputSchema());
+						if (inputSchemaNode.isArray()) {
+							List<PlanTemplateConfigVO.InputSchemaParam> inputSchemaParams = new ArrayList<>();
+							for (com.fasterxml.jackson.databind.JsonNode paramNode : inputSchemaNode) {
+								PlanTemplateConfigVO.InputSchemaParam param = new PlanTemplateConfigVO.InputSchemaParam();
+								if (paramNode.has("name")) {
+									param.setName(paramNode.get("name").asText());
+								}
+								if (paramNode.has("description")) {
+									param.setDescription(paramNode.get("description").asText());
+								}
+								if (paramNode.has("type")) {
+									param.setType(paramNode.get("type").asText());
+								}
+								if (paramNode.has("required")) {
+									param.setRequired(paramNode.get("required").asBoolean());
+								}
+								inputSchemaParams.add(param);
+							}
+							toolConfig.setInputSchema(inputSchemaParams);
+						}
+					}
+					catch (Exception e) {
+						logger.warn("Failed to parse inputSchema for planTemplateId: {}", planTemplateId, e);
+						// Set empty list if parsing fails
+						toolConfig.setInputSchema(new ArrayList<>());
+					}
+				}
+
+				configVO.setToolConfig(toolConfig);
+			}
+
+			logger.info("Successfully retrieved plan template configuration for planTemplateId: {}", planTemplateId);
+			return ResponseEntity.ok(configVO);
+
+		}
+		catch (Exception e) {
+			logger.error("Failed to get plan template configuration for planTemplateId: {}", planTemplateId, e);
+			return ResponseEntity.internalServerError().build();
 		}
 	}
 
