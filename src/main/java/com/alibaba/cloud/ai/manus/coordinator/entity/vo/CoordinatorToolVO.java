@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.manus.coordinator.entity.vo;
 
 import com.alibaba.cloud.ai.manus.coordinator.entity.po.CoordinatorToolEntity;
+import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
@@ -154,8 +155,10 @@ public class CoordinatorToolVO {
 
 	/**
 	 * Convert from Entity to VO
+	 * @param entity CoordinatorToolEntity
+	 * @param planTemplate PlanTemplate (optional, used to get serviceGroup)
 	 */
-	public static CoordinatorToolVO fromEntity(CoordinatorToolEntity entity) {
+	public static CoordinatorToolVO fromEntity(CoordinatorToolEntity entity, PlanTemplate planTemplate) {
 		if (entity == null) {
 			return null;
 		}
@@ -167,7 +170,10 @@ public class CoordinatorToolVO {
 		vo.setPlanTemplateId(entity.getPlanTemplateId());
 		vo.setHttpEndpoint(entity.getHttpEndpoint());
 		vo.setMcpEndpoint(entity.getMcpEndpoint());
-		vo.setServiceGroup(entity.getServiceGroup());
+		// Get serviceGroup from PlanTemplate instead of entity
+		if (planTemplate != null) {
+			vo.setServiceGroup(planTemplate.getServiceGroup());
+		}
 		vo.setEnableInternalToolcall(entity.getEnableInternalToolcall());
 		vo.setEnableHttpService(entity.getEnableHttpService());
 		vo.setEnableMcpService(entity.getEnableMcpService());
@@ -176,7 +182,15 @@ public class CoordinatorToolVO {
 	}
 
 	/**
+	 * Convert from Entity to VO (backward compatibility - serviceGroup will be null)
+	 */
+	public static CoordinatorToolVO fromEntity(CoordinatorToolEntity entity) {
+		return fromEntity(entity, null);
+	}
+
+	/**
 	 * Convert to Entity
+	 * Note: serviceGroup is no longer stored in CoordinatorToolEntity, it's in PlanTemplate
 	 */
 	public CoordinatorToolEntity toEntity() {
 		CoordinatorToolEntity entity = new CoordinatorToolEntity();
@@ -187,8 +201,7 @@ public class CoordinatorToolVO {
 		entity.setPlanTemplateId(this.planTemplateId);
 		entity.setHttpEndpoint(this.httpEndpoint);
 		entity.setMcpEndpoint(this.mcpEndpoint);
-
-		entity.setServiceGroup(this.serviceGroup);
+		// serviceGroup is no longer set here - it's stored in PlanTemplate
 		entity.setEnableInternalToolcall(this.enableInternalToolcall);
 		entity.setEnableHttpService(this.enableHttpService);
 		entity.setEnableMcpService(this.enableMcpService);

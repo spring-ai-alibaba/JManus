@@ -41,6 +41,8 @@ public class PlanTemplateConfigVO {
 
 	private Boolean readOnly;
 
+	private String serviceGroup;
+
 	private ToolConfigVO toolConfig;
 
 	/**
@@ -109,6 +111,14 @@ public class PlanTemplateConfigVO {
 
 	public void setToolConfig(ToolConfigVO toolConfig) {
 		this.toolConfig = toolConfig;
+	}
+
+	public String getServiceGroup() {
+		return serviceGroup;
+	}
+
+	public void setServiceGroup(String serviceGroup) {
+		this.serviceGroup = serviceGroup;
 	}
 
 	/**

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,12 +33,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.alibaba.cloud.ai.manus.coordinator.entity.vo.CoordinatorToolVO;
+import com.alibaba.cloud.ai.manus.coordinator.entity.vo.PlanTemplateConfigVO;
+import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
+import com.alibaba.cloud.ai.manus.coordinator.service.CoordinatorToolServiceImpl;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
+import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
-import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -64,6 +69,9 @@ public class PlanTemplateController {
 
 	@Autowired
 	private IPlanParameterMappingService parameterMappingService;
+
+	@Autowired
+	private CoordinatorToolServiceImpl coordinatorToolService;
 
 	/**
 	 * Save version history
@@ -376,6 +384,94 @@ public class PlanTemplateController {
 			logger.error("Failed to get parameter requirements for plan template: " + planTemplateId, e);
 			return ResponseEntity.internalServerError()
 				.body(Map.of("error", "Failed to get parameter requirements: " + e.getMessage()));
+		}
+	}
+
+	/**
+	 * Create or update plan template and register as coordinator tool
+	 * This method combines the functionality of both "Save Plan Template" and
+	 * "Register Plan Templates as Toolcalls" by using PlanTemplateConfigVO.
+	 * It will:
+	 * 1. Create or update the PlanTemplate in the database
+	 * 2. Create or update the CoordinatorTool (if toolConfig is provided)
+	 * @param configVO Plan template configuration VO containing plan template data and
+	 * optional toolConfig
+	 * @return Response containing created/updated plan template and coordinator tool
+	 * information
+	 */
+	@PostMapping("/create-or-update-with-tool")
+	@Transactional
+	public ResponseEntity<Map<String, Object>> createOrUpdatePlanTemplateWithTool(
+			@RequestBody PlanTemplateConfigVO configVO) {
+		try {
+			if (configVO == null) {
+				return ResponseEntity.badRequest().body(Map.of("error", "PlanTemplateConfigVO cannot be null"));
+			}
+
+			String planTemplateId = configVO.getPlanTemplateId();
+			if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
+				return ResponseEntity.badRequest()
+					.body(Map.of("error", "planTemplateId is required in PlanTemplateConfigVO"));
+			}
+
+			logger.info("Creating or updating plan template with tool registration for planTemplateId: {}",
+					planTemplateId);
+
+			// Use the unified service method that handles both plan template and coordinator
+			// tool creation/update
+			CoordinatorToolVO coordinatorToolVO = coordinatorToolService
+				.createOrUpdateCoordinatorToolFromPlanTemplateConfig(configVO);
+
+			// Get the plan template to return in response
+			PlanTemplate planTemplate = planTemplateService.getPlanTemplate(planTemplateId);
+
+			// Build response
+			Map<String, Object> response = new HashMap<>();
+			response.put("success", true);
+			response.put("planTemplateId", planTemplateId);
+			response.put("message", "Plan template and coordinator tool created/updated successfully");
+
+			if (planTemplate != null) {
+				Map<String, Object> planTemplateInfo = new HashMap<>();
+				planTemplateInfo.put("id", planTemplate.getPlanTemplateId());
+				planTemplateInfo.put("title", planTemplate.getTitle());
+				planTemplateInfo.put("description", planTemplate.getUserRequest());
+				planTemplateInfo.put("createTime", planTemplate.getCreateTime());
+				planTemplateInfo.put("updateTime", planTemplate.getUpdateTime());
+				response.put("planTemplate", planTemplateInfo);
+			}
+
+			if (coordinatorToolVO != null) {
+				Map<String, Object> toolInfo = new HashMap<>();
+				toolInfo.put("id", coordinatorToolVO.getId());
+				toolInfo.put("toolName", coordinatorToolVO.getToolName());
+				toolInfo.put("toolDescription", coordinatorToolVO.getToolDescription());
+				toolInfo.put("serviceGroup", coordinatorToolVO.getServiceGroup());
+				toolInfo.put("enableInternalToolcall", coordinatorToolVO.getEnableInternalToolcall());
+				toolInfo.put("enableHttpService", coordinatorToolVO.getEnableHttpService());
+				toolInfo.put("enableMcpService", coordinatorToolVO.getEnableMcpService());
+				toolInfo.put("publishStatus", coordinatorToolVO.getPublishStatus());
+				response.put("coordinatorTool", toolInfo);
+				response.put("toolRegistered", true);
+			}
+			else {
+				response.put("toolRegistered", false);
+				response.put("toolMessage", "No toolConfig provided, plan template saved but not registered as tool");
+			}
+
+			return ResponseEntity.ok(response);
+
+		}
+		catch (CoordinatorToolException e) {
+			logger.error("CoordinatorToolException while creating/updating plan template with tool: {}", e.getMessage(),
+					e);
+			return ResponseEntity.badRequest()
+				.body(Map.of("error", e.getMessage(), "errorCode", e.getErrorCode()));
+		}
+		catch (Exception e) {
+			logger.error("Failed to create or update plan template with tool", e);
+			return ResponseEntity.internalServerError()
+				.body(Map.of("error", "Failed to create or update plan template with tool: " + e.getMessage()));
 		}
 	}
 

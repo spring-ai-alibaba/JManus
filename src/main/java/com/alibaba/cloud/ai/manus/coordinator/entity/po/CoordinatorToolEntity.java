@@ -15,14 +15,22 @@
  */
 package com.alibaba.cloud.ai.manus.coordinator.entity.po;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 /**
  * Coordinator Tool Entity Class
  */
 @Entity
-@Table(name = "coordinator_tools", uniqueConstraints = @UniqueConstraint(columnNames = { "toolName", "serviceGroup" }))
+@Table(name = "coordinator_tools", uniqueConstraints = @UniqueConstraint(columnNames = { "toolName" }))
 public class CoordinatorToolEntity {
 
 	@Id
@@ -46,9 +54,6 @@ public class CoordinatorToolEntity {
 
 	@Column(length = 100)
 	private String mcpEndpoint;
-
-	@Column(length = 100)
-	private String serviceGroup;
 
 	@Column(nullable = false)
 	private Boolean enableInternalToolcall = true;
@@ -168,14 +173,6 @@ public class CoordinatorToolEntity {
 
 	public void setUpdateTime(LocalDateTime updateTime) {
 		this.updateTime = updateTime;
-	}
-
-	public String getServiceGroup() {
-		return serviceGroup;
-	}
-
-	public void setServiceGroup(String serviceGroup) {
-		this.serviceGroup = serviceGroup;
 	}
 
 	/**

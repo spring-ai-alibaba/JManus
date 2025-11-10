@@ -12,10 +12,10 @@
   "planType": "dynamic_agent",
   "planTemplateId": "default-plan-id-001000222",
   "readOnly": true,
+  "serviceGroup": "inited-toolcall",
   "toolConfig": {
     "toolName": "Default User Input Processing(don't delete this plan)",
     "toolDescription": "This is a default user input plan, do not delete this plan",
-    "serviceGroup": "inited-toolcall",
     "enableInternalToolcall": true,
     "enableHttpService": false,
     "enableMcpService": false,

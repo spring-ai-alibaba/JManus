@@ -101,8 +101,10 @@ public class CoordinatorToolServiceImpl {
 				log.info("Successfully registered subplan tool: {} with ID: {}", registeredTool.getToolName(),
 						registeredTool.getId());
 
-				// Convert CoordinatorToolEntity back to CoordinatorToolVO and return
-				return CoordinatorToolVO.fromEntity(savedEntity);
+				// Convert CoordinatorToolEntity back to CoordinatorToolVO and return (get PlanTemplate for serviceGroup)
+				PlanTemplate planTemplate = planTemplateRepository.findByPlanTemplateId(savedEntity.getPlanTemplateId())
+					.orElse(null);
+				return CoordinatorToolVO.fromEntity(savedEntity, planTemplate);
 
 			}
 			catch (CoordinatorToolException e) {
@@ -186,8 +188,10 @@ public class CoordinatorToolServiceImpl {
 						newToolDef.getToolName(), newToolDef.getId(), toolVO.getPlanTemplateId());
 			}
 
-			// Convert back to VO and return
-			return CoordinatorToolVO.fromEntity(savedEntity);
+			// Convert back to VO and return (get PlanTemplate for serviceGroup)
+			PlanTemplate planTemplate = planTemplateRepository.findByPlanTemplateId(savedEntity.getPlanTemplateId())
+				.orElse(null);
+			return CoordinatorToolVO.fromEntity(savedEntity, planTemplate);
 
 		}
 		catch (CoordinatorToolException e) {
@@ -251,7 +255,11 @@ public class CoordinatorToolServiceImpl {
 
 	public Optional<CoordinatorToolVO> getCoordinatorToolById(Long id) {
 		try {
-			return coordinatorToolRepository.findById(id).map(CoordinatorToolVO::fromEntity);
+			return coordinatorToolRepository.findById(id).map(entity -> {
+				PlanTemplate planTemplate = planTemplateRepository.findByPlanTemplateId(entity.getPlanTemplateId())
+					.orElse(null);
+				return CoordinatorToolVO.fromEntity(entity, planTemplate);
+			});
 		}
 		catch (Exception e) {
 			log.error("Error getting coordinator tool by ID: {}", e.getMessage(), e);
@@ -263,7 +271,8 @@ public class CoordinatorToolServiceImpl {
 		try {
 			List<CoordinatorToolEntity> entities = coordinatorToolRepository.findByPlanTemplateId(planTemplateId);
 			if (!entities.isEmpty()) {
-				return Optional.of(CoordinatorToolVO.fromEntity(entities.get(0)));
+				PlanTemplate planTemplate = planTemplateRepository.findByPlanTemplateId(planTemplateId).orElse(null);
+				return Optional.of(CoordinatorToolVO.fromEntity(entities.get(0), planTemplate));
 			}
 			return Optional.empty();
 		}
@@ -277,7 +286,11 @@ public class CoordinatorToolServiceImpl {
 		try {
 			return coordinatorToolRepository.findAll()
 				.stream()
-				.map(CoordinatorToolVO::fromEntity)
+				.map(entity -> {
+					PlanTemplate planTemplate = planTemplateRepository.findByPlanTemplateId(entity.getPlanTemplateId())
+						.orElse(null);
+					return CoordinatorToolVO.fromEntity(entity, planTemplate);
+				})
 				.collect(Collectors.toList());
 		}
 		catch (Exception e) {
@@ -356,7 +369,7 @@ public class CoordinatorToolServiceImpl {
 		entity.setInputSchema(toolVO.getInputSchema());
 		entity.setPlanTemplateId(toolVO.getPlanTemplateId());
 		entity.setMcpEndpoint(toolVO.getMcpEndpoint());
-		entity.setServiceGroup(toolVO.getServiceGroup());
+		// serviceGroup is no longer stored in CoordinatorToolEntity - it's in PlanTemplate
 
 		// Set service enablement flags
 		entity.setEnableInternalToolcall(
@@ -385,7 +398,15 @@ public class CoordinatorToolServiceImpl {
 			toolDef.setEndpoint("internal-toolcall");
 		}
 
-		toolDef.setServiceGroup(toolVO.getServiceGroup());
+		// Get serviceGroup from PlanTemplate instead of toolVO
+		PlanTemplate planTemplate = planTemplateRepository.findByPlanTemplateId(toolVO.getPlanTemplateId())
+			.orElse(null);
+		if (planTemplate != null && planTemplate.getServiceGroup() != null) {
+			toolDef.setServiceGroup(planTemplate.getServiceGroup());
+		}
+		else {
+			toolDef.setServiceGroup(toolVO.getServiceGroup()); // Fallback to VO if PlanTemplate not found
+		}
 
 		// Parse input schema and create parameters
 		try {
@@ -447,6 +468,15 @@ public class CoordinatorToolServiceImpl {
 			if (planTemplate == null) {
 				log.info("Plan template not found for planTemplateId: {}, creating new PlanTemplate", planTemplateId);
 				planTemplate = createPlanTemplateFromConfig(configVO);
+			}
+			else {
+				// Update serviceGroup on existing PlanTemplate if provided in configVO
+				String serviceGroup = configVO.getServiceGroup();
+				if (serviceGroup != null && !serviceGroup.trim().isEmpty() && !serviceGroup.equals(planTemplate.getServiceGroup())) {
+					planTemplate.setServiceGroup(serviceGroup);
+					planTemplateRepository.save(planTemplate);
+					log.info("Updated serviceGroup to '{}' on PlanTemplate with ID: {}", serviceGroup, planTemplateId);
+				}
 			}
 
 			// Convert PlanTemplateConfigVO to CoordinatorToolVO
@@ -532,9 +562,18 @@ public class CoordinatorToolServiceImpl {
 				toolVO.setToolDescription(defaultDescription);
 			}
 
-			// Service group
-			toolVO.setServiceGroup(
-					toolConfig.getServiceGroup() != null ? toolConfig.getServiceGroup() : "inited-toolcall");
+			// Service group: get from PlanTemplate (already set when creating/updating PlanTemplate)
+			// Set it on VO for response, but it's stored in PlanTemplate, not CoordinatorToolEntity
+			String serviceGroup = planTemplate != null ? planTemplate.getServiceGroup() : null;
+			if (serviceGroup == null || serviceGroup.trim().isEmpty()) {
+				// Fallback: prefer root level serviceGroup, then toolConfig.serviceGroup, then default
+				serviceGroup = configVO.getServiceGroup();
+				if (serviceGroup == null || serviceGroup.trim().isEmpty()) {
+					serviceGroup = toolConfig.getServiceGroup();
+				}
+				serviceGroup = serviceGroup != null && !serviceGroup.trim().isEmpty() ? serviceGroup : "inited-toolcall";
+			}
+			toolVO.setServiceGroup(serviceGroup);
 
 			// Service enablement flags
 			toolVO.setEnableInternalToolcall(
@@ -553,7 +592,15 @@ public class CoordinatorToolServiceImpl {
 			toolVO
 				.setToolName(planTemplate != null ? "tool_" + planTemplate.getTitle() : "tool_" + configVO.getTitle());
 			toolVO.setToolDescription(planTemplate != null ? planTemplate.getUserRequest() : configVO.getTitle());
-			toolVO.setServiceGroup("inited-toolcall");
+			// Service group: get from PlanTemplate (already set when creating/updating PlanTemplate)
+			// Set it on VO for response, but it's stored in PlanTemplate, not CoordinatorToolEntity
+			String serviceGroup = planTemplate != null ? planTemplate.getServiceGroup() : null;
+			if (serviceGroup == null || serviceGroup.trim().isEmpty()) {
+				// Fallback: use root level serviceGroup if provided, otherwise default
+				serviceGroup = configVO.getServiceGroup();
+				serviceGroup = serviceGroup != null && !serviceGroup.trim().isEmpty() ? serviceGroup : "inited-toolcall";
+			}
+			toolVO.setServiceGroup(serviceGroup);
 			toolVO.setEnableInternalToolcall(true);
 			toolVO.setEnableHttpService(false);
 			toolVO.setEnableMcpService(false);
@@ -665,6 +712,20 @@ public class CoordinatorToolServiceImpl {
 			PlanTemplate savedTemplate = planTemplateRepository.findByPlanTemplateId(planTemplateId)
 				.orElseThrow(() -> new CoordinatorToolException("INTERNAL_ERROR",
 						"Failed to retrieve created PlanTemplate with ID: " + planTemplateId));
+
+			// Set serviceGroup on PlanTemplate from configVO
+			String serviceGroup = configVO.getServiceGroup();
+			if (serviceGroup != null && !serviceGroup.trim().isEmpty()) {
+				savedTemplate.setServiceGroup(serviceGroup);
+				planTemplateRepository.save(savedTemplate);
+				log.info("Set serviceGroup '{}' on PlanTemplate with ID: {}", serviceGroup, planTemplateId);
+			}
+			else {
+				// Set default serviceGroup if not provided
+				savedTemplate.setServiceGroup("inited-toolcall");
+				planTemplateRepository.save(savedTemplate);
+				log.info("Set default serviceGroup 'inited-toolcall' on PlanTemplate with ID: {}", planTemplateId);
+			}
 
 			log.info("Successfully created PlanTemplate with ID: {}", planTemplateId);
 			return savedTemplate;

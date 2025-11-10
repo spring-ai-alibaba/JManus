@@ -55,6 +55,9 @@ public class PlanTemplate {
 	@Column(name = "is_internal_toolcall", nullable = false)
 	private boolean isInternalToolcall = false;
 
+	@Column(name = "service_group", length = 100)
+	private String serviceGroup;
+
 	// Constructor
 	public PlanTemplate() {
 	}
@@ -123,6 +126,14 @@ public class PlanTemplate {
 
 	public void setInternalToolcall(boolean isInternalToolcall) {
 		this.isInternalToolcall = isInternalToolcall;
+	}
+
+	public String getServiceGroup() {
+		return serviceGroup;
+	}
+
+	public void setServiceGroup(String serviceGroup) {
+		this.serviceGroup = serviceGroup;
 	}
 
 }
