@@ -126,12 +126,12 @@
 <script setup lang="ts">
 import type { Tool } from '@/types/tool'
 import { Icon } from '@iconify/vue'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import Modal from '../modal/index.vue'
 
 interface Props {
   modelValue: boolean
-  tools: Tool[]
   selectedToolIds: string[]
 }
 
@@ -142,6 +142,27 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+// Get available tools from singleton
+const availableToolsStore = useAvailableToolsSingleton()
+const tools = computed(() => availableToolsStore.availableTools.value as Tool[])
+
+// Load available tools on mount if not already loaded
+onMounted(() => {
+  if (tools.value.length === 0 && !availableToolsStore.isLoading.value) {
+    availableToolsStore.loadAvailableTools()
+  }
+})
+
+// Also load when modal opens
+watch(
+  () => props.modelValue,
+  (isVisible) => {
+    if (isVisible && tools.value.length === 0 && !availableToolsStore.isLoading.value) {
+      availableToolsStore.loadAvailableTools()
+    }
+  }
+)
 
 // Reactive state
 const visible = computed({
@@ -177,7 +198,7 @@ watch(
 
 // Filtered and sorted tools
 const filteredTools = computed(() => {
-  let filtered = props.tools.filter(tool => tool.key) // Filter out invalid tools
+  let filtered = tools.value.filter(tool => tool.key) // Filter out invalid tools
 
   // Filter out non-selectable tools
   filtered = filtered.filter(tool => tool.selectable === true)
@@ -226,7 +247,7 @@ const filteredTools = computed(() => {
 // All tools grouped by service group (for checking which groups have matches)
 const allGroupedTools = computed(() => {
   const groups = new Map<string, Tool[]>()
-  const allTools = props.tools.filter(tool => tool.key && tool.selectable === true)
+  const allTools = tools.value.filter(tool => tool.key && tool.selectable === true)
 
   allTools.forEach(tool => {
     const groupName = tool.serviceGroup || 'Ungrouped'

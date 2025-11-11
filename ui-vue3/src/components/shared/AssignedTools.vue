@@ -41,20 +41,13 @@
 
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
-import { computed, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
+import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 
 // Props
 interface Props {
   title: string
   selectedToolIds: string[]
-  availableTools: Array<{
-    key: string
-    name: string
-    description: string
-    enabled: boolean
-    serviceGroup: string
-    selectable: boolean
-  }>
   addButtonText?: string
   emptyText?: string
   showAddButton?: boolean
@@ -74,13 +67,24 @@ const emit = defineEmits<{
   'tools-filtered': [filteredToolIds: string[]]
 }>()
 
+// Get available tools from singleton
+const availableToolsStore = useAvailableToolsSingleton()
+const availableTools = computed(() => availableToolsStore.availableTools.value)
+
+// Load available tools on mount if not already loaded
+onMounted(() => {
+  if (availableTools.value.length === 0 && !availableToolsStore.isLoading.value) {
+    availableToolsStore.loadAvailableTools()
+  }
+})
+
 // Computed property to filter out tools that are not in availableTools
 const filteredSelectedToolIds = computed(() => {
   if (!Array.isArray(props.selectedToolIds)) {
     return []
   }
   return props.selectedToolIds.filter(toolId =>
-    props.availableTools.some(tool => tool.key === toolId)
+    availableTools.value.some(tool => tool.key === toolId)
   )
 })
 
@@ -103,7 +107,7 @@ watch(
 
 // Methods
 const getToolDisplayNameWithGroup = (toolId: string): string => {
-  const tool = props.availableTools.find(t => t.key === toolId)
+  const tool = availableTools.value.find(t => t.key === toolId)
   if (!tool) return toolId
 
   const group = tool.serviceGroup || 'Ungrouped'
@@ -111,7 +115,7 @@ const getToolDisplayNameWithGroup = (toolId: string): string => {
 }
 
 const getToolDescription = (toolId: string): string => {
-  const tool = props.availableTools.find(t => t.key === toolId)
+  const tool = availableTools.value.find(t => t.key === toolId)
   return tool ? tool.description : ''
 }
 </script>

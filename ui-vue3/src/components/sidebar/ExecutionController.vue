@@ -195,7 +195,11 @@
 </template>
 
 <script setup lang="ts">
-import type { CoordinatorToolVO } from '@/api/coordinator-tool-api-service'
+import type {
+  CoordinatorToolConfig,
+  CoordinatorToolVO,
+} from '@/api/coordinator-tool-api-service'
+import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
 import { FileInfo } from '@/api/file-upload-api-service'
 import {
   PlanParameterApiService,
@@ -203,8 +207,10 @@ import {
 } from '@/api/plan-parameter-api-service'
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
 import SaveConfirmationDialog from '@/components/sidebar/SaveConfirmationDialog.vue'
+import { PlanActApiService } from '@/api/plan-act-api-service'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { templateStore } from '@/stores/templateStore'
-import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
+import type { PlanData, PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -213,20 +219,22 @@ import { useToast } from '@/plugins/useToast'
 const { t } = useI18n()
 const toast = useToast()
 
+// Template config singleton
+const templateConfig = usePlanTemplateConfigSingleton()
+
 // Props
 interface Props {
   currentPlanTemplateId?: string
   isExecuting?: boolean
   isGenerating?: boolean
-  showPublishButton?: boolean
   toolInfo?: CoordinatorToolVO
+  publishModalRef?: { loadParameterRequirements: () => void } | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   currentPlanTemplateId: '',
   isExecuting: false,
   isGenerating: false,
-  showPublishButton: true,
   toolInfo: () => ({
     toolName: '',
     toolDescription: '',
@@ -237,15 +245,13 @@ const props = withDefaults(defineProps<Props>(), {
     enableInternalToolcall: false,
     serviceGroup: '',
   }),
+  publishModalRef: null,
 })
 
 // Emits
 const emit = defineEmits<{
-  executePlan: [payload: PlanExecutionRequestPayload]
-  publishMcpService: []
-  clearParams: []
-  updateExecutionParams: [params: string]
-  saveBeforeExecute: []
+  planExecutionRequested: [payload: PlanExecutionRequestPayload]
+  openPublishModal: []
 }>()
 
 // Local state
@@ -261,6 +267,17 @@ const activeTab = ref('get-sync')
 const parameterErrors = ref<Record<string, string>>({})
 const isValidationError = ref(false)
 const isExecutingPlan = ref(false) // Flag to prevent parameter reload during execution
+
+// CoordinatorTool configuration
+const coordinatorToolConfig = ref<CoordinatorToolConfig>({
+  enabled: true,
+  success: true,
+})
+
+// Computed property: whether to show publish MCP service button
+const showPublishButton = computed(() => {
+  return coordinatorToolConfig.value.enabled
+})
 
 // File upload state
 const fileUploadRef = ref<InstanceType<typeof FileUploadComponent>>()
@@ -474,72 +491,203 @@ const proceedWithExecution = () => {
     return
   }
 
-  // Pass replacement parameters if available
-  const replacementParams =
-    parameterRequirements.value.hasParameters && Object.keys(parameterValues.value).length > 0
-      ? parameterValues.value
-      : undefined
+  try {
+    // Get plan data from templateConfig
+    if (!templateConfig.selectedTemplate.value) {
+      console.log('[ExecutionController] ❌ No template selected, returning')
+      toast.error(t('sidebar.selectPlanFirst'))
+      isExecutingPlan.value = false
+      return
+    }
 
-  console.log('[ExecutionController] 🔄 Replacement params:', replacementParams)
+    const config = templateConfig.getConfig()
 
-  const payload: PlanExecutionRequestPayload = {
-    title: '', // Will be set by the parent component
-    planData: {
-      title: '',
-      steps: [],
-      directResponse: false,
-    }, // Will be set by the parent component
-    params: undefined, // Will be set by the parent component
-    replacementParams,
-    uploadedFiles: uploadedFiles.value,
-    uploadKey: uploadKey.value,
+    // Convert PlanTemplateConfigVO to PlanData format
+    const planTemplateId =
+      templateConfig.selectedTemplate.value.planTemplateId || config.planTemplateId
+    const planData: PlanData = {
+      title: config.title || templateConfig.selectedTemplate.value.title || 'Execution Plan',
+      steps: (config.steps || []).map(step => ({
+        stepRequirement: step.stepRequirement || '',
+        agentName: step.agentName || '',
+        modelName: step.modelName || null,
+        selectedToolKeys: [],
+        terminateColumns: step.terminateColumns || '',
+        stepContent: '',
+      })),
+      directResponse: config.directResponse || false,
+      ...(planTemplateId && { planTemplateId }),
+      ...(config.planType && { planType: config.planType }),
+    }
+
+    const title = templateConfig.selectedTemplate.value.title ?? config.title ?? 'Execution Plan'
+
+    // Pass replacement parameters if available
+    const replacementParams =
+      parameterRequirements.value.hasParameters && Object.keys(parameterValues.value).length > 0
+        ? parameterValues.value
+        : undefined
+
+    console.log('[ExecutionController] 🔄 Replacement params:', replacementParams)
+    console.log('[ExecutionController] 📋 Prepared plan data:', JSON.stringify(planData, null, 2))
+
+    // Build final payload with plan data
+    const finalPayload: PlanExecutionRequestPayload = {
+      title,
+      planData,
+      params: undefined, // params are now handled via replacementParams
+      replacementParams,
+      uploadedFiles: uploadedFiles.value,
+      uploadKey: uploadKey.value,
+    }
+
+    console.log(
+      '[ExecutionController] 📤 Emitting planExecutionRequested with final payload:',
+      JSON.stringify(finalPayload, null, 2)
+    )
+    // Emit to parent component via Vue event
+    emit('planExecutionRequested', finalPayload)
+    // Also dispatch window event for global listeners (like direct/index.vue)
+    window.dispatchEvent(
+      new CustomEvent('plan-execution-requested', { detail: finalPayload })
+    )
+
+    console.log('[ExecutionController] ✅ Event emitted successfully')
+  } catch (error: unknown) {
+    console.error('[ExecutionController] ❌ Error executing plan:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    toast.error(t('sidebar.executeFailed') + ': ' + message)
+    isExecutingPlan.value = false
+  } finally {
+    console.log('[ExecutionController] 🧹 Cleaning up after execution')
+    // Clear parameters after execution
+    clearExecutionParams()
+    console.log('[ExecutionController] ✅ Cleanup completed')
   }
-
-  console.log(
-    '[ExecutionController] 📤 Emitting executePlan with payload:',
-    JSON.stringify(payload, null, 2)
-  )
-  emit('executePlan', payload)
 }
 
 const handleSaveAndExecute = async () => {
   console.log('[ExecutionController] 💾 Save and execute requested')
   try {
-    // Emit save event to parent (Sidebar component)
-    // The parent will handle the save and then we can execute
-    emit('saveBeforeExecute')
+    // Save using templateConfig directly
+    if (!templateConfig.selectedTemplate.value) {
+      toast.error(t('sidebar.selectPlanFirst'))
+      return
+    }
+
+    // Validate config
+    const validation = templateConfig.validate()
+    if (!validation.isValid) {
+      toast.error('Invalid format, please correct and save.\nErrors: ' + validation.errors.join(', '))
+      return
+    }
+
+    const planTemplateId = templateConfig.selectedTemplate.value.planTemplateId
+    if (!planTemplateId) {
+      toast.error('Plan template ID is required')
+      return
+    }
+
+    // Save using templateConfig
+    const success = await templateConfig.save()
+    if (!success) {
+      toast.error('Failed to save plan template')
+      return
+    }
+
+    // For backward compatibility, also save using the old API if needed
+    const content = templateConfig.generateJsonString().trim()
+    const saveResult = await PlanActApiService.savePlanTemplate(planTemplateId, content)
+
+    // Update the selected template ID with the real planId returned from backend
+    if (
+      (saveResult as { planId?: string })?.planId &&
+      templateConfig.selectedTemplate.value?.planTemplateId?.startsWith('new-')
+    ) {
+      const newPlanId = (saveResult as { planId: string }).planId
+      console.log(
+        '[ExecutionController] Updating template ID from',
+        templateConfig.selectedTemplate.value.planTemplateId,
+        'to',
+        newPlanId
+      )
+      if (templateConfig.selectedTemplate.value) {
+        templateConfig.selectedTemplate.value.planTemplateId = newPlanId
+      }
+      templateConfig.currentPlanTemplateId.value = newPlanId
+      templateConfig.setPlanTemplateId(newPlanId)
+    }
+
+    // Update versions after save
+    templateConfig.updateVersionsAfterSave(content)
+
+    // Reset modification flag after successful save
+    templateStore.hasTaskRequirementModified = false
+
+    // Refresh parameter requirements after successful save
+    await refreshParameterRequirements()
+
+    const result = saveResult as {
+      duplicate?: boolean
+      saved?: boolean
+      message?: string
+      versionCount?: number
+    }
+    if (result?.duplicate) {
+      toast.success(
+        t('sidebar.saveCompleted', {
+          message: result.message,
+          versionCount: result.versionCount,
+        })
+      )
+    } else if (result?.saved) {
+      toast.success(
+        t('sidebar.saveSuccess', {
+          message: result.message,
+          versionCount: result.versionCount,
+        })
+      )
+    } else if (result?.message) {
+      toast.success(t('sidebar.saveStatus', { message: result.message }))
+    }
+
     // Wait a bit for save to complete
     await new Promise(resolve => setTimeout(resolve, 500))
-    // Now proceed with execution
+    // Now proceed with execution - rebuild payload with current template config
     if (pendingExecutionPayload.value) {
-      console.log(
-        '[ExecutionController] 📤 Emitting executePlan after save:',
-        JSON.stringify(pendingExecutionPayload.value, null, 2)
-      )
-      emit('executePlan', pendingExecutionPayload.value)
+      // Rebuild payload with current template config
+      proceedWithExecution()
       pendingExecutionPayload.value = null
     }
   } catch (error: unknown) {
     console.error('[ExecutionController] ❌ Failed to save before execute:', error)
     const message = error instanceof Error ? error.message : t('sidebar.saveFailed')
     toast.error(message)
+    throw error
   }
 }
 
 const handleContinueExecution = () => {
   console.log('[ExecutionController] ⏩ Continue without save requested')
   if (pendingExecutionPayload.value) {
-    console.log(
-      '[ExecutionController] 📤 Emitting executePlan without save:',
-      JSON.stringify(pendingExecutionPayload.value, null, 2)
-    )
-    emit('executePlan', pendingExecutionPayload.value)
+    // Rebuild payload with current template config
+    proceedWithExecution()
     pendingExecutionPayload.value = null
   }
 }
 
 const handlePublishMcpService = () => {
-  emit('publishMcpService')
+  console.log('[ExecutionController] Publish MCP service button clicked')
+  console.log('[ExecutionController] currentPlanTemplateId:', templateConfig.currentPlanTemplateId.value)
+
+  if (!templateConfig.currentPlanTemplateId.value) {
+    console.log('[ExecutionController] No plan template selected, showing warning')
+    toast.error(t('mcpService.selectPlanTemplateFirst'))
+    return
+  }
+
+  console.log('[ExecutionController] Emitting openPublishModal event')
+  emit('openPublishModal')
 }
 
 const clearExecutionParams = () => {
@@ -553,7 +701,32 @@ const clearExecutionParams = () => {
   console.log('[ExecutionController] 🔓 Reset isExecutingPlan to false')
 
   console.log('[ExecutionController] ✅ After clear - parameterValues cleared')
-  emit('clearParams')
+  // Execution params are now managed internally, no need to emit
+}
+
+// Refresh parameter requirements (called after save)
+const refreshParameterRequirements = async () => {
+  // Add a delay to ensure the backend has processed the new template and committed the transaction
+  await new Promise(resolve => setTimeout(resolve, 1000))
+
+  console.log(
+    '[ExecutionController] 🔄 Refreshing parameter requirements for templateId:',
+    templateConfig.currentPlanTemplateId.value
+  )
+
+  // Use nextTick to ensure all reactive updates are complete
+  await new Promise(resolve => setTimeout(resolve, 100))
+
+  // Reload parameter requirements
+  await loadParameterRequirements()
+
+  // Refresh parameter requirements in PublishMcpServiceModal if available
+  if (props.publishModalRef) {
+    console.log('[ExecutionController] 📞 Calling PublishMcpServiceModal.loadParameterRequirements()')
+    props.publishModalRef.loadParameterRequirements()
+  } else {
+    console.warn('[ExecutionController] ⚠️ PublishMcpServiceModal ref not available')
+  }
 }
 
 // Load parameter requirements when plan template changes
@@ -688,7 +861,7 @@ const updateExecutionParamsFromParameters = () => {
   } else {
     executionParams.value = ''
   }
-  emit('updateExecutionParams', executionParams.value)
+  // Execution params are now managed internally, no need to emit
 }
 
 // Watch for changes in plan template ID
@@ -719,17 +892,28 @@ watch(
   }
 )
 
-// Watch for changes in execution params (for backward compatibility)
-watch(
-  () => executionParams.value,
-  newValue => {
-    emit('updateExecutionParams', newValue)
+// Execution params are now managed internally, no need to emit updates
+
+// Load CoordinatorTool configuration
+const loadCoordinatorToolConfig = async () => {
+  try {
+    const config = await CoordinatorToolApiService.getCoordinatorToolConfig()
+    coordinatorToolConfig.value = config
+  } catch (error) {
+    console.error('[ExecutionController] Failed to load CoordinatorTool configuration:', error)
+    // Use default configuration
+    coordinatorToolConfig.value = {
+      enabled: true,
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }
   }
-)
+}
 
 // Load parameters on mount
 onMounted(() => {
   loadParameterRequirements()
+  loadCoordinatorToolConfig()
 })
 
 // Expose methods for parent component
@@ -737,6 +921,7 @@ defineExpose({
   executionParams,
   clearExecutionParams,
   loadParameterRequirements,
+  refreshParameterRequirements,
   fileUploadRef,
   uploadedFiles,
   uploadKey,

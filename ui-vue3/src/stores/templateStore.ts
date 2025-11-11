@@ -22,16 +22,9 @@ import { reactive } from 'vue'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 
 export class TemplateStore {
-  // Template list related state
-  currentPlanTemplateId: string | null = null
-  planTemplateList: PlanTemplateConfigVO[] = []
-  selectedTemplate: PlanTemplateConfigVO | null = null
+  // Loading and error state
   isLoading = false
   errorMessage = ''
-
-  // Reference to the singleton instance
-  private templateConfig = usePlanTemplateConfigSingleton()
-
   // Track task requirement modifications
   hasTaskRequirementModified = false
 
@@ -61,36 +54,6 @@ export class TemplateStore {
     this.loadGroupCollapseState()
   }
 
-  // Computed properties that delegate to templateConfig singleton
-  get jsonContent(): string {
-    return this.templateConfig.toJsonString()
-  }
-
-  get planType(): string {
-    return this.templateConfig.getPlanType()
-  }
-
-  get planVersions(): string[] {
-    return this.templateConfig.planVersions.value
-  }
-
-  get currentVersionIndex(): number {
-    return this.templateConfig.currentVersionIndex.value
-  }
-
-  // Version control computed properties - delegate to templateConfig
-  get canRollback(): boolean {
-    return this.templateConfig.canRollback.value
-  }
-
-  get canRestore(): boolean {
-    return this.templateConfig.canRestore.value
-  }
-
-  // Expose templateConfig for direct access when needed
-  get templateConfigInstance() {
-    return this.templateConfig
-  }
 
   // Load group collapse state from localStorage
   loadGroupCollapseState() {
@@ -166,9 +129,12 @@ export class TemplateStore {
     return new Date()
   }
 
+  // Reference to template config for accessing planTemplateList
+  private templateConfig = usePlanTemplateConfigSingleton()
+
   // Computed properties
   get sortedTemplates(): PlanTemplateConfigVO[] {
-    const templates = [...this.planTemplateList]
+    const templates = [...this.templateConfig.planTemplateList.value]
 
     switch (this.organizationMethod) {
       case 'by_time':
@@ -313,11 +279,11 @@ export class TemplateStore {
       const configVOs = await PlanTemplateApiService.getAllPlanTemplateConfigVOs()
 
       // Use PlanTemplateConfigVO directly
-      this.planTemplateList = configVOs
+      this.templateConfig.planTemplateList.value = configVOs
 
       // Build service group mapping
       this.templateServiceGroups.clear()
-      for (const config of this.planTemplateList) {
+      for (const config of this.templateConfig.planTemplateList.value) {
         const planTemplateId = config.planTemplateId
         if (planTemplateId) {
           const serviceGroup = config.serviceGroup || config.toolConfig?.serviceGroup || ''
@@ -328,11 +294,11 @@ export class TemplateStore {
       }
 
       console.log(
-        `[TemplateStore] Successfully loaded ${this.planTemplateList.length} plan templates`
+        `[TemplateStore] Successfully loaded ${this.templateConfig.planTemplateList.value.length} plan templates`
       )
     } catch (error: unknown) {
       console.error('[TemplateStore] Failed to load plan template list:', error)
-      this.planTemplateList = []
+      this.templateConfig.planTemplateList.value = []
       const message = error instanceof Error ? error.message : 'Unknown error'
       this.errorMessage = `Load failed: ${message}`
     } finally {
@@ -341,19 +307,10 @@ export class TemplateStore {
   }
 
   async selectTemplate(template: PlanTemplateConfigVO) {
-    this.currentPlanTemplateId = template.planTemplateId || null
-    this.selectedTemplate = template
-
-    // Load template config using singleton
-    if (template.planTemplateId) {
-      await this.templateConfig.load(template.planTemplateId)
-      // Reset modification flag when loading new template
-      this.hasTaskRequirementModified = false
-    } else {
-      // Reset config if no template ID
-      this.templateConfig.reset()
-      this.hasTaskRequirementModified = false
-    }
+    this.templateConfig.currentPlanTemplateId.value = template.planTemplateId || null
+    this.templateConfig.selectedTemplate.value = template
+    // Reset modification flag when loading new template
+    this.hasTaskRequirementModified = false
 
     console.log(`[TemplateStore] Selected plan template: ${template.planTemplateId}`)
   }
@@ -366,16 +323,8 @@ export class TemplateStore {
       createTime: new Date().toISOString(),
       updateTime: new Date().toISOString(),
     }
-    this.selectedTemplate = emptyTemplate
-    this.currentPlanTemplateId = null
-
-    // Reset template config using singleton
-    this.templateConfig.reset()
-    this.templateConfig.setPlanType(planType)
-    if (emptyTemplate.planTemplateId) {
-      this.templateConfig.setPlanTemplateId(emptyTemplate.planTemplateId)
-    }
-    this.templateConfig.setTitle(emptyTemplate.title || '')
+    this.templateConfig.selectedTemplate.value = emptyTemplate
+    this.templateConfig.currentPlanTemplateId.value = null
 
     // Reset modification flag for new template
     this.hasTaskRequirementModified = false
@@ -391,7 +340,7 @@ export class TemplateStore {
     }
     try {
       await PlanActApiService.deletePlanTemplate(planTemplateId)
-      if (this.currentPlanTemplateId === planTemplateId) {
+      if (this.templateConfig.currentPlanTemplateId.value === planTemplateId) {
         this.clearSelection()
       }
       await this.loadPlanTemplateList()
@@ -404,72 +353,9 @@ export class TemplateStore {
   }
 
   clearSelection() {
-    this.currentPlanTemplateId = null
-    this.selectedTemplate = null
-    this.templateConfig.reset()
+    this.templateConfig.currentPlanTemplateId.value = null
+    this.templateConfig.selectedTemplate.value = null
     this.hasTaskRequirementModified = false
-  }
-
-  rollbackVersion() {
-    this.templateConfig.rollbackVersion()
-  }
-
-  restoreVersion() {
-    this.templateConfig.restoreVersion()
-  }
-
-  async saveTemplate() {
-    if (!this.selectedTemplate) return
-
-    // Validate config
-    const validation = this.templateConfig.validate()
-    if (!validation.isValid) {
-      throw new Error('Invalid format, please correct and save.\nErrors: ' + validation.errors.join(', '))
-    }
-
-    try {
-      const planTemplateId = this.selectedTemplate.planTemplateId
-      if (!planTemplateId) {
-        throw new Error('Plan template ID is required')
-      }
-
-      // Save using templateConfig singleton
-      const success = await this.templateConfig.save()
-      if (!success) {
-        throw new Error('Failed to save plan template')
-      }
-
-      // For backward compatibility, also save using the old API if needed
-      const content = this.jsonContent.trim()
-      const saveResult = await PlanActApiService.savePlanTemplate(planTemplateId, content)
-
-      // Update the selected template ID with the real planId returned from backend
-      if (
-        (saveResult as { planId?: string })?.planId &&
-        this.selectedTemplate.planTemplateId?.startsWith('new-')
-      ) {
-        const newPlanId = (saveResult as { planId: string }).planId
-        console.log(
-          '[TemplateStore] Updating template ID from',
-          this.selectedTemplate.planTemplateId,
-          'to',
-          newPlanId
-        )
-        this.selectedTemplate.planTemplateId = newPlanId
-        this.currentPlanTemplateId = newPlanId
-        this.templateConfig.setPlanTemplateId(newPlanId)
-      }
-
-      // Update versions after save
-      this.templateConfig.updateVersionsAfterSave(content)
-
-      // Reset modification flag after successful save
-      this.hasTaskRequirementModified = false
-      return saveResult
-    } catch (error: unknown) {
-      console.error('Failed to save plan template:', error)
-      throw error
-    }
   }
 }
 

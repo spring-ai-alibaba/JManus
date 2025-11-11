@@ -48,6 +48,11 @@ export function usePlanTemplateConfig() {
   const planVersions = ref<string[]>([])
   const currentVersionIndex = ref(-1)
 
+  // Template list and selection state
+  const planTemplateList = ref<PlanTemplateConfigVO[]>([])
+  const selectedTemplate = ref<PlanTemplateConfigVO | null>(null)
+  const currentPlanTemplateId = ref<string | null>(null)
+
   // Getters
   const getTitle = () => config.title
   const getSteps = () => config.steps || []
@@ -258,6 +263,25 @@ export function usePlanTemplateConfig() {
     return JSON.stringify(config, null, 2)
   }
 
+  // Dynamically generate JSON from current config state (not cached, regenerated each time)
+  const generateJsonString = (): string => {
+    // Generate fresh JSON from current config state
+    const jsonConfig: PlanTemplateConfigVO = {
+      title: config.title || '',
+      steps: config.steps || [],
+      directResponse: config.directResponse || false,
+      planType: config.planType || 'dynamic_agent',
+      planTemplateId: config.planTemplateId || '',
+      readOnly: config.readOnly || false,
+      serviceGroup: config.serviceGroup || '',
+    }
+    // Include toolConfig if it exists
+    if (config.toolConfig) {
+      jsonConfig.toolConfig = { ...config.toolConfig }
+    }
+    return JSON.stringify(jsonConfig, null, 2)
+  }
+
   // Load config from JSON string
   const fromJsonString = (jsonString: string) => {
     try {
@@ -445,6 +469,9 @@ export function usePlanTemplateConfig() {
     error,
     planVersions,
     currentVersionIndex,
+    planTemplateList,
+    selectedTemplate,
+    currentPlanTemplateId,
 
     // Getters
     getTitle,
@@ -496,6 +523,7 @@ export function usePlanTemplateConfig() {
     save,
     validate,
     toJsonString,
+    generateJsonString,
     fromJsonString,
     rollbackVersion,
     restoreVersion,
