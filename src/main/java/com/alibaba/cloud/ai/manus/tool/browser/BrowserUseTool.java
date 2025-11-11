@@ -379,14 +379,30 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 			// getting information during navigation
 			try {
 				Integer timeout = getBrowserTimeout();
+				// First wait for DOM content loaded
 				page.waitForLoadState(com.microsoft.playwright.options.LoadState.DOMCONTENTLOADED,
 						new Page.WaitForLoadStateOptions().setTimeout(timeout * 1000));
+				// Then wait for network idle to ensure all AJAX requests and dynamic content updates are complete
+				// This is especially important after actions like key_enter that trigger searches
+				try {
+					page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE,
+							new Page.WaitForLoadStateOptions().setTimeout(3000)); // 3 second timeout for network idle
+				}
+				catch (TimeoutError e) {
+					// If network idle timeout, wait a bit more for dynamic content to update
+					log.debug("Network idle timeout, waiting for content updates: {}", e.getMessage());
+					Thread.sleep(1000); // Wait 1 second for content to update
+				}
 			}
 			catch (TimeoutError e) {
 				log.warn("Page load state wait timeout, continuing anyway: {}", e.getMessage());
 			}
 			catch (PlaywrightException e) {
 				log.warn("Playwright error waiting for load state, continuing anyway: {}", e.getMessage());
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				log.warn("Interrupted while waiting for page load");
 			}
 			catch (Exception loadException) {
 				log.warn("Unexpected error waiting for load state, continuing anyway: {}", loadException.getMessage());
@@ -424,6 +440,16 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				state.put("tabs", List.of(Map.of("error", "Failed to get tabs: " + e.getMessage())));
 			}
 
+			// Wait a bit more before generating ARIA snapshot to ensure all dynamic content
+			// (like search results) is fully rendered
+			try {
+				Thread.sleep(500); // Additional wait for content rendering
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				log.warn("Interrupted while waiting for content rendering");
+			}
+
 			// Generate ARIA snapshot using the new AriaSnapshot utility with error
 			// handling
 			try {
@@ -432,6 +458,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				DriverWrapper driver = getDriver();
 				AriaElementHolder ariaElementHolder = driver.getAriaElementHolder();
 				if (ariaElementHolder != null) {
+					// Force re-parse the page to get the latest state
 					String snapshot = ariaElementHolder.parsePageAndAssignRefs(page, snapshotOptions);
 					if (snapshot != null && !snapshot.trim().isEmpty()) {
 						state.put("interactive_elements", snapshot);
