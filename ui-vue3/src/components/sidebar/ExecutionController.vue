@@ -203,7 +203,7 @@ import {
 } from '@/api/plan-parameter-api-service'
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
 import SaveConfirmationDialog from '@/components/sidebar/SaveConfirmationDialog.vue'
-import { sidebarStore } from '@/stores/sidebar'
+import { templateStore } from '@/stores/templateStore'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -426,7 +426,7 @@ const handleExecutePlan = () => {
   console.log('[ExecutionController] 🚀 Execute button clicked')
 
   // Check if task requirements have been modified
-  if (sidebarStore.hasTaskRequirementModified) {
+  if (templateStore.hasTaskRequirementModified) {
     console.log(
       '[ExecutionController] ⚠️ Task requirements modified, showing save confirmation dialog'
     )

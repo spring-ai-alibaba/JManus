@@ -38,7 +38,7 @@
           class="tab-button"
           :class="{ active: sidebarStore.currentTab === 'config' }"
           @click="sidebarStore.switchToTab('config')"
-          :disabled="!sidebarStore.selectedTemplate"
+          :disabled="!templateStore.selectedTemplate"
         >
           <Icon icon="carbon:settings" width="16" />
           {{ $t('sidebar.configuration') }}
@@ -50,7 +50,7 @@
         <div class="organization-section">
           <button
             class="new-task-btn"
-            @click="() => sidebarStore.createNewTemplate(sidebarStore.planType)"
+            @click="() => handleCreateNewTemplate()"
           >
             <Icon icon="carbon:add" width="16" />
             {{ $t('sidebar.newPlan') }}
@@ -59,7 +59,7 @@
             <div class="organization-selector">
               <label class="organization-label">{{ $t('sidebar.organizationLabel') }}</label>
               <select
-                :value="sidebarStore.organizationMethod"
+                :value="templateStore.organizationMethod"
                 @change="handleOrganizationChange"
                 class="organization-select"
               >
@@ -94,22 +94,22 @@
 
         <div class="sidebar-content-list">
           <!-- Loading state -->
-          <div v-if="sidebarStore.isLoading" class="loading-state">
+          <div v-if="templateStore.isLoading" class="loading-state">
             <Icon icon="carbon:circle-dash" width="20" class="spinning" />
             <span>{{ $t('sidebar.loading') }}</span>
           </div>
 
           <!-- Error state -->
-          <div v-else-if="sidebarStore.errorMessage" class="error-state">
+          <div v-else-if="templateStore.errorMessage" class="error-state">
             <Icon icon="carbon:warning" width="20" />
-            <span>{{ sidebarStore.errorMessage }}</span>
-            <button @click="sidebarStore.loadPlanTemplateList" class="retry-btn">
+            <span>{{ templateStore.errorMessage }}</span>
+            <button @click="templateStore.loadPlanTemplateList" class="retry-btn">
               {{ $t('sidebar.retry') }}
             </button>
           </div>
 
           <!-- Empty state -->
-          <div v-else-if="sidebarStore.planTemplateList.length === 0" class="empty-state">
+          <div v-else-if="templateStore.planTemplateList.length === 0" class="empty-state">
             <Icon icon="carbon:document" width="32" />
             <span>{{ $t('sidebar.noTemplates') }}</span>
           </div>
@@ -123,30 +123,30 @@
               <!-- Group header (only show for grouped methods) -->
               <div
                 v-if="
-                  (sidebarStore.organizationMethod === 'by_group_time' ||
-                    sidebarStore.organizationMethod === 'by_group_abc') &&
+                  (templateStore.organizationMethod === 'by_group_time' ||
+                    templateStore.organizationMethod === 'by_group_abc') &&
                   templates.length > 0
                 "
                 class="group-header"
-                @click="sidebarStore.toggleGroupCollapse(groupName)"
+                @click="templateStore.toggleGroupCollapse(groupName)"
                 :title="
-                  sidebarStore.isGroupCollapsed(groupName)
+                  templateStore.isGroupCollapsed(groupName)
                     ? $t('sidebar.expandGroup')
                     : $t('sidebar.collapseGroup')
                 "
               >
                 <button
                   class="group-toggle-btn"
-                  @click.stop="sidebarStore.toggleGroupCollapse(groupName)"
+                  @click.stop="templateStore.toggleGroupCollapse(groupName)"
                   :title="
-                    sidebarStore.isGroupCollapsed(groupName)
+                    templateStore.isGroupCollapsed(groupName)
                       ? $t('sidebar.expandGroup')
                       : $t('sidebar.collapseGroup')
                   "
                 >
                   <Icon
                     :icon="
-                      sidebarStore.isGroupCollapsed(groupName)
+                      templateStore.isGroupCollapsed(groupName)
                         ? 'carbon:chevron-right'
                         : 'carbon:chevron-down'
                     "
@@ -167,9 +167,9 @@
               <template
                 v-if="
                   !(
-                    (sidebarStore.organizationMethod === 'by_group_time' ||
-                      sidebarStore.organizationMethod === 'by_group_abc') &&
-                    sidebarStore.isGroupCollapsed(groupName)
+                    (templateStore.organizationMethod === 'by_group_time' ||
+                      templateStore.organizationMethod === 'by_group_abc') &&
+                    templateStore.isGroupCollapsed(groupName)
                   )
                 "
               >
@@ -179,12 +179,12 @@
                   class="sidebar-content-list-item"
                   :class="{
                     'sidebar-content-list-item-active':
-                      template.planTemplateId === sidebarStore.currentPlanTemplateId,
+                      template.planTemplateId === templateStore.currentPlanTemplateId,
                     'grouped-item':
-                      sidebarStore.organizationMethod === 'by_group_time' ||
-                      sidebarStore.organizationMethod === 'by_group_abc',
+                      templateStore.organizationMethod === 'by_group_time' ||
+                      templateStore.organizationMethod === 'by_group_abc',
                   }"
-                  @click="sidebarStore.selectTemplate(template)"
+                  @click="handleSelectTemplate(template)"
                 >
                   <div class="task-icon">
                     <Icon icon="carbon:document" width="20" />
@@ -198,7 +198,7 @@
                   <div class="task-time">
                     {{
                       getRelativeTimeString(
-                        sidebarStore.parseDateTime(template.updateTime || template.createTime)
+                        templateStore.templateConfigInstance.parseDateTime(template.updateTime || template.createTime)
                       )
                     }}
                   </div>
@@ -206,7 +206,7 @@
                     <button
                       class="delete-task-btn"
                       :title="$t('sidebar.deleteTemplate')"
-                      @click.stop="sidebarStore.deleteTemplate(template)"
+                      @click.stop="templateStore.deleteTemplate(template)"
                     >
                       <Icon icon="carbon:close" width="16" />
                     </button>
@@ -220,12 +220,12 @@
 
       <!-- Config Tab Content -->
       <div v-else-if="sidebarStore.currentTab === 'config'" class="tab-content config-tab">
-        <div v-if="sidebarStore.selectedTemplate" class="config-container">
+        <div v-if="templateStore.selectedTemplate" class="config-container">
           <!-- Template Info Header -->
           <div class="template-info-header">
             <div class="template-info">
-              <h3>{{ sidebarStore.selectedTemplate.title || $t('sidebar.unnamedPlan') }}</h3>
-              <span class="template-id">ID: {{ sidebarStore.selectedTemplate.planTemplateId }}</span>
+              <h3>{{ templateStore.selectedTemplate.title || $t('sidebar.unnamedPlan') }}</h3>
+              <span class="template-id">ID: {{ templateStore.selectedTemplate.planTemplateId }}</span>
             </div>
             <button class="back-to-list-btn" @click="sidebarStore.switchToTab('list')">
               <Icon icon="carbon:arrow-left" width="16" />
@@ -235,11 +235,12 @@
           <!-- Section 2: JSON Editor (Conditional based on plan type) -->
           <!-- Use JsonEditorV2 for all plan types -->
           <JsonEditorV2
-            :key="sidebarStore.currentPlanTemplateId || 'default'"
-            :json-content="sidebarStore.jsonContent"
-            :can-rollback="sidebarStore.canRollback"
-            :can-restore="sidebarStore.canRestore"
-            :current-plan-template-id="sidebarStore.currentPlanTemplateId || ''"
+            :key="templateStore.currentPlanTemplateId || 'default'"
+            :json-content="templateStore.jsonContent"
+            :can-rollback="templateStore.canRollback"
+            :can-restore="templateStore.canRestore"
+            :current-plan-template-id="templateStore.currentPlanTemplateId || ''"
+            :available-tools="availableToolsStore.availableTools.value"
             @rollback="handleRollback"
             @restore="handleRestore"
             @save="handleSaveTemplate"
@@ -250,7 +251,7 @@
           <!-- Section 3: Execution Controller -->
           <ExecutionController
             ref="executionControllerRef"
-            :current-plan-template-id="sidebarStore.currentPlanTemplateId || ''"
+            :current-plan-template-id="templateStore.currentPlanTemplateId || ''"
             :show-publish-button="showPublishButton"
             :tool-info="currentToolInfo"
             @execute-plan="handleExecutePlan"
@@ -278,8 +279,8 @@
   <PublishServiceModal
     ref="publishMcpModalRef"
     v-model="showPublishMcpModal"
-    :plan-template-id="sidebarStore.currentPlanTemplateId || ''"
-    :plan-description="sidebarStore.selectedTemplate?.toolConfig?.toolDescription || ''"
+    :plan-template-id="templateStore.currentPlanTemplateId || ''"
+    :plan-description="templateStore.selectedTemplate?.toolConfig?.toolDescription || ''"
     @published="handleMcpServicePublished"
   />
 
@@ -332,6 +333,8 @@ import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
 import PublishServiceModal from '@/components/publish-service-modal/PublishServiceModal.vue'
 import { useToast } from '@/plugins/useToast'
 import { sidebarStore } from '@/stores/sidebar'
+import { templateStore } from '@/stores/templateStore'
+import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import type { PlanData, PlanExecutionRequestPayload } from '@/types/plan-execution'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
 import { Icon } from '@iconify/vue'
@@ -342,6 +345,9 @@ import JsonEditorV2 from './JsonEditorV2.vue'
 
 const { t } = useI18n()
 const toast = useToast()
+
+// Available tools management
+const availableToolsStore = useAvailableToolsSingleton()
 
 // Search functionality
 const searchKeyword = ref('')
@@ -384,14 +390,14 @@ const showPublishButton = computed(() => {
 
 // Watch for changes in currentPlanTemplateId and jsonContent
 watch(
-  () => sidebarStore.currentPlanTemplateId,
+  () => templateStore.currentPlanTemplateId,
   (newId, oldId) => {
     console.log('[Sidebar] currentPlanTemplateId changed from', oldId, 'to', newId)
   }
 )
 
 watch(
-  () => sidebarStore.jsonContent,
+  () => templateStore.jsonContent,
   (newContent, oldContent) => {
     console.log('[Sidebar] jsonContent changed from', oldContent, 'to', newContent)
   }
@@ -424,7 +430,7 @@ const emit = defineEmits<{
 
 const handleSaveTemplate = async () => {
   try {
-    const saveResult = await sidebarStore.saveTemplate()
+    const saveResult = await templateStore.saveTemplate()
 
     const result = saveResult as {
       duplicate?: boolean
@@ -471,7 +477,7 @@ const refreshParameterRequirements = async () => {
 
   console.log(
     '[Sidebar] 🔄 Refreshing parameter requirements for templateId:',
-    sidebarStore.currentPlanTemplateId
+    templateStore.currentPlanTemplateId
   )
 
   // Use nextTick to ensure all reactive updates are complete
@@ -507,11 +513,7 @@ const refreshParameterRequirements = async () => {
 // Version control handlers
 const handleRollback = () => {
   try {
-    if (typeof sidebarStore.rollbackVersion === 'function') {
-      sidebarStore.rollbackVersion()
-    } else {
-      console.warn('rollbackVersion method is not available')
-    }
+    templateStore.rollbackVersion()
   } catch (error) {
     console.error('Error during rollback operation:', error)
     toast.error(t('sidebar.rollbackFailed') || 'Rollback failed')
@@ -520,11 +522,7 @@ const handleRollback = () => {
 
 const handleRestore = () => {
   try {
-    if (typeof sidebarStore.restoreVersion === 'function') {
-      sidebarStore.restoreVersion()
-    } else {
-      console.warn('restoreVersion method is not available')
-    }
+    templateStore.restoreVersion()
   } catch (error) {
     console.error('Error during restore operation:', error)
     toast.error(t('sidebar.restoreFailed') || 'Restore failed')
@@ -536,26 +534,26 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
     '[Sidebar] 🎯 handleExecutePlan called with payload:',
     JSON.stringify(payload, null, 2)
   )
-  console.log('[Sidebar] 📊 Current sidebarStore state:', {
-    currentPlanTemplateId: sidebarStore.currentPlanTemplateId,
-    selectedTemplate: sidebarStore.selectedTemplate?.planTemplateId,
-    jsonContent: sidebarStore.jsonContent.substring(0, 100) + '...',
+  console.log('[Sidebar] 📊 Current templateStore state:', {
+    currentPlanTemplateId: templateStore.currentPlanTemplateId,
+    selectedTemplate: templateStore.selectedTemplate?.planTemplateId,
+    jsonContent: templateStore.jsonContent.substring(0, 100) + '...',
   })
 
   try {
     // Get plan data from templateConfig
-    if (!sidebarStore.selectedTemplate) {
+    if (!templateStore.selectedTemplate) {
       console.log('[Sidebar] ❌ No template selected, returning')
       return
     }
 
-    const templateConfig = sidebarStore.templateConfigInstance
+    const templateConfig = templateStore.templateConfigInstance
     const config = templateConfig.getConfig()
     
     // Convert PlanTemplateConfigVO to PlanData format
-    const planTemplateId = sidebarStore.selectedTemplate.planTemplateId || config.planTemplateId
+    const planTemplateId = templateStore.selectedTemplate.planTemplateId || config.planTemplateId
     const planData: PlanData = {
-      title: config.title || sidebarStore.selectedTemplate.title || 'Execution Plan',
+      title: config.title || templateStore.selectedTemplate.title || 'Execution Plan',
       steps: (config.steps || []).map(step => ({
         stepRequirement: step.stepRequirement || '',
         agentName: step.agentName || '',
@@ -569,7 +567,7 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
       ...(config.planType && { planType: config.planType }),
     }
 
-    const title = sidebarStore.selectedTemplate.title ?? config.title ?? 'Execution Plan'
+    const title = templateStore.selectedTemplate.title ?? config.title ?? 'Execution Plan'
 
     console.log('[Sidebar] 📋 Prepared plan data:', JSON.stringify(planData, null, 2))
 
@@ -616,9 +614,9 @@ const isCopyingPlan = ref(false)
 
 const handlePublishMcpService = () => {
   console.log('[Sidebar] Publish MCP service button clicked')
-  console.log('[Sidebar] currentPlanTemplateId:', sidebarStore.currentPlanTemplateId)
+  console.log('[Sidebar] currentPlanTemplateId:', templateStore.currentPlanTemplateId)
 
-  if (!sidebarStore.currentPlanTemplateId) {
+  if (!templateStore.currentPlanTemplateId) {
     console.log('[Sidebar] No plan template selected, showing warning')
     toast.error(t('mcpService.selectPlanTemplateFirst'))
     return
@@ -656,7 +654,7 @@ const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
 
   // Reload available tools to include the newly published service
   console.log('[Sidebar] 🔄 Reloading available tools after service publish/delete')
-  await sidebarStore.loadAvailableTools()
+  await availableToolsStore.loadAvailableTools()
 
   // Reload tool info for all templates to update the task preview
   await loadAllTemplateToolInfo()
@@ -665,7 +663,7 @@ const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
 // JSON Editor event handlers
 const handleUpdateJsonContent = (value: string) => {
   // Update template config from JSON string
-  const templateConfig = sidebarStore.templateConfigInstance
+  const templateConfig = templateStore.templateConfigInstance
   templateConfig.fromJsonString(value)
 }
 
@@ -687,13 +685,13 @@ const handleUpdateExecutionParams = (params: string) => {
 const handleCopyPlan = () => {
   console.log('[Sidebar] Copy plan clicked')
 
-  if (!sidebarStore.selectedTemplate) {
+  if (!templateStore.selectedTemplate) {
     console.log('[Sidebar] No template selected, cannot copy')
     toast.error(t('sidebar.selectPlanFirst'))
     return
   }
 
-  newPlanTitle.value = (sidebarStore.selectedTemplate.title ?? t('sidebar.unnamedPlan')) + ' (copy)'
+  newPlanTitle.value = (templateStore.selectedTemplate.title ?? t('sidebar.unnamedPlan')) + ' (copy)'
   console.log('[Sidebar] Opening copy plan modal')
   showCopyPlanModal.value = true
 }
@@ -710,7 +708,7 @@ const confirmCopyPlan = async () => {
     return
   }
 
-  if (!sidebarStore.selectedTemplate || !sidebarStore.jsonContent) {
+  if (!templateStore.selectedTemplate || !templateStore.jsonContent) {
     toast.error(t('sidebar.noPlanToCopy'))
     return
   }
@@ -718,7 +716,7 @@ const confirmCopyPlan = async () => {
   isCopyingPlan.value = true
 
   try {
-    const currentPlan = JSON.parse(sidebarStore.jsonContent)
+    const currentPlan = JSON.parse(templateStore.jsonContent)
     const newPlan = {
       ...currentPlan,
       title: newPlanTitle.value.trim(),
@@ -731,7 +729,7 @@ const confirmCopyPlan = async () => {
     const typedResult = result as { saved?: boolean; message?: string }
     if (typedResult.saved) {
       toast.success(t('sidebar.copyPlanSuccess', { title: newPlanTitle.value.trim() }))
-      await sidebarStore.loadPlanTemplateList()
+      await templateStore.loadPlanTemplateList()
       closeCopyPlanModal()
     } else {
       toast.error(t('sidebar.copyPlanFailed', { message: typedResult.message || 'Unknown error' }))
@@ -800,9 +798,18 @@ const loadToolInfo = async (planTemplateId: string | null) => {
 // Handle organization method change
 const handleOrganizationChange = (event: Event) => {
   const target = event.target as HTMLSelectElement
-  sidebarStore.setOrganizationMethod(
+  templateStore.setOrganizationMethod(
     target.value as 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc'
   )
+}
+
+// Handle create new template
+const handleCreateNewTemplate = async () => {
+  await templateStore.createNewTemplate(templateStore.planType)
+  sidebarStore.switchToTab('config')
+  // Reload available tools to ensure fresh tool list
+  console.log('[Sidebar] 🔄 Reloading available tools for new template')
+  await availableToolsStore.loadAvailableTools()
 }
 
 // Utility functions
@@ -839,13 +846,13 @@ const getTaskPreviewText = (template: PlanTemplateConfigVO): string => {
 const filteredGroupedTemplates = computed(() => {
   const keyword = searchKeyword.value.trim().toLowerCase()
   if (!keyword) {
-    return sidebarStore.groupedTemplates
+    return templateStore.groupedTemplates
   }
 
   const filtered = new Map<string | null, PlanTemplateConfigVO[]>()
 
   // Iterate through all groups
-  for (const [groupName, templates] of sidebarStore.groupedTemplates) {
+  for (const [groupName, templates] of templateStore.groupedTemplates) {
     const matchingTemplates: PlanTemplateConfigVO[] = []
 
     for (const template of templates) {
@@ -877,14 +884,14 @@ watch(searchKeyword, newKeyword => {
 
   // Only auto-expand for grouped organization methods
   if (
-    sidebarStore.organizationMethod !== 'by_group_time' &&
-    sidebarStore.organizationMethod !== 'by_group_abc'
+    templateStore.organizationMethod !== 'by_group_time' &&
+    templateStore.organizationMethod !== 'by_group_abc'
   ) {
     return
   }
 
   // Expand groups that contain matches
-  for (const [groupName, templates] of sidebarStore.groupedTemplates) {
+  for (const [groupName, templates] of templateStore.groupedTemplates) {
     let hasMatch = false
     for (const template of templates) {
       const title = (template.title || '').toLowerCase()
@@ -895,8 +902,8 @@ watch(searchKeyword, newKeyword => {
       }
     }
 
-    if (hasMatch && sidebarStore.isGroupCollapsed(groupName)) {
-      sidebarStore.toggleGroupCollapse(groupName)
+    if (hasMatch && templateStore.isGroupCollapsed(groupName)) {
+      templateStore.toggleGroupCollapse(groupName)
     }
   }
 })
@@ -905,7 +912,7 @@ watch(searchKeyword, newKeyword => {
 // Tool info is now included in PlanTemplateConfigVO from the API
 const loadAllTemplateToolInfo = async () => {
   // Populate templateToolInfo from template data
-  for (const template of sidebarStore.planTemplateList) {
+  for (const template of templateStore.planTemplateList) {
     const planTemplateId = template.planTemplateId
     if (planTemplateId && template.toolConfig?.toolName) {
       templateToolInfo.value[planTemplateId] = {
@@ -969,19 +976,25 @@ const resetSidebarWidth = () => {
 
 // Watch for plan template changes to load tool information
 watch(
-  () => sidebarStore.currentPlanTemplateId,
+  () => templateStore.currentPlanTemplateId,
   newPlanTemplateId => {
     loadToolInfo(newPlanTemplateId)
   },
   { immediate: true }
 )
 
+// Handle select template
+const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
+  await templateStore.selectTemplate(template)
+  sidebarStore.switchToTab('config')
+}
+
 // Lifecycle
 onMounted(async () => {
-  await sidebarStore.loadPlanTemplateList()
+  await templateStore.loadPlanTemplateList()
   await loadAllTemplateToolInfo() // Load tool info after templates are loaded
   loadCoordinatorToolConfig()
-  sidebarStore.loadAvailableTools() // Load available tools on sidebar mount
+  availableToolsStore.loadAvailableTools() // Load available tools on sidebar mount
 
   // Restore sidebar width from localStorage
   const savedWidth = localStorage.getItem('sidebarWidth')
@@ -998,9 +1011,9 @@ onUnmounted(() => {
 
 // Expose methods for parent component to call
 defineExpose({
-  loadPlanTemplateList: sidebarStore.loadPlanTemplateList,
+  loadPlanTemplateList: templateStore.loadPlanTemplateList,
   toggleSidebar: sidebarStore.toggleSidebar,
-  currentPlanTemplateId: sidebarStore.currentPlanTemplateId,
+  currentPlanTemplateId: templateStore.currentPlanTemplateId,
 })
 </script>
 

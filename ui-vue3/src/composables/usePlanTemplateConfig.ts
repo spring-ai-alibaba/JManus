@@ -396,6 +396,48 @@ export function usePlanTemplateConfig() {
   const isValid = computed(() => validate().isValid)
   const hasToolConfig = computed(() => config.toolConfig !== undefined)
 
+  // Utility function to parse date from different formats
+  const parseDateTime = (dateValue: unknown): Date => {
+    if (!dateValue) {
+      return new Date()
+    }
+
+    // If array format [year, month, day, hour, minute, second, nanosecond]
+    if (Array.isArray(dateValue) && dateValue.length >= 6) {
+      // JavaScript Date constructor months start from 0, so subtract 1
+      return new Date(
+        dateValue[0],
+        dateValue[1] - 1,
+        dateValue[2],
+        dateValue[3],
+        dateValue[4],
+        dateValue[5],
+        Math.floor(dateValue[6] / 1000000)
+      )
+    }
+
+    // If string format, parse directly
+    if (typeof dateValue === 'string') {
+      return new Date(dateValue)
+    }
+
+    // Return current time for other cases
+    return new Date()
+  }
+
+  // Action handlers for UI components
+  const handleRollback = () => {
+    rollbackVersion()
+  }
+
+  const handleRestore = () => {
+    restoreVersion()
+  }
+
+  const handleSave = async (): Promise<boolean> => {
+    return await save()
+  }
+
   return {
     // State
     config,
@@ -464,6 +506,14 @@ export function usePlanTemplateConfig() {
     hasToolConfig,
     canRollback,
     canRestore,
+
+    // Action handlers
+    handleRollback,
+    handleRestore,
+    handleSave,
+
+    // Utility functions
+    parseDateTime,
   }
 }
 

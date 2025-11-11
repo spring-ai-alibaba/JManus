@@ -78,6 +78,7 @@ export class TemplateStore {
     return this.templateConfig.currentVersionIndex.value
   }
 
+  // Version control computed properties - delegate to templateConfig
   get canRollback(): boolean {
     return this.templateConfig.canRollback.value
   }

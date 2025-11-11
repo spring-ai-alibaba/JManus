@@ -16,8 +16,8 @@
 
 import { reactive, computed, watch, ref } from 'vue'
 // import { useI18n } from 'vue-i18n' // Currently unused
-import type { StepData, DisplayPlanData } from '@/types/plan-execution'
-import { sidebarStore } from '@/stores/sidebar'
+import type { DisplayPlanData } from '@/types/plan-execution'
+import { templateStore } from '@/stores/templateStore'
 
 export interface JsonEditorProps {
   jsonContent: string
@@ -203,7 +203,7 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
         newRequirements.some((req, index) => req !== (initialStepRequirements[index] || ''))
 
       if (hasChanged) {
-        sidebarStore.hasTaskRequirementModified = true
+        templateStore.hasTaskRequirementModified = true
       }
     },
     { deep: true }
@@ -218,40 +218,6 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
     }
   )
 
-  // Step management functions
-  const addStep = () => {
-    const newStep: StepData = {
-      stepRequirement: '',
-      agentName: 'ConfigurableDynaAgent', // Default agent name
-      modelName: null, // Default to null (no model selected)
-      selectedToolKeys: [],
-      terminateColumns: '',
-      agentType: '',
-      stepContent: '',
-    }
-    displayData.steps.push(newStep)
-  }
-
-  const removeStep = (index: number) => {
-    if (index >= 0 && index < displayData.steps.length) {
-      displayData.steps.splice(index, 1)
-    }
-  }
-
-  const moveStepUp = (index: number) => {
-    if (index > 0) {
-      const step = displayData.steps.splice(index, 1)[0]
-      displayData.steps.splice(index - 1, 0, step)
-    }
-  }
-
-  const moveStepDown = (index: number) => {
-    if (index < displayData.steps.length - 1) {
-      const step = displayData.steps.splice(index, 1)[0]
-      displayData.steps.splice(index + 1, 0, step)
-    }
-  }
-
   // JSON preview functions
   const toggleJsonPreview = () => {
     showJsonPreview.value = !showJsonPreview.value
@@ -261,38 +227,14 @@ export function useJsonEditor(props: JsonEditorProps, emit: JsonEditorEmits) {
     showJsonPreview.value = false
   }
 
-  // Action handlers
-  const handleRollback = () => {
-    emit('rollback')
-  }
-
-  const handleRestore = () => {
-    emit('restore')
-  }
-
-  const handleSave = () => {
-    emit('save')
-  }
-
   return {
     // State
     showJsonPreview,
     displayData,
     formattedJsonOutput,
 
-    // Step management
-    addStep,
-    removeStep,
-    moveStepUp,
-    moveStepDown,
-
     // JSON preview
     toggleJsonPreview,
     closeJsonPreview,
-
-    // Actions
-    handleRollback,
-    handleRestore,
-    handleSave,
   }
 }

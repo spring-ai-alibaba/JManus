@@ -273,7 +273,7 @@
                 <AssignedTools
                   :title="$t('sidebar.selectedTools')"
                   :selected-tool-ids="step.selectedToolKeys || []"
-                  :available-tools="sidebarStore.availableTools"
+                  :available-tools="props.availableTools"
                   :add-button-text="$t('sidebar.addRemoveTools')"
                   :empty-text="$t('sidebar.noTools')"
                   :use-grid-layout="true"
@@ -356,7 +356,7 @@
     <!-- Tool Selection Modal -->
     <ToolSelectionModal
       v-model="showToolModal"
-      :tools="sidebarStore.availableTools"
+      :tools="props.availableTools"
       :selected-tool-ids="
         currentStepIndex >= 0 ? displayData.steps[currentStepIndex]?.selectedToolKeys || [] : []
       "
@@ -369,7 +369,8 @@
 import { ConfigApiService, type ModelOption } from '@/api/config-api-service'
 import AssignedTools from '@/components/shared/AssignedTools.vue'
 import ToolSelectionModal from '@/components/tool-selection-modal/ToolSelectionModal.vue'
-import { sidebarStore } from '@/stores/sidebar'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import type { StepData } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -385,10 +386,19 @@ interface JsonEditorV2Props {
   isGenerating?: boolean
   isExecuting?: boolean
   currentPlanTemplateId: string
+  availableTools?: Array<{
+    key: string
+    name: string
+    description: string
+    enabled: boolean
+    serviceGroup: string
+    selectable: boolean
+  }>
 }
 
 // Props
 const props = withDefaults(defineProps<JsonEditorV2Props>(), {
+  availableTools: () => [],
   currentPlanTemplateId: '',
   isGenerating: false,
   isExecuting: false,
@@ -413,16 +423,62 @@ const {
   showJsonPreview,
   displayData,
   formattedJsonOutput,
-  addStep,
-  removeStep,
-  moveStepUp,
-  moveStepDown,
-  handleRollback,
-  handleRestore,
-  handleSave,
   toggleJsonPreview,
   closeJsonPreview,
 } = useJsonEditor(compatibleProps, emit)
+
+// Get template config singleton for action handlers
+const templateConfig = usePlanTemplateConfigSingleton()
+
+// Step management functions (moved from json-editor-logic.ts)
+const addStep = () => {
+  const newStep: StepData = {
+    stepRequirement: '',
+    agentName: 'ConfigurableDynaAgent', // Default agent name
+    modelName: null, // Default to null (no model selected)
+    selectedToolKeys: [],
+    terminateColumns: '',
+    agentType: '',
+    stepContent: '',
+  }
+  displayData.steps.push(newStep)
+}
+
+const removeStep = (index: number) => {
+  if (index >= 0 && index < displayData.steps.length) {
+    displayData.steps.splice(index, 1)
+  }
+}
+
+const moveStepUp = (index: number) => {
+  if (index > 0) {
+    const step = displayData.steps.splice(index, 1)[0]
+    displayData.steps.splice(index - 1, 0, step)
+  }
+}
+
+const moveStepDown = (index: number) => {
+  if (index < displayData.steps.length - 1) {
+    const step = displayData.steps.splice(index, 1)[0]
+    displayData.steps.splice(index + 1, 0, step)
+  }
+}
+
+// Action handlers (moved from json-editor-logic.ts to usePlanTemplateConfig)
+const handleRollback = () => {
+  templateConfig.handleRollback()
+  emit('rollback')
+}
+
+const handleRestore = () => {
+  templateConfig.handleRestore()
+  emit('restore')
+}
+
+const handleSave = async () => {
+  await templateConfig.handleSave()
+  emit('save')
+}
 
 // Error state
 const planTypeError = ref<string | null>(null)
@@ -639,7 +695,7 @@ const loadAvailableModels = async () => {
 const showToolSelectionModal = (stepIndex: number) => {
   currentStepIndex.value = stepIndex
   showToolModal.value = true
-  console.log('[JsonEditorV2] Available tools from store:', sidebarStore.availableTools)
+  console.log('[JsonEditorV2] Available tools from props:', props.availableTools)
 }
 
 const handleToolSelectionConfirm = (selectedToolIds: string[]) => {

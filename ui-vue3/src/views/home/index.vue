@@ -222,12 +222,13 @@ onMounted(() => {
 })
 
 import { sidebarStore } from '@/stores/sidebar'
+import { templateStore } from '@/stores/templateStore'
 
 const saveJsonPlanToTemplate = async (jsonPlan: JsonPlan) => {
   try {
-    await sidebarStore.createNewTemplate(jsonPlan.planType)
-    sidebarStore.jsonContent = JSON.stringify(jsonPlan)
-    const saveResult = await sidebarStore.saveTemplate()
+    await templateStore.createNewTemplate(jsonPlan.planType)
+    templateStore.templateConfigInstance.fromJsonString(JSON.stringify(jsonPlan))
+    const saveResult = await templateStore.saveTemplate()
     const result = saveResult as {
       duplicate?: boolean
       saved?: boolean
@@ -369,22 +370,22 @@ const selectPlan = async (plan: PlanItem) => {
       }
 
       // Load the template list
-      await sidebarStore.loadPlanTemplateList()
+      await templateStore.loadPlanTemplateList()
       console.log('[Sidebar] Template list loaded')
 
       // Find and select the template - use the updated ID from saveResult or fallback to original
       const templateId = (saveResult as { planId?: string })?.planId || plan.planJson.planTemplateId
-      const template = sidebarStore.planTemplateList.find(t => t.id === templateId)
+      const template = templateStore.planTemplateList.find(t => t.planTemplateId === templateId)
       if (!template) {
         console.error('[Sidebar] Template not found for ID:', templateId)
         console.log(
           '[Sidebar] Available templates:',
-          sidebarStore.planTemplateList.map(t => t.id)
+          templateStore.planTemplateList.map(t => t.planTemplateId)
         )
         return
       }
 
-      await sidebarStore.selectTemplate(template)
+      await templateStore.selectTemplate(template)
       console.log('[Sidebar] Template selected:', template.title)
 
       // Call the execute logic directly

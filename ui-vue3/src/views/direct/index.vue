@@ -115,6 +115,7 @@ import { useMessage } from '@/composables/useMessage'
 import type { InputMessage } from '@/stores/memory'
 import { memoryStore } from '@/stores/memory'
 import { sidebarStore } from '@/stores/sidebar'
+import { templateStore } from '@/stores/templateStore'
 import { useTaskStore } from '@/stores/task'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 import type { PlanExecutionRecord } from '@/types/plan-execution-record'
@@ -419,7 +420,7 @@ onMounted(() => {
   }
 
   // Initialize sidebar data
-  sidebarStore.loadPlanTemplateList()
+  templateStore.loadPlanTemplateList()
 
   // Check if there is a task in the store
   if (taskStore.hasUnprocessedTask() && taskStore.currentTask) {
