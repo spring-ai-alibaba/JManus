@@ -284,38 +284,6 @@ export class SidebarStore {
         groups.get(serviceGroup)!.push(template)
       }
     })
-    ┌─────────────────────────────────────────────────────────────┐
-│ User clicks template item                                    │
-│ @click="sidebarStore.selectTemplate(template)"              │
-└─────────────────────────────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────────────────────┐
-│ sidebarStore.selectTemplate(template)                        │
-│ (line 376-386)                                               │
-└─────────────────────────────────────────────────────────────┘
-                    │
-                    ├─► Set currentPlanTemplateId = template.id
-                    ├─► Set selectedTemplate = template
-                    ├─► Set currentTab = 'config'
-                    ├─► Clear jsonContent (prevent stale data)
-                    │
-                    └─► loadTemplateData(template)
-                        │
-                        ├─► PlanActApiService.getPlanVersions(template.id)
-                        │   └─► API: GET /api/plan-template/versions/{id}
-                        │
-                        ├─► Update planVersions array
-                        ├─► Set jsonContent = latest version
-                        ├─► Parse JSON to extract:
-                        │   ├─► generatorPrompt
-                        │   ├─► executionParams
-                        │   └─► planType
-                        │
-                        └─► Reset hasTaskRequirementModified = false
-
-                        已经处理好了初始化，现在需要再存一个当前激活的templateId。 
-
     // Create result map with ungrouped first, then sorted groups
     const result = new Map<string | null, PlanTemplateConfigVO[]>()
     if (ungrouped.length > 0) {
