@@ -239,22 +239,18 @@
             :json-content="sidebarStore.jsonContent"
             :can-rollback="sidebarStore.canRollback"
             :can-restore="sidebarStore.canRestore"
-            :is-generating="sidebarStore.isGenerating"
-            :is-executing="sidebarStore.isExecuting"
             :current-plan-template-id="sidebarStore.currentPlanTemplateId || ''"
             @rollback="handleRollback"
             @restore="handleRestore"
             @save="handleSaveTemplate"
             @copy-plan="handleCopyPlan"
-            @update:json-content="(value: string) => (sidebarStore.jsonContent = value)"
+            @update:json-content="handleUpdateJsonContent"
           />
 
           <!-- Section 3: Execution Controller -->
           <ExecutionController
             ref="executionControllerRef"
             :current-plan-template-id="sidebarStore.currentPlanTemplateId || ''"
-            :is-executing="sidebarStore.isExecuting"
-            :is-generating="sidebarStore.isGenerating"
             :show-publish-button="showPublishButton"
             :tool-info="currentToolInfo"
             @execute-plan="handleExecutePlan"
@@ -336,7 +332,7 @@ import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
 import PublishServiceModal from '@/components/publish-service-modal/PublishServiceModal.vue'
 import { useToast } from '@/plugins/useToast'
 import { sidebarStore } from '@/stores/sidebar'
-import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
+import type { PlanData, PlanExecutionRequestPayload } from '@/types/plan-execution'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -547,37 +543,45 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
   })
 
   try {
-    const planData = sidebarStore.preparePlanExecution()
-    console.log('[Sidebar] 📋 Prepared plan data:', JSON.stringify(planData, null, 2))
-
-    if (!planData) {
-      console.log('[Sidebar] ❌ No plan data available, returning')
+    // Get plan data from templateConfig
+    if (!sidebarStore.selectedTemplate) {
+      console.log('[Sidebar] ❌ No template selected, returning')
       return
     }
 
-    // Always use the prepared plan data (which includes planTemplateId)
-    // Add replacement parameters to plan data if provided
-    const finalPlanData = {
-      ...planData,
-      uploadedFiles: payload.uploadedFiles,
-      uploadKey: payload.uploadKey,
+    const templateConfig = sidebarStore.templateConfigInstance
+    const config = templateConfig.getConfig()
+    
+    // Convert PlanTemplateConfigVO to PlanData format
+    const planTemplateId = sidebarStore.selectedTemplate.planTemplateId || config.planTemplateId
+    const planData: PlanData = {
+      title: config.title || sidebarStore.selectedTemplate.title || 'Execution Plan',
+      steps: (config.steps || []).map(step => ({
+        stepRequirement: step.stepRequirement || '',
+        agentName: step.agentName || '',
+        modelName: step.modelName || null,
+        selectedToolKeys: [],
+        terminateColumns: step.terminateColumns || '',
+        stepContent: '',
+      })),
+      directResponse: config.directResponse || false,
+      ...(planTemplateId && { planTemplateId }),
+      ...(config.planType && { planType: config.planType }),
     }
 
-    if (payload.replacementParams && Object.keys(payload.replacementParams).length > 0) {
-      console.log('[Sidebar] 🔄 Processing replacement parameters:', payload.replacementParams)
-      finalPlanData.replacementParams = payload.replacementParams
-    }
+    const title = sidebarStore.selectedTemplate.title ?? config.title ?? 'Execution Plan'
 
-    console.log('[Sidebar] ✅ Final plan data:', JSON.stringify(finalPlanData, null, 2))
+    console.log('[Sidebar] 📋 Prepared plan data:', JSON.stringify(planData, null, 2))
 
-    // Use the prepared plan data for the payload
+    // Build final payload with replacement parameters if provided
     const finalPayload: PlanExecutionRequestPayload = {
       ...payload,
-      title: finalPlanData.title,
-      planData: finalPlanData.planData,
-      params: finalPlanData.params,
-      uploadedFiles: finalPlanData.uploadedFiles,
-      uploadKey: finalPlanData.uploadKey,
+      title,
+      planData,
+      params: undefined, // params are now handled via replacementParams
+      replacementParams: payload.replacementParams,
+      uploadedFiles: payload.uploadedFiles,
+      uploadKey: payload.uploadKey,
     }
 
     console.log(
@@ -593,10 +597,7 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
     toast.error(t('sidebar.executeFailed') + ': ' + message)
   } finally {
     console.log('[Sidebar] 🧹 Cleaning up after execution')
-    sidebarStore.finishPlanExecution()
-    // Clear execution parameters after successful execution
-    sidebarStore.clearExecutionParams()
-    // Also clear ExecutionController parameters
+    // Clear ExecutionController parameters
     if (executionControllerRef.value) {
       console.log('[Sidebar] 🧹 Calling ExecutionController.clearExecutionParams')
       executionControllerRef.value.clearExecutionParams()
@@ -661,13 +662,25 @@ const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
   await loadAllTemplateToolInfo()
 }
 
+// JSON Editor event handlers
+const handleUpdateJsonContent = (value: string) => {
+  // Update template config from JSON string
+  const templateConfig = sidebarStore.templateConfigInstance
+  templateConfig.fromJsonString(value)
+}
+
 // Execution Controller event handlers
 const handleClearExecutionParams = () => {
-  sidebarStore.clearExecutionParams()
+  // Clear execution parameters in ExecutionController
+  if (executionControllerRef.value) {
+    executionControllerRef.value.clearExecutionParams()
+  }
 }
 
 const handleUpdateExecutionParams = (params: string) => {
-  sidebarStore.executionParams = params
+  // Execution params are now managed by ExecutionController
+  // This handler is kept for compatibility but doesn't need to do anything
+  console.log('[Sidebar] Execution params updated:', params)
 }
 
 // Copy plan handler functions

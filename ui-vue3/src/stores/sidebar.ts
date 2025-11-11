@@ -14,39 +14,18 @@
  * limitations under the License.
  */
 
-import { PlanActApiService } from '@/api/plan-act-api-service'
 import { ToolApiService } from '@/api/tool-api-service'
-import { PlanTemplateApiService } from '@/api/plan-template-with-tool-api-service'
-import { i18n } from '@/base/i18n'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
 import type { Tool } from '@/types/tool'
 import { reactive } from 'vue'
+import { templateStore } from './templateStore'
 
 type TabType = 'list' | 'config'
 
 export class SidebarStore {
-  // Basic state
+  // Basic state (sidebar UI state only)
   isCollapsed = false
   currentTab: TabType = 'list'
-
-  // Template list related state
-  currentPlanTemplateId: string | null = null
-  planTemplateList: PlanTemplateConfigVO[] = []
-  selectedTemplate: PlanTemplateConfigVO | null = null
-  isLoading = false
-  errorMessage = ''
-
-  // Configuration related state
-  jsonContent = ''
-  planType = 'dynamic_agent'
-  generatorPrompt = ''
-  executionParams = ''
-  isGenerating = false
-  isExecuting = false
-
-  // Version control
-  planVersions: string[] = []
-  currentVersionIndex = -1
 
   // Available tools state
   availableTools: Array<{
@@ -60,264 +39,103 @@ export class SidebarStore {
   isLoadingTools = false
   toolsLoadError = ''
 
-  // Track task requirement modifications
-  hasTaskRequirementModified = false
-
-  // Organization method: 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc'
-  organizationMethod: 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc' = 'by_time'
-
-  // Template service group mapping (templateId -> serviceGroup)
-  templateServiceGroups: Map<string, string> = new Map()
-
-  // Group collapse state (groupName -> isCollapsed)
-  groupCollapseState: Map<string | null, boolean> = new Map()
-
-  constructor() {
-    // Ensure properties are properly initialized
-    this.planVersions = []
-    this.currentVersionIndex = -1
-    // Load organization method from localStorage
-    const savedMethod = localStorage.getItem('sidebarOrganizationMethod')
-    if (
-      savedMethod &&
-      ['by_time', 'by_abc', 'by_group_time', 'by_group_abc'].includes(savedMethod)
-    ) {
-      this.organizationMethod = savedMethod as
-        | 'by_time'
-        | 'by_abc'
-        | 'by_group_time'
-        | 'by_group_abc'
-    }
-    // Load group collapse state from localStorage
-    this.loadGroupCollapseState()
+  // Reference to templateStore for template-related operations
+  get templateStore() {
+    return templateStore
   }
 
-  // Load group collapse state from localStorage
-  loadGroupCollapseState() {
-    try {
-      const saved = localStorage.getItem('sidebarGroupCollapseState')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        this.groupCollapseState = new Map(
-          Object.entries(parsed).map(([k, v]) => [k === 'null' ? null : k, v as boolean])
-        )
-      }
-    } catch (error) {
-      console.warn('[SidebarStore] Failed to load group collapse state:', error)
-    }
+  // Computed properties that delegate to templateStore
+  get jsonContent(): string {
+    return templateStore.jsonContent
   }
 
-  // Save group collapse state to localStorage
-  saveGroupCollapseState() {
-    try {
-      // Convert Map to object, handling null keys properly
-      const obj: Record<string, boolean> = {}
-      this.groupCollapseState.forEach((value, key) => {
-        // Convert null key to 'null' string for JSON serialization
-        const objKey = key ?? 'null'
-        obj[objKey] = value
-      })
-      localStorage.setItem('sidebarGroupCollapseState', JSON.stringify(obj))
-    } catch (error) {
-      console.warn('[SidebarStore] Failed to save group collapse state:', error)
-    }
+  get planType(): string {
+    return templateStore.planType
   }
 
-  // Toggle group collapse state
-  toggleGroupCollapse(groupName: string | null) {
-    // Use null as the key in Map, but convert to 'null' string for localStorage
-    const currentState = this.groupCollapseState.get(groupName) ?? false
-    this.groupCollapseState.set(groupName, !currentState)
-    this.saveGroupCollapseState()
+  get planVersions(): string[] {
+    return templateStore.planVersions
   }
 
-  // Check if group is collapsed
-  isGroupCollapsed(groupName: string | null): boolean {
-    // Use null as the key directly in Map
-    return this.groupCollapseState.get(groupName) ?? false
+  get currentVersionIndex(): number {
+    return templateStore.currentVersionIndex
   }
 
-  // Helper function to parse date from different formats
-  parseDateTime(dateValue: unknown): Date {
-    if (!dateValue) {
-      return new Date()
-    }
-
-    // If array format [year, month, day, hour, minute, second, nanosecond]
-    if (Array.isArray(dateValue) && dateValue.length >= 6) {
-      // JavaScript Date constructor months start from 0, so subtract 1
-      return new Date(
-        dateValue[0],
-        dateValue[1] - 1,
-        dateValue[2],
-        dateValue[3],
-        dateValue[4],
-        dateValue[5],
-        Math.floor(dateValue[6] / 1000000)
-      )
-    }
-
-    // If string format, parse directly
-    if (typeof dateValue === 'string') {
-      return new Date(dateValue)
-    }
-
-    // Return current time for other cases
-    return new Date()
+  get currentPlanTemplateId(): string | null {
+    return templateStore.currentPlanTemplateId
   }
 
-  // Computed properties
-  get sortedTemplates(): PlanTemplateConfigVO[] {
-    const templates = [...this.planTemplateList]
-
-    switch (this.organizationMethod) {
-      case 'by_time':
-        return templates.sort((a, b) => {
-          const timeA = this.parseDateTime(a.updateTime ?? a.createTime)
-          const timeB = this.parseDateTime(b.updateTime ?? b.createTime)
-          return timeB.getTime() - timeA.getTime()
-        })
-      case 'by_abc':
-        return templates.sort((a, b) => {
-          const titleA = (a.title ?? '').toLowerCase()
-          const titleB = (b.title ?? '').toLowerCase()
-          return titleA.localeCompare(titleB)
-        })
-      case 'by_group_time':
-      case 'by_group_abc': {
-        // For grouped methods, return templates sorted within groups
-        // The grouping logic will be handled in the component
-        const groups = new Map<string, PlanTemplateConfigVO[]>()
-        const ungrouped: PlanTemplateConfigVO[] = []
-
-        templates.forEach(template => {
-          const planTemplateId = template.planTemplateId || ''
-          const serviceGroup = this.templateServiceGroups.get(planTemplateId) ?? ''
-          if (!serviceGroup || serviceGroup === 'default' || serviceGroup === '') {
-            ungrouped.push(template)
-          } else {
-            if (!groups.has(serviceGroup)) {
-              groups.set(serviceGroup, [])
-            }
-            groups.get(serviceGroup)!.push(template)
-          }
-        })
-
-        // Sort within each group
-        const sortedGroups = new Map<string, PlanTemplateConfigVO[]>()
-        groups.forEach((templatesInGroup, groupName) => {
-          const sorted = [...templatesInGroup]
-          if (this.organizationMethod === 'by_group_time') {
-            sorted.sort((a, b) => {
-              const timeA = this.parseDateTime(a.updateTime ?? a.createTime)
-              const timeB = this.parseDateTime(b.updateTime ?? b.createTime)
-              return timeB.getTime() - timeA.getTime()
-            })
-          } else {
-            // by_group_abc
-            sorted.sort((a, b) => {
-              const titleA = (a.title ?? '').toLowerCase()
-              const titleB = (b.title ?? '').toLowerCase()
-              return titleA.localeCompare(titleB)
-            })
-          }
-          sortedGroups.set(groupName, sorted)
-        })
-
-        // Sort ungrouped templates
-        if (this.organizationMethod === 'by_group_time') {
-          ungrouped.sort((a, b) => {
-            const timeA = this.parseDateTime(a.updateTime ?? a.createTime)
-            const timeB = this.parseDateTime(b.updateTime ?? b.createTime)
-            return timeB.getTime() - timeA.getTime()
-          })
-        } else {
-          ungrouped.sort((a, b) => {
-            const titleA = (a.title ?? '').toLowerCase()
-            const titleB = (b.title ?? '').toLowerCase()
-            return titleA.localeCompare(titleB)
-          })
-        }
-
-        // Return flat list (grouping will be handled in component)
-        const result: PlanTemplateConfigVO[] = []
-        // Add ungrouped first
-        result.push(...ungrouped)
-        // Add grouped templates sorted by group name
-        const sortedGroupNames = Array.from(sortedGroups.keys()).sort()
-        sortedGroupNames.forEach(groupName => {
-          result.push(...sortedGroups.get(groupName)!)
-        })
-        return result
-      }
-      default:
-        return templates.sort((a, b) => {
-          const timeA = this.parseDateTime(a.updateTime || a.createTime || '')
-          const timeB = this.parseDateTime(b.updateTime || b.createTime || '')
-          return timeB.getTime() - timeA.getTime()
-        })
-    }
+  get planTemplateList() {
+    return templateStore.planTemplateList
   }
 
-  // Get grouped templates for display
-  get groupedTemplates(): Map<string | null, PlanTemplateConfigVO[]> {
-    if (this.organizationMethod !== 'by_group_time' && this.organizationMethod !== 'by_group_abc') {
-      // Return all templates in a single group for non-grouped methods
-      return new Map([[null, this.sortedTemplates]])
-    }
-
-    const groups = new Map<string | null, PlanTemplateConfigVO[]>()
-    const ungrouped: PlanTemplateConfigVO[] = []
-
-    // Use sorted templates directly (already sorted by sortedTemplates getter)
-    const sorted = this.sortedTemplates
-
-    sorted.forEach(template => {
-      const planTemplateId = template.planTemplateId || ''
-      const serviceGroup = this.templateServiceGroups.get(planTemplateId) ?? ''
-      if (!serviceGroup || serviceGroup === 'default' || serviceGroup === '') {
-        ungrouped.push(template)
-      } else {
-        if (!groups.has(serviceGroup)) {
-          groups.set(serviceGroup, [])
-        }
-        groups.get(serviceGroup)!.push(template)
-      }
-    })
-    // Create result map with ungrouped first, then sorted groups
-    const result = new Map<string | null, PlanTemplateConfigVO[]>()
-    if (ungrouped.length > 0) {
-      result.set(null, ungrouped)
-    }
-    // Add sorted groups
-    const sortedGroupNames = Array.from(groups.keys()).sort()
-    sortedGroupNames.forEach(groupName => {
-      result.set(groupName, groups.get(groupName)!)
-    })
-
-    return result
+  get selectedTemplate() {
+    return templateStore.selectedTemplate
   }
 
-  // Set organization method
-  setOrganizationMethod(method: 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc') {
-    this.organizationMethod = method
-    localStorage.setItem('sidebarOrganizationMethod', method)
+  get isLoading(): boolean {
+    return templateStore.isLoading
+  }
+
+  get errorMessage(): string {
+    return templateStore.errorMessage
+  }
+
+  get hasTaskRequirementModified(): boolean {
+    return templateStore.hasTaskRequirementModified
+  }
+
+  get organizationMethod() {
+    return templateStore.organizationMethod
+  }
+
+  get templateServiceGroups() {
+    return templateStore.templateServiceGroups
+  }
+
+  get groupCollapseState() {
+    return templateStore.groupCollapseState
+  }
+
+  get sortedTemplates() {
+    return templateStore.sortedTemplates
+  }
+
+  get groupedTemplates() {
+    return templateStore.groupedTemplates
   }
 
   get canRollback(): boolean {
-    return this.planVersions.length > 1 && this.currentVersionIndex > 0
+    return templateStore.canRollback
   }
 
   get canRestore(): boolean {
-    return this.planVersions.length > 1 && this.currentVersionIndex < this.planVersions.length - 1
+    return templateStore.canRestore
   }
 
-  get computedApiUrl(): string {
-    if (!this.selectedTemplate?.planTemplateId) return ''
-    const baseUrl = `/api/plan-template/execute/${this.selectedTemplate.planTemplateId}`
-    const params = this.executionParams.trim()
-    // GET method, parameter name is allParams
-    return params ? `${baseUrl}?allParams=${encodeURIComponent(params)}` : baseUrl
+  get templateConfigInstance() {
+    return templateStore.templateConfigInstance
+  }
+
+  // Delegate methods to templateStore
+  loadGroupCollapseState() {
+    return templateStore.loadGroupCollapseState()
+  }
+
+  saveGroupCollapseState() {
+    return templateStore.saveGroupCollapseState()
+  }
+
+  toggleGroupCollapse(groupName: string | null) {
+    return templateStore.toggleGroupCollapse(groupName)
+  }
+
+  isGroupCollapsed(groupName: string | null): boolean {
+    return templateStore.isGroupCollapsed(groupName)
+  }
+
+  setOrganizationMethod(method: 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc') {
+    return templateStore.setOrganizationMethod(method)
   }
 
   // Actions
@@ -329,251 +147,45 @@ export class SidebarStore {
     this.currentTab = tab
   }
 
+  // Delegate template operations to templateStore
   async loadPlanTemplateList() {
-    this.isLoading = true
-    this.errorMessage = ''
-    try {
-      console.log('[SidebarStore] Starting to load plan template list...')
-      const configVOs = await PlanTemplateApiService.getAllPlanTemplateConfigVOs()
-      
-      // Use PlanTemplateConfigVO directly
-      this.planTemplateList = configVOs
-      
-      // Build service group mapping
-      this.templateServiceGroups.clear()
-      for (const config of this.planTemplateList) {
-        const planTemplateId = config.planTemplateId
-        if (planTemplateId) {
-          const serviceGroup = config.serviceGroup || config.toolConfig?.serviceGroup || ''
-          if (serviceGroup) {
-            this.templateServiceGroups.set(planTemplateId, serviceGroup)
-          }
-        }
-      }
-      
-      console.log(
-        `[SidebarStore] Successfully loaded ${this.planTemplateList.length} plan templates`
-      )
-    } catch (error: unknown) {
-      console.error('[SidebarStore] Failed to load plan template list:', error)
-      this.planTemplateList = []
-      const message = error instanceof Error ? error.message : 'Unknown error'
-      this.errorMessage = `Load failed: ${message}`
-    } finally {
-      this.isLoading = false
-    }
+    return templateStore.loadPlanTemplateList()
   }
 
   async selectTemplate(template: PlanTemplateConfigVO) {
-    this.currentPlanTemplateId = template.planTemplateId || null
-    this.selectedTemplate = template
+    await templateStore.selectTemplate(template)
     this.currentTab = 'config'
-
-    // Clear jsonContent immediately to prevent stale data
-    this.jsonContent = ''
-
-    await this.loadTemplateData(template)
-    console.log(`[SidebarStore] Selected plan template: ${template.planTemplateId}`)
-  }
-
-  async loadTemplateData(template: PlanTemplateConfigVO) {
-    try {
-      const planTemplateId = template.planTemplateId
-      if (!planTemplateId) {
-        throw new Error('Plan template ID is required')
-      }
-      const versionsResponse = await PlanActApiService.getPlanVersions(planTemplateId)
-      this.planVersions = (versionsResponse as { versions?: string[] }).versions || []
-      if (this.planVersions.length > 0) {
-        const latestContent = this.planVersions[this.planVersions.length - 1]
-        this.jsonContent = latestContent
-        this.currentVersionIndex = this.planVersions.length - 1
-        // Reset modification flag when loading new template
-        this.hasTaskRequirementModified = false
-        try {
-          const parsed = JSON.parse(latestContent)
-          if (parsed.prompt) {
-            this.generatorPrompt = parsed.prompt
-          }
-          if (parsed.params) {
-            this.executionParams = parsed.params
-          }
-          // Update planType based on the loaded template's JSON content
-          if (parsed.planType) {
-            this.planType = parsed.planType
-            console.log(`[SidebarStore] Updated planType to: ${this.planType}`)
-          }
-        } catch {
-          console.warn('Unable to parse JSON content to get prompt information')
-        }
-      } else {
-        this.jsonContent = ''
-        this.generatorPrompt = ''
-        this.executionParams = ''
-        this.planType = 'dynamic_agent'
-        this.hasTaskRequirementModified = false
-      }
-    } catch (error: unknown) {
-      console.error('Failed to load template data:', error)
-      throw error
-    }
   }
 
   async createNewTemplate(planType: string) {
-    const emptyTemplate: PlanTemplateConfigVO = {
-      planTemplateId: `new-${Date.now()}`,
-      title: i18n.global.t('sidebar.newTemplateName'),
-      planType: planType,
-      createTime: new Date().toISOString(),
-      updateTime: new Date().toISOString(),
-    }
-    this.selectedTemplate = emptyTemplate
-    this.currentPlanTemplateId = null
-    this.jsonContent = ''
-    this.generatorPrompt = ''
-    this.executionParams = ''
-    this.planVersions = []
-    this.currentVersionIndex = -1
+    await templateStore.createNewTemplate(planType)
     this.currentTab = 'config'
-    // Reset to default planType for new templates
-    this.planType = planType
-    // Reset modification flag for new template
-    this.hasTaskRequirementModified = false
-
     // Reload available tools to ensure fresh tool list
     console.log('[SidebarStore] 🔄 Reloading available tools for new template')
     await this.loadAvailableTools()
-
-    console.log('[SidebarStore] Created new empty plan template, switching to config tab')
   }
 
   async deleteTemplate(template: PlanTemplateConfigVO) {
-    const planTemplateId = template.planTemplateId
-    if (!planTemplateId) {
-      console.warn('[SidebarStore] deleteTemplate: Invalid template object or ID')
-      return
-    }
-    try {
-      await PlanActApiService.deletePlanTemplate(planTemplateId)
-      if (this.currentPlanTemplateId === planTemplateId) {
-        this.clearSelection()
-      }
-      await this.loadPlanTemplateList()
-      console.log(`[SidebarStore] Plan template ${planTemplateId} has been deleted`)
-    } catch (error: unknown) {
-      console.error('Failed to delete plan template:', error)
-      await this.loadPlanTemplateList()
-      throw error
-    }
+    return templateStore.deleteTemplate(template)
   }
 
   clearSelection() {
-    this.currentPlanTemplateId = null
-    this.selectedTemplate = null
-    this.jsonContent = ''
-    this.generatorPrompt = ''
-    this.executionParams = ''
-    this.planVersions = []
-    this.currentVersionIndex = -1
+    templateStore.clearSelection()
     this.currentTab = 'list'
-    this.hasTaskRequirementModified = false
-  }
-
-  clearExecutionParams() {
-    this.executionParams = ''
   }
 
   rollbackVersion() {
-    if (this.canRollback && this.currentVersionIndex > 0) {
-      this.currentVersionIndex--
-      this.jsonContent = this.planVersions[this.currentVersionIndex] || ''
-    }
+    return templateStore.rollbackVersion()
   }
 
   restoreVersion() {
-    if (this.canRestore && this.currentVersionIndex < this.planVersions.length - 1) {
-      this.currentVersionIndex++
-      this.jsonContent = this.planVersions[this.currentVersionIndex] || ''
-    }
+    return templateStore.restoreVersion()
   }
 
   async saveTemplate() {
-    if (!this.selectedTemplate) return
-    const content = this.jsonContent.trim()
-    if (!content) {
-      throw new Error('Content cannot be empty')
-    }
-    try {
-      JSON.parse(content)
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Unknown error'
-      throw new Error('Invalid format, please correct and save.\nError: ' + message)
-    }
-    try {
-      const planTemplateId = this.selectedTemplate.planTemplateId
-      if (!planTemplateId) {
-        throw new Error('Plan template ID is required')
-      }
-      const saveResult = await PlanActApiService.savePlanTemplate(planTemplateId, content)
-
-      // Update the selected template ID with the real planId returned from backend
-      if (
-        (saveResult as { planId?: string })?.planId &&
-        this.selectedTemplate.planTemplateId?.startsWith('new-')
-      ) {
-        const newPlanId = (saveResult as { planId: string }).planId
-        console.log(
-          '[SidebarStore] Updating template ID from',
-          this.selectedTemplate.planTemplateId,
-          'to',
-          newPlanId
-        )
-        this.selectedTemplate.planTemplateId = newPlanId
-        this.currentPlanTemplateId = newPlanId
-      }
-
-      if (this.currentVersionIndex < this.planVersions.length - 1) {
-        this.planVersions = this.planVersions.slice(0, this.currentVersionIndex + 1)
-      }
-      this.planVersions.push(content)
-      this.currentVersionIndex = this.planVersions.length - 1
-      // Reset modification flag after successful save
-      this.hasTaskRequirementModified = false
-      return saveResult
-    } catch (error: unknown) {
-      console.error('Failed to save plan template:', error)
-      throw error
-    }
+    return templateStore.saveTemplate()
   }
 
-  preparePlanExecution() {
-    if (!this.selectedTemplate) return null
-    this.isExecuting = true
-    try {
-      let planData
-      try {
-        planData = JSON.parse(this.jsonContent)
-        planData.planTemplateId = this.selectedTemplate.planTemplateId
-      } catch {
-        throw new Error('Failed to parse plan data')
-      }
-      const title = this.selectedTemplate.title ?? planData.title ?? 'Execution Plan'
-      return {
-        title,
-        planData,
-        params: this.executionParams.trim() || undefined,
-        replacementParams: undefined as Record<string, string> | undefined,
-      }
-    } catch (error: unknown) {
-      console.error('Failed to prepare plan execution:', error)
-      this.isExecuting = false
-      throw error
-    }
-  }
-
-  finishPlanExecution() {
-    this.isExecuting = false
-  }
   // Load available tools from backend
   async loadAvailableTools() {
     if (this.isLoadingTools) {

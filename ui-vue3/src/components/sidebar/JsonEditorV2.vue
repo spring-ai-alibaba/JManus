@@ -382,14 +382,16 @@ interface JsonEditorV2Props {
   jsonContent: string
   canRollback: boolean
   canRestore: boolean
-  isGenerating: boolean
-  isExecuting: boolean
+  isGenerating?: boolean
+  isExecuting?: boolean
   currentPlanTemplateId: string
 }
 
 // Props
 const props = withDefaults(defineProps<JsonEditorV2Props>(), {
   currentPlanTemplateId: '',
+  isGenerating: false,
+  isExecuting: false,
 })
 
 // Emits

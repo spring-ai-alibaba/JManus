@@ -591,7 +591,7 @@ public class CoordinatorToolServiceImpl {
 			// No toolConfig provided, use defaults
 			toolVO
 				.setToolName(planTemplate != null ? "tool_" + planTemplate.getTitle() : "tool_" + configVO.getTitle());
-			toolVO.setToolDescription(planTemplate != null ? planTemplate.getUserRequest() : configVO.getTitle());
+			toolVO.setToolDescription(planTemplate != null ? planTemplate.getTitle() : configVO.getTitle());
 			// Service group: get from PlanTemplate (already set when creating/updating PlanTemplate)
 			// Set it on VO for response, but it's stored in PlanTemplate, not CoordinatorToolEntity
 			String serviceGroup = planTemplate != null ? planTemplate.getServiceGroup() : null;
@@ -682,54 +682,6 @@ public class CoordinatorToolServiceImpl {
 		}
 	}
 
-	/**
-	 * Initialize or update version history from PlanTemplateConfigVO
-	 * Uses PlanTemplateService.saveToVersionHistory() which automatically checks if content is different
-	 * Only saves a new version if the input JSON is different from the latest version
-	 * @param configVO Plan template configuration VO
-	 * @param planTemplateId Plan template ID
-	 */
-	private void initializeVersionHistoryFromConfig(PlanTemplateConfigVO configVO, String planTemplateId) {
-		try {
-			// Convert PlanTemplateConfigVO to JSON string (excluding toolConfig)
-			PlanTemplateConfigVO planJsonConfig = new PlanTemplateConfigVO();
-			planJsonConfig.setTitle(configVO.getTitle());
-			planJsonConfig.setSteps(configVO.getSteps());
-			planJsonConfig.setDirectResponse(configVO.getDirectResponse());
-			planJsonConfig.setPlanType(configVO.getPlanType());
-			planJsonConfig.setPlanTemplateId(configVO.getPlanTemplateId());
-			planJsonConfig.setReadOnly(configVO.getReadOnly());
-			// Explicitly do not set toolConfig
-
-			String planJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(planJsonConfig);
-
-			// Use PlanTemplateService.saveToVersionHistory() which automatically:
-			// 1. Checks if content is the same as the latest version
-			// 2. Only saves a new version if content is different
-			PlanTemplateService.VersionSaveResult result = planTemplateService.saveToVersionHistory(planTemplateId,
-					planJson);
-
-			if (result.isSaved()) {
-				log.info("Saved new version {} for PlanTemplate {} (content was different from latest version)",
-						result.getVersionIndex(), planTemplateId);
-			}
-			else if (result.isDuplicate()) {
-				log.info("Skipped saving version for PlanTemplate {} (content is the same as latest version: {})",
-						planTemplateId, result.getVersionIndex());
-			}
-			else {
-				log.warn("Unexpected result when saving version for PlanTemplate {}: {}", planTemplateId,
-						result.getMessage());
-			}
-
-		}
-		catch (Exception e) {
-			log.error("Failed to initialize version history from PlanTemplateConfigVO for planTemplateId: {}",
-					planTemplateId, e);
-			throw new CoordinatorToolException("INTERNAL_ERROR",
-					"Failed to initialize version history: " + e.getMessage());
-		}
-	}
 
 	/**
 	 * Create PlanTemplate from PlanTemplateConfigVO and save it to database

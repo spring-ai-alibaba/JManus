@@ -22,6 +22,7 @@ import type {
   InputSchemaParam,
 } from '@/types/plan-template'
 import { PlanTemplateApiService } from '@/api/plan-template-with-tool-api-service'
+import { PlanActApiService } from '@/api/plan-act-api-service'
 
 /**
  * Composable for managing PlanTemplateConfigVO
@@ -42,6 +43,10 @@ export function usePlanTemplateConfig() {
   // Loading state
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+
+  // Version control state
+  const planVersions = ref<string[]>([])
+  const currentVersionIndex = ref(-1)
 
   // Getters
   const getTitle = () => config.title
@@ -243,7 +248,63 @@ export function usePlanTemplateConfig() {
     if ('toolConfig' in config) {
       delete config.toolConfig
     }
+    planVersions.value = []
+    currentVersionIndex.value = -1
     error.value = null
+  }
+
+  // Convert config to JSON string
+  const toJsonString = (): string => {
+    return JSON.stringify(config, null, 2)
+  }
+
+  // Load config from JSON string
+  const fromJsonString = (jsonString: string) => {
+    try {
+      const parsed = JSON.parse(jsonString)
+      setConfig(parsed)
+      return true
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Invalid JSON format'
+      return false
+    }
+  }
+
+  // Version control methods
+  const canRollback = computed(() => {
+    return planVersions.value.length > 1 && currentVersionIndex.value > 0
+  })
+
+  const canRestore = computed(() => {
+    return (
+      planVersions.value.length > 1 &&
+      currentVersionIndex.value < planVersions.value.length - 1
+    )
+  })
+
+  const rollbackVersion = () => {
+    if (canRollback.value && currentVersionIndex.value > 0) {
+      currentVersionIndex.value--
+      const versionContent = planVersions.value[currentVersionIndex.value] || ''
+      fromJsonString(versionContent)
+    }
+  }
+
+  const restoreVersion = () => {
+    if (canRestore.value && currentVersionIndex.value < planVersions.value.length - 1) {
+      currentVersionIndex.value++
+      const versionContent = planVersions.value[currentVersionIndex.value] || ''
+      fromJsonString(versionContent)
+    }
+  }
+
+  // Update versions after save
+  const updateVersionsAfterSave = (content: string) => {
+    if (currentVersionIndex.value < planVersions.value.length - 1) {
+      planVersions.value = planVersions.value.slice(0, currentVersionIndex.value + 1)
+    }
+    planVersions.value.push(content)
+    currentVersionIndex.value = planVersions.value.length - 1
   }
 
   // Load from API
@@ -257,8 +318,26 @@ export function usePlanTemplateConfig() {
       isLoading.value = true
       error.value = null
 
+      // Load config from API
       const loadedConfig = await PlanTemplateApiService.getPlanTemplateConfigVO(planTemplateId)
       setConfig(loadedConfig)
+
+      // Load versions for version control
+      try {
+        const versionsResponse = await PlanActApiService.getPlanVersions(planTemplateId)
+        planVersions.value =
+          (versionsResponse as { versions?: string[] }).versions || []
+        if (planVersions.value.length > 0) {
+          currentVersionIndex.value = planVersions.value.length - 1
+        } else {
+          currentVersionIndex.value = -1
+        }
+      } catch (versionError) {
+        console.warn('Failed to load plan versions:', versionError)
+        planVersions.value = []
+        currentVersionIndex.value = -1
+      }
+
       return true
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load plan template config'
@@ -322,6 +401,8 @@ export function usePlanTemplateConfig() {
     config,
     isLoading,
     error,
+    planVersions,
+    currentVersionIndex,
 
     // Getters
     getTitle,
@@ -372,10 +453,30 @@ export function usePlanTemplateConfig() {
     load,
     save,
     validate,
+    toJsonString,
+    fromJsonString,
+    rollbackVersion,
+    restoreVersion,
+    updateVersionsAfterSave,
 
     // Computed
     isValid,
     hasToolConfig,
+    canRollback,
+    canRestore,
   }
+}
+
+// Singleton instance for global use
+let singletonInstance: ReturnType<typeof usePlanTemplateConfig> | null = null
+
+/**
+ * Get or create singleton instance of usePlanTemplateConfig
+ */
+export function usePlanTemplateConfigSingleton() {
+  if (!singletonInstance) {
+    singletonInstance = usePlanTemplateConfig()
+  }
+  return singletonInstance
 }
 
