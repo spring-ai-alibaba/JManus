@@ -50,16 +50,35 @@
           </div>
         </div>
 
-        <!-- Plan Template ID (Read-only) -->
+        <!-- Service Group -->
         <div class="form-row">
-          <label class="form-label">{{ $t('sidebar.planTemplateId') }}</label>
-          <input
-            :value="templateConfig.currentPlanTemplateId.value || ''"
-            type="text"
-            class="form-input readonly-input"
-            readonly
-            :placeholder="$t('sidebar.planTemplateIdPlaceholder')"
-          />
+          <label class="form-label">{{ $t('mcpService.serviceGroup') }}</label>
+          <div class="service-group-autocomplete">
+            <input
+              type="text"
+              v-model="serviceGroup"
+              @input="handleServiceGroupInput"
+              @focus="showGroupSuggestions = true"
+              @blur="handleServiceGroupBlur"
+              :placeholder="$t('mcpService.serviceGroupPlaceholder')"
+              class="form-input"
+            />
+            <!-- Filtered group suggestions dropdown -->
+            <div
+              v-if="showGroupSuggestions && filteredServiceGroups.length > 0"
+              class="service-group-dropdown"
+            >
+              <div
+                v-for="group in filteredServiceGroups"
+                :key="group"
+                class="service-group-option"
+                @mousedown="selectServiceGroup(group)"
+              >
+                {{ group }}
+              </div>
+            </div>
+          </div>
+          <div class="field-description">{{ $t('mcpService.serviceGroupDescription') }}</div>
         </div>
       </div>
 
@@ -369,6 +388,8 @@
 <script setup lang="ts">
 import { ConfigApiService, type ModelOption } from '@/api/config-api-service'
 import { PlanActApiService } from '@/api/plan-act-api-service'
+import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
+import { ToolApiService } from '@/api/tool-api-service'
 import AssignedTools from '@/components/shared/AssignedTools.vue'
 import ToolSelectionModal from '@/components/tool-selection-modal/ToolSelectionModal.vue'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
@@ -415,6 +436,12 @@ const displayData = reactive<{
 // JSON preview state
 const showJsonPreview = ref(false)
 
+// Service group autocomplete state
+const showGroupSuggestions = ref(false)
+const availableServiceGroups = ref<string[]>([])
+const isLoadingGroups = ref(false)
+const serviceGroup = ref('')
+
 // Dynamically generate JSON output from templateConfig (not cached, regenerated each time)
 const generatedJsonOutput = computed(() => {
   return templateConfig.generateJsonString()
@@ -428,6 +455,8 @@ const syncDisplayDataFromConfig = () => {
   displayData.directResponse = config.directResponse || false
   displayData.planTemplateId = config.planTemplateId || templateConfig.currentPlanTemplateId.value || ''
   displayData.planType = config.planType || 'dynamic_agent'
+  // Sync service group
+  serviceGroup.value = config.serviceGroup || config.toolConfig?.serviceGroup || ''
 }
 
 // Sync displayData changes back to templateConfig
@@ -871,6 +900,12 @@ watch(
   { immediate: true }
 )
 
+// Load service group from template config
+const loadServiceGroup = () => {
+  const group = templateConfig.getServiceGroup() || templateConfig.getToolServiceGroup() || ''
+  serviceGroup.value = group
+}
+
 // Watch for templateConfig changes and sync to displayData
 watch(
   () => templateConfig.config,
@@ -899,14 +934,132 @@ watch(
     }
     // Sync displayData when template changes
     syncDisplayDataFromConfig()
+    // Load service group when template changes
+    loadServiceGroup()
   },
   { immediate: true }
 )
+
+// Watch title changes and sync to toolName
+watch(
+  () => displayData.title,
+  async (newTitle) => {
+    if (newTitle && newTitle.trim() && templateConfig.currentPlanTemplateId.value) {
+      await syncToolNameFromTitle(newTitle.trim())
+    }
+  }
+)
+
+// Watch service group changes and sync to template config
+watch(
+  () => serviceGroup.value,
+  (newGroup) => {
+    templateConfig.setServiceGroup(newGroup)
+  }
+)
+
+// Load available service groups
+const loadAvailableServiceGroups = async () => {
+  if (isLoadingGroups.value) {
+    return
+  }
+
+  isLoadingGroups.value = true
+  try {
+    const tools = await ToolApiService.getAvailableTools()
+    const groupsSet = new Set<string>()
+    tools.forEach(tool => {
+      if (tool.serviceGroup) {
+        groupsSet.add(tool.serviceGroup)
+      }
+    })
+    availableServiceGroups.value = Array.from(groupsSet).sort()
+  } catch (error) {
+    console.error('[JsonEditorV2] Failed to load service groups:', error)
+    availableServiceGroups.value = []
+  } finally {
+    isLoadingGroups.value = false
+  }
+}
+
+// Filtered service groups
+const filteredServiceGroups = computed(() => {
+  const trimmedGroup = serviceGroup.value.trim()
+  if (!trimmedGroup) {
+    return availableServiceGroups.value
+  }
+
+  const query = trimmedGroup.toLowerCase()
+  return availableServiceGroups.value.filter(group => group.toLowerCase().includes(query))
+})
+
+// Handle service group input
+const handleServiceGroupInput = () => {
+  showGroupSuggestions.value = true
+}
+
+// Handle service group blur
+const handleServiceGroupBlur = () => {
+  setTimeout(() => {
+    showGroupSuggestions.value = false
+  }, 200)
+}
+
+// Select a service group from dropdown
+const selectServiceGroup = (group: string) => {
+  serviceGroup.value = group
+  showGroupSuggestions.value = false
+}
+
+// Sync toolName from title
+const syncToolNameFromTitle = async (title: string) => {
+  if (!templateConfig.currentPlanTemplateId.value) {
+    return
+  }
+
+  try {
+    // Get existing tool or create default
+    let tool = await CoordinatorToolApiService.getCoordinatorToolByTemplate(
+      templateConfig.currentPlanTemplateId.value
+    )
+
+    if (!tool) {
+      // Create default tool if it doesn't exist
+      tool = CoordinatorToolApiService.createDefaultCoordinatorTool(
+        templateConfig.currentPlanTemplateId.value,
+        undefined,
+        templateConfig.getConfig().title || ''
+      )
+    }
+
+    // Update toolName to match title
+    if (tool.toolName !== title) {
+      tool.toolName = title
+      
+      // Save the tool
+      if (tool.id) {
+        await CoordinatorToolApiService.updateCoordinatorTool(tool.id, tool)
+      } else {
+        const savedTool = await CoordinatorToolApiService.createCoordinatorTool(tool)
+        tool = savedTool
+      }
+    }
+  } catch (error) {
+    console.warn('[JsonEditorV2] Failed to sync toolName from title:', error)
+    // Silently fail - this is a background sync operation
+  }
+}
 
 // Initialize on mount
 onMounted(() => {
   // Sync displayData from templateConfig
   syncDisplayDataFromConfig()
+  
+  // Load service group
+  loadServiceGroup()
+  
+  // Load available service groups
+  loadAvailableServiceGroups()
 
   loadAvailableModels()
 
@@ -1049,6 +1202,13 @@ const formatTableHeader = (terminateColumns: string): string => {
   font-size: 10px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
+}
+
+.field-description {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+  margin-top: 2px;
 }
 
 .form-input,
@@ -1556,5 +1716,68 @@ const formatTableHeader = (terminateColumns: string): string => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Service Group Autocomplete Styles */
+.service-group-autocomplete {
+  position: relative;
+  width: 100%;
+}
+
+.service-group-autocomplete .form-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  font-size: 11px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.service-group-autocomplete .form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.service-group-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.service-group-option {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.service-group-option:last-child {
+  border-bottom: none;
+}
+
+.service-group-option:hover {
+  background: rgba(102, 126, 234, 0.2);
+  color: white;
+}
+
+.service-group-option:active {
+  background: rgba(102, 126, 234, 0.3);
 }
 </style>

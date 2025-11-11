@@ -1281,7 +1281,7 @@ const words: I18nType = {
     toolDescriptionPlaceholder: 'Please enter tool description',
     toolDescriptionDescription:
       'Tell the model when to use this tool. The more detailed you write (when to choose, when not to choose), the more accurate the model will be in selecting tools.',
-    serviceGroup: 'Service Group *',
+    serviceGroup: 'Service Group',
     serviceGroupPlaceholder: 'Please enter service group',
     serviceGroupDescription:
       'Used to group tools, making it easier for you to find your tool among many tools.',

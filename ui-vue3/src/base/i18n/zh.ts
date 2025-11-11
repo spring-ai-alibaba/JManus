@@ -1226,7 +1226,7 @@ const words: I18nType = {
     toolDescriptionPlaceholder: '请输入工具描述',
     toolDescriptionDescription:
       '告知模型，在什么时候需要使用这个工具，写的越详细（什么时候选择，什么时候不选择），模型选工具的准确性越高。',
-    serviceGroup: '服务组 *',
+    serviceGroup: '服务组',
     serviceGroupPlaceholder: '请输入服务组',
     serviceGroupDescription: '用来分组工具，方便你从大量工具里面找到你的那个工具。',
     parameterConfig: '参数配置',

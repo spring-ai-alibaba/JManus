@@ -16,21 +16,6 @@
 <template>
   <Modal v-model="showModal" :title="modalTitle" @confirm="handlePublish">
     <div class="modal-form wide-modal">
-      <!-- Tool Name -->
-      <div class="form-section">
-        <div class="form-item">
-          <label>{{ t('mcpService.toolNameRequired') }}</label>
-          <input
-            type="text"
-            v-model="formData.serviceName"
-            :placeholder="t('mcpService.toolNamePlaceholder')"
-            :class="{ error: !formData.serviceName || !formData.serviceName.trim() }"
-            required
-          />
-          <div class="field-description">{{ t('mcpService.toolNameDescription') }}</div>
-        </div>
-      </div>
-
       <!-- Tool Description -->
       <div class="form-section">
         <div class="form-item">
@@ -44,40 +29,6 @@
             required
           />
           <div class="field-description">{{ t('mcpService.toolDescriptionDescription') }}</div>
-        </div>
-      </div>
-
-      <!-- Service Group -->
-      <div class="form-section">
-        <div class="form-item">
-          <label>{{ t('mcpService.serviceGroup') }}</label>
-          <div class="service-group-autocomplete">
-            <input
-              type="text"
-              v-model="formData.serviceGroup"
-              @input="handleServiceGroupInput"
-              @focus="showGroupSuggestions = true"
-              @blur="handleServiceGroupBlur"
-              :placeholder="t('mcpService.serviceGroupPlaceholder')"
-              :class="{ error: !formData.serviceGroup || !formData.serviceGroup.trim() }"
-              required
-            />
-            <!-- Filtered group suggestions dropdown -->
-            <div
-              v-if="showGroupSuggestions && filteredServiceGroups.length > 0"
-              class="service-group-dropdown"
-            >
-              <div
-                v-for="group in filteredServiceGroups"
-                :key="group"
-                class="service-group-option"
-                @mousedown="selectServiceGroup(group)"
-              >
-                {{ group }}
-              </div>
-            </div>
-          </div>
-          <div class="field-description">{{ t('mcpService.serviceGroupDescription') }}</div>
         </div>
       </div>
 
@@ -200,13 +151,16 @@ import {
   PlanParameterApiService,
   type ParameterRequirements,
 } from '@/api/plan-parameter-api-service'
-import { ToolApiService } from '@/api/tool-api-service'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import Modal from '@/components/modal/index.vue'
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+
+// Get template config singleton
+const templateConfig = usePlanTemplateConfigSingleton()
 
 // Props
 interface Props {
@@ -256,29 +210,11 @@ const parameterRequirements = ref<ParameterRequirements>({
 })
 const isLoadingParameters = ref(false)
 
-// Service group autocomplete state
-const showGroupSuggestions = ref(false)
-const availableServiceGroups = ref<string[]>([])
-const isLoadingGroups = ref(false)
-
 // Form data
 const formData = reactive({
-  serviceName: '',
   userRequest: '',
   endpoint: '',
-  serviceGroup: '',
   parameters: [] as Array<{ name: string; description: string }>,
-})
-
-// Filtered service groups based on input (reusing filtering pattern from ToolSelectionModal)
-const filteredServiceGroups = computed(() => {
-  const trimmedGroup = formData.serviceGroup.trim()
-  if (!trimmedGroup) {
-    return availableServiceGroups.value
-  }
-
-  const query = trimmedGroup.toLowerCase()
-  return availableServiceGroups.value.filter(group => group.toLowerCase().includes(query))
 })
 
 // Calculate modal title
@@ -289,10 +225,8 @@ const modalTitle = computed(() => {
 
 // Initialize form data
 const initializeFormData = () => {
-  formData.serviceName = '' // Show empty when no entity
   formData.userRequest = props.planDescription || ''
   formData.endpoint = ''
-  formData.serviceGroup = ''
   // Only reset parameters when not loaded from plan template
   if (!parameterRequirements.value.hasParameters) {
     formData.parameters = []
@@ -301,63 +235,6 @@ const initializeFormData = () => {
   isSaved.value = false
 }
 
-// Watch tool description and copy to tool name when description changes
-watch(
-  () => formData.userRequest,
-  newDescription => {
-    // Copy description to tool name when description is entered
-    const trimmedDescription = newDescription.trim()
-    if (trimmedDescription) {
-      // Only copy if tool name is empty to avoid overwriting user input
-      if (!formData.serviceName.trim()) {
-        formData.serviceName = trimmedDescription
-      }
-    }
-  }
-)
-
-// Load available service groups from tools (reusing logic from ToolSelectionModal)
-const loadAvailableServiceGroups = async () => {
-  if (isLoadingGroups.value) {
-    return
-  }
-
-  isLoadingGroups.value = true
-  try {
-    const tools = await ToolApiService.getAvailableTools()
-    // Extract unique service groups (same pattern as groupedTools in ToolSelectionModal)
-    const groupsSet = new Set<string>()
-    tools.forEach(tool => {
-      if (tool.serviceGroup) {
-        groupsSet.add(tool.serviceGroup)
-      }
-    })
-    availableServiceGroups.value = Array.from(groupsSet).sort()
-  } catch (error) {
-    console.error('[PublishModal] Failed to load service groups:', error)
-    availableServiceGroups.value = []
-  } finally {
-    isLoadingGroups.value = false
-  }
-}
-
-// Handle service group input
-const handleServiceGroupInput = () => {
-  showGroupSuggestions.value = true
-}
-
-// Handle service group blur (with delay to allow option click)
-const handleServiceGroupBlur = () => {
-  setTimeout(() => {
-    showGroupSuggestions.value = false
-  }, 200)
-}
-
-// Select a service group from dropdown
-const selectServiceGroup = (group: string) => {
-  formData.serviceGroup = group
-  showGroupSuggestions.value = false
-}
 
 // Load parameter requirements from plan template
 const loadParameterRequirements = async () => {
@@ -417,21 +294,23 @@ const showMessage = (msg: string, type: 'success' | 'error' | 'info') => {
 
 // Validate form
 const validateForm = (): boolean => {
-  // Validate tool name
-  if (!formData.serviceName.trim()) {
-    showMessage(t('mcpService.toolNameRequiredError'), 'error')
-    return false
-  }
-
   // Validate tool description
   if (!formData.userRequest.trim()) {
     showMessage(t('mcpService.toolDescriptionRequiredError'), 'error')
     return false
   }
 
-  // Validate service group
-  if (!formData.serviceGroup.trim()) {
+  // Validate service group (from templateConfig)
+  const serviceGroup = templateConfig.getServiceGroup() || templateConfig.getToolServiceGroup() || ''
+  if (!serviceGroup.trim()) {
     showMessage(t('mcpService.serviceGroupRequiredError'), 'error')
+    return false
+  }
+
+  // Validate tool name (from templateConfig title)
+  const toolName = templateConfig.getTitle() || ''
+  if (!toolName.trim()) {
+    showMessage(t('mcpService.toolNameRequiredError'), 'error')
     return false
   }
 
@@ -495,9 +374,14 @@ const handlePublish = async () => {
 
     // 2. Update tool information
     console.log('[PublishModal] Updating tool information')
-    currentTool.value.toolName = formData.serviceName.trim()
+    // Get toolName from templateConfig title
+    const toolName = templateConfig.getTitle() || ''
+    // Get serviceGroup from templateConfig
+    const serviceGroup = templateConfig.getServiceGroup() || templateConfig.getToolServiceGroup() || ''
+    
+    currentTool.value.toolName = toolName.trim()
     currentTool.value.toolDescription = formData.userRequest.trim()
-    currentTool.value.serviceGroup = formData.serviceGroup.trim()
+    currentTool.value.serviceGroup = serviceGroup.trim()
     currentTool.value.planTemplateId = props.planTemplateId // Ensure planTemplateId is set
 
     // Set service enabled status and corresponding endpoint
@@ -546,7 +430,8 @@ const handlePublish = async () => {
       // Build service URL information
       const serviceUrls = []
       if (publishAsInternalToolcall.value) {
-        serviceUrls.push(`Internal Call: ${formData.serviceName}`)
+        const toolName = templateConfig.getTitle() || ''
+        serviceUrls.push(`Internal Call: ${toolName}`)
       }
 
       console.log('[PublishModal] Service published successfully')
@@ -672,9 +557,7 @@ const loadCoordinatorToolData = async () => {
 
     console.log('[PublishModal] Load tool data completed')
     // Fill form data
-    formData.serviceName = tool.toolName || ''
     formData.userRequest = tool.toolDescription || props.planDescription || ''
-    formData.serviceGroup = tool.serviceGroup ?? ''
 
     // Set form data based on service type
     publishAsHttpService.value = tool.enableHttpService ?? false
@@ -736,12 +619,6 @@ watch(
   }
 )
 
-// Load available service groups when modal opens
-watch(showModal, newVisible => {
-  if (newVisible) {
-    loadAvailableServiceGroups()
-  }
-})
 
 // Initialize when component mounts
 onMounted(async () => {
