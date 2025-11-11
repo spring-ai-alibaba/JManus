@@ -15,6 +15,7 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
+import com.alibaba.cloud.ai.manus.tool.browser.AriaElementHolder;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.microsoft.playwright.Locator;
@@ -50,6 +51,11 @@ public class ClickByElementAction extends BrowserAction {
 			return new ToolExecuteResult("Failed to create locator for element with index " + index);
 		}
 
+		// Get element role to determine click strategy (before try block for use in catch)
+		AriaElementHolder.AriaNode node = getAriaNodeByIdx(index);
+		String role = node != null ? node.role : null;
+		boolean isDownloadLink = role != null && ("link".equals(role) || "gridcell".equals(role));
+
 		String clickResultMessage = clickAndSwitchToNewTabIfOpened(page, () -> {
 			try {
 				log.info("Executing click action on element with idx {}: {}", index, elementName);
@@ -58,16 +64,35 @@ public class ClickByElementAction extends BrowserAction {
 				int elementTimeout = getElementTimeoutMs();
 				log.debug("Using element timeout: {}ms for click operations", elementTimeout);
 
-				// Wait for element to be visible and enabled before clicking
-				locator.waitFor(new Locator.WaitForOptions().setTimeout(elementTimeout));
+				// For download links or gridcells, use more lenient waiting strategy
+				if (isDownloadLink) {
+					log.debug("Element is a link/gridcell, using lenient click strategy for potential download");
+					// Wait for element to exist (not necessarily visible/enabled)
+					try {
+						locator.waitFor(new Locator.WaitForOptions().setState(com.microsoft.playwright.options.WaitForSelectorState.ATTACHED)
+								.setTimeout(elementTimeout));
+					}
+					catch (com.microsoft.playwright.TimeoutError e) {
+						log.warn("Element not attached within timeout, trying to click anyway: {}", e.getMessage());
+					}
 
-				// Check if element is visible and enabled
-				if (!locator.isVisible()) {
-					throw new RuntimeException("Element is not visible");
+					// For download links, use force click to bypass actionability checks
+					// This is necessary because download links may trigger downloads immediately
+					locator.click(new Locator.ClickOptions().setTimeout(elementTimeout).setForce(true));
 				}
+				else {
+					// For other elements, use standard waiting strategy
+					// Wait for element to be visible and enabled before clicking
+					locator.waitFor(new Locator.WaitForOptions().setTimeout(elementTimeout));
 
-				// Click with explicit timeout
-				locator.click(new Locator.ClickOptions().setTimeout(elementTimeout));
+					// Check if element is visible and enabled
+					if (!locator.isVisible()) {
+						throw new RuntimeException("Element is not visible");
+					}
+
+					// Click with explicit timeout
+					locator.click(new Locator.ClickOptions().setTimeout(elementTimeout));
+				}
 
 				// Add small delay to ensure the action is processed
 				Thread.sleep(500);
@@ -76,7 +101,20 @@ public class ClickByElementAction extends BrowserAction {
 			}
 			catch (com.microsoft.playwright.TimeoutError e) {
 				log.error("Timeout waiting for element with idx {} to be ready for click: {}", index, e.getMessage());
-				throw new RuntimeException("Timeout waiting for element to be ready for click: " + e.getMessage(), e);
+				// For download links, try force click as fallback
+				if (isDownloadLink) {
+					try {
+						log.info("Retrying with force click for element with idx {}: {}", index, elementName);
+						locator.click(new Locator.ClickOptions().setForce(true).setTimeout(2000));
+						log.info("Force click succeeded for element with idx {}: {}", index, elementName);
+					}
+					catch (Exception forceException) {
+						throw new RuntimeException("Timeout waiting for element to be ready for click: " + e.getMessage(), e);
+					}
+				}
+				else {
+					throw new RuntimeException("Timeout waiting for element to be ready for click: " + e.getMessage(), e);
+				}
 			}
 			catch (Exception e) {
 				log.error("Error during click on element with idx {}: {}", index, e.getMessage());
