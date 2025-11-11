@@ -80,7 +80,7 @@ public class AriaSnapshot {
 						const elements = document.querySelectorAll('*');
 						let counter = 1;
 						elements.forEach((el) => {
-							el.setAttribute('data-aria-id', 'aria-id-' + counter);
+							el.setAttribute('aria-label', 'aria-id-' + counter);
 							counter++;
 						});
 					})();

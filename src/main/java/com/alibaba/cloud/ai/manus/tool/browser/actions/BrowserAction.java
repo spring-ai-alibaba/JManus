@@ -129,7 +129,7 @@ public abstract class BrowserAction {
 			String escapedDataAriaId = dataAriaId.replace("'", "\\'");
 			
 			// Use data-aria-id attribute to locate the element
-			Locator dataAriaIdLocator = page.locator("[data-aria-id='" + escapedDataAriaId + "']");
+			Locator dataAriaIdLocator = page.locator("[aria-label='" + escapedDataAriaId + "']");
 			
 			return dataAriaIdLocator;
 		}

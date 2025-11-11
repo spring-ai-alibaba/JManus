@@ -242,39 +242,7 @@ public class DriverWrapper {
 		}
 	}
 
-	/**
-	 * Get AriaElementHolder, refreshing from current page if needed
-	 * @return AriaElementHolder instance
-	 */
-	public AriaElementHelper getAriaElementHolder() {
-		if (ariaElementHolder == null && currentPage != null) {
-			refreshAriaElementHolder();
-		}
-		return ariaElementHolder;
-	}
-
-	/**
-	 * Refresh ARIA element holder from current page
-	 */
-	private void refreshAriaElementHolder() {
-		if (currentPage == null) {
-			return;
-		}
-		try {
-			AriaSnapshotOptions options = new AriaSnapshotOptions().setSelector("body").setTimeout(30000);
-
-			// Create new instance and use the new method to parse page and assign refs
-			ariaElementHolder = new AriaElementHelper();
-			String snapshot = ariaElementHolder.parsePageAndAssignRefs(currentPage, options);
-
-			if (snapshot != null) {
-				log.debug("Successfully refreshed ARIA element holder with snapshot");
-			}
-		}
-		catch (Exception e) {
-			log.warn("Failed to refresh ARIA element holder: {}", e.getMessage());
-		}
-	}
+	
 
 	public Playwright getPlaywright() {
 		return playwright;

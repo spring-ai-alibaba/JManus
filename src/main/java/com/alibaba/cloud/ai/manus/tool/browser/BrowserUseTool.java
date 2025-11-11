@@ -455,22 +455,14 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 			try {
 				AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
 					.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
-				DriverWrapper driver = getDriver();
-				AriaElementHelper ariaElementHolder = driver.getAriaElementHolder();
-				if (ariaElementHolder != null) {
-					// Force re-parse the page to get the latest state
-					String snapshot = ariaElementHolder.parsePageAndAssignRefs(page, snapshotOptions);
+			
+				String snapshot = AriaElementHelper.parsePageAndAssignRefs(page, snapshotOptions);
 					if (snapshot != null && !snapshot.trim().isEmpty()) {
 						state.put("interactive_elements", snapshot);
 					}
 					else {
 						state.put("interactive_elements", "No interactive elements found or snapshot is empty");
 					}
-				}
-				else {
-					log.warn("ARIA element holder is not available");
-					state.put("interactive_elements", "ARIA element holder not available");
-				}
 			}
 			catch (PlaywrightException e) {
 				log.warn("Playwright error getting ARIA snapshot: {}", e.getMessage());
