@@ -456,7 +456,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
 					.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
 				DriverWrapper driver = getDriver();
-				AriaElementHolder ariaElementHolder = driver.getAriaElementHolder();
+				AriaElementHelper ariaElementHolder = driver.getAriaElementHolder();
 				if (ariaElementHolder != null) {
 					// Force re-parse the page to get the latest state
 					String snapshot = ariaElementHolder.parsePageAndAssignRefs(page, snapshotOptions);

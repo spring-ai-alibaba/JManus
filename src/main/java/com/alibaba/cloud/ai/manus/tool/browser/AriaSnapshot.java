@@ -73,6 +73,19 @@ public class AriaSnapshot {
 			log.debug("Generating ARIA snapshot with selector: {}, timeout: {}", options.getSelector(),
 					options.getTimeout());
 
+			// Inject unique data-aria-id IDs into all elements before taking snapshot
+			// Force replace data-aria-id to ensure consistent IDs
+			page.evaluate("""
+					(() => {
+						const elements = document.querySelectorAll('*');
+						let counter = 1;
+						elements.forEach((el) => {
+							el.setAttribute('data-aria-id', 'aria-id-' + counter);
+							counter++;
+						});
+					})();
+					""");
+
 			// Wait for selector if timeout is specified (similar to frame.timeout in
 			// Playwright)
 			if (options.getTimeout() != null && options.getTimeout() > 0) {
@@ -91,10 +104,6 @@ public class AriaSnapshot {
 			Locator locator = page.locator(options.getSelector());
 
 			// Call Playwright's native ariaSnapshot method
-			// The method internally uses frame.sendMessage("ariaSnapshot", params) with
-			// timeout
-			// Note: If ariaSnapshot() accepts options, it would be
-			// Locator.AriaSnapshotOptions
 			String snapshot = locator.ariaSnapshot();
 			return snapshot != null ? snapshot : "";
 		}

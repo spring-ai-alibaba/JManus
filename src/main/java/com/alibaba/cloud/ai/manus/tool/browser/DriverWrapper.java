@@ -48,7 +48,7 @@ public class DriverWrapper {
 
 	private Browser browser;
 
-	private AriaElementHolder ariaElementHolder;
+	private AriaElementHelper ariaElementHolder;
 
 	private final Path cookiePath;
 
@@ -246,7 +246,7 @@ public class DriverWrapper {
 	 * Get AriaElementHolder, refreshing from current page if needed
 	 * @return AriaElementHolder instance
 	 */
-	public AriaElementHolder getAriaElementHolder() {
+	public AriaElementHelper getAriaElementHolder() {
 		if (ariaElementHolder == null && currentPage != null) {
 			refreshAriaElementHolder();
 		}
@@ -264,7 +264,7 @@ public class DriverWrapper {
 			AriaSnapshotOptions options = new AriaSnapshotOptions().setSelector("body").setTimeout(30000);
 
 			// Create new instance and use the new method to parse page and assign refs
-			ariaElementHolder = new AriaElementHolder();
+			ariaElementHolder = new AriaElementHelper();
 			String snapshot = ariaElementHolder.parsePageAndAssignRefs(currentPage, options);
 
 			if (snapshot != null) {

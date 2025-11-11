@@ -15,7 +15,6 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
-import com.alibaba.cloud.ai.manus.tool.browser.AriaElementHolder;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.microsoft.playwright.Locator;
@@ -41,46 +40,19 @@ public class ClickByElementAction extends BrowserAction {
 			return new ToolExecuteResult("Element with index " + index + " not found in ARIA snapshot");
 		}
 
-		// Get element name for logging
-		String elementName = getElementNameByIdx(index);
-
-		log.info("Clicking element with idx {}: {}", index, elementName);
 		Page page = getCurrentPage();
 		Locator locator = getLocatorByIdx(index);
 		if (locator == null) {
 			return new ToolExecuteResult("Failed to create locator for element with index " + index);
 		}
 
-		// Get element role to determine click strategy (before try block for use in catch)
-		AriaElementHolder.AriaNode node = getAriaNodeByIdx(index);
-		String role = node != null ? node.role : null;
-		boolean isDownloadLink = role != null && ("link".equals(role) || "gridcell".equals(role));
-
 		String clickResultMessage = clickAndSwitchToNewTabIfOpened(page, () -> {
 			try {
-				log.info("Executing click action on element with idx {}: {}", index, elementName);
-
 				// Use a reasonable timeout for element operations (max 10 seconds)
 				int elementTimeout = getElementTimeoutMs();
 				log.debug("Using element timeout: {}ms for click operations", elementTimeout);
 
-				// For download links or gridcells, use more lenient waiting strategy
-				if (isDownloadLink) {
-					log.debug("Element is a link/gridcell, using lenient click strategy for potential download");
-					// Wait for element to exist (not necessarily visible/enabled)
-					try {
-						locator.waitFor(new Locator.WaitForOptions().setState(com.microsoft.playwright.options.WaitForSelectorState.ATTACHED)
-								.setTimeout(elementTimeout));
-					}
-					catch (com.microsoft.playwright.TimeoutError e) {
-						log.warn("Element not attached within timeout, trying to click anyway: {}", e.getMessage());
-					}
 
-					// For download links, use force click to bypass actionability checks
-					// This is necessary because download links may trigger downloads immediately
-					locator.click(new Locator.ClickOptions().setTimeout(elementTimeout).setForce(true));
-				}
-				else {
 					// For other elements, use standard waiting strategy
 					// Wait for element to be visible and enabled before clicking
 					locator.waitFor(new Locator.WaitForOptions().setTimeout(elementTimeout));
@@ -92,29 +64,16 @@ public class ClickByElementAction extends BrowserAction {
 
 					// Click with explicit timeout
 					locator.click(new Locator.ClickOptions().setTimeout(elementTimeout));
-				}
+				
 
 				// Add small delay to ensure the action is processed
 				Thread.sleep(500);
 
-				log.info("Click action completed for element with idx {}: {}", index, elementName);
+				
 			}
 			catch (com.microsoft.playwright.TimeoutError e) {
 				log.error("Timeout waiting for element with idx {} to be ready for click: {}", index, e.getMessage());
-				// For download links, try force click as fallback
-				if (isDownloadLink) {
-					try {
-						log.info("Retrying with force click for element with idx {}: {}", index, elementName);
-						locator.click(new Locator.ClickOptions().setForce(true).setTimeout(2000));
-						log.info("Force click succeeded for element with idx {}: {}", index, elementName);
-					}
-					catch (Exception forceException) {
-						throw new RuntimeException("Timeout waiting for element to be ready for click: " + e.getMessage(), e);
-					}
-				}
-				else {
-					throw new RuntimeException("Timeout waiting for element to be ready for click: " + e.getMessage(), e);
-				}
+				throw new RuntimeException("Timeout waiting for element to be ready for click: " + e.getMessage(), e);
 			}
 			catch (Exception e) {
 				log.error("Error during click on element with idx {}: {}", index, e.getMessage());
@@ -124,8 +83,7 @@ public class ClickByElementAction extends BrowserAction {
 				throw new RuntimeException("Error clicking element: " + e.getMessage(), e);
 			}
 		});
-		return new ToolExecuteResult("Successfully clicked element at index " + index + " element name: " + elementName
-				+ " " + clickResultMessage);
+		return new ToolExecuteResult("Successfully clicked element at index " + index + " " + clickResultMessage);
 	}
 
 }
