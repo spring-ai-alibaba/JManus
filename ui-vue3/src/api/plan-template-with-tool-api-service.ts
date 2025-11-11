@@ -176,4 +176,18 @@ export class PlanTemplateApiService {
       throw error
     }
   }
+
+  /**
+   * Get all plan template configuration VOs
+   */
+  static async getAllPlanTemplateConfigVOs(): Promise<PlanTemplateConfigVO[]> {
+    try {
+      const response = await fetch('/api/plan-template/list-config')
+      const result = await this.handleResponse(response)
+      return await result.json()
+    } catch (error) {
+      console.error('Failed to get all plan template config VOs:', error)
+      throw error
+    }
+  }
 }

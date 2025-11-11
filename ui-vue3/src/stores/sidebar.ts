@@ -16,8 +16,9 @@
 
 import { PlanActApiService } from '@/api/plan-act-api-service'
 import { ToolApiService } from '@/api/tool-api-service'
+import { PlanTemplateApiService } from '@/api/plan-template-with-tool-api-service'
 import { i18n } from '@/base/i18n'
-import type { PlanTemplate } from '@/types/plan-template'
+import type { PlanTemplateConfigVO } from '@/types/plan-template'
 import type { Tool } from '@/types/tool'
 import { reactive } from 'vue'
 
@@ -30,8 +31,8 @@ export class SidebarStore {
 
   // Template list related state
   currentPlanTemplateId: string | null = null
-  planTemplateList: PlanTemplate[] = []
-  selectedTemplate: PlanTemplate | null = null
+  planTemplateList: PlanTemplateConfigVO[] = []
+  selectedTemplate: PlanTemplateConfigVO | null = null
   isLoading = false
   errorMessage = ''
 
@@ -166,7 +167,7 @@ export class SidebarStore {
   }
 
   // Computed properties
-  get sortedTemplates(): PlanTemplate[] {
+  get sortedTemplates(): PlanTemplateConfigVO[] {
     const templates = [...this.planTemplateList]
 
     switch (this.organizationMethod) {
@@ -186,11 +187,12 @@ export class SidebarStore {
       case 'by_group_abc': {
         // For grouped methods, return templates sorted within groups
         // The grouping logic will be handled in the component
-        const groups = new Map<string, PlanTemplate[]>()
-        const ungrouped: PlanTemplate[] = []
+        const groups = new Map<string, PlanTemplateConfigVO[]>()
+        const ungrouped: PlanTemplateConfigVO[] = []
 
         templates.forEach(template => {
-          const serviceGroup = this.templateServiceGroups.get(template.id) ?? ''
+          const planTemplateId = template.planTemplateId || ''
+          const serviceGroup = this.templateServiceGroups.get(planTemplateId) ?? ''
           if (!serviceGroup || serviceGroup === 'default' || serviceGroup === '') {
             ungrouped.push(template)
           } else {
@@ -202,7 +204,7 @@ export class SidebarStore {
         })
 
         // Sort within each group
-        const sortedGroups = new Map<string, PlanTemplate[]>()
+        const sortedGroups = new Map<string, PlanTemplateConfigVO[]>()
         groups.forEach((templatesInGroup, groupName) => {
           const sorted = [...templatesInGroup]
           if (this.organizationMethod === 'by_group_time') {
@@ -238,7 +240,7 @@ export class SidebarStore {
         }
 
         // Return flat list (grouping will be handled in component)
-        const result: PlanTemplate[] = []
+        const result: PlanTemplateConfigVO[] = []
         // Add ungrouped first
         result.push(...ungrouped)
         // Add grouped templates sorted by group name
@@ -250,28 +252,29 @@ export class SidebarStore {
       }
       default:
         return templates.sort((a, b) => {
-          const timeA = this.parseDateTime(a.updateTime ?? a.createTime)
-          const timeB = this.parseDateTime(b.updateTime ?? b.createTime)
+          const timeA = this.parseDateTime(a.updateTime || a.createTime || '')
+          const timeB = this.parseDateTime(b.updateTime || b.createTime || '')
           return timeB.getTime() - timeA.getTime()
         })
     }
   }
 
   // Get grouped templates for display
-  get groupedTemplates(): Map<string | null, PlanTemplate[]> {
+  get groupedTemplates(): Map<string | null, PlanTemplateConfigVO[]> {
     if (this.organizationMethod !== 'by_group_time' && this.organizationMethod !== 'by_group_abc') {
       // Return all templates in a single group for non-grouped methods
       return new Map([[null, this.sortedTemplates]])
     }
 
-    const groups = new Map<string | null, PlanTemplate[]>()
-    const ungrouped: PlanTemplate[] = []
+    const groups = new Map<string | null, PlanTemplateConfigVO[]>()
+    const ungrouped: PlanTemplateConfigVO[] = []
 
     // Use sorted templates directly (already sorted by sortedTemplates getter)
     const sorted = this.sortedTemplates
 
     sorted.forEach(template => {
-      const serviceGroup = this.templateServiceGroups.get(template.id) ?? ''
+      const planTemplateId = template.planTemplateId || ''
+      const serviceGroup = this.templateServiceGroups.get(planTemplateId) ?? ''
       if (!serviceGroup || serviceGroup === 'default' || serviceGroup === '') {
         ungrouped.push(template)
       } else {
@@ -281,9 +284,40 @@ export class SidebarStore {
         groups.get(serviceGroup)!.push(template)
       }
     })
+    ┌─────────────────────────────────────────────────────────────┐
+│ User clicks template item                                    │
+│ @click="sidebarStore.selectTemplate(template)"              │
+└─────────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│ sidebarStore.selectTemplate(template)                        │
+│ (line 376-386)                                               │
+└─────────────────────────────────────────────────────────────┘
+                    │
+                    ├─► Set currentPlanTemplateId = template.id
+                    ├─► Set selectedTemplate = template
+                    ├─► Set currentTab = 'config'
+                    ├─► Clear jsonContent (prevent stale data)
+                    │
+                    └─► loadTemplateData(template)
+                        │
+                        ├─► PlanActApiService.getPlanVersions(template.id)
+                        │   └─► API: GET /api/plan-template/versions/{id}
+                        │
+                        ├─► Update planVersions array
+                        ├─► Set jsonContent = latest version
+                        ├─► Parse JSON to extract:
+                        │   ├─► generatorPrompt
+                        │   ├─► executionParams
+                        │   └─► planType
+                        │
+                        └─► Reset hasTaskRequirementModified = false
+
+                        已经处理好了初始化，现在需要再存一个当前激活的templateId。 
 
     // Create result map with ungrouped first, then sorted groups
-    const result = new Map<string | null, PlanTemplate[]>()
+    const result = new Map<string | null, PlanTemplateConfigVO[]>()
     if (ungrouped.length > 0) {
       result.set(null, ungrouped)
     }
@@ -311,8 +345,8 @@ export class SidebarStore {
   }
 
   get computedApiUrl(): string {
-    if (!this.selectedTemplate) return ''
-    const baseUrl = `/api/plan-template/execute/${this.selectedTemplate.id}`
+    if (!this.selectedTemplate?.planTemplateId) return ''
+    const baseUrl = `/api/plan-template/execute/${this.selectedTemplate.planTemplateId}`
     const params = this.executionParams.trim()
     // GET method, parameter name is allParams
     return params ? `${baseUrl}?allParams=${encodeURIComponent(params)}` : baseUrl
@@ -332,20 +366,26 @@ export class SidebarStore {
     this.errorMessage = ''
     try {
       console.log('[SidebarStore] Starting to load plan template list...')
-      const response = (await PlanActApiService.getAllPlanTemplates()) as {
-        templates?: PlanTemplate[]
+      const configVOs = await PlanTemplateApiService.getAllPlanTemplateConfigVOs()
+      
+      // Use PlanTemplateConfigVO directly
+      this.planTemplateList = configVOs
+      
+      // Build service group mapping
+      this.templateServiceGroups.clear()
+      for (const config of this.planTemplateList) {
+        const planTemplateId = config.planTemplateId
+        if (planTemplateId) {
+          const serviceGroup = config.serviceGroup || config.toolConfig?.serviceGroup || ''
+          if (serviceGroup) {
+            this.templateServiceGroups.set(planTemplateId, serviceGroup)
+          }
+        }
       }
-      if (response?.templates && Array.isArray(response.templates)) {
-        this.planTemplateList = response.templates
-        console.log(
-          `[SidebarStore] Successfully loaded ${response.templates.length} plan templates`
-        )
-        // Load service group information for each template
-        await this.loadTemplateServiceGroups()
-      } else {
-        this.planTemplateList = []
-        console.warn('[SidebarStore] API returned abnormal data format, using empty list', response)
-      }
+      
+      console.log(
+        `[SidebarStore] Successfully loaded ${this.planTemplateList.length} plan templates`
+      )
     } catch (error: unknown) {
       console.error('[SidebarStore] Failed to load plan template list:', error)
       this.planTemplateList = []
@@ -356,25 +396,8 @@ export class SidebarStore {
     }
   }
 
-  // Load service group information for templates
-  async loadTemplateServiceGroups() {
-    this.templateServiceGroups.clear()
-    const { CoordinatorToolApiService } = await import('@/api/coordinator-tool-api-service')
-    for (const template of this.planTemplateList) {
-      try {
-        const toolData = await CoordinatorToolApiService.getCoordinatorToolByTemplate(template.id)
-        if (toolData?.serviceGroup) {
-          this.templateServiceGroups.set(template.id, toolData.serviceGroup)
-        }
-      } catch (error) {
-        // Silently ignore errors for templates without published tools
-        console.debug(`No service group found for template ${template.id}:`, error)
-      }
-    }
-  }
-
-  async selectTemplate(template: PlanTemplate) {
-    this.currentPlanTemplateId = template.id
+  async selectTemplate(template: PlanTemplateConfigVO) {
+    this.currentPlanTemplateId = template.planTemplateId || null
     this.selectedTemplate = template
     this.currentTab = 'config'
 
@@ -382,12 +405,16 @@ export class SidebarStore {
     this.jsonContent = ''
 
     await this.loadTemplateData(template)
-    console.log(`[SidebarStore] Selected plan template: ${template.id}`)
+    console.log(`[SidebarStore] Selected plan template: ${template.planTemplateId}`)
   }
 
-  async loadTemplateData(template: PlanTemplate) {
+  async loadTemplateData(template: PlanTemplateConfigVO) {
     try {
-      const versionsResponse = await PlanActApiService.getPlanVersions(template.id)
+      const planTemplateId = template.planTemplateId
+      if (!planTemplateId) {
+        throw new Error('Plan template ID is required')
+      }
+      const versionsResponse = await PlanActApiService.getPlanVersions(planTemplateId)
       this.planVersions = (versionsResponse as { versions?: string[] }).versions || []
       if (this.planVersions.length > 0) {
         const latestContent = this.planVersions[this.planVersions.length - 1]
@@ -425,10 +452,10 @@ export class SidebarStore {
   }
 
   async createNewTemplate(planType: string) {
-    const emptyTemplate: PlanTemplate = {
-      id: `new-${Date.now()}`,
+    const emptyTemplate: PlanTemplateConfigVO = {
+      planTemplateId: `new-${Date.now()}`,
       title: i18n.global.t('sidebar.newTemplateName'),
-      description: i18n.global.t('sidebar.newTemplateDescription'),
+      planType: planType,
       createTime: new Date().toISOString(),
       updateTime: new Date().toISOString(),
     }
@@ -452,18 +479,19 @@ export class SidebarStore {
     console.log('[SidebarStore] Created new empty plan template, switching to config tab')
   }
 
-  async deleteTemplate(template: PlanTemplate) {
-    if (!template.id) {
+  async deleteTemplate(template: PlanTemplateConfigVO) {
+    const planTemplateId = template.planTemplateId
+    if (!planTemplateId) {
       console.warn('[SidebarStore] deleteTemplate: Invalid template object or ID')
       return
     }
     try {
-      await PlanActApiService.deletePlanTemplate(template.id)
-      if (this.currentPlanTemplateId === template.id) {
+      await PlanActApiService.deletePlanTemplate(planTemplateId)
+      if (this.currentPlanTemplateId === planTemplateId) {
         this.clearSelection()
       }
       await this.loadPlanTemplateList()
-      console.log(`[SidebarStore] Plan template ${template.id} has been deleted`)
+      console.log(`[SidebarStore] Plan template ${planTemplateId} has been deleted`)
     } catch (error: unknown) {
       console.error('Failed to delete plan template:', error)
       await this.loadPlanTemplateList()
@@ -514,21 +542,26 @@ export class SidebarStore {
       throw new Error('Invalid format, please correct and save.\nError: ' + message)
     }
     try {
-      const saveResult = await PlanActApiService.savePlanTemplate(this.selectedTemplate.id, content)
+      const planTemplateId = this.selectedTemplate.planTemplateId
+      if (!planTemplateId) {
+        throw new Error('Plan template ID is required')
+      }
+      const saveResult = await PlanActApiService.savePlanTemplate(planTemplateId, content)
 
       // Update the selected template ID with the real planId returned from backend
       if (
         (saveResult as { planId?: string })?.planId &&
-        this.selectedTemplate.id.startsWith('new-')
+        this.selectedTemplate.planTemplateId?.startsWith('new-')
       ) {
+        const newPlanId = (saveResult as { planId: string }).planId
         console.log(
           '[SidebarStore] Updating template ID from',
-          this.selectedTemplate.id,
+          this.selectedTemplate.planTemplateId,
           'to',
-          (saveResult as { planId: string }).planId
+          newPlanId
         )
-        this.selectedTemplate.id = (saveResult as { planId: string }).planId
-        this.currentPlanTemplateId = (saveResult as { planId: string }).planId
+        this.selectedTemplate.planTemplateId = newPlanId
+        this.currentPlanTemplateId = newPlanId
       }
 
       if (this.currentVersionIndex < this.planVersions.length - 1) {
@@ -552,7 +585,7 @@ export class SidebarStore {
       let planData
       try {
         planData = JSON.parse(this.jsonContent)
-        planData.planTemplateId = this.selectedTemplate.id
+        planData.planTemplateId = this.selectedTemplate.planTemplateId
       } catch {
         throw new Error('Failed to parse plan data')
       }

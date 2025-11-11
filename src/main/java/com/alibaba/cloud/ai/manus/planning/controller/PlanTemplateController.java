@@ -447,6 +447,136 @@ public class PlanTemplateController {
 	}
 
 	/**
+	 * Get all plan template configuration VOs
+	 * @return List of PlanTemplateConfigVO containing plan template and tool configuration
+	 */
+	@GetMapping("/list-config")
+	public ResponseEntity<List<PlanTemplateConfigVO>> getAllPlanTemplateConfigVOs() {
+		try {
+			logger.info("Getting all plan template configurations");
+
+			// Get all plan templates
+			List<PlanTemplate> templates = planTemplateService.getAllPlanTemplates();
+			List<PlanTemplateConfigVO> configVOs = new ArrayList<>();
+
+			for (PlanTemplate planTemplate : templates) {
+				// Skip internal toolcall templates
+				if (planTemplate.isInternalToolcall()) {
+					continue;
+				}
+
+				String planTemplateId = planTemplate.getPlanTemplateId();
+
+				// Get latest plan JSON version
+				String planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
+				if (planJson == null || planJson.trim().isEmpty()) {
+					logger.warn("Plan JSON not found for planTemplateId: {}, skipping", planTemplateId);
+					continue;
+				}
+
+				try {
+					// Parse plan JSON to PlanInterface
+					PlanInterface planInterface = objectMapper.readValue(planJson, PlanInterface.class);
+
+					// Create PlanTemplateConfigVO from plan template and plan JSON
+					PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
+					configVO.setPlanTemplateId(planTemplate.getPlanTemplateId());
+					configVO.setTitle(planTemplate.getTitle());
+					configVO.setPlanType(planInterface.getPlanType());
+					configVO.setServiceGroup(planTemplate.getServiceGroup());
+					configVO.setDirectResponse(planInterface.isDirectResponse());
+					configVO.setReadOnly(false); // Default to false, can be set based on business logic
+					// Set createTime and updateTime from PlanTemplate entity
+					if (planTemplate.getCreateTime() != null) {
+						configVO.setCreateTime(planTemplate.getCreateTime().toString());
+					}
+					if (planTemplate.getUpdateTime() != null) {
+						configVO.setUpdateTime(planTemplate.getUpdateTime().toString());
+					}
+
+					// Convert ExecutionStep list to StepConfig list
+					if (planInterface.getAllSteps() != null) {
+						List<PlanTemplateConfigVO.StepConfig> stepConfigs = new ArrayList<>();
+						for (ExecutionStep step : planInterface.getAllSteps()) {
+							PlanTemplateConfigVO.StepConfig stepConfig = new PlanTemplateConfigVO.StepConfig();
+							stepConfig.setStepRequirement(step.getStepRequirement());
+							stepConfig.setAgentName(step.getAgentName());
+							stepConfig.setModelName(step.getModelName());
+							stepConfig.setTerminateColumns(step.getTerminateColumns());
+							stepConfigs.add(stepConfig);
+						}
+						configVO.setSteps(stepConfigs);
+					}
+
+					// Get coordinator tool if exists to populate toolConfig
+					Optional<CoordinatorToolVO> coordinatorToolOpt = coordinatorToolService
+						.getCoordinatorToolByPlanTemplateId(planTemplateId);
+					if (coordinatorToolOpt.isPresent()) {
+						CoordinatorToolVO toolVO = coordinatorToolOpt.get();
+						PlanTemplateConfigVO.ToolConfigVO toolConfig = new PlanTemplateConfigVO.ToolConfigVO();
+						toolConfig.setToolName(toolVO.getToolName());
+						toolConfig.setToolDescription(toolVO.getToolDescription());
+						toolConfig.setServiceGroup(toolVO.getServiceGroup());
+						toolConfig.setEnableInternalToolcall(toolVO.getEnableInternalToolcall());
+						toolConfig.setEnableHttpService(toolVO.getEnableHttpService());
+						toolConfig.setEnableMcpService(toolVO.getEnableMcpService());
+						toolConfig.setPublishStatus(toolVO.getPublishStatus());
+
+						// Parse inputSchema JSON string to InputSchemaParam list
+						if (toolVO.getInputSchema() != null && !toolVO.getInputSchema().trim().isEmpty()) {
+							try {
+								com.fasterxml.jackson.databind.JsonNode inputSchemaNode = objectMapper
+									.readTree(toolVO.getInputSchema());
+								if (inputSchemaNode.isArray()) {
+									List<PlanTemplateConfigVO.InputSchemaParam> inputSchemaParams = new ArrayList<>();
+									for (com.fasterxml.jackson.databind.JsonNode paramNode : inputSchemaNode) {
+										PlanTemplateConfigVO.InputSchemaParam param = new PlanTemplateConfigVO.InputSchemaParam();
+										if (paramNode.has("name")) {
+											param.setName(paramNode.get("name").asText());
+										}
+										if (paramNode.has("description")) {
+											param.setDescription(paramNode.get("description").asText());
+										}
+										if (paramNode.has("type")) {
+											param.setType(paramNode.get("type").asText());
+										}
+										if (paramNode.has("required")) {
+											param.setRequired(paramNode.get("required").asBoolean());
+										}
+										inputSchemaParams.add(param);
+									}
+									toolConfig.setInputSchema(inputSchemaParams);
+								}
+							}
+							catch (Exception e) {
+								logger.warn("Failed to parse inputSchema for planTemplateId: {}", planTemplateId, e);
+								// Set empty list if parsing fails
+								toolConfig.setInputSchema(new ArrayList<>());
+							}
+						}
+
+						configVO.setToolConfig(toolConfig);
+					}
+
+					configVOs.add(configVO);
+				}
+				catch (Exception e) {
+					logger.warn("Failed to process plan template {}: {}", planTemplateId, e.getMessage());
+					// Continue processing other templates even if one fails
+				}
+			}
+
+			logger.info("Successfully retrieved {} plan template configurations", configVOs.size());
+			return ResponseEntity.ok(configVOs);
+
+		}
+		catch (Exception e) {
+			logger.error("Failed to get all plan template configurations", e);
+			return ResponseEntity.internalServerError().build();
+		}
+	}
+
+	/**
 	 * Get plan template configuration VO by plan template ID
 	 * @param planTemplateId The plan template ID
 	 * @return PlanTemplateConfigVO containing plan template and tool configuration
@@ -486,6 +616,13 @@ public class PlanTemplateController {
 			configVO.setServiceGroup(planTemplate.getServiceGroup());
 			configVO.setDirectResponse(planInterface.isDirectResponse());
 			configVO.setReadOnly(false); // Default to false, can be set based on business logic
+			// Set createTime and updateTime from PlanTemplate entity
+			if (planTemplate.getCreateTime() != null) {
+				configVO.setCreateTime(planTemplate.getCreateTime().toString());
+			}
+			if (planTemplate.getUpdateTime() != null) {
+				configVO.setUpdateTime(planTemplate.getUpdateTime().toString());
+			}
 
 			// Convert ExecutionStep list to StepConfig list
 			if (planInterface.getAllSteps() != null) {

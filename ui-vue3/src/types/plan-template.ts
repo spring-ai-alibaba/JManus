@@ -151,6 +151,8 @@ export interface PlanTemplateConfigVO {
   readOnly?: boolean
   serviceGroup?: string
   toolConfig?: ToolConfigVO
+  createTime?: string
+  updateTime?: string
 }
 
 export interface CreateOrUpdatePlanTemplateWithToolResponse {

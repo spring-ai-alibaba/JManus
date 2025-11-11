@@ -45,6 +45,10 @@ public class PlanTemplateConfigVO {
 
 	private ToolConfigVO toolConfig;
 
+	private String createTime;
+
+	private String updateTime;
+
 	/**
 	 * Default constructor
 	 */
@@ -119,6 +123,22 @@ public class PlanTemplateConfigVO {
 
 	public void setServiceGroup(String serviceGroup) {
 		this.serviceGroup = serviceGroup;
+	}
+
+	public String getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(String createTime) {
+		this.createTime = createTime;
+	}
+
+	public String getUpdateTime() {
+		return updateTime;
+	}
+
+	public void setUpdateTime(String updateTime) {
+		this.updateTime = updateTime;
 	}
 
 	/**

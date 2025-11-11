@@ -175,11 +175,11 @@
               >
                 <div
                   v-for="template in templates"
-                  :key="template.id"
+                  :key="template.planTemplateId || 'unknown'"
                   class="sidebar-content-list-item"
                   :class="{
                     'sidebar-content-list-item-active':
-                      template.id === sidebarStore.currentPlanTemplateId,
+                      template.planTemplateId === sidebarStore.currentPlanTemplateId,
                     'grouped-item':
                       sidebarStore.organizationMethod === 'by_group_time' ||
                       sidebarStore.organizationMethod === 'by_group_abc',
@@ -225,7 +225,7 @@
           <div class="template-info-header">
             <div class="template-info">
               <h3>{{ sidebarStore.selectedTemplate.title || $t('sidebar.unnamedPlan') }}</h3>
-              <span class="template-id">ID: {{ sidebarStore.selectedTemplate.id }}</span>
+              <span class="template-id">ID: {{ sidebarStore.selectedTemplate.planTemplateId }}</span>
             </div>
             <button class="back-to-list-btn" @click="sidebarStore.switchToTab('list')">
               <Icon icon="carbon:arrow-left" width="16" />
@@ -233,9 +233,8 @@
           </div>
 
           <!-- Section 2: JSON Editor (Conditional based on plan type) -->
-          <!-- Use JsonEditorV2 for dynamic_agent type -->
+          <!-- Use JsonEditorV2 for all plan types -->
           <JsonEditorV2
-            v-if="sidebarStore.planType === 'dynamic_agent'"
             :key="sidebarStore.currentPlanTemplateId || 'default'"
             :json-content="sidebarStore.jsonContent"
             :can-rollback="sidebarStore.canRollback"
@@ -247,22 +246,6 @@
             @restore="handleRestore"
             @save="handleSaveTemplate"
             @copy-plan="handleCopyPlan"
-            @update:json-content="(value: string) => (sidebarStore.jsonContent = value)"
-          />
-
-          <!-- Use JsonEditor for simple or other types -->
-          <JsonEditor
-            v-else
-            :key="'simple-' + (sidebarStore.currentPlanTemplateId || 'default')"
-            :json-content="sidebarStore.jsonContent"
-            :can-rollback="sidebarStore.canRollback"
-            :can-restore="sidebarStore.canRestore"
-            :is-generating="sidebarStore.isGenerating"
-            :is-executing="sidebarStore.isExecuting"
-            :current-plan-template-id="sidebarStore.currentPlanTemplateId || ''"
-            @rollback="handleRollback"
-            @restore="handleRestore"
-            @save="handleSaveTemplate"
             @update:json-content="(value: string) => (sidebarStore.jsonContent = value)"
           />
 
@@ -300,7 +283,7 @@
     ref="publishMcpModalRef"
     v-model="showPublishMcpModal"
     :plan-template-id="sidebarStore.currentPlanTemplateId || ''"
-    :plan-description="sidebarStore.selectedTemplate?.description || ''"
+    :plan-description="sidebarStore.selectedTemplate?.toolConfig?.toolDescription || ''"
     @published="handleMcpServicePublished"
   />
 
@@ -354,12 +337,11 @@ import PublishServiceModal from '@/components/publish-service-modal/PublishServi
 import { useToast } from '@/plugins/useToast'
 import { sidebarStore } from '@/stores/sidebar'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
-import type { PlanTemplate } from '@/types/plan-template'
+import type { PlanTemplateConfigVO } from '@/types/plan-template'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ExecutionController from './ExecutionController.vue'
-import JsonEditor from './JsonEditor.vue'
 import JsonEditorV2 from './JsonEditorV2.vue'
 
 const { t } = useI18n()
@@ -560,7 +542,7 @@ const handleExecutePlan = async (payload: PlanExecutionRequestPayload) => {
   )
   console.log('[Sidebar] 📊 Current sidebarStore state:', {
     currentPlanTemplateId: sidebarStore.currentPlanTemplateId,
-    selectedTemplate: sidebarStore.selectedTemplate?.id,
+    selectedTemplate: sidebarStore.selectedTemplate?.planTemplateId,
     jsonContent: sidebarStore.jsonContent.substring(0, 100) + '...',
   })
 
@@ -833,12 +815,11 @@ const getRelativeTimeString = (date: Date): string => {
 }
 
 // Get task preview text - show tool name if published, otherwise empty
-const getTaskPreviewText = (template: PlanTemplate): string => {
-  const toolInfo = templateToolInfo.value[template.id]
-  if (!toolInfo) {
-    return '' // Return empty string when no tools are published
+const getTaskPreviewText = (template: PlanTemplateConfigVO): string => {
+  if (template.toolConfig?.toolName) {
+    return `${t('sidebar.publishedTool')}: ${template.toolConfig.toolName}`
   }
-  return `${t('sidebar.publishedTool')}: ${toolInfo.toolName}`
+  return '' // Return empty string when no tools are published
 }
 
 // Filter templates based on search keyword
@@ -848,11 +829,11 @@ const filteredGroupedTemplates = computed(() => {
     return sidebarStore.groupedTemplates
   }
 
-  const filtered = new Map<string | null, PlanTemplate[]>()
+  const filtered = new Map<string | null, PlanTemplateConfigVO[]>()
 
   // Iterate through all groups
   for (const [groupName, templates] of sidebarStore.groupedTemplates) {
-    const matchingTemplates: PlanTemplate[] = []
+    const matchingTemplates: PlanTemplateConfigVO[] = []
 
     for (const template of templates) {
       // Search in title
@@ -908,16 +889,22 @@ watch(searchKeyword, newKeyword => {
 })
 
 // Load tool information for all templates
+// Tool info is now included in PlanTemplateConfigVO from the API
 const loadAllTemplateToolInfo = async () => {
+  // Populate templateToolInfo from template data
   for (const template of sidebarStore.planTemplateList) {
-    try {
-      const toolData = await CoordinatorToolApiService.getCoordinatorToolByTemplate(template.id)
-      if (toolData?.toolName) {
-        templateToolInfo.value[template.id] = toolData
+    const planTemplateId = template.planTemplateId
+    if (planTemplateId && template.toolConfig?.toolName) {
+      templateToolInfo.value[planTemplateId] = {
+        toolName: template.toolConfig.toolName,
+        toolDescription: template.toolConfig.toolDescription || '',
+        planTemplateId: planTemplateId,
+        inputSchema: '[]',
+        enableHttpService: template.toolConfig.enableHttpService || false,
+        enableMcpService: template.toolConfig.enableMcpService || false,
+        enableInternalToolcall: template.toolConfig.enableInternalToolcall || false,
+        serviceGroup: template.toolConfig.serviceGroup || template.serviceGroup || '',
       }
-    } catch (error) {
-      // Silently ignore errors for templates without published tools
-      console.debug(`No tool found for template ${template.id}:`, error)
     }
   }
 }
