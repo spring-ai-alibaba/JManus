@@ -276,15 +276,23 @@ const getTaskPreviewText = (template: PlanTemplateConfigVO): string => {
 
 // Filter templates based on search keyword
 const filteredGroupedTemplates = computed(() => {
+  // Access planTemplateList directly to ensure reactivity
+  // This ensures Vue tracks changes to the list
+  const _ = templateConfig.planTemplateList.value
+  
   const keyword = searchKeyword.value.trim().toLowerCase()
+  
+  // Get grouped templates from templateStore
+  const grouped = templateStore.groupedTemplates
+  
   if (!keyword) {
-    return templateStore.groupedTemplates
+    return grouped
   }
 
   const filtered = new Map<string | null, PlanTemplateConfigVO[]>()
 
   // Iterate through all groups
-  for (const [groupName, templates] of templateStore.groupedTemplates) {
+  for (const [groupName, templates] of grouped) {
     const matchingTemplates: PlanTemplateConfigVO[] = []
 
     for (const template of templates) {
@@ -309,6 +317,9 @@ const filteredGroupedTemplates = computed(() => {
 
 // Auto-expand groups that contain matching items when searching
 watch(searchKeyword, newKeyword => {
+  // Access planTemplateList to ensure reactivity
+  const _ = templateConfig.planTemplateList.value
+  
   const keyword = newKeyword.trim().toLowerCase()
   if (!keyword) {
     return
@@ -323,7 +334,8 @@ watch(searchKeyword, newKeyword => {
   }
 
   // Expand groups that contain matches
-  for (const [groupName, templates] of templateStore.groupedTemplates) {
+  const grouped = templateStore.groupedTemplates
+  for (const [groupName, templates] of grouped) {
     let hasMatch = false
     for (const template of templates) {
       const title = (template.title || '').toLowerCase()

@@ -18,7 +18,7 @@ import { PlanActApiService } from '@/api/plan-act-api-service'
 import { PlanTemplateApiService } from '@/api/plan-template-with-tool-api-service'
 import { i18n } from '@/base/i18n'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
-import { reactive } from 'vue'
+import { computed, reactive } from 'vue'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 
 export class TemplateStore {
@@ -132,138 +132,6 @@ export class TemplateStore {
   // Reference to template config for accessing planTemplateList
   private templateConfig = usePlanTemplateConfigSingleton()
 
-  // Computed properties
-  get sortedTemplates(): PlanTemplateConfigVO[] {
-    const templates = [...this.templateConfig.planTemplateList.value]
-
-    switch (this.organizationMethod) {
-      case 'by_time':
-        return templates.sort((a, b) => {
-          const timeA = this.parseDateTime(a.updateTime ?? a.createTime)
-          const timeB = this.parseDateTime(b.updateTime ?? b.createTime)
-          return timeB.getTime() - timeA.getTime()
-        })
-      case 'by_abc':
-        return templates.sort((a, b) => {
-          const titleA = (a.title ?? '').toLowerCase()
-          const titleB = (b.title ?? '').toLowerCase()
-          return titleA.localeCompare(titleB)
-        })
-      case 'by_group_time':
-      case 'by_group_abc': {
-        // For grouped methods, return templates sorted within groups
-        // The grouping logic will be handled in the component
-        const groups = new Map<string, PlanTemplateConfigVO[]>()
-        const ungrouped: PlanTemplateConfigVO[] = []
-
-        templates.forEach(template => {
-          const planTemplateId = template.planTemplateId || ''
-          const serviceGroup = this.templateServiceGroups.get(planTemplateId) ?? ''
-          if (!serviceGroup || serviceGroup === 'default' || serviceGroup === '') {
-            ungrouped.push(template)
-          } else {
-            if (!groups.has(serviceGroup)) {
-              groups.set(serviceGroup, [])
-            }
-            groups.get(serviceGroup)!.push(template)
-          }
-        })
-
-        // Sort within each group
-        const sortedGroups = new Map<string, PlanTemplateConfigVO[]>()
-        groups.forEach((templatesInGroup, groupName) => {
-          const sorted = [...templatesInGroup]
-          if (this.organizationMethod === 'by_group_time') {
-            sorted.sort((a, b) => {
-              const timeA = this.parseDateTime(a.updateTime ?? a.createTime)
-              const timeB = this.parseDateTime(b.updateTime ?? b.createTime)
-              return timeB.getTime() - timeA.getTime()
-            })
-          } else {
-            // by_group_abc
-            sorted.sort((a, b) => {
-              const titleA = (a.title ?? '').toLowerCase()
-              const titleB = (b.title ?? '').toLowerCase()
-              return titleA.localeCompare(titleB)
-            })
-          }
-          sortedGroups.set(groupName, sorted)
-        })
-
-        // Sort ungrouped templates
-        if (this.organizationMethod === 'by_group_time') {
-          ungrouped.sort((a, b) => {
-            const timeA = this.parseDateTime(a.updateTime ?? a.createTime)
-            const timeB = this.parseDateTime(b.updateTime ?? b.createTime)
-            return timeB.getTime() - timeA.getTime()
-          })
-        } else {
-          ungrouped.sort((a, b) => {
-            const titleA = (a.title ?? '').toLowerCase()
-            const titleB = (b.title ?? '').toLowerCase()
-            return titleA.localeCompare(titleB)
-          })
-        }
-
-        // Return flat list (grouping will be handled in component)
-        const result: PlanTemplateConfigVO[] = []
-        // Add ungrouped first
-        result.push(...ungrouped)
-        // Add grouped templates sorted by group name
-        const sortedGroupNames = Array.from(sortedGroups.keys()).sort()
-        sortedGroupNames.forEach(groupName => {
-          result.push(...sortedGroups.get(groupName)!)
-        })
-        return result
-      }
-      default:
-        return templates.sort((a, b) => {
-          const timeA = this.parseDateTime(a.updateTime || a.createTime || '')
-          const timeB = this.parseDateTime(b.updateTime || b.createTime || '')
-          return timeB.getTime() - timeA.getTime()
-        })
-    }
-  }
-
-  // Get grouped templates for display
-  get groupedTemplates(): Map<string | null, PlanTemplateConfigVO[]> {
-    if (this.organizationMethod !== 'by_group_time' && this.organizationMethod !== 'by_group_abc') {
-      // Return all templates in a single group for non-grouped methods
-      return new Map([[null, this.sortedTemplates]])
-    }
-
-    const groups = new Map<string | null, PlanTemplateConfigVO[]>()
-    const ungrouped: PlanTemplateConfigVO[] = []
-
-    // Use sorted templates directly (already sorted by sortedTemplates getter)
-    const sorted = this.sortedTemplates
-
-    sorted.forEach(template => {
-      const planTemplateId = template.planTemplateId || ''
-      const serviceGroup = this.templateServiceGroups.get(planTemplateId) ?? ''
-      if (!serviceGroup || serviceGroup === 'default' || serviceGroup === '') {
-        ungrouped.push(template)
-      } else {
-        if (!groups.has(serviceGroup)) {
-          groups.set(serviceGroup, [])
-        }
-        groups.get(serviceGroup)!.push(template)
-      }
-    })
-    // Create result map with ungrouped first, then sorted groups
-    const result = new Map<string | null, PlanTemplateConfigVO[]>()
-    if (ungrouped.length > 0) {
-      result.set(null, ungrouped)
-    }
-    // Add sorted groups
-    const sortedGroupNames = Array.from(groups.keys()).sort()
-    sortedGroupNames.forEach(groupName => {
-      result.set(groupName, groups.get(groupName)!)
-    })
-
-    return result
-  }
-
   // Set organization method
   setOrganizationMethod(method: 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc') {
     this.organizationMethod = method
@@ -359,5 +227,176 @@ export class TemplateStore {
   }
 }
 
-export const templateStore = reactive(new TemplateStore())
+// Create store instance
+const storeInstance = new TemplateStore()
+
+// Get template config singleton for computed properties
+const templateConfigRef = usePlanTemplateConfigSingleton()
+
+// Create reactive store first
+export const templateStore = reactive({
+  // State properties
+  isLoading: storeInstance.isLoading,
+  errorMessage: storeInstance.errorMessage,
+  hasTaskRequirementModified: storeInstance.hasTaskRequirementModified,
+  organizationMethod: storeInstance.organizationMethod,
+  templateServiceGroups: storeInstance.templateServiceGroups,
+  groupCollapseState: storeInstance.groupCollapseState,
+
+  // Methods
+  loadGroupCollapseState: () => storeInstance.loadGroupCollapseState(),
+  saveGroupCollapseState: () => storeInstance.saveGroupCollapseState(),
+  toggleGroupCollapse: (groupName: string | null) => storeInstance.toggleGroupCollapse(groupName),
+  isGroupCollapsed: (groupName: string | null) => storeInstance.isGroupCollapsed(groupName),
+  parseDateTime: (dateValue: unknown) => storeInstance.parseDateTime(dateValue),
+  setOrganizationMethod: (method: 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc') => {
+    storeInstance.setOrganizationMethod(method)
+    templateStore.organizationMethod = method
+  },
+  loadPlanTemplateList: async () => {
+    await storeInstance.loadPlanTemplateList()
+    // Update reactive properties after loading
+    templateStore.isLoading = storeInstance.isLoading
+    templateStore.errorMessage = storeInstance.errorMessage
+    templateStore.templateServiceGroups = storeInstance.templateServiceGroups
+  },
+  selectTemplate: (template: PlanTemplateConfigVO) => storeInstance.selectTemplate(template),
+  createNewTemplate: (planType: string) => storeInstance.createNewTemplate(planType),
+  deleteTemplate: (template: PlanTemplateConfigVO) => storeInstance.deleteTemplate(template),
+  clearSelection: () => storeInstance.clearSelection(),
+})
+
+// Create computed properties for reactive template lists
+// These must be defined after templateStore to access reactive properties
+const sortedTemplatesComputed = computed(() => {
+  const templates = [...templateConfigRef.planTemplateList.value]
+
+  switch (templateStore.organizationMethod) {
+    case 'by_time':
+      return templates.sort((a, b) => {
+        const timeA = templateStore.parseDateTime(a.updateTime ?? a.createTime)
+        const timeB = templateStore.parseDateTime(b.updateTime ?? b.createTime)
+        return timeB.getTime() - timeA.getTime()
+      })
+    case 'by_abc':
+      return templates.sort((a, b) => {
+        const titleA = (a.title ?? '').toLowerCase()
+        const titleB = (b.title ?? '').toLowerCase()
+        return titleA.localeCompare(titleB)
+      })
+    case 'by_group_time':
+    case 'by_group_abc': {
+      const groups = new Map<string, PlanTemplateConfigVO[]>()
+      const ungrouped: PlanTemplateConfigVO[] = []
+
+      templates.forEach(template => {
+        const planTemplateId = template.planTemplateId || ''
+        const serviceGroup = templateStore.templateServiceGroups.get(planTemplateId) ?? ''
+        if (!serviceGroup || serviceGroup === 'default' || serviceGroup === '') {
+          ungrouped.push(template)
+        } else {
+          if (!groups.has(serviceGroup)) {
+            groups.set(serviceGroup, [])
+          }
+          groups.get(serviceGroup)!.push(template)
+        }
+      })
+
+      const sortedGroups = new Map<string, PlanTemplateConfigVO[]>()
+      groups.forEach((templatesInGroup, groupName) => {
+        const sorted = [...templatesInGroup]
+        if (templateStore.organizationMethod === 'by_group_time') {
+          sorted.sort((a, b) => {
+            const timeA = templateStore.parseDateTime(a.updateTime ?? a.createTime)
+            const timeB = templateStore.parseDateTime(b.updateTime ?? b.createTime)
+            return timeB.getTime() - timeA.getTime()
+          })
+        } else {
+          sorted.sort((a, b) => {
+            const titleA = (a.title ?? '').toLowerCase()
+            const titleB = (b.title ?? '').toLowerCase()
+            return titleA.localeCompare(titleB)
+          })
+        }
+        sortedGroups.set(groupName, sorted)
+      })
+
+      if (templateStore.organizationMethod === 'by_group_time') {
+        ungrouped.sort((a, b) => {
+          const timeA = templateStore.parseDateTime(a.updateTime ?? a.createTime)
+          const timeB = templateStore.parseDateTime(b.updateTime ?? b.createTime)
+          return timeB.getTime() - timeA.getTime()
+        })
+      } else {
+        ungrouped.sort((a, b) => {
+          const titleA = (a.title ?? '').toLowerCase()
+          const titleB = (b.title ?? '').toLowerCase()
+          return titleA.localeCompare(titleB)
+        })
+      }
+
+      const result: PlanTemplateConfigVO[] = []
+      result.push(...ungrouped)
+      const sortedGroupNames = Array.from(sortedGroups.keys()).sort()
+      sortedGroupNames.forEach(groupName => {
+        result.push(...sortedGroups.get(groupName)!)
+      })
+      return result
+    }
+    default:
+      return templates.sort((a, b) => {
+        const timeA = templateStore.parseDateTime(a.updateTime || a.createTime || '')
+        const timeB = templateStore.parseDateTime(b.updateTime || b.createTime || '')
+        return timeB.getTime() - timeA.getTime()
+      })
+  }
+})
+
+const groupedTemplatesComputed = computed(() => {
+  if (templateStore.organizationMethod !== 'by_group_time' && templateStore.organizationMethod !== 'by_group_abc') {
+    return new Map([[null, sortedTemplatesComputed.value]])
+  }
+
+  const groups = new Map<string | null, PlanTemplateConfigVO[]>()
+  const ungrouped: PlanTemplateConfigVO[] = []
+  const sorted = sortedTemplatesComputed.value
+
+  sorted.forEach(template => {
+    const planTemplateId = template.planTemplateId || ''
+    const serviceGroup = templateStore.templateServiceGroups.get(planTemplateId) ?? ''
+    if (!serviceGroup || serviceGroup === 'default' || serviceGroup === '') {
+      ungrouped.push(template)
+    } else {
+      if (!groups.has(serviceGroup)) {
+        groups.set(serviceGroup, [])
+      }
+      groups.get(serviceGroup)!.push(template)
+    }
+  })
+
+  const result = new Map<string | null, PlanTemplateConfigVO[]>()
+  if (ungrouped.length > 0) {
+    result.set(null, ungrouped)
+  }
+  const sortedGroupNames = Array.from(groups.keys()).sort()
+  sortedGroupNames.forEach(groupName => {
+    result.set(groupName, groups.get(groupName)!)
+  })
+
+  return result
+})
+
+
+// Add computed properties to reactive store using Object.defineProperty
+Object.defineProperty(templateStore, 'sortedTemplates', {
+  get: () => sortedTemplatesComputed.value,
+  enumerable: true,
+  configurable: true,
+})
+
+Object.defineProperty(templateStore, 'groupedTemplates', {
+  get: () => groupedTemplatesComputed.value,
+  enumerable: true,
+  configurable: true,
+})
 
