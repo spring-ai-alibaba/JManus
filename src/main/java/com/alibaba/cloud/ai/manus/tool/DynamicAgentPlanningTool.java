@@ -15,16 +15,18 @@
  */
 package com.alibaba.cloud.ai.manus.tool;
 
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.DynamicAgentExecutionPlan;
-import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.openai.api.OpenAiApi.FunctionTool;
 import org.springframework.ai.tool.function.FunctionToolCallback;
 import org.springframework.ai.tool.metadata.ToolMetadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.util.*;
+
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.DynamicAgentExecutionPlan;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
 public class DynamicAgentPlanningTool extends AbstractBaseTool<DynamicAgentPlanningTool.DynamicAgentPlanningInput>
 		implements PlanningToolInterface {
@@ -258,7 +260,6 @@ public class DynamicAgentPlanningTool extends AbstractBaseTool<DynamicAgentPlann
 			DynamicAgentExecutionPlan plan = new DynamicAgentExecutionPlan();
 			plan.setTitle(title);
 			plan.setDirectResponse(true);
-			plan.setUserRequest(title); // Here title is the user request content
 
 			this.currentPlan = plan;
 			return new ToolExecuteResult("Direct response mode: dynamic agent plan created successfully");

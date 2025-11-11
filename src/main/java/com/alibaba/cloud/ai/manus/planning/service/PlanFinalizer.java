@@ -23,6 +23,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -36,7 +38,7 @@ import com.alibaba.cloud.ai.manus.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
-import com.alibaba.cloud.ai.manus.workspace.conversation.advisor.CustomMessageChatMemoryAdvisor;
+import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
 
 import reactor.core.publisher.Flux;
 
@@ -58,29 +60,31 @@ public class PlanFinalizer {
 
 	private final TaskInterruptionManager taskInterruptionManager;
 
+	private final MemoryService memoryService;
+
 	public PlanFinalizer(LlmService llmService, PlanExecutionRecorder recorder, ManusProperties manusProperties,
-			StreamingResponseHandler streamingResponseHandler, TaskInterruptionManager taskInterruptionManager) {
+			StreamingResponseHandler streamingResponseHandler, TaskInterruptionManager taskInterruptionManager,
+			MemoryService memoryService) {
 		this.llmService = llmService;
 		this.recorder = recorder;
 		this.manusProperties = manusProperties;
 		this.streamingResponseHandler = streamingResponseHandler;
 		this.taskInterruptionManager = taskInterruptionManager;
+		this.memoryService = memoryService;
 	}
 
 	/**
 	 * Generate the execution summary of the plan using LLM
 	 */
 	private void generateSummary(ExecutionContext context, PlanExecutionResult result) {
-		validateContextWithPlan(context, "ExecutionContext or its plan cannot be null");
+		validateContextWithPlan(context, "ExecutionContext or its plan or title cannot be null");
 
 		Map<String, Object> promptVariables = Map.of("executionDetail",
-				context.getPlan().getPlanExecutionStateStringFormat(false), "userRequest", context.getUserRequest());
+				context.getPlan().getPlanExecutionStateStringFormat(false), "title", context.getTitle());
 
 		String summaryPrompt = """
 				You are jmanus, an AI assistant capable of responding to user requests. You need to respond to the user's request based on the execution results of this step-by-step execution plan.
 
-				The current user request is:
-				{userRequest}
 
 				Step-by-step plan execution details:
 				{executionDetail}
@@ -94,19 +98,19 @@ public class PlanFinalizer {
 	 * Generate direct LLM response for simple requests
 	 */
 	private void generateDirectResponse(ExecutionContext context, PlanExecutionResult result) {
-		validateForGeneration(context, "ExecutionContext or user request cannot be null");
+		validateForGeneration(context, "ExecutionContext or title cannot be null");
 
-		String userRequest = context.getUserRequest();
-		log.info("Generating direct response for user request: {}", userRequest);
+		String title = context.getTitle();
+		log.info("Generating direct response for user request: {}", title);
 
-		Map<String, Object> promptVariables = Map.of("userRequest", userRequest);
+		Map<String, Object> promptVariables = Map.of("title", title);
 
 		String directResponsePrompt = """
 				You are jmanus, an AI assistant capable of responding to user requests. Currently in direct feedback mode, you need to directly respond to the user's simple requests without complex planning and decomposition.
 
 				The current user request is:
 
-				{userRequest}
+				{title}
 				""";
 		generateWithLlm(context, result, directResponsePrompt, promptVariables, "direct response",
 				"Generated direct response: {}");
@@ -142,11 +146,6 @@ public class PlanFinalizer {
 		}
 
 		requestSpec.advisors(memoryAdvisor -> memoryAdvisor.param(CONVERSATION_ID, context.getConversationId()));
-		requestSpec.advisors(
-				CustomMessageChatMemoryAdvisor
-					.builder(llmService.getConversationMemory(manusProperties.getMaxMemory()), context.getUserRequest(),
-							CustomMessageChatMemoryAdvisor.AdvisorType.AFTER)
-					.build());
 	}
 
 	/**
@@ -187,6 +186,8 @@ public class PlanFinalizer {
 			if (isTaskInterrupted(context, result)) {
 				log.debug("Task was interrupted for plan: {}", context.getCurrentPlanId());
 				handleInterruptedTask(context, result);
+				// Save interrupted task result to conversation memory
+				saveResultToConversationMemory(context, result.getFinalResult());
 				return result;
 			}
 
@@ -194,21 +195,29 @@ public class PlanFinalizer {
 			if (context.isNeedSummary()) {
 				log.debug("Generating LLM summary for plan: {}", context.getCurrentPlanId());
 				generateSummary(context, result);
-				return result;
 			}
-
 			// Check if this is a direct response plan
 			else if (context.getPlan() != null && context.getPlan().isDirectResponse()) {
 				log.debug("Generating direct response for plan: {}", context.getCurrentPlanId());
 				generateDirectResponse(context, result);
-				return result;
 			}
 			else {
 				log.debug("No need to generate summary or direct response for plan: {}", context.getCurrentPlanId());
 				processAndRecordResult(context, result, result.getFinalResult(), "Final result: {}");
-
-				return result;
 			}
+
+			// Save final result to conversation memory after all processing
+			saveResultToConversationMemory(context, result.getFinalResult());
+
+			// Add rootPlanId to conversation memory mapping (only for root plans)
+			if (context.getConversationId() != null && context.getRootPlanId() != null
+					&& context.getRootPlanId().equals(context.getCurrentPlanId())) {
+				log.debug("Adding rootPlanId {} to conversation {} in memory mappings", context.getRootPlanId(),
+						context.getConversationId());
+				memoryService.addRootPlanIdToConversation(context.getConversationId(), context.getRootPlanId());
+			}
+
+			return result;
 
 		}
 		catch (Exception e) {
@@ -253,8 +262,8 @@ public class PlanFinalizer {
 		if (context == null) {
 			throw new IllegalArgumentException(errorMessage);
 		}
-		if (context.getUserRequest() == null) {
-			throw new IllegalArgumentException("User request cannot be null");
+		if (context.getTitle() == null) {
+			throw new IllegalArgumentException("Title cannot be null");
 		}
 	}
 
@@ -341,15 +350,44 @@ public class PlanFinalizer {
 	 * @return Formatted interruption message
 	 */
 	private String generateInterruptionMessage(ExecutionContext context, PlanExecutionResult result) {
-		String userRequest = context.getUserRequest();
+		String title = context.getTitle();
 		StringBuilder message = new StringBuilder();
 		message.append("❌ **Task Interrupted**\n\n");
 		message.append("Your request \"")
-			.append(userRequest)
+			.append(title)
 			.append("\" was interrupted and could not be completed.\n\n");
 		message.append("**Status:** Task stopped by user request\n");
 
 		return message.toString();
+	}
+
+	/**
+	 * Save agent execution result to conversation memory
+	 * @param context Execution context containing conversationId
+	 * @param result The execution result to save
+	 */
+	private void saveResultToConversationMemory(ExecutionContext context, String result) {
+		if (context == null || context.getConversationId() == null || context.getConversationId().trim().isEmpty()) {
+			log.debug("No conversationId available, skipping conversation memory save");
+			return;
+		}
+
+		if (result == null || result.trim().isEmpty()) {
+			log.debug("Result is empty, skipping conversation memory save");
+			return;
+		}
+
+		try {
+			ChatMemory conversationMemory = llmService.getConversationMemory(manusProperties.getMaxMemory());
+			AssistantMessage assistantMessage = new AssistantMessage(result);
+			conversationMemory.add(context.getConversationId(), assistantMessage);
+			log.info("Saved agent execution result to conversation memory for conversationId: {}, result length: {}",
+					context.getConversationId(), result.length());
+		}
+		catch (Exception e) {
+			log.warn("Failed to save agent execution result to conversation memory for conversationId: {}",
+					context.getConversationId(), e);
+		}
 	}
 
 }

@@ -251,10 +251,6 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 					yield appendToFile(filePath, appendContent);
 				}
-				case "create" -> {
-					String createContent = (String) toolInputMap.get("content");
-					yield createFile(filePath, createContent != null ? createContent : "");
-				}
 				case "delete" -> deleteFile(filePath);
 				case "count_words" -> countWords(filePath);
 				case "list_files" -> listFiles(filePath != null ? filePath : "");
@@ -271,7 +267,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 							wholeWord != null ? wholeWord : false);
 				}
 				default -> new ToolExecuteResult("Unknown operation: " + action
-						+ ". Supported operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep");
+						+ ". Supported operations: replace, get_text, get_all_text, append, delete, count_words, list_files, grep");
 			};
 		}
 		catch (Exception e) {
@@ -329,10 +325,6 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 					yield appendToFile(filePath, appendContent);
 				}
-				case "create" -> {
-					String createContent = input.getContent();
-					yield createFile(filePath, createContent != null ? createContent : "");
-				}
 				case "delete" -> deleteFile(filePath);
 				case "count_words" -> countWords(filePath);
 				case "list_files" -> listFiles(filePath != null ? filePath : "");
@@ -349,7 +341,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 							wholeWord != null ? wholeWord : false);
 				}
 				default -> new ToolExecuteResult("Unknown operation: " + action
-						+ ". Supported operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep");
+						+ ". Supported operations: replace, get_text, get_all_text, append, delete, count_words, list_files, grep");
 			};
 		}
 		catch (Exception e) {
@@ -412,33 +404,6 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		}
 
 		return filePath.substring(lastDotIndex);
-	}
-
-	/**
-	 * Create a new file with optional content
-	 */
-	private ToolExecuteResult createFile(String filePath, String content) {
-		try {
-			Path absolutePath = validateGlobalPath(filePath);
-
-			// Check if file already exists
-			if (Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File already exists: " + filePath);
-			}
-
-			// Create parent directories if needed
-			Files.createDirectories(absolutePath.getParent());
-
-			// Create the file with content
-			Files.writeString(absolutePath, content != null ? content : "");
-
-			log.info("Created new shared file: {}", absolutePath);
-			return new ToolExecuteResult("Shared file created successfully: " + filePath);
-		}
-		catch (IOException e) {
-			log.error("Error creating shared file: {}", filePath, e);
-			return new ToolExecuteResult("Error creating shared file: " + e.getMessage());
-		}
 	}
 
 	/**
@@ -554,8 +519,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		try {
 			Path absolutePath = validateGlobalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new shared file automatically: {}", absolutePath);
 			}
 
 			String content = Files.readString(absolutePath);
@@ -599,8 +567,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 			Path absolutePath = validateGlobalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new shared file automatically: {}", absolutePath);
 			}
 
 			java.util.List<String> lines = Files.readAllLines(absolutePath);
@@ -651,8 +622,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		try {
 			Path absolutePath = validateGlobalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new shared file automatically: {}", absolutePath);
 			}
 
 			String content = Files.readString(absolutePath);
@@ -714,8 +688,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		try {
 			Path absolutePath = validateGlobalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new shared file automatically: {}", absolutePath);
 			}
 
 			String content = Files.readString(absolutePath);
@@ -736,8 +713,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		try {
 			Path absolutePath = validateGlobalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new shared file automatically: {}", absolutePath);
 			}
 
 			java.util.List<String> lines = Files.readAllLines(absolutePath);
@@ -821,7 +801,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 							- Shared Directory: %s
 							- Scope: Shared directory only (all files stored in rootPlanId/shared/)
 							- Operations are automatically handled (no manual file opening/closing required)
-							- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep
+							- Available operations: replace, get_text, get_all_text, append, delete, count_words, list_files, grep
 							""",
 					workingDir.toString(), sharedDir.toString());
 		}
@@ -830,7 +810,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 					"""
 							Current Global File Operation State:
 							- Error getting working directory: %s
-							- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep
+							- Available operations: replace, get_text, get_all_text, append, delete, count_words, list_files, grep
 							""",
 					e.getMessage());
 		}
@@ -853,7 +833,6 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 
 				Supported operations:
-				- create: Create a new shared file with optional content, requires file_path and optional content parameter
 				- delete: Delete an existing shared file, requires file_path parameter
 				- list_files: List files and directories in the shared directory, optional file_path parameter (defaults to shared root)
 				- replace: Replace specific text in shared file, requires source_text and target_text parameters
@@ -878,25 +857,6 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				{
 				    "type": "object",
 				    "oneOf": [
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "create"
-				                },
-				                "file_path": {
-				                    "type": "string",
-				                    "description": "File path to create (relative to shared directory, rootPlanId/shared/)"
-				                },
-				                "content": {
-				                    "type": "string",
-				                    "description": "Initial content for the new shared file (optional)"
-				                }
-				            },
-				            "required": ["action", "file_path"],
-				            "additionalProperties": false
-				        },
 				        {
 				            "type": "object",
 				            "properties": {

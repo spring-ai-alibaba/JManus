@@ -735,7 +735,7 @@ const words: I18nType = {
   sidebar: {
     title: 'Func-Agent 编辑器',
     templateList: '模板列表',
-    configuration: '配置',
+    configuration: 'Func-Agent配置',
     newPlan: '新建Func-Agent计划',
     loading: '加载中...',
     retry: '重试',
@@ -1294,6 +1294,7 @@ const words: I18nType = {
     selectMemory: '选择记忆',
     clearMemory: '清除记忆',
     newChat: '新建对话',
+    loadHistoryFailed: '加载对话历史失败',
   },
   selectCommon: {
     pleaseSelect: '请选择...',

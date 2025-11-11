@@ -102,7 +102,7 @@ public class PlanTemplateController {
 			PlanTemplate template = planTemplateService.getPlanTemplate(planTemplateId);
 			if (template == null) {
 				// If it doesn't exist, create a new plan
-				planTemplateService.savePlanTemplate(planTemplateId, title, title, planJson, false);
+				planTemplateService.savePlanTemplate(planTemplateId, title, planJson, false);
 				logger.info("New plan created: {}", planTemplateId);
 				return new PlanTemplateService.VersionSaveResult(true, false, "New plan created", 0);
 			}
@@ -296,7 +296,7 @@ public class PlanTemplateController {
 				}
 				templateData.put("id", template.getPlanTemplateId());
 				templateData.put("title", template.getTitle());
-				templateData.put("description", template.getUserRequest());
+				templateData.put("description", template.getTitle());
 				templateData.put("createTime", template.getCreateTime());
 				templateData.put("updateTime", template.getUpdateTime());
 				templateList.add(templateData);

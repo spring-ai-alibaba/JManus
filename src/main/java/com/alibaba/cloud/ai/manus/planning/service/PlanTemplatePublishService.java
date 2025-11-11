@@ -15,18 +15,25 @@
  */
 package com.alibaba.cloud.ai.manus.planning.service;
 
-import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
-import com.alibaba.cloud.ai.manus.planning.repository.PlanTemplateRepository;
-import com.alibaba.cloud.ai.manus.coordinator.entity.vo.CoordinatorToolVO;
-import com.alibaba.cloud.ai.manus.coordinator.service.CoordinatorToolServiceImpl;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import com.alibaba.cloud.ai.manus.coordinator.entity.vo.CoordinatorToolVO;
+import com.alibaba.cloud.ai.manus.coordinator.service.CoordinatorToolServiceImpl;
+import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
+import com.alibaba.cloud.ai.manus.planning.repository.PlanTemplateRepository;
 
 /**
  * Service for publishing plan templates as inner toolcalls
@@ -143,11 +150,11 @@ public class PlanTemplatePublishService {
 	 */
 	private boolean registerSinglePlanTemplate(PlanTemplate planTemplate) {
 		try {
-			// Create CoordinatorToolVO for the plan template
-			CoordinatorToolVO coordinatorToolVO = new CoordinatorToolVO();
-			coordinatorToolVO.setToolName("tool_" + planTemplate.getTitle());
-			coordinatorToolVO.setToolDescription(planTemplate.getUserRequest());
-			coordinatorToolVO.setPlanTemplateId(planTemplate.getPlanTemplateId());
+		// Create CoordinatorToolVO for the plan template
+		CoordinatorToolVO coordinatorToolVO = new CoordinatorToolVO();
+		coordinatorToolVO.setToolName("tool_" + planTemplate.getTitle());
+		coordinatorToolVO.setToolDescription(planTemplate.getTitle());
+		coordinatorToolVO.setPlanTemplateId(planTemplate.getPlanTemplateId());
 			coordinatorToolVO.setServiceGroup("inited-toolcall");
 
 			// Enable internal toolcall service

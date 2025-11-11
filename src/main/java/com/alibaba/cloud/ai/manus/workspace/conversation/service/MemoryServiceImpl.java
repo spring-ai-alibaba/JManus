@@ -15,6 +15,11 @@
  */
 package com.alibaba.cloud.ai.manus.workspace.conversation.service;
 
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -23,12 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.cloud.ai.manus.workspace.conversation.entity.po.MemoryEntity;
-import com.alibaba.cloud.ai.manus.workspace.conversation.repository.MemoryRepository;
 import com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo.Memory;
-
-import java.time.ZoneId;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.alibaba.cloud.ai.manus.workspace.conversation.repository.MemoryRepository;
 
 /**
  * @author dahua
@@ -64,6 +65,11 @@ public class MemoryServiceImpl implements MemoryService {
 			memory.setCreateTime(entity.getCreateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
 		}
 
+		// Copy root plan IDs
+		if (entity.getRootPlanIds() != null) {
+			memory.setRootPlanIds(new ArrayList<>(entity.getRootPlanIds()));
+		}
+
 		return memory;
 	}
 
@@ -84,17 +90,22 @@ public class MemoryServiceImpl implements MemoryService {
 			entity.setCreateTime(java.sql.Timestamp.valueOf(memory.getCreateTime()));
 		}
 
+		// Copy root plan IDs
+		if (memory.getRootPlanIds() != null) {
+			entity.setRootPlanIds(new ArrayList<>(memory.getRootPlanIds()));
+		}
+
 		return entity;
 	}
 
 	@Override
 	public List<Memory> getMemories() {
-		List<MemoryEntity> memoryEntities = memoryRepository.findAll();
+		// Query top 15 memories directly from database (sorted by createTime DESC, filtered for non-null)
+		List<MemoryEntity> memoryEntities = memoryRepository.findTop15Memories();
 
-		// Convert to Memory VO and sort by create time
+		// Convert to Memory VO
 		return memoryEntities.stream()
 			.map(this::convertToMemory)
-			.sorted((m1, m2) -> m1.getCreateTime().compareTo(m2.getCreateTime()))
 			.collect(Collectors.toList());
 	}
 
@@ -157,6 +168,38 @@ public class MemoryServiceImpl implements MemoryService {
 		logger.info("Generated unique conversation ID: {}", conversationId);
 
 		return conversationId;
+	}
+
+	@Override
+	public void addRootPlanIdToConversation(String conversationId, String rootPlanId) {
+		if (conversationId == null || conversationId.trim().isEmpty()) {
+			logger.warn("Cannot add rootPlanId to null or empty conversationId");
+			return;
+		}
+
+		if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
+			logger.warn("Cannot add null or empty rootPlanId to conversation {}", conversationId);
+			return;
+		}
+
+		try {
+			MemoryEntity memoryEntity = memoryRepository.findByConversationId(conversationId);
+			if (memoryEntity == null) {
+				// Create new memory if it doesn't exist
+				logger.info("Creating new memory for conversationId: {} with rootPlanId: {}", conversationId,
+						rootPlanId);
+				memoryEntity = new MemoryEntity(conversationId, "Conversation " + conversationId);
+			}
+
+			// Add the root plan ID
+			memoryEntity.addRootPlanId(rootPlanId);
+			memoryRepository.save(memoryEntity);
+
+			logger.info("Added rootPlanId {} to conversation {}", rootPlanId, conversationId);
+		}
+		catch (Exception e) {
+			logger.error("Failed to add rootPlanId {} to conversation {}", rootPlanId, conversationId, e);
+		}
 	}
 
 }

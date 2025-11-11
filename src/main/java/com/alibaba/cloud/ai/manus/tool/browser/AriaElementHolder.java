@@ -502,6 +502,16 @@ public class AriaElementHolder {
 	}
 
 	/**
+	 * Clear all cached data structures to prepare for a new snapshot
+	 */
+	private void clearAll() {
+		rootNodes.clear();
+		refMap.clear();
+		roleMap.clear();
+		nameMap.clear();
+	}
+
+	/**
 	 * Parse page, assign sequential refs, and return YAML snapshot This method
 	 * encapsulates the common pattern of parsing a page and preparing it for use
 	 * @param page The page to parse
@@ -515,6 +525,9 @@ public class AriaElementHolder {
 		}
 
 		try {
+			// Clear all previous data before parsing new snapshot
+			clearAll();
+
 			// Use default options if none provided
 			if (options == null) {
 				options = new AriaSnapshotOptions().setSelector("body").setTimeout(30000);

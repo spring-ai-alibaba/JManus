@@ -16,9 +16,9 @@
 
 // Plan-related API wrapper (TypeScript version for Vue projects)
 
+import { DirectApiService } from '@/api/direct-api-service'
 import type { CronConfig } from '@/types/cron-task'
 import { LlmCheckService } from '@/utils/llm-check'
-import { DirectApiService } from '@/api/direct-api-service'
 
 export class PlanActApiService {
   private static readonly PLAN_TEMPLATE_URL = '/api/plan-template'
@@ -30,7 +30,8 @@ export class PlanActApiService {
     rawParam?: string,
     uploadedFiles?: string[],
     replacementParams?: Record<string, string>,
-    uploadKey?: string
+    uploadKey?: string,
+    requestSource: 'VUE_DIALOG' | 'VUE_SIDEBAR' = 'VUE_SIDEBAR'
   ): Promise<unknown> {
     return LlmCheckService.withLlmCheck(async () => {
       console.log('[PlanActApiService] executePlan called with:', {
@@ -39,6 +40,7 @@ export class PlanActApiService {
         uploadedFiles,
         replacementParams,
         uploadKey,
+        requestSource,
       })
 
       // Add rawParam to replacementParams if provided (backend expects it in replacementParams)
@@ -50,12 +52,13 @@ export class PlanActApiService {
         console.log('[PlanActApiService] Added rawParam to replacementParams:', rawParam)
       }
 
-      // Use the unified DirectApiService method
+      // Use the unified DirectApiService method (default to VUE_SIDEBAR for plan execution)
       return await DirectApiService.executeByToolName(
         planTemplateId,
         replacementParams,
         uploadedFiles,
-        uploadKey
+        uploadKey,
+        requestSource
       )
     })
   }

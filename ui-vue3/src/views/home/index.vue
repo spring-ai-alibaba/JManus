@@ -82,13 +82,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
 import BlurCard from '@/components/blurCard/BlurCard.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
 import { useTaskStore } from '@/stores/task'
+import { Icon } from '@iconify/vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 // Define component name for Vue linting rules
 defineOptions({
@@ -274,9 +274,10 @@ const adjustTextareaHeight = () => {
 
 const handleKeydown = (event: KeyboardEvent) => {
   console.log('[Home] handleKeydown called, key:', event.key)
-  if (event.key === 'Enter' && !event.shiftKey) {
+  // Ctrl+Enter to send
+  if (event.key === 'Enter' && event.ctrlKey) {
     event.preventDefault()
-    console.log('[Home] Enter key pressed, calling handleSend')
+    console.log('[Home] Ctrl+Enter key pressed, calling handleSend')
     handleSend()
   }
 }

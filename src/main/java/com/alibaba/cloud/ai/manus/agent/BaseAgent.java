@@ -81,6 +81,8 @@ public abstract class BaseAgent {
 
 	private int planDepth = 0;
 
+	private String conversationId = null;
+
 	protected LlmService llmService;
 
 	protected final ManusProperties manusProperties;
@@ -200,8 +202,8 @@ public abstract class BaseAgent {
 
 				{planStatus}
 
-				- Current step requirements (this step needs to be completed by you! Required by the user's original request, but if not required in the current step, no need to complete in this step):
-				STEP {currentStepIndex}: {stepText}
+				- Current step requirements :
+				{stepText}
 
 				- Operation step instructions:
 				{extraParams}
@@ -458,6 +460,14 @@ public abstract class BaseAgent {
 
 	public void setPlanDepth(int planDepth) {
 		this.planDepth = planDepth;
+	}
+
+	public String getConversationId() {
+		return conversationId;
+	}
+
+	public void setConversationId(String conversationId) {
+		this.conversationId = conversationId;
 	}
 
 	/**

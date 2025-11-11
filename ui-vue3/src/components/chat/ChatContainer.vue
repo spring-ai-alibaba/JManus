@@ -100,6 +100,7 @@ const {
   updateMessage,
   startStreaming,
   stopStreaming,
+  clearMessages,
   findMessage,
 } = useChatMessages()
 
@@ -326,6 +327,7 @@ defineExpose({
   updateMessage,
   startStreaming,
   stopStreaming,
+  clearMessages,
 })
 </script>
 

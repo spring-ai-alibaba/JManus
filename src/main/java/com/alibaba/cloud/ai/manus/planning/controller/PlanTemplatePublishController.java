@@ -15,17 +15,21 @@
  */
 package com.alibaba.cloud.ai.manus.planning.controller;
 
-import com.alibaba.cloud.ai.manus.planning.service.PlanTemplatePublishService;
-import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateInitializationService;
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.alibaba.cloud.ai.manus.planning.service.PlanTemplatePublishService;
 
 /**
  * Controller for publishing plan templates as inner toolcalls
@@ -39,56 +43,6 @@ public class PlanTemplatePublishController {
 
 	@Autowired
 	private PlanTemplatePublishService planTemplatePublishService;
-
-	@Autowired
-	private PlanTemplateInitializationService planTemplateInitializationService;
-
-	/**
-	 * Initialize and register plan templates as inner toolcalls
-	 * @param request Request containing language (plan names are automatically
-	 * discovered)
-	 * @return Initialization and registration result
-	 */
-	@PostMapping("/init-and-register")
-	public ResponseEntity<Map<String, Object>> initAndRegisterPlanTemplates(@RequestBody Map<String, Object> request) {
-		try {
-			String language = (String) request.get("language");
-
-			if (language == null || language.trim().isEmpty()) {
-				return ResponseEntity.badRequest().body(Map.of("error", "Language is required"));
-			}
-
-			log.info("Initializing and registering plan templates for language: {}", language);
-
-			// Step 1: Initialize plan templates (automatically finds all plan names)
-			Map<String, Object> initResult = planTemplateInitializationService
-				.initializePlanTemplatesForLanguage(language);
-
-			// Extract plan names from init result for registration
-			@SuppressWarnings("unchecked")
-			List<String> planNames = (List<String>) initResult.get("successList");
-
-			// Step 2: Register initialized plan templates as inner toolcalls
-			Map<String, Object> registerResult = planTemplatePublishService.registerPlanTemplatesAsToolcalls(planNames);
-
-			// Combine results
-			Map<String, Object> response = new HashMap<>();
-			response.put("success", true);
-			response.put("language", language);
-			response.put("planNames", planNames);
-			response.put("initResult", initResult);
-			response.put("registerResult", registerResult);
-			response.put("message", "Plan templates initialized and registered successfully");
-
-			return ResponseEntity.ok(response);
-
-		}
-		catch (Exception e) {
-			log.error("Failed to initialize and register plan templates", e);
-			return ResponseEntity.internalServerError()
-				.body(Map.of("error", "Failed to initialize and register plan templates: " + e.getMessage()));
-		}
-	}
 
 	/**
 	 * Register specific plan templates as inner toolcalls

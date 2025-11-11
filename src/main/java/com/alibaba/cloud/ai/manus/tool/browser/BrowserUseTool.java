@@ -40,8 +40,10 @@ import com.alibaba.cloud.ai.manus.tool.browser.actions.RefreshAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.ScreenShotAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.ScrollAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.SwitchTabAction;
+import com.alibaba.cloud.ai.manus.tool.browser.actions.WriteCurrentWebContentAction;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
+import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.PlaywrightException;
@@ -57,11 +59,14 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	private final ObjectMapper objectMapper;
 
+	private final TextFileService textFileService;
+
 	public BrowserUseTool(ChromeDriverService chromeDriverService, SmartContentSavingService innerStorageService,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper, TextFileService textFileService) {
 		this.chromeDriverService = chromeDriverService;
 		this.innerStorageService = innerStorageService;
 		this.objectMapper = objectMapper;
+		this.textFileService = textFileService;
 	}
 
 	public DriverWrapper getDriver() {
@@ -93,8 +98,9 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 	private volatile boolean hasRunAtLeastOnce = false;
 
 	public static synchronized BrowserUseTool getInstance(ChromeDriverService chromeDriverService,
-			SmartContentSavingService innerStorageService, ObjectMapper objectMapper) {
-		BrowserUseTool instance = new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper);
+			SmartContentSavingService innerStorageService, ObjectMapper objectMapper, TextFileService textFileService) {
+		BrowserUseTool instance = new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper,
+				textFileService);
 		return instance;
 	}
 
@@ -213,6 +219,12 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 					}
 					case "move_to_and_click": {
 						result = executeActionWithRetry(() -> new MoveToAndClickAction(this).execute(requestVO),
+								action);
+						break;
+					}
+					case "write_current_web_snapshot": {
+						result = executeActionWithRetry(
+								() -> new WriteCurrentWebContentAction(this, textFileService).execute(requestVO),
 								action);
 						break;
 					}
@@ -427,12 +439,12 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 			// Generate ARIA snapshot using the new AriaSnapshot utility with error
 			// handling
 			try {
-				AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
-					.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
 				DriverWrapper driver = getDriver();
 				AriaElementHolder ariaElementHolder = driver.getAriaElementHolder();
 				if (ariaElementHolder != null) {
-					String snapshot = ariaElementHolder.parsePageAndAssignRefs(page, snapshotOptions);
+					// If ariaElementHolder already exists, use toYaml() to get the snapshot
+					// instead of calling parsePageAndAssignRefs() again to avoid duplicate parsing
+					String snapshot = ariaElementHolder.toYaml();
 					if (snapshot != null && !snapshot.trim().isEmpty()) {
 						state.put("interactive_elements", snapshot);
 					}
@@ -485,13 +497,13 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				- 'input_text': Input text in element
 				- 'key_enter': Press Enter key
 				- 'screenshot': Capture screenshot
-				- 'get_text': Get text content of current whole page text content, including all frames and nested elements.
 				- 'execute_js': Execute JavaScript code
 				- 'scroll': Scroll page up/down
 				- 'refresh': Refresh current page
 				- 'new_tab': Open new tab with specified URL
 				- 'close_tab': Close current tab
 				- 'switch_tab': Switch to specific tab
+				- 'write_current_web_snapshot': Write current page ARIA snapshot to a file named after the page title
 
 				Note: Browser operations have timeout configuration, default is 30 seconds.
 				""";
@@ -583,17 +595,6 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				            "properties": {
 				                "action": {
 				                    "type": "string",
-				                    "const": "get_text"
-				                }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				      },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
 				                    "const": "execute_js"
 				                },
 				                "script": {
@@ -671,6 +672,17 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                "action": {
 				                    "type": "string",
 				                    "const": "refresh"
+				                }
+				            },
+				            "required": ["action"],
+				            "additionalProperties": false
+				        },
+				        {
+				            "type": "object",
+				            "properties": {
+				                "action": {
+				                    "type": "string",
+				                    "const": "write_current_web_snapshot"
 				                }
 				            },
 				            "required": ["action"],

@@ -103,6 +103,7 @@
 
 <script setup lang="ts">
 import { CommonApiService } from '@/api/common-api-service'
+import { MemoryApiService } from '@/api/memory-api-service'
 import { PlanActApiService } from '@/api/plan-act-api-service'
 import ChatContainer from '@/components/chat/ChatContainer.vue'
 import InputArea from '@/components/input/InputArea.vue'
@@ -116,6 +117,7 @@ import { memoryStore } from '@/stores/memory'
 import { sidebarStore } from '@/stores/sidebar'
 import { useTaskStore } from '@/stores/task'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
+import type { PlanExecutionRecord } from '@/types/plan-execution-record'
 import { planExecutionManager } from '@/utils/plan-execution-manager'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -151,7 +153,7 @@ const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()
 const { t } = useI18n()
-const { message } = useMessage()
+const { message, showMessage } = useMessage()
 
 const prompt = ref<string>('')
 const inputOnlyContent = ref<string>('')
@@ -338,6 +340,83 @@ onMounted(() => {
   })
 
   console.log('[Direct] Event callbacks registered to planExecutionManager')
+
+  // Restore conversation history if conversationId exists in localStorage
+  const savedConversationId = memoryStore.getConversationId()
+  if (savedConversationId) {
+    console.log('[Direct] Found saved conversationId, restoring conversation:', savedConversationId)
+    nextTick(async () => {
+      try {
+        // Fetch conversation history from backend
+        const historyRecords = await MemoryApiService.getConversationHistory(savedConversationId)
+        console.log('[DirectView] Restored conversation history on page load:', historyRecords)
+
+        // Convert each PlanExecutionRecord to chat messages and display them
+        for (const record of historyRecords) {
+          if (!record) continue
+
+          // Add user message (the original query)
+          if (record.userRequest && chatRef.value && record.startTime) {
+            chatRef.value.addMessage('user', record.userRequest, {
+              timestamp: new Date(record.startTime),
+            })
+          }
+
+          // Add assistant message (the result/summary)
+          if (chatRef.value && record.currentPlanId) {
+            const assistantContent =
+              record.summary || record.result || record.message || 'Execution completed'
+
+            // Convert API record to plan execution record format
+            const planExecutionRecord: Partial<PlanExecutionRecord> = {
+              currentPlanId: record.currentPlanId,
+              status: record.completed ? 'completed' : 'running',
+            }
+
+            // Add optional fields if they exist
+            if (record.rootPlanId) planExecutionRecord.rootPlanId = record.rootPlanId
+            if (record.summary) planExecutionRecord.summary = record.summary
+            if (record.completed !== undefined) planExecutionRecord.completed = record.completed
+            if (record.agentExecutionSequence)
+              planExecutionRecord.agentExecutionSequence = record.agentExecutionSequence
+
+            chatRef.value.addMessage('assistant', assistantContent, {
+              timestamp:
+                record.endTime && record.endTime
+                  ? new Date(record.endTime)
+                  : record.startTime
+                    ? new Date(record.startTime)
+                    : new Date(),
+              planExecution: planExecutionRecord as PlanExecutionRecord,
+            })
+
+            // Store the plan record in the plan execution manager cache for future reference
+            if (record.rootPlanId) {
+              planExecutionManager.setCachedPlanRecord(
+                record.rootPlanId,
+                planExecutionRecord as PlanExecutionRecord
+              )
+            }
+          }
+        }
+
+        // Scroll to bottom after loading history
+        await nextTick()
+        if (chatRef.value) {
+          chatRef.value.scrollToBottom()
+        }
+
+        console.log(
+          '[DirectView] Successfully restored conversation with',
+          historyRecords.length,
+          'dialog rounds'
+        )
+      } catch (error) {
+        console.error('[DirectView] Failed to restore conversation history:', error)
+        // Don't show error message to user on page load, just log it
+      }
+    })
+  }
 
   // Initialize sidebar data
   sidebarStore.loadPlanTemplateList()
@@ -600,7 +679,7 @@ const handleChatSendMessage = async (query: InputMessage) => {
     let response: ApiResponse
 
     if (extendedQuery.toolName && extendedQuery.replacementParams) {
-      // Execute selected tool
+      // Execute selected tool (from dialog)
       console.log(
         '[DirectView] Calling DirectApiService.executeByToolName with tool:',
         extendedQuery.toolName
@@ -609,15 +688,29 @@ const handleChatSendMessage = async (query: InputMessage) => {
         extendedQuery.toolName,
         extendedQuery.replacementParams as Record<string, string>,
         query.uploadedFiles,
-        query.uploadKey
+        query.uploadKey,
+        'VUE_DIALOG'
       )) as ApiResponse
     } else {
-      // Use default plan template
+      // Use default plan template (from dialog)
       console.log('[DirectView] Calling DirectApiService.sendMessageWithDefaultPlan')
-      response = (await DirectApiService.sendMessageWithDefaultPlan(query)) as ApiResponse
+      response = (await DirectApiService.sendMessageWithDefaultPlan(
+        query,
+        'VUE_DIALOG'
+      )) as ApiResponse
     }
 
     console.log('[DirectView] API response received:', response)
+
+    // Save conversationId from response to memoryStore
+    const responseWithConversationId = response as { conversationId?: string }
+    if (responseWithConversationId.conversationId) {
+      memoryStore.setConversationId(responseWithConversationId.conversationId)
+      console.log(
+        '[DirectView] Saved conversationId to memoryStore:',
+        responseWithConversationId.conversationId
+      )
+    }
 
     // Handle the response
     const typedResponse = response as { planId?: string }
@@ -806,7 +899,8 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
         payload.params.trim(),
         uploadedFiles,
         payload.replacementParams,
-        uploadKey
+        uploadKey,
+        'VUE_SIDEBAR' // Request from sidebar
       )
     } else {
       console.log('[Direct] Calling executePlan without rawParam')
@@ -815,7 +909,8 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
         undefined,
         uploadedFiles,
         payload.replacementParams,
-        uploadKey
+        uploadKey,
+        'VUE_SIDEBAR' // Request from sidebar
       )
     }
 
@@ -895,13 +990,109 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
   }
 }
 
-const memorySelected = () => {
-  chatRef.value.showMemory()
+const memorySelected = async () => {
+  // Memory sidebar is already closed by selectMemory() calling toggleSidebar()
+  // Load conversation history if a memory is selected
+  if (memoryStore.selectMemoryId) {
+    console.log('[DirectView] Memory selected:', memoryStore.selectMemoryId)
+
+    try {
+      // Clear current chat first
+      if (chatRef.value) {
+        chatRef.value.clearMessages()
+      }
+
+      // Set the conversation ID in memory store
+      memoryStore.setConversationId(memoryStore.selectMemoryId)
+
+      // Fetch conversation history from backend
+      const historyRecords = await MemoryApiService.getConversationHistory(
+        memoryStore.selectMemoryId
+      )
+      console.log('[DirectView] Loaded conversation history:', historyRecords)
+
+      // Convert each PlanExecutionRecord to chat messages and display them
+      for (const record of historyRecords) {
+        if (!record) continue
+
+        // Add user message (the original query)
+        if (record.userRequest && chatRef.value && record.startTime) {
+          const userMessage = chatRef.value.addMessage('user', record.userRequest, {
+            timestamp: new Date(record.startTime),
+          })
+          console.log('[DirectView] Added user message:', userMessage)
+        }
+
+        // Add assistant message (the result/summary)
+        if (chatRef.value && record.currentPlanId) {
+          const assistantContent =
+            record.summary || record.result || record.message || 'Execution completed'
+
+          // Convert API record to plan execution record format
+          const planExecutionRecord: Partial<PlanExecutionRecord> = {
+            currentPlanId: record.currentPlanId,
+            status: record.completed ? 'completed' : 'running',
+          }
+
+          // Add optional fields if they exist
+          if (record.rootPlanId) {
+            planExecutionRecord.rootPlanId = record.rootPlanId
+          }
+          if (record.summary) {
+            planExecutionRecord.summary = record.summary
+          }
+          if (record.completed !== undefined) {
+            planExecutionRecord.completed = record.completed
+          }
+          if (record.agentExecutionSequence) {
+            planExecutionRecord.agentExecutionSequence = record.agentExecutionSequence
+          }
+
+          const assistantMessage = chatRef.value.addMessage('assistant', assistantContent, {
+            timestamp:
+              record.endTime && record.endTime
+                ? new Date(record.endTime)
+                : record.startTime
+                  ? new Date(record.startTime)
+                  : new Date(),
+            planExecution: planExecutionRecord as PlanExecutionRecord,
+          })
+          console.log('[DirectView] Added assistant message:', assistantMessage)
+
+          // Store the plan record in the plan execution manager cache for future reference
+          if (record.rootPlanId) {
+            planExecutionManager.setCachedPlanRecord(
+              record.rootPlanId,
+              planExecutionRecord as PlanExecutionRecord
+            )
+          }
+        }
+      }
+
+      // Scroll to bottom after loading history
+      await nextTick()
+      if (chatRef.value) {
+        chatRef.value.scrollToBottom()
+      }
+
+      console.log(
+        '[DirectView] Successfully loaded conversation history with',
+        historyRecords.length,
+        'dialog rounds'
+      )
+    } catch (error) {
+      console.error('[DirectView] Failed to load conversation history:', error)
+      showMessage(t('memory.loadHistoryFailed'), 'error')
+    }
+  }
 }
 
 const newChat = () => {
   memoryStore.clearMemoryId()
-  chatRef.value.newChat()
+  memoryStore.clearConversationId()
+  if (chatRef.value) {
+    chatRef.value.clearMessages()
+  }
 }
 </script>
 

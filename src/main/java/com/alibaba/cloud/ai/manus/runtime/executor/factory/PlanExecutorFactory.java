@@ -36,6 +36,7 @@ import com.alibaba.cloud.ai.manus.runtime.service.FileUploadService;
 import com.alibaba.cloud.ai.manus.runtime.service.ParallelToolExecutionService;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
+import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -78,13 +79,16 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final ParallelToolExecutionService parallelToolExecutionService;
 
+	private final MemoryService memoryService;
+
 	public PlanExecutorFactory(LlmService llmService, PlanExecutionRecorder recorder, ManusProperties manusProperties,
 			ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
 			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
 			AgentInterruptionHelper agentInterruptionHelper, PlanningFactory planningFactory,
 			ToolCallingManager toolCallingManager, UserInputService userInputService,
 			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
-			JmanusEventPublisher jmanusEventPublisher, ParallelToolExecutionService parallelToolExecutionService) {
+			JmanusEventPublisher jmanusEventPublisher, ParallelToolExecutionService parallelToolExecutionService,
+			MemoryService memoryService) {
 		this.llmService = llmService;
 		this.recorder = recorder;
 		this.manusProperties = manusProperties;
@@ -100,6 +104,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		this.planIdDispatcher = planIdDispatcher;
 		this.jmanusEventPublisher = jmanusEventPublisher;
 		this.parallelToolExecutionService = parallelToolExecutionService;
+		this.memoryService = memoryService;
 	}
 
 	/**
@@ -111,7 +116,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		return new DynamicToolPlanExecutor(null, recorder, llmService, manusProperties, levelBasedExecutorPool,
 				dynamicModelRepository, fileUploadService, agentInterruptionHelper, planningFactory, toolCallingManager,
 				userInputService, streamingResponseHandler, planIdDispatcher, jmanusEventPublisher, objectMapper,
-				parallelToolExecutionService);
+				parallelToolExecutionService, memoryService);
 	}
 
 	/**

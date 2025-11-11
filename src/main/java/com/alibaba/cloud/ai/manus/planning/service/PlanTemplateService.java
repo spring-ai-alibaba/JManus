@@ -15,6 +15,17 @@
  */
 package com.alibaba.cloud.ai.manus.planning.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
 import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplateVersion;
 import com.alibaba.cloud.ai.manus.planning.repository.PlanTemplateRepository;
@@ -23,16 +34,6 @@ import com.alibaba.cloud.ai.manus.runtime.executor.factory.PlanExecutorFactory;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Plan template service class that provides business logic related to plan templates
@@ -67,20 +68,34 @@ public class PlanTemplateService implements IPlanTemplateService {
 	 * Save plan template and its first version
 	 * @param planTemplateId Plan template ID
 	 * @param title Plan title
-	 * @param userRequest User request
 	 * @param planJson Plan JSON data
 	 */
 	@Transactional
-	public void savePlanTemplate(String planTemplateId, String title, String userRequest, String planJson,
-			boolean isInternalToolcall) {
-		// Save basic plan template information
-		PlanTemplate template = new PlanTemplate(planTemplateId, title, userRequest, isInternalToolcall);
-		planTemplateRepository.save(template);
+	public void savePlanTemplate(String planTemplateId, String title, String planJson, boolean isInternalToolcall) {
+		// Check if plan template already exists
+		Optional<PlanTemplate> existingTemplateOpt = planTemplateRepository.findByPlanTemplateId(planTemplateId);
+		PlanTemplate template;
 
-		// Save the first version
+		if (existingTemplateOpt.isPresent()) {
+			// Update existing template
+			template = existingTemplateOpt.get();
+			template.setTitle(title);
+			template.setInternalToolcall(isInternalToolcall);
+			template.setUpdateTime(LocalDateTime.now());
+			planTemplateRepository.save(template);
+			logger.debug("Updated existing plan template: {}", planTemplateId);
+		}
+		else {
+			// Create new plan template
+			template = new PlanTemplate(planTemplateId, title, isInternalToolcall);
+			planTemplateRepository.save(template);
+			logger.debug("Created new plan template: {}", planTemplateId);
+		}
+
+		// Save the first version (or new version if template already existed)
 		saveToVersionHistory(planTemplateId, planJson);
 
-		logger.info("Saved plan template {} and its first version", planTemplateId);
+		logger.info("Saved plan template {} and its version", planTemplateId);
 	}
 
 	/**
@@ -149,7 +164,7 @@ public class PlanTemplateService implements IPlanTemplateService {
 		}
 
 	}
-
+	
 	/**
 	 * Save plan version to history record
 	 * @param planTemplateId Plan template ID
