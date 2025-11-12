@@ -208,6 +208,8 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 			}
 			// file_path is optional for list_files action
 			if (filePath == null && !"list_files".equals(action)) {
+			// file_path is optional for list_files action
+			if (filePath == null && !"list_files".equals(action)) {
 				return new ToolExecuteResult("Error: file_path parameter is required");
 			}
 
@@ -820,6 +822,7 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				  Note: If file content is too long, it will be automatically stored in temporary file and return file path
 				- append: Append content to file, requires content parameter
 				- count_words: Count words in current file
+				- list_files: List files and directories in the current plan directory, optional file_path parameter (defaults to current plan root)
 				- grep: Search for text patterns in file, similar to Linux grep command
 				  Parameters: pattern (required), case_sensitive (optional, default false), whole_word (optional, default false)
 

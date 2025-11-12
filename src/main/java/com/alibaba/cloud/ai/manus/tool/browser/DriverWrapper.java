@@ -48,8 +48,6 @@ public class DriverWrapper {
 
 	private Browser browser;
 
-	private AriaElementHolder ariaElementHolder;
-
 	private final Path cookiePath;
 
 	// Mixin class for Playwright Cookie deserialization
@@ -86,7 +84,7 @@ public class DriverWrapper {
 		this.playwright = playwright;
 		this.currentPage = currentPage;
 		this.browser = browser;
-		this.ariaElementHolder = null; // Will be initialized on first use
+	
 		this.objectMapper = objectMapper;
 		// Configure ObjectMapper
 		this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -121,6 +119,17 @@ public class DriverWrapper {
 			List<Cookie> cookies = objectMapper.readValue(jsonData, new TypeReference<List<Cookie>>() {
 			});
 			if (cookies != null && !cookies.isEmpty()) {
+				// Filter out expired cookies before loading
+				List<Cookie> validCookies = filterExpiredCookies(cookies);
+				if (!validCookies.isEmpty()) {
+					this.currentPage.context().addCookies(validCookies);
+					log.info("Loaded {} valid cookies (filtered {} expired) from: {}", validCookies.size(),
+							cookies.size() - validCookies.size(), this.cookiePath.toAbsolutePath());
+				}
+				else {
+					log.info("All cookies in file are expired, skipping cookie loading: {}",
+							this.cookiePath.toAbsolutePath());
+				}
 				// Filter out expired cookies before loading
 				List<Cookie> validCookies = filterExpiredCookies(cookies);
 				if (!validCookies.isEmpty()) {
@@ -254,27 +263,34 @@ public class DriverWrapper {
 	}
 
 	/**
-	 * Refresh ARIA element holder from current page
+	 * Save browser context storage state (cookies, localStorage, sessionStorage, etc.)
+	 * This provides better persistence than just saving cookies
 	 */
-	private void refreshAriaElementHolder() {
-		if (currentPage == null) {
+	private void saveStorageState() {
+		if (this.currentPage == null) {
+			log.debug("Cannot save storage state: currentPage is null.");
 			return;
 		}
 		try {
-			AriaSnapshotOptions options = new AriaSnapshotOptions().setSelector("body").setTimeout(30000);
-
-			// Create new instance and use the new method to parse page and assign refs
-			ariaElementHolder = new AriaElementHolder();
-			String snapshot = ariaElementHolder.parsePageAndAssignRefs(currentPage, options);
-
-			if (snapshot != null) {
-				log.debug("Successfully refreshed ARIA element holder with snapshot");
+			com.microsoft.playwright.BrowserContext context = this.currentPage.context();
+			if (context == null) {
+				log.debug("Cannot save storage state: browser context is null.");
+				return;
 			}
+
+			// Save storage state to file (includes cookies, localStorage, sessionStorage)
+			java.nio.file.Path storageStatePath = this.cookiePath.getParent().resolve("storage-state.json");
+			// Playwright storageState method uses StorageStateOptions
+			context.storageState(
+					new com.microsoft.playwright.BrowserContext.StorageStateOptions().setPath(storageStatePath));
+			log.debug("Storage state saved successfully to: {}", storageStatePath.toAbsolutePath());
 		}
 		catch (Exception e) {
-			log.warn("Failed to refresh ARIA element holder: {}", e.getMessage());
+			log.debug("Failed to save storage state: {}", e.getMessage());
 		}
 	}
+
+	
 
 	public Playwright getPlaywright() {
 		return playwright;
@@ -291,7 +307,6 @@ public class DriverWrapper {
 	public void setCurrentPage(Page currentPage) {
 		this.currentPage = currentPage;
 		// Refresh ARIA element holder when page changes
-		this.ariaElementHolder = null;
 		// Potentially load cookies if page context changes and it's desired
 		// loadCookies();
 	}
@@ -369,9 +384,6 @@ public class DriverWrapper {
 				this.browser = null;
 			}
 		}
-
-		// Clean up ARIA element holder
-		this.ariaElementHolder = null;
 
 		log.info("DriverWrapper close operation completed");
 

@@ -176,6 +176,8 @@ const collapsedGroups = ref(new Set<string>())
 const selectedTools = ref<string[]>([])
 // Store the collapsed state before search to restore when search is cleared
 const collapsedGroupsBeforeSearch = ref<Set<string> | null>(null)
+// Store the collapsed state before search to restore when search is cleared
+const collapsedGroupsBeforeSearch = ref<Set<string> | null>(null)
 
 // Set group checkbox indeterminate state
 const updateGroupCheckboxState = (groupName: string, tools: Tool[]) => {

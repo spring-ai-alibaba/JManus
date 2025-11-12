@@ -36,6 +36,18 @@ public class NavigateAction extends BrowserAction {
 		if (url == null) {
 			return new ToolExecuteResult("URL is required for 'navigate' action");
 		}
+
+		// Check if URL is a short URL (http://sUrl.a/...)
+		if (url.startsWith("http://sUrl.a/") || url.startsWith("https://sUrl.a/")) {
+			String realUrl = getShortUrlService().getRealUrlFromShortUrl(getRootPlanId(), url);
+			if (realUrl == null) {
+				return new ToolExecuteResult("Short URL not found in mapping: " + url);
+			}
+			url = realUrl;
+			org.slf4j.LoggerFactory.getLogger(NavigateAction.class)
+					.debug("Resolved short URL {} to real URL {}", request.getUrl(), url);
+		}
+
 		// Auto-complete the URL prefix
 		if (!url.startsWith("http://") && !url.startsWith("https://")) {
 			url = "https://" + url;

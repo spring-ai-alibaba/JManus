@@ -43,7 +43,6 @@ import com.alibaba.cloud.ai.manus.tool.browser.actions.SwitchTabAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.WriteCurrentWebContentAction;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
-import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.PlaywrightException;
@@ -59,14 +58,15 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	private final ObjectMapper objectMapper;
 
-	private final TextFileService textFileService;
+	private final com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService;
 
 	public BrowserUseTool(ChromeDriverService chromeDriverService, SmartContentSavingService innerStorageService,
-			ObjectMapper objectMapper, TextFileService textFileService) {
+			ObjectMapper objectMapper,
+			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService) {
 		this.chromeDriverService = chromeDriverService;
 		this.innerStorageService = innerStorageService;
 		this.objectMapper = objectMapper;
-		this.textFileService = textFileService;
+		this.shortUrlService = shortUrlService;
 	}
 
 	public DriverWrapper getDriver() {
@@ -98,10 +98,19 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 	private volatile boolean hasRunAtLeastOnce = false;
 
 	public static synchronized BrowserUseTool getInstance(ChromeDriverService chromeDriverService,
-			SmartContentSavingService innerStorageService, ObjectMapper objectMapper, TextFileService textFileService) {
+			SmartContentSavingService innerStorageService, ObjectMapper objectMapper,
+			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService) {
 		BrowserUseTool instance = new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper,
-				textFileService);
+				shortUrlService);
 		return instance;
+	}
+
+	/**
+	 * Get ShortUrlService instance
+	 * @return ShortUrlService
+	 */
+	public com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService getShortUrlService() {
+		return shortUrlService;
 	}
 
 	public ToolExecuteResult run(BrowserRequestVO requestVO) {
@@ -391,14 +400,30 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 			// getting information during navigation
 			try {
 				Integer timeout = getBrowserTimeout();
+				// First wait for DOM content loaded
 				page.waitForLoadState(com.microsoft.playwright.options.LoadState.DOMCONTENTLOADED,
 						new Page.WaitForLoadStateOptions().setTimeout(timeout * 1000));
+				// Then wait for network idle to ensure all AJAX requests and dynamic content updates are complete
+				// This is especially important after actions like key_enter that trigger searches
+				try {
+					page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE,
+							new Page.WaitForLoadStateOptions().setTimeout(3000)); // 3 second timeout for network idle
+				}
+				catch (TimeoutError e) {
+					// If network idle timeout, wait a bit more for dynamic content to update
+					log.debug("Network idle timeout, waiting for content updates: {}", e.getMessage());
+					Thread.sleep(1000); // Wait 1 second for content to update
+				}
 			}
 			catch (TimeoutError e) {
 				log.warn("Page load state wait timeout, continuing anyway: {}", e.getMessage());
 			}
 			catch (PlaywrightException e) {
 				log.warn("Playwright error waiting for load state, continuing anyway: {}", e.getMessage());
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				log.warn("Interrupted while waiting for page load");
 			}
 			catch (Exception loadException) {
 				log.warn("Unexpected error waiting for load state, continuing anyway: {}", loadException.getMessage());
@@ -436,26 +461,31 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				state.put("tabs", List.of(Map.of("error", "Failed to get tabs: " + e.getMessage())));
 			}
 
+			// Wait a bit more before generating ARIA snapshot to ensure all dynamic content
+			// (like search results) is fully rendered
+			try {
+				Thread.sleep(500); // Additional wait for content rendering
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				log.warn("Interrupted while waiting for content rendering");
+			}
+
 			// Generate ARIA snapshot using the new AriaSnapshot utility with error
 			// handling
 			try {
-				DriverWrapper driver = getDriver();
-				AriaElementHolder ariaElementHolder = driver.getAriaElementHolder();
-				if (ariaElementHolder != null) {
-					// If ariaElementHolder already exists, use toYaml() to get the snapshot
-					// instead of calling parsePageAndAssignRefs() again to avoid duplicate parsing
-					String snapshot = ariaElementHolder.toYaml();
+				AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
+					.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
+			
+				// Use compressUrl = true to enable URL compression
+				String snapshot = AriaElementHelper.parsePageAndAssignRefs(page, snapshotOptions, true,
+						shortUrlService, rootPlanId);
 					if (snapshot != null && !snapshot.trim().isEmpty()) {
 						state.put("interactive_elements", snapshot);
 					}
 					else {
 						state.put("interactive_elements", "No interactive elements found or snapshot is empty");
 					}
-				}
-				else {
-					log.warn("ARIA element holder is not available");
-					state.put("interactive_elements", "ARIA element holder not available");
-				}
 			}
 			catch (PlaywrightException e) {
 				log.warn("Playwright error getting ARIA snapshot: {}", e.getMessage());

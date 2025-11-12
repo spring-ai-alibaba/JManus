@@ -40,10 +40,6 @@ public class ClickByElementAction extends BrowserAction {
 			return new ToolExecuteResult("Element with index " + index + " not found in ARIA snapshot");
 		}
 
-		// Get element name for logging
-		String elementName = getElementNameByIdx(index);
-
-		log.info("Clicking element with idx {}: {}", index, elementName);
 		Page page = getCurrentPage();
 		Locator locator = getLocatorByIdx(index);
 		if (locator == null) {
@@ -52,27 +48,28 @@ public class ClickByElementAction extends BrowserAction {
 
 		String clickResultMessage = clickAndSwitchToNewTabIfOpened(page, () -> {
 			try {
-				log.info("Executing click action on element with idx {}: {}", index, elementName);
-
 				// Use a reasonable timeout for element operations (max 10 seconds)
 				int elementTimeout = getElementTimeoutMs();
 				log.debug("Using element timeout: {}ms for click operations", elementTimeout);
 
-				// Wait for element to be visible and enabled before clicking
-				locator.waitFor(new Locator.WaitForOptions().setTimeout(elementTimeout));
 
-				// Check if element is visible and enabled
-				if (!locator.isVisible()) {
-					throw new RuntimeException("Element is not visible");
-				}
+					// For other elements, use standard waiting strategy
+					// Wait for element to be visible and enabled before clicking
+					locator.waitFor(new Locator.WaitForOptions().setTimeout(elementTimeout));
 
-				// Click with explicit timeout
-				locator.click(new Locator.ClickOptions().setTimeout(elementTimeout));
+					// Check if element is visible and enabled
+					if (!locator.isVisible()) {
+						throw new RuntimeException("Element is not visible");
+					}
+
+					// Click with explicit timeout
+					locator.click(new Locator.ClickOptions().setTimeout(elementTimeout));
+				
 
 				// Add small delay to ensure the action is processed
 				Thread.sleep(500);
 
-				log.info("Click action completed for element with idx {}: {}", index, elementName);
+				
 			}
 			catch (com.microsoft.playwright.TimeoutError e) {
 				log.error("Timeout waiting for element with idx {} to be ready for click: {}", index, e.getMessage());
@@ -86,8 +83,7 @@ public class ClickByElementAction extends BrowserAction {
 				throw new RuntimeException("Error clicking element: " + e.getMessage(), e);
 			}
 		});
-		return new ToolExecuteResult("Successfully clicked element at index " + index + " element name: " + elementName
-				+ " " + clickResultMessage);
+		return new ToolExecuteResult("Successfully clicked element at index " + index + " " + clickResultMessage);
 	}
 
 }
