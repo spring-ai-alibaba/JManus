@@ -388,7 +388,6 @@
 <script setup lang="ts">
 import { ConfigApiService, type ModelOption } from '@/api/config-api-service'
 import { PlanActApiService } from '@/api/plan-act-api-service'
-import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
 import { ToolApiService } from '@/api/tool-api-service'
 import AssignedTools from '@/components/shared/AssignedTools.vue'
 import ToolSelectionModal from '@/components/tool-selection-modal/ToolSelectionModal.vue'
@@ -456,7 +455,7 @@ const syncDisplayDataFromConfig = () => {
   displayData.planTemplateId = config.planTemplateId || templateConfig.currentPlanTemplateId.value || ''
   displayData.planType = config.planType || 'dynamic_agent'
   // Sync service group
-  serviceGroup.value = config.serviceGroup || config.toolConfig?.serviceGroup || ''
+  serviceGroup.value = config.serviceGroup || ''
 }
 
 // Sync displayData changes back to templateConfig
@@ -902,7 +901,7 @@ watch(
 
 // Load service group from template config
 const loadServiceGroup = () => {
-  const group = templateConfig.getServiceGroup() || templateConfig.getToolServiceGroup() || ''
+  const group = templateConfig.getServiceGroup() || ''
   serviceGroup.value = group
 }
 
@@ -940,15 +939,6 @@ watch(
   { immediate: true }
 )
 
-// Watch title changes and sync to toolName
-watch(
-  () => displayData.title,
-  async (newTitle) => {
-    if (newTitle && newTitle.trim() && templateConfig.currentPlanTemplateId.value) {
-      await syncToolNameFromTitle(newTitle.trim())
-    }
-  }
-)
 
 // Watch service group changes and sync to template config
 watch(
@@ -1011,44 +1001,6 @@ const selectServiceGroup = (group: string) => {
   showGroupSuggestions.value = false
 }
 
-// Sync toolName from title
-const syncToolNameFromTitle = async (title: string) => {
-  if (!templateConfig.currentPlanTemplateId.value) {
-    return
-  }
-
-  try {
-    // Get existing tool or create default
-    let tool = await CoordinatorToolApiService.getCoordinatorToolByTemplate(
-      templateConfig.currentPlanTemplateId.value
-    )
-
-    if (!tool) {
-      // Create default tool if it doesn't exist
-      tool = CoordinatorToolApiService.createDefaultCoordinatorTool(
-        templateConfig.currentPlanTemplateId.value,
-        undefined,
-        templateConfig.getConfig().title || ''
-      )
-    }
-
-    // Update toolName to match title
-    if (tool.toolName !== title) {
-      tool.toolName = title
-      
-      // Save the tool
-      if (tool.id) {
-        await CoordinatorToolApiService.updateCoordinatorTool(tool.id, tool)
-      } else {
-        const savedTool = await CoordinatorToolApiService.createCoordinatorTool(tool)
-        tool = savedTool
-      }
-    }
-  } catch (error) {
-    console.warn('[JsonEditorV2] Failed to sync toolName from title:', error)
-    // Silently fail - this is a background sync operation
-  }
-}
 
 // Initialize on mount
 onMounted(() => {

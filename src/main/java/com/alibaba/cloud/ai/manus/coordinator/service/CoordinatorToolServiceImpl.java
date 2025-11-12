@@ -458,7 +458,6 @@ public class CoordinatorToolServiceImpl {
 
 		log.info("Creating or updating coordinator tool from PlanTemplateConfigVO for planTemplateId: {}",
 				planTemplateId);
-
 		try {
 			// Check if coordinator tool already exists by planTemplateId
 			Optional<CoordinatorToolVO> existingToolOpt = getCoordinatorToolByPlanTemplateId(planTemplateId);
@@ -543,13 +542,8 @@ public class CoordinatorToolServiceImpl {
 		if (toolConfig != null) {
 			// Tool name: use from toolConfig if not null, otherwise default to "tool_" +
 			// title
-			if (toolConfig.getToolName() != null && !toolConfig.getToolName().trim().isEmpty()) {
-				toolVO.setToolName(toolConfig.getToolName());
-			}
-			else {
-				String defaultToolName = planTemplate != null ? "tool_" + planTemplate.getTitle()
-						: "tool_" + configVO.getTitle();
-				toolVO.setToolName(defaultToolName);
+			if (configVO.getTitle() != null && !configVO.getTitle().trim().isEmpty()) {
+				toolVO.setToolName(configVO.getTitle());
 			}
 
 			// Tool description: use from toolConfig if not null, otherwise default to
@@ -568,9 +562,6 @@ public class CoordinatorToolServiceImpl {
 			if (serviceGroup == null || serviceGroup.trim().isEmpty()) {
 				// Fallback: prefer root level serviceGroup, then toolConfig.serviceGroup, then default
 				serviceGroup = configVO.getServiceGroup();
-				if (serviceGroup == null || serviceGroup.trim().isEmpty()) {
-					serviceGroup = toolConfig.getServiceGroup();
-				}
 				serviceGroup = serviceGroup != null && !serviceGroup.trim().isEmpty() ? serviceGroup : "inited-toolcall";
 			}
 			toolVO.setServiceGroup(serviceGroup);

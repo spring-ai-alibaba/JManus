@@ -301,7 +301,7 @@ const validateForm = (): boolean => {
   }
 
   // Validate service group (from templateConfig)
-  const serviceGroup = templateConfig.getServiceGroup() || templateConfig.getToolServiceGroup() || ''
+  const serviceGroup = templateConfig.getServiceGroup() || ''
   if (!serviceGroup.trim()) {
     showMessage(t('mcpService.serviceGroupRequiredError'), 'error')
     return false
@@ -377,7 +377,7 @@ const handlePublish = async () => {
     // Get toolName from templateConfig title
     const toolName = templateConfig.getTitle() || ''
     // Get serviceGroup from templateConfig
-    const serviceGroup = templateConfig.getServiceGroup() || templateConfig.getToolServiceGroup() || ''
+    const serviceGroup = templateConfig.getServiceGroup() || ''
     
     currentTool.value.toolName = toolName.trim()
     currentTool.value.toolDescription = formData.userRequest.trim()

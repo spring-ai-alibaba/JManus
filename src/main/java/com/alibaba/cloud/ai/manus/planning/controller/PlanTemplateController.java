@@ -514,9 +514,7 @@ public class PlanTemplateController {
 					if (coordinatorToolOpt.isPresent()) {
 						CoordinatorToolVO toolVO = coordinatorToolOpt.get();
 						PlanTemplateConfigVO.ToolConfigVO toolConfig = new PlanTemplateConfigVO.ToolConfigVO();
-						toolConfig.setToolName(toolVO.getToolName());
 						toolConfig.setToolDescription(toolVO.getToolDescription());
-						toolConfig.setServiceGroup(toolVO.getServiceGroup());
 						toolConfig.setEnableInternalToolcall(toolVO.getEnableInternalToolcall());
 						toolConfig.setEnableHttpService(toolVO.getEnableHttpService());
 						toolConfig.setEnableMcpService(toolVO.getEnableMcpService());
@@ -644,7 +642,7 @@ public class PlanTemplateController {
 			if (coordinatorToolOpt.isPresent()) {
 				CoordinatorToolVO toolVO = coordinatorToolOpt.get();
 				PlanTemplateConfigVO.ToolConfigVO toolConfig = new PlanTemplateConfigVO.ToolConfigVO();
-				toolConfig.setToolName(toolVO.getToolName());
+				
 				toolConfig.setToolDescription(toolVO.getToolDescription());
 				toolConfig.setEnableInternalToolcall(toolVO.getEnableInternalToolcall());
 				toolConfig.setEnableHttpService(toolVO.getEnableHttpService());

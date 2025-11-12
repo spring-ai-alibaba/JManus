@@ -210,11 +210,7 @@ public class PlanTemplateConfigVO {
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class ToolConfigVO {
 
-		private String toolName;
-
 		private String toolDescription;
-
-		private String serviceGroup;
 
 		private Boolean enableInternalToolcall;
 
@@ -230,7 +226,6 @@ public class PlanTemplateConfigVO {
 		 * Default constructor
 		 */
 		public ToolConfigVO() {
-			this.serviceGroup = "inited-toolcall";
 			this.enableInternalToolcall = true;
 			this.enableHttpService = false;
 			this.enableMcpService = false;
@@ -240,28 +235,12 @@ public class PlanTemplateConfigVO {
 
 		// Getters and Setters
 
-		public String getToolName() {
-			return toolName;
-		}
-
-		public void setToolName(String toolName) {
-			this.toolName = toolName;
-		}
-
 		public String getToolDescription() {
 			return toolDescription;
 		}
 
 		public void setToolDescription(String toolDescription) {
 			this.toolDescription = toolDescription;
-		}
-
-		public String getServiceGroup() {
-			return serviceGroup;
-		}
-
-		public void setServiceGroup(String serviceGroup) {
-			this.serviceGroup = serviceGroup;
 		}
 
 		public Boolean getEnableInternalToolcall() {
@@ -306,10 +285,10 @@ public class PlanTemplateConfigVO {
 
 		@Override
 		public String toString() {
-			return "ToolConfigVO{" + "toolName='" + toolName + '\'' + ", toolDescription='" + toolDescription + '\''
-					+ ", serviceGroup='" + serviceGroup + '\'' + ", enableInternalToolcall=" + enableInternalToolcall
-					+ ", enableHttpService=" + enableHttpService + ", enableMcpService=" + enableMcpService
-					+ ", publishStatus='" + publishStatus + '\'' + ", inputSchema=" + inputSchema + '}';
+			return "ToolConfigVO{" + "toolDescription='" + toolDescription + '\'' + ", enableInternalToolcall="
+					+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableMcpService="
+					+ enableMcpService + ", publishStatus='" + publishStatus + '\'' + ", inputSchema=" + inputSchema
+					+ '}';
 		}
 
 	}

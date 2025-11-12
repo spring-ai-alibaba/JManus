@@ -120,9 +120,7 @@ export function usePlanTemplateConfig() {
   }
 
   // ToolConfig getters
-  const getToolName = () => config.toolConfig?.toolName || ''
   const getToolDescription = () => config.toolConfig?.toolDescription || ''
-  const getToolServiceGroup = () => config.toolConfig?.serviceGroup || ''
   const getEnableInternalToolcall = () => config.toolConfig?.enableInternalToolcall ?? true
   const getEnableHttpService = () => config.toolConfig?.enableHttpService ?? false
   const getEnableMcpService = () => config.toolConfig?.enableMcpService ?? false
@@ -130,25 +128,11 @@ export function usePlanTemplateConfig() {
   const getInputSchema = () => config.toolConfig?.inputSchema || []
 
   // ToolConfig setters
-  const setToolName = (toolName: string) => {
-    if (!config.toolConfig) {
-      config.toolConfig = {}
-    }
-    config.toolConfig.toolName = toolName
-  }
-
   const setToolDescription = (toolDescription: string) => {
     if (!config.toolConfig) {
       config.toolConfig = {}
     }
     config.toolConfig.toolDescription = toolDescription
-  }
-
-  const setToolServiceGroup = (serviceGroup: string) => {
-    if (!config.toolConfig) {
-      config.toolConfig = {}
-    }
-    config.toolConfig.serviceGroup = serviceGroup
   }
 
   const setEnableInternalToolcall = (enable: boolean) => {
@@ -482,9 +466,7 @@ export function usePlanTemplateConfig() {
     getReadOnly,
     getServiceGroup,
     getToolConfig,
-    getToolName,
     getToolDescription,
-    getToolServiceGroup,
     getEnableInternalToolcall,
     getEnableHttpService,
     getEnableMcpService,
@@ -504,9 +486,7 @@ export function usePlanTemplateConfig() {
     setReadOnly,
     setServiceGroup,
     setToolConfig,
-    setToolName,
     setToolDescription,
-    setToolServiceGroup,
     setEnableInternalToolcall,
     setEnableHttpService,
     setEnableMcpService,

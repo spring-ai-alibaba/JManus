@@ -186,7 +186,7 @@
 
 <script setup lang="ts">
 import { sidebarStore } from '@/stores/sidebar'
-import { templateStore } from '@/stores/templateStore'
+import { templateStore, type TemplateStoreType } from '@/stores/templateStore'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
@@ -266,10 +266,10 @@ const getRelativeTimeString = (date: Date): string => {
   return date.toLocaleDateString('zh-CN')
 }
 
-// Get task preview text - show tool name if published, otherwise empty
+// Get task preview text - show tool description if published, otherwise empty
 const getTaskPreviewText = (template: PlanTemplateConfigVO): string => {
-  if (template.toolConfig?.toolName) {
-    return `${t('sidebar.publishedTool')}: ${template.toolConfig.toolName}`
+  if (template.toolConfig?.toolDescription) {
+    return `${t('sidebar.publishedTool')}: ${template.toolConfig.toolDescription}`
   }
   return '' // Return empty string when no tools are published
 }
@@ -278,12 +278,12 @@ const getTaskPreviewText = (template: PlanTemplateConfigVO): string => {
 const filteredGroupedTemplates = computed(() => {
   // Access planTemplateList directly to ensure reactivity
   // This ensures Vue tracks changes to the list
-  const _ = templateConfig.planTemplateList.value
+  templateConfig.planTemplateList.value
   
   const keyword = searchKeyword.value.trim().toLowerCase()
   
   // Get grouped templates from templateStore
-  const grouped = templateStore.groupedTemplates
+  const grouped = (templateStore as TemplateStoreType).groupedTemplates
   
   if (!keyword) {
     return grouped
@@ -318,7 +318,7 @@ const filteredGroupedTemplates = computed(() => {
 // Auto-expand groups that contain matching items when searching
 watch(searchKeyword, newKeyword => {
   // Access planTemplateList to ensure reactivity
-  const _ = templateConfig.planTemplateList.value
+  templateConfig.planTemplateList.value
   
   const keyword = newKeyword.trim().toLowerCase()
   if (!keyword) {
@@ -334,7 +334,7 @@ watch(searchKeyword, newKeyword => {
   }
 
   // Expand groups that contain matches
-  const grouped = templateStore.groupedTemplates
+  const grouped = (templateStore as TemplateStoreType).groupedTemplates
   for (const [groupName, templates] of grouped) {
     let hasMatch = false
     for (const template of templates) {

@@ -400,3 +400,12 @@ Object.defineProperty(templateStore, 'groupedTemplates', {
   configurable: true,
 })
 
+// Type augmentation to include computed properties
+export interface TemplateStoreWithComputed {
+  sortedTemplates: PlanTemplateConfigVO[]
+  groupedTemplates: Map<string | null, PlanTemplateConfigVO[]>
+}
+
+// Type assertion to help TypeScript understand the computed properties
+export type TemplateStoreType = typeof templateStore & TemplateStoreWithComputed
+

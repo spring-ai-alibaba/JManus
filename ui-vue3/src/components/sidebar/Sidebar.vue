@@ -319,16 +319,16 @@ const loadAllTemplateToolInfo = async () => {
   // Populate templateToolInfo from template data
   for (const template of templateConfig.planTemplateList.value) {
     const planTemplateId = template.planTemplateId
-    if (planTemplateId && template.toolConfig?.toolName) {
+    if (planTemplateId && template.toolConfig?.toolDescription) {
       templateToolInfo.value[planTemplateId] = {
-        toolName: template.toolConfig.toolName,
+        toolName: template.title || '', // Use title as toolName
         toolDescription: template.toolConfig.toolDescription || '',
         planTemplateId: planTemplateId,
         inputSchema: '[]',
         enableHttpService: template.toolConfig.enableHttpService || false,
         enableMcpService: template.toolConfig.enableMcpService || false,
         enableInternalToolcall: template.toolConfig.enableInternalToolcall || false,
-        serviceGroup: template.toolConfig.serviceGroup || template.serviceGroup || '',
+        serviceGroup: template.serviceGroup || '',
       }
     }
   }

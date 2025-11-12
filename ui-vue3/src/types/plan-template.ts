@@ -125,9 +125,7 @@ export interface InputSchemaParam {
 }
 
 export interface ToolConfigVO {
-  toolName?: string
   toolDescription?: string
-  serviceGroup?: string
   enableInternalToolcall?: boolean
   enableHttpService?: boolean
   enableMcpService?: boolean
