@@ -154,7 +154,7 @@ export class TemplateStore {
       for (const config of this.templateConfig.planTemplateList.value) {
         const planTemplateId = config.planTemplateId
         if (planTemplateId) {
-          const serviceGroup = config.serviceGroup || config.toolConfig?.serviceGroup || ''
+          const serviceGroup = config.serviceGroup  || ''
           if (serviceGroup) {
             this.templateServiceGroups.set(planTemplateId, serviceGroup)
           }
