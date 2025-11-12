@@ -497,10 +497,10 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			}
 
 			StringBuilder result = new StringBuilder();
-			String displayPath = directoryPath == null || directoryPath.isEmpty() ? "shared/"
-					: "shared/" + directoryPath;
-			result.append(String.format("Files in shared directory: %s\n", displayPath));
-			result.append("=".repeat(50)).append("\n");
+			result.append("Files in shared directory: \n");
+			if (directoryPath != null && !directoryPath.isEmpty()) {
+				result.append(directoryPath).append("\n");
+			}
 
 			java.util.List<Path> files = Files.list(targetDirectory).sorted().toList();
 

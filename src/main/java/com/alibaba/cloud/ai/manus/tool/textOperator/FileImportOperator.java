@@ -181,31 +181,10 @@ public class FileImportOperator extends AbstractBaseTool<FileImportOperator.File
 			// Build result message
 			StringBuilder result = new StringBuilder();
 			result.append("File import completed successfully\n");
-			result.append("Source path: ").append(realPath).append("\n");
-			result.append("Target path: shared/").append(targetPath.getFileName()).append("\n");
-			result.append("=".repeat(50)).append("\n");
-			result.append("Imported directories: ").append(importedDirs.size()).append("\n");
-			result.append("Imported files: ").append(importedFiles.size()).append("\n");
-
-			if (!importedDirs.isEmpty()) {
-				result.append("\nDirectories:\n");
-				for (String dir : importedDirs) {
-					result.append("  📁 ").append(dir).append("/\n");
-				}
-			}
-
-			if (!importedFiles.isEmpty()) {
-				result.append("\nFiles:\n");
-				for (String file : importedFiles) {
-					result.append("  📄 ").append(file).append("\n");
-				}
-			}
+			result.append("Imported ").append(importedFiles.size()).append(" files");
 
 			if (!errors.isEmpty()) {
-				result.append("\nErrors:\n");
-				for (String error : errors) {
-					result.append("  ❌ ").append(error).append("\n");
-				}
+				result.append("\nErrors: ").append(errors.size()).append(" file(s) failed to import");
 			}
 
 			log.info("Imported {} files and {} directories from {} to shared/", importedFiles.size(),
