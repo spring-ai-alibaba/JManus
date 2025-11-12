@@ -57,11 +57,15 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	private final ObjectMapper objectMapper;
 
+	private final com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService;
+
 	public BrowserUseTool(ChromeDriverService chromeDriverService, SmartContentSavingService innerStorageService,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper,
+			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService) {
 		this.chromeDriverService = chromeDriverService;
 		this.innerStorageService = innerStorageService;
 		this.objectMapper = objectMapper;
+		this.shortUrlService = shortUrlService;
 	}
 
 	public DriverWrapper getDriver() {
@@ -93,9 +97,19 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 	private volatile boolean hasRunAtLeastOnce = false;
 
 	public static synchronized BrowserUseTool getInstance(ChromeDriverService chromeDriverService,
-			SmartContentSavingService innerStorageService, ObjectMapper objectMapper) {
-		BrowserUseTool instance = new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper);
+			SmartContentSavingService innerStorageService, ObjectMapper objectMapper,
+			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService) {
+		BrowserUseTool instance = new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper,
+				shortUrlService);
 		return instance;
+	}
+
+	/**
+	 * Get ShortUrlService instance
+	 * @return ShortUrlService
+	 */
+	public com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService getShortUrlService() {
+		return shortUrlService;
 	}
 
 	public ToolExecuteResult run(BrowserRequestVO requestVO) {
@@ -456,7 +470,9 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
 					.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
 			
-				String snapshot = AriaElementHelper.parsePageAndAssignRefs(page, snapshotOptions);
+				// Use compressUrl = true to enable URL compression
+				String snapshot = AriaElementHelper.parsePageAndAssignRefs(page, snapshotOptions, true,
+						shortUrlService, rootPlanId);
 					if (snapshot != null && !snapshot.trim().isEmpty()) {
 						state.put("interactive_elements", snapshot);
 					}

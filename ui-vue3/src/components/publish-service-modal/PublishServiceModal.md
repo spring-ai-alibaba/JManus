@@ -69,12 +69,12 @@
       <!-- Parameter Configuration -->
       <div class="form-section">
         <div class="section-title">{{ t('mcpService.parameterConfig') }}</div>
-        
+
         <!-- Parameter Requirements Help Text -->
         <div v-if="parameterRequirements.hasParameters" class="params-help-text">
           {{ t('sidebar.parameterRequirementsHelp') }}
         </div>
-        
+
         <div class="parameter-table">
           <table>
             <thead>
@@ -128,7 +128,7 @@
               {{ t('mcpService.publishAsInternalToolcallDescription') }}
             </div>
           </div>
-          
+
           <!-- HTTP POST Service Publishing Option -->
           <div class="http-publish-option">
             <label class="checkbox-label">
@@ -142,9 +142,9 @@
             <div class="checkbox-description">
               {{ t('mcpService.publishAsHttpServiceDescription') }}
             </div>
-            
+
           </div>
-          
+
           <!-- MCP Service Publishing Option -->
           <div class="mcp-publish-option">
             <label class="checkbox-label">
@@ -158,7 +158,7 @@
             <div class="checkbox-description">
               {{ t('mcpService.publishAsMcpServiceDescription') }}
             </div>
-            
+
             <!-- Endpoint Configuration - Only shown when MCP service publishing option is selected -->
             <div v-if="publishAsMcpService" class="form-section">
               <div class="form-item">
@@ -255,26 +255,27 @@
     <template #footer>
       <div class="button-container">
         <!-- Delete Button - Only shown when saved -->
-        <button 
-          v-if="isSaved && currentTool?.id" 
-          class="action-btn danger" 
-          @click="handleDelete" 
+        <button
+          v-if="isSaved && currentTool?.id"
+          class="action-btn danger"
+          @click="handleDelete"
           :disabled="deleting"
         >
           <Icon icon="carbon:loading" v-if="deleting" class="loading-icon" />
           <Icon icon="carbon:trash-can" v-else />
           {{ deleting ? t('mcpService.deleting') : t('mcpService.delete') }}
         </button>
-        
+
         <!-- Publish as Service Button - Always shown -->
         <button class="action-btn primary" @click="handlePublish" :disabled="publishing">
           <Icon icon="carbon:loading" v-if="publishing" class="loading-icon" />
           <Icon icon="carbon:cloud-upload" v-else />
           {{ publishing ? t('mcpService.publishing') : t('mcpService.publishAsService') }}
         </button>
-        
+
       </div>
     </template>
+
   </Modal>
 
   <!-- Error Toast -->
@@ -1736,4 +1737,4 @@ defineExpose({
 }
 
 
-</style> 
+</style>

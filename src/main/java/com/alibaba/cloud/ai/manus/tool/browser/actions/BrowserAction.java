@@ -101,6 +101,30 @@ public abstract class BrowserAction {
 	}
 
 	/**
+	 * Get ShortUrlService instance
+	 * @return ShortUrlService
+	 */
+	protected com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService getShortUrlService() {
+		return browserUseTool.getShortUrlService();
+	}
+
+	/**
+	 * Get current plan ID
+	 * @return Current plan ID
+	 */
+	protected String getCurrentPlanId() {
+		return browserUseTool.getCurrentPlanId();
+	}
+
+	/**
+	 * Get root plan ID
+	 * @return Root plan ID
+	 */
+	protected String getRootPlanId() {
+		return browserUseTool.getRootPlanId();
+	}
+
+	/**
 	 * Get current page Page instance
 	 * @return Current Playwright Page instance
 	 */

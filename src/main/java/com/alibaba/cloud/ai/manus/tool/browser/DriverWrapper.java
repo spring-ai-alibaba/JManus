@@ -48,8 +48,6 @@ public class DriverWrapper {
 
 	private Browser browser;
 
-	private AriaElementHelper ariaElementHolder;
-
 	private final Path cookiePath;
 
 	// Mixin class for Playwright Cookie deserialization
@@ -86,7 +84,7 @@ public class DriverWrapper {
 		this.playwright = playwright;
 		this.currentPage = currentPage;
 		this.browser = browser;
-		this.ariaElementHolder = null; // Will be initialized on first use
+	
 		this.objectMapper = objectMapper;
 		// Configure ObjectMapper
 		this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -259,7 +257,6 @@ public class DriverWrapper {
 	public void setCurrentPage(Page currentPage) {
 		this.currentPage = currentPage;
 		// Refresh ARIA element holder when page changes
-		this.ariaElementHolder = null;
 		// Potentially load cookies if page context changes and it's desired
 		// loadCookies();
 	}
@@ -337,9 +334,6 @@ public class DriverWrapper {
 				this.browser = null;
 			}
 		}
-
-		// Clean up ARIA element holder
-		this.ariaElementHolder = null;
 
 		log.info("DriverWrapper close operation completed");
 

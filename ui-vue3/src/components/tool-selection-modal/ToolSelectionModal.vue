@@ -357,13 +357,13 @@ const handleCancel = () => {
 // Auto-expand groups that contain matching tools when searching
 watch(searchQuery, newQuery => {
   const query = newQuery.trim().toLowerCase()
-  
+
   if (query) {
     // Save current collapsed state before search if not already saved
     if (collapsedGroupsBeforeSearch.value === null) {
       collapsedGroupsBeforeSearch.value = new Set(collapsedGroups.value)
     }
-    
+
     // Expand all groups that contain matching tools (check all original tools, not just filtered)
     for (const [groupName, tools] of allGroupedTools.value) {
       const hasMatchingTool = tools.some(
@@ -372,7 +372,7 @@ watch(searchQuery, newQuery => {
           (tool.description && tool.description.toLowerCase().includes(query)) ||
           (tool.serviceGroup && tool.serviceGroup.toLowerCase().includes(query))
       )
-      
+
       if (hasMatchingTool) {
         // Expand the group if it contains matching tools
         collapsedGroups.value.delete(groupName)

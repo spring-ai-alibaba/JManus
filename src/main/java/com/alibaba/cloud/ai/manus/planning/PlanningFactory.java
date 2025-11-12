@@ -83,7 +83,6 @@ import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
 import com.alibaba.cloud.ai.manus.tool.textOperator.FileImportOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.GlobalFileOperator;
-import com.alibaba.cloud.ai.manus.tool.textOperator.LocalFileOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -159,6 +158,9 @@ public class PlanningFactory {
 	@Autowired
 	private ApplicationContext applicationContext;
 
+	@Autowired
+	private com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService;
+
 	public PlanningFactory(ChromeDriverService chromeDriverService, PlanExecutionRecorder recorder,
 			ManusProperties manusProperties, TextFileService textFileService, McpService mcpService,
 			SmartContentSavingService innerStorageService, UnifiedDirectoryManager unifiedDirectoryManager,
@@ -221,7 +223,8 @@ public class PlanningFactory {
 		}
 		if (agentInit) {
 			// Add all tool definitions
-			toolDefinitions.add(BrowserUseTool.getInstance(chromeDriverService, innerStorageService, objectMapper));
+			toolDefinitions.add(BrowserUseTool.getInstance(chromeDriverService, innerStorageService, objectMapper,
+				shortUrlService));
 			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
@@ -230,7 +233,6 @@ public class PlanningFactory {
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
 
-			toolDefinitions.add(new LocalFileOperator(textFileService, innerStorageService, objectMapper));
 			toolDefinitions.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper));
 			toolDefinitions.add(new FileImportOperator(textFileService, null));
 			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper));

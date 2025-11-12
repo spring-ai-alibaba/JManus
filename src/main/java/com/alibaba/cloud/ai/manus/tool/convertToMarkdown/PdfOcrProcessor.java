@@ -474,7 +474,8 @@ public class PdfOcrProcessor {
 	private boolean ocrFileExists(String currentPlanId, String ocrFilename) {
 		try {
 			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path ocrFile = currentPlanDir.resolve(ocrFilename);
+			Path sharedDir = currentPlanDir.resolve("shared");
+			Path ocrFile = sharedDir.resolve(ocrFilename);
 			return Files.exists(ocrFile);
 		}
 		catch (Exception e) {
@@ -500,7 +501,8 @@ public class PdfOcrProcessor {
 	private Path saveOcrResult(String content, String filename, String currentPlanId) {
 		try {
 			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path outputFile = currentPlanDir.resolve(filename);
+			Path sharedDir = currentPlanDir.resolve("shared");
+			Path outputFile = sharedDir.resolve(filename);
 
 			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
 					StandardOpenOption.TRUNCATE_EXISTING);
