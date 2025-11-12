@@ -130,17 +130,6 @@ public class DriverWrapper {
 					log.info("All cookies in file are expired, skipping cookie loading: {}",
 							this.cookiePath.toAbsolutePath());
 				}
-				// Filter out expired cookies before loading
-				List<Cookie> validCookies = filterExpiredCookies(cookies);
-				if (!validCookies.isEmpty()) {
-					this.currentPage.context().addCookies(validCookies);
-					log.info("Loaded {} valid cookies (filtered {} expired) from: {}", validCookies.size(),
-							cookies.size() - validCookies.size(), this.cookiePath.toAbsolutePath());
-				}
-				else {
-					log.info("All cookies in file are expired, skipping cookie loading: {}",
-							this.cookiePath.toAbsolutePath());
-				}
 			}
 			else {
 				log.info("No cookies found in file or cookies list was empty: {}", this.cookiePath.toAbsolutePath());
@@ -215,51 +204,13 @@ public class DriverWrapper {
 
 	/**
 	 * Public method to save cookies (can be called after operations)
+	 * Also saves storage state for better persistence (includes cookies, localStorage, etc.)
 	 */
 	public void persistCookies() {
 		saveCookies();
 		// Also save storage state for better persistence (includes cookies, localStorage,
 		// etc.)
 		saveStorageState();
-	}
-
-	/**
-	 * Save browser context storage state (cookies, localStorage, sessionStorage, etc.)
-	 * This provides better persistence than just saving cookies
-	 */
-	private void saveStorageState() {
-		if (this.currentPage == null) {
-			log.debug("Cannot save storage state: currentPage is null.");
-			return;
-		}
-		try {
-			com.microsoft.playwright.BrowserContext context = this.currentPage.context();
-			if (context == null) {
-				log.debug("Cannot save storage state: browser context is null.");
-				return;
-			}
-
-			// Save storage state to file (includes cookies, localStorage, sessionStorage)
-			java.nio.file.Path storageStatePath = this.cookiePath.getParent().resolve("storage-state.json");
-			// Playwright storageState method uses StorageStateOptions
-			context.storageState(
-					new com.microsoft.playwright.BrowserContext.StorageStateOptions().setPath(storageStatePath));
-			log.debug("Storage state saved successfully to: {}", storageStatePath.toAbsolutePath());
-		}
-		catch (Exception e) {
-			log.debug("Failed to save storage state: {}", e.getMessage());
-		}
-	}
-
-	/**
-	 * Get AriaElementHolder, refreshing from current page if needed
-	 * @return AriaElementHolder instance
-	 */
-	public AriaElementHolder getAriaElementHolder() {
-		if (ariaElementHolder == null && currentPage != null) {
-			refreshAriaElementHolder();
-		}
-		return ariaElementHolder;
 	}
 
 	/**

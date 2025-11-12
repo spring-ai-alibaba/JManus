@@ -43,6 +43,7 @@ import com.alibaba.cloud.ai.manus.tool.browser.actions.SwitchTabAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.WriteCurrentWebContentAction;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
+import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.PlaywrightException;
@@ -60,13 +61,17 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	private final com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService;
 
+	private final TextFileService textFileService;
+
 	public BrowserUseTool(ChromeDriverService chromeDriverService, SmartContentSavingService innerStorageService,
 			ObjectMapper objectMapper,
-			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService) {
+			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService,
+			TextFileService textFileService) {
 		this.chromeDriverService = chromeDriverService;
 		this.innerStorageService = innerStorageService;
 		this.objectMapper = objectMapper;
 		this.shortUrlService = shortUrlService;
+		this.textFileService = textFileService;
 	}
 
 	public DriverWrapper getDriver() {
@@ -99,9 +104,10 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	public static synchronized BrowserUseTool getInstance(ChromeDriverService chromeDriverService,
 			SmartContentSavingService innerStorageService, ObjectMapper objectMapper,
-			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService) {
+			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService,
+			TextFileService textFileService) {
 		BrowserUseTool instance = new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper,
-				shortUrlService);
+				shortUrlService, textFileService);
 		return instance;
 	}
 

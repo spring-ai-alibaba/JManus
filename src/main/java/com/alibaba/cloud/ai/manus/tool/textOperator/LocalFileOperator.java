@@ -208,8 +208,6 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 			}
 			// file_path is optional for list_files action
 			if (filePath == null && !"list_files".equals(action)) {
-			// file_path is optional for list_files action
-			if (filePath == null && !"list_files".equals(action)) {
 				return new ToolExecuteResult("Error: file_path parameter is required");
 			}
 

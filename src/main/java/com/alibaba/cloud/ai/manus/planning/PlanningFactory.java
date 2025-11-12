@@ -233,7 +233,7 @@ public class PlanningFactory {
 		if (agentInit) {
 			// Add all tool definitions
 			toolDefinitions.add(BrowserUseTool.getInstance(chromeDriverService, innerStorageService, objectMapper,
-				shortUrlService));
+				shortUrlService, textFileService));
 			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
