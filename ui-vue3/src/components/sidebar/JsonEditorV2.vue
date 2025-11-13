@@ -252,7 +252,7 @@
               <div class="form-row">
                 <AssignedTools
                   :title="$t('sidebar.selectedTools')"
-                  :selected-tool-ids="(step as any).selectedToolKeys || []"
+                  :selected-tool-ids="(step as StepConfigWithTools).selectedToolKeys || []"
                   :add-button-text="$t('sidebar.addRemoveTools')"
                   :empty-text="$t('sidebar.noTools')"
                   :use-grid-layout="true"
@@ -333,7 +333,7 @@
       v-model="showToolModal"
       :selected-tool-ids="
         currentStepIndex >= 0
-          ? (displayData.steps[currentStepIndex] as any)?.selectedToolKeys || []
+          ? (displayData.steps[currentStepIndex] as StepConfigWithTools)?.selectedToolKeys || []
           : []
       "
       @confirm="handleToolSelectionConfirm"
@@ -388,6 +388,11 @@ import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateCon
 import { templateStore } from '@/stores/templateStore'
 import { useToast } from '@/plugins/useToast'
 import type { StepConfig } from '@/types/plan-template'
+
+// Extended StepConfig with selectedToolKeys for UI state
+interface StepConfigWithTools extends StepConfig {
+  selectedToolKeys?: string[]
+}
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -404,14 +409,13 @@ interface JsonEditorV2Props {
 // Props
 const { isGenerating = false, isExecuting = false } = defineProps<JsonEditorV2Props>()
 
-
 // Get template config singleton
 const templateConfig = usePlanTemplateConfigSingleton()
 
 // Display data - sync with templateConfig
 const displayData = reactive<{
   title: string
-  steps: StepConfig[]
+  steps: StepConfigWithTools[]
 }>({
   title: '',
   steps: [],
@@ -785,7 +789,7 @@ const showToolSelectionModal = (stepIndex: number) => {
 const handleToolSelectionConfirm = (selectedToolIds: string[]) => {
   if (currentStepIndex.value >= 0 && currentStepIndex.value < displayData.steps.length) {
     // Update the specific step's selected tool keys
-    ;(displayData.steps[currentStepIndex.value] as any).selectedToolKeys = [...selectedToolIds]
+    displayData.steps[currentStepIndex.value].selectedToolKeys = [...selectedToolIds]
   }
   showToolModal.value = false
   currentStepIndex.value = -1
@@ -794,7 +798,7 @@ const handleToolSelectionConfirm = (selectedToolIds: string[]) => {
 const handleToolsFiltered = (stepIndex: number, filteredTools: string[]) => {
   if (stepIndex >= 0 && stepIndex < displayData.steps.length) {
     // Update the step's selected tool keys with filtered tools
-    ;(displayData.steps[stepIndex] as any).selectedToolKeys = [...filteredTools]
+    displayData.steps[stepIndex].selectedToolKeys = [...filteredTools]
   }
 }
 

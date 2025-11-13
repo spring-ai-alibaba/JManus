@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.cloud.ai.manus.coordinator.entity.po;
+package com.alibaba.cloud.ai.manus.planning.model.po;
 
 import java.time.LocalDateTime;
 
@@ -31,7 +31,7 @@ import jakarta.persistence.UniqueConstraint;
  */
 @Entity
 @Table(name = "coordinator_tools", uniqueConstraints = @UniqueConstraint(columnNames = { "toolName" }))
-public class CoordinatorToolEntity {
+public class FuncAgentToolEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -64,7 +64,7 @@ public class CoordinatorToolEntity {
 	@Column(nullable = false)
 	private LocalDateTime updateTime;
 
-	public CoordinatorToolEntity() {
+	public FuncAgentToolEntity() {
 		this.createTime = LocalDateTime.now();
 		this.updateTime = LocalDateTime.now();
 		this.enableInternalToolcall = true;

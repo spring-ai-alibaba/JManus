@@ -102,7 +102,10 @@
       </button>
 
       <!-- Internal Call wrapper - only show when enableInternalToolcall is true -->
-      <div v-if="templateConfig.selectedTemplate.value?.toolConfig?.enableInternalToolcall" class="call-example-wrapper">
+      <div
+        v-if="templateConfig.selectedTemplate.value?.toolConfig?.enableInternalToolcall"
+        class="call-example-wrapper"
+      >
         <div class="call-example-header">
           <h4 class="call-example-title">{{ t('sidebar.internalCall') }}</h4>
           <p class="call-example-description">{{ t('sidebar.internalCallDescription') }}</p>
@@ -111,10 +114,16 @@
           <div class="call-info">
             <div class="call-method">{{ t('sidebar.internalMethodCall') }}</div>
             <div class="call-endpoint">
-              {{ t('sidebar.toolName') }}: {{ templateConfig.selectedTemplate.value?.title || templateConfig.currentPlanTemplateId.value || '' }}
+              {{ t('sidebar.toolName') }}:
+              {{
+                templateConfig.selectedTemplate.value?.title ||
+                templateConfig.currentPlanTemplateId.value ||
+                ''
+              }}
             </div>
             <div v-if="templateConfig.selectedTemplate.value?.serviceGroup" class="call-endpoint">
-              {{ t('sidebar.serviceGroup') }}: {{ templateConfig.selectedTemplate.value.serviceGroup }}
+              {{ t('sidebar.serviceGroup') }}:
+              {{ templateConfig.selectedTemplate.value.serviceGroup }}
             </div>
             <div class="call-description">{{ t('sidebar.internalCallUsage') }}</div>
             <div class="call-example">
@@ -126,7 +135,10 @@
       </div>
 
       <!-- HTTP API URLs wrapper with tabs - only show when enableHttpService is true -->
-      <div v-if="templateConfig.selectedTemplate.value?.toolConfig?.enableHttpService" class="call-example-wrapper">
+      <div
+        v-if="templateConfig.selectedTemplate.value?.toolConfig?.enableHttpService"
+        class="call-example-wrapper"
+      >
         <div class="call-example-header">
           <h4 class="call-example-title">{{ t('sidebar.httpCallExample') }}</h4>
           <p class="call-example-description">{{ t('sidebar.httpCallDescription') }}</p>
@@ -166,7 +178,10 @@
       </div>
 
       <!-- MCP Call wrapper - only show when enableMcpService is true -->
-      <div v-if="templateConfig.selectedTemplate.value?.toolConfig?.enableMcpService" class="call-example-wrapper">
+      <div
+        v-if="templateConfig.selectedTemplate.value?.toolConfig?.enableMcpService"
+        class="call-example-wrapper"
+      >
         <div class="call-example-header">
           <h4 class="call-example-title">{{ t('sidebar.mcpCall') }}</h4>
           <p class="call-example-description">{{ t('sidebar.mcpCallDescription') }}</p>
@@ -735,9 +750,7 @@ const loadParameterRequirements = async () => {
   isLoadingParameters.value = true
   try {
     console.log('[ExecutionController] 🌐 Fetching parameter requirements from API...')
-    const requirements = await PlanParameterApiService.getParameterRequirements(
-      planTemplateId
-    )
+    const requirements = await PlanParameterApiService.getParameterRequirements(planTemplateId)
     console.log(
       '[ExecutionController] 📥 Received requirements from API:',
       JSON.stringify(requirements, null, 2)

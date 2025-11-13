@@ -265,7 +265,7 @@ const getRelativeTimeString = (date: Date): string => {
 const filteredGroupedTemplates = computed(() => {
   // Access planTemplateList directly to ensure reactivity
   // This ensures Vue tracks changes to the list
-  templateConfig.planTemplateList.value
+  void templateConfig.planTemplateList.value
 
   const keyword = searchKeyword.value.trim().toLowerCase()
 
@@ -303,7 +303,7 @@ const filteredGroupedTemplates = computed(() => {
 // Auto-expand groups that contain matching items when searching
 watch(searchKeyword, newKeyword => {
   // Access planTemplateList to ensure reactivity
-  templateConfig.planTemplateList.value
+  void templateConfig.planTemplateList.value
 
   const keyword = newKeyword.trim().toLowerCase()
   if (!keyword) {

@@ -366,13 +366,13 @@ export function usePlanTemplateConfig() {
       error.value = null
 
       const result = await PlanTemplateApiService.createOrUpdatePlanTemplateWithTool(getConfig())
-      
+
       if (result.success) {
         // Reload the template to get updated data from backend
         const planTemplateId = config.planTemplateId
         if (planTemplateId) {
           await load(planTemplateId)
-          
+
           // Update selectedTemplate if it matches the saved template
           if (selectedTemplate.value?.planTemplateId === planTemplateId) {
             const loadedConfig = getConfig()
@@ -381,7 +381,7 @@ export function usePlanTemplateConfig() {
               ...loadedConfig,
             }
           }
-          
+
           // Update planTemplateList if the template exists in the list
           const templateIndex = planTemplateList.value.findIndex(
             t => t.planTemplateId === planTemplateId
@@ -395,7 +395,7 @@ export function usePlanTemplateConfig() {
           }
         }
       }
-      
+
       return result.success
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to save plan template config'

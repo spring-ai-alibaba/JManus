@@ -50,72 +50,6 @@ export interface PlanTemplateEvents {
   planExecutionRequested: [payload: PlanExecutionRequestPayload]
 }
 
-// Plan template initialization and registration types
-export interface PlanTemplateInitRequest {
-  language: string
-}
-
-export interface PlanTemplateInitResponse {
-  success: boolean
-  language: string
-  planNames: string[]
-  initResult: {
-    success: boolean
-    successCount: number
-    errorCount: number
-    successList: string[]
-    errorList: string[]
-    errors: Record<string, string>
-  }
-  registerResult: {
-    success: boolean
-    successCount: number
-    errorCount: number
-    successList: string[]
-    errorList: string[]
-    errors: Record<string, string>
-  }
-  message: string
-}
-
-export interface PlanTemplateRegisterRequest {
-  planNames: string[]
-}
-
-export interface PlanTemplateRegisterResponse {
-  success: boolean
-  totalRequested: number
-  successCount: number
-  errorCount: number
-  successList: string[]
-  errorList: string[]
-  errors: Record<string, string>
-  message: string
-}
-
-export interface PlanTemplateStatus {
-  success: boolean
-  totalPlanTemplates: number
-  registeredPlanTemplates: number
-  unregisteredPlanTemplates: number
-  registeredPlanTemplateIds: string[]
-}
-
-export interface RegisteredPlanTemplate {
-  toolId: number
-  toolName: string
-  planTemplateId: string
-  description: string
-  endpoint: string
-  serviceGroup: string
-}
-
-export interface RegisteredPlanTemplatesResponse {
-  success: boolean
-  registeredTemplates: RegisteredPlanTemplate[]
-  count: number
-}
-
 // Plan template configuration types
 export interface InputSchemaParam {
   name: string
@@ -158,4 +92,3 @@ export interface CreateOrUpdatePlanTemplateWithToolResponse {
   planTemplateId: string
   toolRegistered: boolean
 }
-

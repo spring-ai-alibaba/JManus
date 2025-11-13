@@ -93,9 +93,7 @@
   </div>
 
   <!-- Publish Service Modal -->
-  <PublishServiceModal
-    v-model="showPublishMcpModal"
-  />
+  <PublishServiceModal v-model="showPublishMcpModal" />
 </template>
 
 <script setup lang="ts">
@@ -111,7 +109,7 @@ import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
-import { onMounted, onUnmounted, ref} from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import ExecutionController from './ExecutionController.vue'
 import JsonEditorV2 from './JsonEditorV2.vue'
 import TemplateList from './TemplateList.vue'
@@ -128,12 +126,10 @@ const isResizing = ref(false)
 const startX = ref(0)
 const startWidth = ref(0)
 
-
 // Emits - Keep some events for communication with external components
 const emit = defineEmits<{
   planExecutionRequested: [payload: PlanExecutionRequestPayload]
 }>()
-
 
 const handlePlanExecutionRequested = (payload: PlanExecutionRequestPayload) => {
   console.log(
@@ -151,7 +147,6 @@ const handleOpenPublishModal = () => {
   console.log('[Sidebar] Opening publish MCP service modal')
   showPublishMcpModal.value = true
 }
-
 
 // Sidebar resize methods
 const startResize = (e: MouseEvent) => {
@@ -197,7 +192,6 @@ const resetSidebarWidth = () => {
   sidebarWidth.value = 80
   localStorage.setItem('sidebarWidth', '80')
 }
-
 
 // Lifecycle
 onMounted(async () => {

@@ -34,13 +34,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.alibaba.cloud.ai.manus.coordinator.entity.vo.CoordinatorToolVO;
-import com.alibaba.cloud.ai.manus.coordinator.entity.vo.PlanTemplateConfigVO;
 import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
-import com.alibaba.cloud.ai.manus.coordinator.service.CoordinatorToolServiceImpl;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
+import com.alibaba.cloud.ai.manus.planning.model.vo.PlanTemplateConfigVO;
 import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
+import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateConfigService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
@@ -73,7 +72,7 @@ public class PlanTemplateController {
 	private IPlanParameterMappingService parameterMappingService;
 
 	@Autowired
-	private CoordinatorToolServiceImpl coordinatorToolService;
+	private PlanTemplateConfigService planTemplateConfigService;
 
 	/**
 	 * Save version history
@@ -421,14 +420,14 @@ public class PlanTemplateController {
 
 			// Use the unified service method that handles both plan template and coordinator
 			// tool creation/update
-			CoordinatorToolVO coordinatorToolVO = coordinatorToolService
+			PlanTemplateConfigVO resultConfigVO = planTemplateConfigService
 				.createOrUpdateCoordinatorToolFromPlanTemplateConfig(configVO);
 
 			// Build simple response
 			Map<String, Object> response = new HashMap<>();
 			response.put("success", true);
 			response.put("planTemplateId", planTemplateId);
-			response.put("toolRegistered", coordinatorToolVO != null);
+			response.put("toolRegistered", resultConfigVO != null && resultConfigVO.getToolConfig() != null);
 
 			return ResponseEntity.ok(response);
 
@@ -509,51 +508,14 @@ public class PlanTemplateController {
 					}
 
 					// Get coordinator tool if exists to populate toolConfig
-					Optional<CoordinatorToolVO> coordinatorToolOpt = coordinatorToolService
+					Optional<PlanTemplateConfigVO> coordinatorToolOpt = planTemplateConfigService
 						.getCoordinatorToolByPlanTemplateId(planTemplateId);
 					if (coordinatorToolOpt.isPresent()) {
-						CoordinatorToolVO toolVO = coordinatorToolOpt.get();
-						PlanTemplateConfigVO.ToolConfigVO toolConfig = new PlanTemplateConfigVO.ToolConfigVO();
-						toolConfig.setToolDescription(toolVO.getToolDescription());
-						toolConfig.setEnableInternalToolcall(toolVO.getEnableInternalToolcall());
-						toolConfig.setEnableHttpService(toolVO.getEnableHttpService());
-						toolConfig.setEnableMcpService(toolVO.getEnableMcpService());
-						toolConfig.setPublishStatus(toolVO.getPublishStatus());
-
-						// Parse inputSchema JSON string to InputSchemaParam list
-						if (toolVO.getInputSchema() != null && !toolVO.getInputSchema().trim().isEmpty()) {
-							try {
-								com.fasterxml.jackson.databind.JsonNode inputSchemaNode = objectMapper
-									.readTree(toolVO.getInputSchema());
-								if (inputSchemaNode.isArray()) {
-									List<PlanTemplateConfigVO.InputSchemaParam> inputSchemaParams = new ArrayList<>();
-									for (com.fasterxml.jackson.databind.JsonNode paramNode : inputSchemaNode) {
-										PlanTemplateConfigVO.InputSchemaParam param = new PlanTemplateConfigVO.InputSchemaParam();
-										if (paramNode.has("name")) {
-											param.setName(paramNode.get("name").asText());
-										}
-										if (paramNode.has("description")) {
-											param.setDescription(paramNode.get("description").asText());
-										}
-										if (paramNode.has("type")) {
-											param.setType(paramNode.get("type").asText());
-										}
-										if (paramNode.has("required")) {
-											param.setRequired(paramNode.get("required").asBoolean());
-										}
-										inputSchemaParams.add(param);
-									}
-									toolConfig.setInputSchema(inputSchemaParams);
-								}
-							}
-							catch (Exception e) {
-								logger.warn("Failed to parse inputSchema for planTemplateId: {}", planTemplateId, e);
-								// Set empty list if parsing fails
-								toolConfig.setInputSchema(new ArrayList<>());
-							}
+						PlanTemplateConfigVO toolConfigVO = coordinatorToolOpt.get();
+						// Use toolConfig directly from the returned PlanTemplateConfigVO
+						if (toolConfigVO.getToolConfig() != null) {
+							configVO.setToolConfig(toolConfigVO.getToolConfig());
 						}
-
-						configVO.setToolConfig(toolConfig);
 					}
 
 					configVOs.add(configVO);
@@ -637,52 +599,14 @@ public class PlanTemplateController {
 			}
 
 			// Get coordinator tool if exists to populate toolConfig
-			Optional<CoordinatorToolVO> coordinatorToolOpt = coordinatorToolService
+			Optional<PlanTemplateConfigVO> coordinatorToolOpt = planTemplateConfigService
 				.getCoordinatorToolByPlanTemplateId(planTemplateId);
 			if (coordinatorToolOpt.isPresent()) {
-				CoordinatorToolVO toolVO = coordinatorToolOpt.get();
-				PlanTemplateConfigVO.ToolConfigVO toolConfig = new PlanTemplateConfigVO.ToolConfigVO();
-				
-				toolConfig.setToolDescription(toolVO.getToolDescription());
-				toolConfig.setEnableInternalToolcall(toolVO.getEnableInternalToolcall());
-				toolConfig.setEnableHttpService(toolVO.getEnableHttpService());
-				toolConfig.setEnableMcpService(toolVO.getEnableMcpService());
-				toolConfig.setPublishStatus(toolVO.getPublishStatus());
-
-				// Parse inputSchema JSON string to InputSchemaParam list
-				if (toolVO.getInputSchema() != null && !toolVO.getInputSchema().trim().isEmpty()) {
-					try {
-						com.fasterxml.jackson.databind.JsonNode inputSchemaNode = objectMapper
-							.readTree(toolVO.getInputSchema());
-						if (inputSchemaNode.isArray()) {
-							List<PlanTemplateConfigVO.InputSchemaParam> inputSchemaParams = new ArrayList<>();
-							for (com.fasterxml.jackson.databind.JsonNode paramNode : inputSchemaNode) {
-								PlanTemplateConfigVO.InputSchemaParam param = new PlanTemplateConfigVO.InputSchemaParam();
-								if (paramNode.has("name")) {
-									param.setName(paramNode.get("name").asText());
-								}
-								if (paramNode.has("description")) {
-									param.setDescription(paramNode.get("description").asText());
-								}
-								if (paramNode.has("type")) {
-									param.setType(paramNode.get("type").asText());
-								}
-								if (paramNode.has("required")) {
-									param.setRequired(paramNode.get("required").asBoolean());
-								}
-								inputSchemaParams.add(param);
-							}
-							toolConfig.setInputSchema(inputSchemaParams);
-						}
-					}
-					catch (Exception e) {
-						logger.warn("Failed to parse inputSchema for planTemplateId: {}", planTemplateId, e);
-						// Set empty list if parsing fails
-						toolConfig.setInputSchema(new ArrayList<>());
-					}
+				PlanTemplateConfigVO toolConfigVO = coordinatorToolOpt.get();
+				// Use toolConfig directly from the returned PlanTemplateConfigVO
+				if (toolConfigVO.getToolConfig() != null) {
+					configVO.setToolConfig(toolConfigVO.getToolConfig());
 				}
-
-				configVO.setToolConfig(toolConfig);
 			}
 
 			logger.info("Successfully retrieved plan template configuration for planTemplateId: {}", planTemplateId);

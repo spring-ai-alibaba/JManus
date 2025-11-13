@@ -39,13 +39,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.alibaba.cloud.ai.manus.coordinator.entity.po.CoordinatorToolEntity;
-import com.alibaba.cloud.ai.manus.coordinator.repository.CoordinatorToolRepository;
 import com.alibaba.cloud.ai.manus.event.JmanusListener;
 import com.alibaba.cloud.ai.manus.event.PlanExceptionClearedEvent;
 import com.alibaba.cloud.ai.manus.event.PlanExceptionEvent;
 import com.alibaba.cloud.ai.manus.exception.PlanException;
 import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
+import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateConfigService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.ActToolInfo;
 import com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord;
@@ -103,7 +102,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	private NewRepoPlanExecutionRecorder planExecutionRecorder;
 
 	@Autowired
-	private CoordinatorToolRepository coordinatorToolRepository;
+	private PlanTemplateConfigService planTemplateConfigService;
 
 	@Autowired
 	private PlanTemplateService planTemplateService;
@@ -748,19 +747,12 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	/**
 	 * Get plan template ID from coordinator tool by tool name
+	 * Only returns plan template ID if HTTP service is enabled for the tool
 	 * @param toolName The tool name to look up
-	 * @return Plan template ID if found, null if tool not found
+	 * @return Plan template ID if found and HTTP service is enabled, null otherwise
 	 */
 	private String getPlanTemplateIdFromTool(String toolName) {
-		CoordinatorToolEntity coordinatorTool = coordinatorToolRepository.findByToolName(toolName);
-		if (coordinatorTool == null) {
-			return null;
-		}
-		Boolean isHttpEnabled = coordinatorTool.getEnableHttpService();
-		if (!isHttpEnabled) {
-			return null;
-		}
-		return coordinatorTool.getPlanTemplateId();
+		return planTemplateConfigService.getPlanTemplateIdFromToolName(toolName);
 	}
 
 	@Override
