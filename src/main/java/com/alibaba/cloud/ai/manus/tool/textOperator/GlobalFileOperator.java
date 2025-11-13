@@ -493,13 +493,13 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			}
 
 			if (!Files.isDirectory(targetDirectory)) {
-				return new ToolExecuteResult("Error: Path is not a directory: " + directoryPath);
+				return new ToolExecuteResult("Error: Path is not a directory: " + normalizedPath);
 			}
 
 			StringBuilder result = new StringBuilder();
 			result.append("Files: \n");
-			if (directoryPath != null && !directoryPath.isEmpty()) {
-				result.append(directoryPath).append("\n");
+			if (normalizedPath != null && !normalizedPath.isEmpty()) {
+				result.append(normalizedPath).append("\n");
 			}
 
 			java.util.List<Path> files = Files.list(targetDirectory).sorted().toList();
@@ -529,7 +529,8 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			return new ToolExecuteResult(result.toString());
 		}
 		catch (IOException e) {
-			log.error("Error listing shared files: {}", directoryPath, e);
+			String pathToLog = normalizeFilePath(directoryPath != null ? directoryPath : "");
+			log.error("Error listing shared files: {}", pathToLog, e);
 			return new ToolExecuteResult("Error listing files: " + e.getMessage());
 		}
 	}
