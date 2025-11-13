@@ -28,7 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
+import com.alibaba.cloud.ai.manus.planning.exception.PlanTemplateConfigException;
 import com.alibaba.cloud.ai.manus.planning.model.po.FuncAgentToolEntity;
 import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
 import com.alibaba.cloud.ai.manus.planning.model.vo.PlanTemplateConfigVO;
@@ -66,18 +66,18 @@ public class PlanTemplateConfigService {
 	 * This method ensures toolConfig is properly set with input schema
 	 * @param configVO Plan template configuration VO
 	 * @return PlanTemplateConfigVO with toolConfig and input schema set
-	 * @throws CoordinatorToolException if validation or operation fails
+	 * @throws PlanTemplateConfigException if validation or operation fails
 	 */
 	@Transactional
 	public PlanTemplateConfigVO preparePlanTemplateConfigWithToolConfig(PlanTemplateConfigVO configVO)
-			throws CoordinatorToolException {
+			throws PlanTemplateConfigException {
 		if (configVO == null) {
-			throw new CoordinatorToolException("VALIDATION_ERROR", "PlanTemplateConfigVO cannot be null");
+			throw new PlanTemplateConfigException("VALIDATION_ERROR", "PlanTemplateConfigVO cannot be null");
 		}
 
 		String planTemplateId = configVO.getPlanTemplateId();
 		if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
-			throw new CoordinatorToolException("VALIDATION_ERROR",
+			throw new PlanTemplateConfigException("VALIDATION_ERROR",
 					"planTemplateId is required in PlanTemplateConfigVO");
 		}
 
@@ -133,12 +133,12 @@ public class PlanTemplateConfigService {
 			return configVO;
 
 		}
-		catch (CoordinatorToolException e) {
+		catch (PlanTemplateConfigException e) {
 			throw e;
 		}
 		catch (Exception e) {
 			log.error("Failed to prepare PlanTemplateConfigVO with toolConfig for planTemplateId: {}", planTemplateId, e);
-			throw new CoordinatorToolException("INTERNAL_ERROR",
+			throw new PlanTemplateConfigException("INTERNAL_ERROR",
 					"An unexpected error occurred while preparing PlanTemplateConfigVO: " + e.getMessage());
 		}
 	}
@@ -147,10 +147,10 @@ public class PlanTemplateConfigService {
 	 * Ensure PlanTemplate exists, create or update it if needed
 	 * @param configVO Plan template configuration VO
 	 * @return Existing or newly created PlanTemplate
-	 * @throws CoordinatorToolException if creation fails
+	 * @throws PlanTemplateConfigException if creation fails
 	 */
 	@Transactional
-	public PlanTemplate ensurePlanTemplateExists(PlanTemplateConfigVO configVO) throws CoordinatorToolException {
+	public PlanTemplate ensurePlanTemplateExists(PlanTemplateConfigVO configVO) throws PlanTemplateConfigException {
 		String planTemplateId = configVO.getPlanTemplateId();
 		Optional<PlanTemplate> existingTemplateOpt = planTemplateRepository.findByPlanTemplateId(planTemplateId);
 
@@ -306,7 +306,7 @@ public class PlanTemplateConfigService {
 
 			// Retrieve the saved plan template
 			PlanTemplate savedTemplate = planTemplateRepository.findByPlanTemplateId(planTemplateId)
-					.orElseThrow(() -> new CoordinatorToolException("INTERNAL_ERROR",
+					.orElseThrow(() -> new PlanTemplateConfigException("INTERNAL_ERROR",
 							"Failed to retrieve created PlanTemplate with ID: " + planTemplateId));
 
 			// Set serviceGroup on PlanTemplate from configVO
@@ -327,12 +327,12 @@ public class PlanTemplateConfigService {
 			return savedTemplate;
 
 		}
-		catch (CoordinatorToolException e) {
+		catch (PlanTemplateConfigException e) {
 			throw e;
 		}
 		catch (Exception e) {
 			log.error("Failed to create PlanTemplate from PlanTemplateConfigVO: {}", e.getMessage(), e);
-			throw new CoordinatorToolException("INTERNAL_ERROR", "Failed to create PlanTemplate: " + e.getMessage());
+			throw new PlanTemplateConfigException("INTERNAL_ERROR", "Failed to create PlanTemplate: " + e.getMessage());
 		}
 	}
 
@@ -341,18 +341,18 @@ public class PlanTemplateConfigService {
 	 * Uses planTemplateId as the key identity to determine if tool exists
 	 * @param configVO Plan template configuration VO
 	 * @return Created or updated PlanTemplateConfigVO
-	 * @throws CoordinatorToolException if validation or operation fails
+	 * @throws PlanTemplateConfigException if validation or operation fails
 	 */
 	@Transactional
 	public PlanTemplateConfigVO createOrUpdateCoordinatorToolFromPlanTemplateConfig(PlanTemplateConfigVO configVO)
-			throws CoordinatorToolException {
+			throws PlanTemplateConfigException {
 		if (configVO == null) {
-			throw new CoordinatorToolException("VALIDATION_ERROR", "PlanTemplateConfigVO cannot be null");
+			throw new PlanTemplateConfigException("VALIDATION_ERROR", "PlanTemplateConfigVO cannot be null");
 		}
 
 		String planTemplateId = configVO.getPlanTemplateId();
 		if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
-			throw new CoordinatorToolException("VALIDATION_ERROR",
+			throw new PlanTemplateConfigException("VALIDATION_ERROR",
 					"planTemplateId is required in PlanTemplateConfigVO");
 		}
 
@@ -380,13 +380,13 @@ public class PlanTemplateConfigService {
 			}
 
 		}
-		catch (CoordinatorToolException e) {
+		catch (PlanTemplateConfigException e) {
 			throw e;
 		}
 		catch (Exception e) {
 			log.error("Failed to create or update coordinator tool from PlanTemplateConfigVO for planTemplateId: {}",
 					planTemplateId, e);
-			throw new CoordinatorToolException("INTERNAL_ERROR",
+			throw new PlanTemplateConfigException("INTERNAL_ERROR",
 					"An unexpected error occurred while creating or updating coordinator tool: " + e.getMessage());
 		}
 	}
@@ -396,17 +396,17 @@ public class PlanTemplateConfigService {
 	 * @param id Coordinator tool ID
 	 * @param configVO Plan template configuration VO
 	 * @return Updated PlanTemplateConfigVO
-	 * @throws CoordinatorToolException if update fails
+	 * @throws PlanTemplateConfigException if update fails
 	 */
 	@Transactional
 	public PlanTemplateConfigVO updateCoordinatorTool(Long id, PlanTemplateConfigVO configVO)
-			throws CoordinatorToolException {
+			throws PlanTemplateConfigException {
 		try {
 			log.info("Updating coordinator tool with ID: {}", id);
 
 			// Check if entity exists
 			FuncAgentToolEntity existingEntity = funcAgentToolRepository.findById(id)
-					.orElseThrow(() -> new CoordinatorToolException("NOT_FOUND",
+					.orElseThrow(() -> new PlanTemplateConfigException("NOT_FOUND",
 							"Coordinator tool not found with ID: " + id));
 
 			// Update entity from configVO
@@ -433,12 +433,12 @@ public class PlanTemplateConfigService {
 			return convertEntityToPlanTemplateConfigVO(savedEntity);
 
 		}
-		catch (CoordinatorToolException e) {
+		catch (PlanTemplateConfigException e) {
 			throw e;
 		}
 		catch (Exception e) {
 			log.error("Error updating coordinator tool: {}", e.getMessage(), e);
-			throw new CoordinatorToolException("INTERNAL_ERROR",
+			throw new PlanTemplateConfigException("INTERNAL_ERROR",
 					"An unexpected error occurred while updating coordinator tool: " + e.getMessage());
 		}
 	}
@@ -446,16 +446,16 @@ public class PlanTemplateConfigService {
 	/**
 	 * Delete coordinator tool
 	 * @param id Coordinator tool ID
-	 * @throws CoordinatorToolException if deletion fails
+	 * @throws PlanTemplateConfigException if deletion fails
 	 */
 	@Transactional
-	public void deleteCoordinatorTool(Long id) throws CoordinatorToolException {
+	public void deleteCoordinatorTool(Long id) throws PlanTemplateConfigException {
 		try {
 			log.info("Deleting coordinator tool with ID: {}", id);
 
 			// Check if entity exists
 			if (!funcAgentToolRepository.existsById(id)) {
-				throw new CoordinatorToolException("NOT_FOUND", "Coordinator tool not found with ID: " + id);
+				throw new PlanTemplateConfigException("NOT_FOUND", "Coordinator tool not found with ID: " + id);
 			}
 
 			// Delete entity
@@ -463,12 +463,12 @@ public class PlanTemplateConfigService {
 			log.info("Successfully deleted CoordinatorToolEntity with ID: {}", id);
 
 		}
-		catch (CoordinatorToolException e) {
+		catch (PlanTemplateConfigException e) {
 			throw e;
 		}
 		catch (Exception e) {
 			log.error("Error deleting coordinator tool: {}", e.getMessage(), e);
-			throw new CoordinatorToolException("INTERNAL_ERROR",
+			throw new PlanTemplateConfigException("INTERNAL_ERROR",
 					"An unexpected error occurred while deleting coordinator tool: " + e.getMessage());
 		}
 	}
@@ -477,16 +477,16 @@ public class PlanTemplateConfigService {
 	 * Create coordinator tool
 	 * @param configVO Plan template configuration VO
 	 * @return Created PlanTemplateConfigVO
-	 * @throws CoordinatorToolException if creation fails
+	 * @throws PlanTemplateConfigException if creation fails
 	 */
 	@Transactional
-	public PlanTemplateConfigVO createCoordinatorTool(PlanTemplateConfigVO configVO) throws CoordinatorToolException {
+	public PlanTemplateConfigVO createCoordinatorTool(PlanTemplateConfigVO configVO) throws PlanTemplateConfigException {
 		try {
 			log.info("Creating coordinator tool for planTemplateId: {}", configVO.getPlanTemplateId());
 
 			PlanTemplateConfigVO.ToolConfigVO toolConfig = configVO.getToolConfig();
 			if (toolConfig == null) {
-				throw new CoordinatorToolException("VALIDATION_ERROR", "toolConfig is required");
+				throw new PlanTemplateConfigException("VALIDATION_ERROR", "toolConfig is required");
 			}
 
 			// Convert PlanTemplateConfigVO to Entity and save
@@ -513,7 +513,7 @@ public class PlanTemplateConfigService {
 		}
 		catch (Exception e) {
 			log.error("Failed to create coordinator tool: {}", e.getMessage(), e);
-			throw new CoordinatorToolException("INTERNAL_ERROR",
+			throw new PlanTemplateConfigException("INTERNAL_ERROR",
 					"An unexpected error occurred while creating coordinator tool: " + e.getMessage());
 		}
 	}

@@ -34,8 +34,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
+import com.alibaba.cloud.ai.manus.planning.exception.PlanTemplateConfigException;
 import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
 import com.alibaba.cloud.ai.manus.planning.model.vo.PlanTemplateConfigVO;
 import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
@@ -432,8 +432,8 @@ public class PlanTemplateController {
 			return ResponseEntity.ok(response);
 
 		}
-		catch (CoordinatorToolException e) {
-			logger.error("CoordinatorToolException while creating/updating plan template with tool: {}", e.getMessage(),
+		catch (PlanTemplateConfigException e) {
+			logger.error("PlanTemplateConfigException while creating/updating plan template with tool: {}", e.getMessage(),
 					e);
 			return ResponseEntity.badRequest()
 				.body(Map.of("error", e.getMessage(), "errorCode", e.getErrorCode()));

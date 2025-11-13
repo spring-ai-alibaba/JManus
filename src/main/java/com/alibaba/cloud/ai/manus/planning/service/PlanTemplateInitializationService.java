@@ -31,7 +31,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.alibaba.cloud.ai.manus.coordinator.exception.CoordinatorToolException;
+import com.alibaba.cloud.ai.manus.planning.exception.PlanTemplateConfigException;
 import com.alibaba.cloud.ai.manus.planning.model.vo.PlanTemplateConfigVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -111,7 +111,7 @@ public class PlanTemplateInitializationService {
 						log.info("Successfully initialized plan template and coordinator tool: {} -> planTemplateId: {}",
 								planName, planTemplateId);
 					}
-					catch (CoordinatorToolException e) {
+					catch (PlanTemplateConfigException e) {
 						log.error("Failed to create or update coordinator tool for plan template: {} (planTemplateId: {})",
 								planName, planTemplateId, e);
 						throw new RuntimeException("Failed to create or update coordinator tool: " + e.getMessage(), e);
