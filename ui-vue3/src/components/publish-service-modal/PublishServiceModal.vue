@@ -361,8 +361,6 @@ const handlePublish = async () => {
 
   publishing.value = true
   try {
-    const planTemplateId = templateConfig.currentPlanTemplateId.value || ''
-
     // Prepare inputSchema
     const inputSchema = formData.parameters
       .filter(param => param.name.trim() && param.description.trim())
@@ -386,10 +384,7 @@ const handlePublish = async () => {
       throw new Error('Failed to save plan template')
     }
 
-    // Reload the template to get updated data
-    if (planTemplateId) {
-      await templateConfig.load(planTemplateId)
-    }
+    // selectedTemplate is automatically refreshed by templateConfig.save()
 
     // Perform corresponding publishing operations based on publish type
     const enabledServices = []
@@ -449,8 +444,7 @@ const handleDelete = async () => {
       throw new Error('Failed to save plan template after deletion')
     }
 
-    // Reload the template to get updated data
-    await templateConfig.load(planTemplateId)
+    // selectedTemplate is automatically refreshed by templateConfig.save()
 
     console.log('[PublishModal] Deleted successfully')
     showMessage(t('mcpService.deleteSuccess'), 'success')
