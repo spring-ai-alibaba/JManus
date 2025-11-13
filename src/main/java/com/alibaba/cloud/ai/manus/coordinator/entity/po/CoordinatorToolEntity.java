@@ -49,12 +49,6 @@ public class CoordinatorToolEntity {
 	@Column(nullable = false, length = 50)
 	private String planTemplateId;
 
-	@Column(length = 100)
-	private String httpEndpoint;
-
-	@Column(length = 100)
-	private String mcpEndpoint;
-
 	@Column(nullable = false)
 	private Boolean enableInternalToolcall = true;
 
@@ -119,22 +113,6 @@ public class CoordinatorToolEntity {
 		this.planTemplateId = planTemplateId;
 	}
 
-	public String getHttpEndpoint() {
-		return httpEndpoint;
-	}
-
-	public void setHttpEndpoint(String httpEndpoint) {
-		this.httpEndpoint = httpEndpoint;
-	}
-
-	public String getMcpEndpoint() {
-		return mcpEndpoint;
-	}
-
-	public void setMcpEndpoint(String mcpEndpoint) {
-		this.mcpEndpoint = mcpEndpoint;
-	}
-
 	public Boolean getEnableInternalToolcall() {
 		return enableInternalToolcall;
 	}
@@ -186,8 +164,7 @@ public class CoordinatorToolEntity {
 	@Override
 	public String toString() {
 		return "CoordinatorToolEntity{" + "id=" + id + ", toolName='" + toolName + '\'' + ", toolDescription='"
-				+ toolDescription + '\'' + ", planTemplateId='" + planTemplateId + '\'' + ", httpEndpoint='"
-				+ httpEndpoint + '\'' + ", mcpEndpoint='" + mcpEndpoint + '\'' + ", enableInternalToolcall="
+				+ toolDescription + '\'' + ", planTemplateId='" + planTemplateId + '\'' + ", enableInternalToolcall="
 				+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableMcpService="
 				+ enableMcpService + ", createTime=" + createTime + ", updateTime=" + updateTime + '}';
 	}

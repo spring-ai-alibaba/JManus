@@ -121,9 +121,7 @@
             <Icon icon="carbon:folder" width="16" />
             <span class="group-name">
               {{
-                groupName === null || groupName === ''
-                  ? $t('sidebar.ungroupedMethods')
-                  : groupName
+                groupName === null || groupName === '' ? $t('sidebar.ungroupedMethods') : groupName
               }}
             </span>
             <span class="group-count">({{ templates.length }})</span>
@@ -156,9 +154,6 @@
               </div>
               <div class="task-details">
                 <div class="task-title">{{ template.title || $t('sidebar.unnamedPlan') }}</div>
-                <div class="task-preview">
-                  {{ getTaskPreviewText(template) }}
-                </div>
               </div>
               <div class="task-time">
                 {{
@@ -266,25 +261,17 @@ const getRelativeTimeString = (date: Date): string => {
   return date.toLocaleDateString('zh-CN')
 }
 
-// Get task preview text - show tool description if published, otherwise empty
-const getTaskPreviewText = (template: PlanTemplateConfigVO): string => {
-  if (template.toolConfig?.toolDescription) {
-    return `${t('sidebar.publishedTool')}: ${template.toolConfig.toolDescription}`
-  }
-  return '' // Return empty string when no tools are published
-}
-
 // Filter templates based on search keyword
 const filteredGroupedTemplates = computed(() => {
   // Access planTemplateList directly to ensure reactivity
   // This ensures Vue tracks changes to the list
   templateConfig.planTemplateList.value
-  
+
   const keyword = searchKeyword.value.trim().toLowerCase()
-  
+
   // Get grouped templates from templateStore
   const grouped = (templateStore as TemplateStoreType).groupedTemplates
-  
+
   if (!keyword) {
     return grouped
   }
@@ -298,10 +285,8 @@ const filteredGroupedTemplates = computed(() => {
     for (const template of templates) {
       // Search in title
       const title = (template.title || '').toLowerCase()
-      // Search in task preview
-      const preview = getTaskPreviewText(template).toLowerCase()
 
-      if (title.includes(keyword) || preview.includes(keyword)) {
+      if (title.includes(keyword)) {
         matchingTemplates.push(template)
       }
     }
@@ -319,7 +304,7 @@ const filteredGroupedTemplates = computed(() => {
 watch(searchKeyword, newKeyword => {
   // Access planTemplateList to ensure reactivity
   templateConfig.planTemplateList.value
-  
+
   const keyword = newKeyword.trim().toLowerCase()
   if (!keyword) {
     return
@@ -339,8 +324,7 @@ watch(searchKeyword, newKeyword => {
     let hasMatch = false
     for (const template of templates) {
       const title = (template.title || '').toLowerCase()
-      const preview = getTaskPreviewText(template).toLowerCase()
-      if (title.includes(keyword) || preview.includes(keyword)) {
+      if (title.includes(keyword)) {
         hasMatch = true
         break
       }
@@ -651,7 +635,7 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
 .sidebar-content-list-item {
   display: flex;
   align-items: flex-start;
-  padding: 12px;
+  padding: 8px;
   margin-bottom: 8px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -694,15 +678,6 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
   font-weight: 600;
   color: white;
   margin-bottom: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.task-preview {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -756,4 +731,3 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
   }
 }
 </style>
-

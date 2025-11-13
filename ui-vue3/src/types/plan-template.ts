@@ -158,3 +158,4 @@ export interface CreateOrUpdatePlanTemplateWithToolResponse {
   planTemplateId: string
   toolRegistered: boolean
 }
+

@@ -56,8 +56,12 @@
           <!-- Template Info Header -->
           <div class="template-info-header">
             <div class="template-info">
-              <h3>{{ templateConfig.selectedTemplate.value.title || $t('sidebar.unnamedPlan') }}</h3>
-              <span class="template-id">ID: {{ templateConfig.selectedTemplate.value.planTemplateId }}</span>
+              <h3>
+                {{ templateConfig.selectedTemplate.value.title || $t('sidebar.unnamedPlan') }}
+              </h3>
+              <span class="template-id"
+                >ID: {{ templateConfig.selectedTemplate.value.planTemplateId }}</span
+              >
             </div>
             <button class="back-to-list-btn" @click="sidebarStore.switchToTab('list')">
               <Icon icon="carbon:arrow-left" width="16" />
@@ -70,10 +74,6 @@
 
           <!-- Section 3: Execution Controller -->
           <ExecutionController
-            ref="executionControllerRef"
-            :current-plan-template-id="templateConfig.currentPlanTemplateId.value || ''"
-            :tool-info="currentToolInfo"
-            :publish-modal-ref="publishMcpModalRef"
             @plan-execution-requested="handlePlanExecutionRequested"
             @open-publish-modal="handleOpenPublishModal"
           />
@@ -92,15 +92,10 @@
     </div>
   </div>
 
-  <!-- Publish MCP Service Modal -->
+  <!-- Publish Service Modal -->
   <PublishServiceModal
-    ref="publishMcpModalRef"
     v-model="showPublishMcpModal"
-    :plan-template-id="templateConfig.currentPlanTemplateId.value || ''"
-    :plan-description="templateConfig.selectedTemplate.value?.toolConfig?.toolDescription || ''"
-    @published="handleMcpServicePublished"
   />
-
 </template>
 
 <script setup lang="ts">
@@ -109,24 +104,17 @@ defineOptions({
   name: 'SidebarPanel',
 })
 
-import type { CoordinatorToolVO } from '@/api/coordinator-tool-api-service'
-import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
 import PublishServiceModal from '@/components/publish-service-modal/PublishServiceModal.vue'
-import { useToast } from '@/plugins/useToast'
 import { sidebarStore } from '@/stores/sidebar'
 import { templateStore } from '@/stores/templateStore'
 import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { onMounted, onUnmounted, ref} from 'vue'
 import ExecutionController from './ExecutionController.vue'
 import JsonEditorV2 from './JsonEditorV2.vue'
 import TemplateList from './TemplateList.vue'
-
-const { t } = useI18n()
-const toast = useToast()
 
 // Available tools management
 const availableToolsStore = useAvailableToolsSingleton()
@@ -140,70 +128,11 @@ const isResizing = ref(false)
 const startX = ref(0)
 const startWidth = ref(0)
 
-// Component refs
-const executionControllerRef = ref<InstanceType<typeof ExecutionController> | null>(null)
-
-// Tool information state
-const currentToolInfo = ref<CoordinatorToolVO>({
-  toolName: '',
-  toolDescription: '',
-  planTemplateId: '',
-  inputSchema: '[]',
-  enableHttpService: false,
-  enableMcpService: false,
-  enableInternalToolcall: false,
-  serviceGroup: '',
-})
-
-// Store tool information for all templates
-const templateToolInfo = ref<Partial<Record<string, CoordinatorToolVO>>>({})
-const publishMcpModalRef = ref<InstanceType<typeof PublishServiceModal> | null>(null)
-
-
-// Watch for changes in currentPlanTemplateId and jsonContent
-watch(
-  () => templateConfig.currentPlanTemplateId.value,
-  (newId, oldId) => {
-    console.log('[Sidebar] currentPlanTemplateId changed from', oldId, 'to', newId)
-  }
-)
-
-watch(
-  () => templateConfig.generateJsonString(),
-  (newContent, oldContent) => {
-    console.log('[Sidebar] jsonContent changed from', oldContent, 'to', newContent)
-  }
-)
-
 
 // Emits - Keep some events for communication with external components
 const emit = defineEmits<{
   planExecutionRequested: [payload: PlanExecutionRequestPayload]
 }>()
-
-// Watch for template changes to refresh parameter requirements after save
-watch(
-  () => templateConfig.currentPlanTemplateId.value,
-  async (newId, oldId) => {
-    // Only refresh if template actually changed (not initial load)
-    if (oldId !== null && oldId !== undefined && newId !== oldId) {
-      console.log('[Sidebar] Template changed, refreshing parameter requirements')
-      await refreshParameterRequirements()
-    }
-  }
-)
-
-
-// Method to refresh parameter requirements (delegated to ExecutionController)
-const refreshParameterRequirements = async () => {
-  if (executionControllerRef.value) {
-    console.log('[Sidebar] 📞 Calling ExecutionController.refreshParameterRequirements()')
-    // ExecutionController now handles the refresh internally
-    await executionControllerRef.value.refreshParameterRequirements()
-  } else {
-    console.warn('[Sidebar] ⚠️ ExecutionController ref not available')
-  }
-}
 
 
 const handlePlanExecutionRequested = (payload: PlanExecutionRequestPayload) => {
@@ -223,116 +152,6 @@ const handleOpenPublishModal = () => {
   showPublishMcpModal.value = true
 }
 
-const handleMcpServicePublished = async (tool: CoordinatorToolVO | null) => {
-  if (tool === null) {
-    console.log('MCP service deleted successfully')
-    toast.success(t('mcpService.deleteSuccess'))
-    // Reset tool information
-    currentToolInfo.value = {
-      toolName: '',
-      toolDescription: '',
-      planTemplateId: '',
-      inputSchema: '[]',
-      enableHttpService: false,
-      enableMcpService: false,
-      enableInternalToolcall: false,
-      serviceGroup: '',
-    }
-  } else {
-    console.log('MCP service published successfully:', tool)
-    toast.success(t('mcpService.publishSuccess'))
-    // Update tool information
-    currentToolInfo.value = {
-      ...tool,
-      toolName: tool.toolName,
-      serviceGroup: tool.serviceGroup ?? '',
-    }
-  }
-
-  // Reload available tools to include the newly published service
-  console.log('[Sidebar] 🔄 Reloading available tools after service publish/delete')
-  await availableToolsStore.loadAvailableTools()
-
-  // Reload tool info for all templates to update the task preview
-  await loadAllTemplateToolInfo()
-}
-
-
-
-
-// Load tool information when plan template changes
-const loadToolInfo = async (planTemplateId: string | null) => {
-  if (!planTemplateId) {
-    currentToolInfo.value = {
-      toolName: '',
-      toolDescription: '',
-      planTemplateId: '',
-      inputSchema: '[]',
-      enableHttpService: false,
-      enableMcpService: false,
-      enableInternalToolcall: false,
-      serviceGroup: '',
-    }
-    return
-  }
-
-  try {
-    const toolData = await CoordinatorToolApiService.getCoordinatorToolByTemplate(planTemplateId)
-    if (toolData) {
-      currentToolInfo.value = {
-        ...toolData,
-        toolName: toolData.toolName,
-        serviceGroup: toolData.serviceGroup ?? '',
-      }
-    } else {
-      // No tool found or not published, don't show any call examples
-      currentToolInfo.value = {
-        toolName: '',
-        toolDescription: '',
-        planTemplateId: planTemplateId,
-        inputSchema: '[]',
-        enableHttpService: false,
-        enableMcpService: false,
-        enableInternalToolcall: false,
-        serviceGroup: '',
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load tool information:', error)
-    currentToolInfo.value = {
-      toolName: '',
-      toolDescription: '',
-      planTemplateId: planTemplateId,
-      inputSchema: '[]',
-      enableHttpService: false,
-      enableMcpService: false,
-      enableInternalToolcall: false,
-      serviceGroup: '',
-    }
-  }
-}
-
-
-// Load tool information for all templates
-// Tool info is now included in PlanTemplateConfigVO from the API
-const loadAllTemplateToolInfo = async () => {
-  // Populate templateToolInfo from template data
-  for (const template of templateConfig.planTemplateList.value) {
-    const planTemplateId = template.planTemplateId
-    if (planTemplateId && template.toolConfig?.toolDescription) {
-      templateToolInfo.value[planTemplateId] = {
-        toolName: template.title || '', // Use title as toolName
-        toolDescription: template.toolConfig.toolDescription || '',
-        planTemplateId: planTemplateId,
-        inputSchema: '[]',
-        enableHttpService: template.toolConfig.enableHttpService || false,
-        enableMcpService: template.toolConfig.enableMcpService || false,
-        enableInternalToolcall: template.toolConfig.enableInternalToolcall || false,
-        serviceGroup: template.serviceGroup || '',
-      }
-    }
-  }
-}
 
 // Sidebar resize methods
 const startResize = (e: MouseEvent) => {
@@ -379,20 +198,10 @@ const resetSidebarWidth = () => {
   localStorage.setItem('sidebarWidth', '80')
 }
 
-// Watch for plan template changes to load tool information
-watch(
-  () => templateConfig.currentPlanTemplateId.value,
-  newPlanTemplateId => {
-    loadToolInfo(newPlanTemplateId)
-  },
-  { immediate: true }
-)
-
 
 // Lifecycle
 onMounted(async () => {
   await templateStore.loadPlanTemplateList()
-  await loadAllTemplateToolInfo() // Load tool info after templates are loaded
   availableToolsStore.loadAvailableTools() // Load available tools on sidebar mount
 
   // Restore sidebar width from localStorage
@@ -610,7 +419,6 @@ defineExpose({
     }
   }
 }
-
 
 @keyframes spin {
   from {

@@ -83,7 +83,6 @@
 </template>
 
 <script setup lang="ts">
-import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
 import { FileInfo } from '@/api/file-upload-api-service'
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
 import type { InputMessage } from '@/stores/memory'
@@ -92,9 +91,11 @@ import { useTaskStore } from '@/stores/task'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 
 const { t } = useI18n()
 const taskStore = useTaskStore()
+const templateConfig = usePlanTemplateConfigSingleton()
 
 // Track if task is running
 const isTaskRunning = computed(() => taskStore.hasRunningTask())
@@ -159,8 +160,8 @@ const isMac = computed(() => {
 const loadInnerTools = async () => {
   isLoadingTools.value = true
   try {
-    console.log('[InputArea] Loading inner tools...')
-    const allTools = await CoordinatorToolApiService.getAllCoordinatorTools()
+    console.log('[InputArea] Loading inner tools from planTemplateList...')
+    const allTools = templateConfig.getAllCoordinatorToolsFromTemplates()
 
     // Filter tools: enableInternalToolcall=true and exactly one parameter
     const filteredTools: InnerToolOption[] = []
@@ -401,7 +402,13 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 
   // If user starts typing while browsing history, reset history index
-  if (historyIndex.value !== -1 && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+  if (
+    historyIndex.value !== -1 &&
+    event.key.length === 1 &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey
+  ) {
     historyIndex.value = -1
     originalInputBeforeHistory.value = ''
   }

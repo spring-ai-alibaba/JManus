@@ -300,13 +300,6 @@ const handleSearch = () => {
     return matchesName || matchesId || matchesContent
   })
 }
-
-const showNameEditModal = (messageId: string, currentName: string) => {
-  currentEditMessageId.value = messageId
-  nameInput.value = currentName
-  showNameModal.value = true
-}
-
 const closeNameModal = () => {
   showNameModal.value = false
   currentEditMessageId.value = null
@@ -629,9 +622,6 @@ const confirmDelete = async () => {
   border-top: 1px solid #444444;
   padding: 0.75rem;
   animation: fadeIn 0.3s ease-in-out;
-}
-
-.message-bubble {
 }
 
 .bubble-avatar {

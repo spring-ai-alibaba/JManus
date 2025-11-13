@@ -285,8 +285,7 @@ export function usePlanTemplateConfig() {
 
   const canRestore = computed(() => {
     return (
-      planVersions.value.length > 1 &&
-      currentVersionIndex.value < planVersions.value.length - 1
+      planVersions.value.length > 1 && currentVersionIndex.value < planVersions.value.length - 1
     )
   })
 
@@ -333,8 +332,7 @@ export function usePlanTemplateConfig() {
       // Load versions for version control
       try {
         const versionsResponse = await PlanActApiService.getPlanVersions(planTemplateId)
-        planVersions.value =
-          (versionsResponse as { versions?: string[] }).versions || []
+        planVersions.value = (versionsResponse as { versions?: string[] }).versions || []
         if (planVersions.value.length > 0) {
           currentVersionIndex.value = planVersions.value.length - 1
         } else {
@@ -446,6 +444,81 @@ export function usePlanTemplateConfig() {
     return await save()
   }
 
+  /**
+   * Get all coordinator tools from planTemplateList
+   * Filters templates that have toolConfig with enableInternalToolcall enabled
+   * @returns Array of coordinator tools compatible with CoordinatorToolVO structure
+   */
+  const getAllCoordinatorToolsFromTemplates = () => {
+    const tools: Array<{
+      toolName: string
+      toolDescription: string
+      planTemplateId: string
+      inputSchema: string
+      enableInternalToolcall: boolean
+      enableHttpService: boolean
+      enableMcpService: boolean
+      serviceGroup?: string
+    }> = []
+
+    for (const template of planTemplateList.value) {
+      // Only include templates with toolConfig
+      if (!template.toolConfig) {
+        continue
+      }
+
+      const toolConfig = template.toolConfig
+
+      // Only include tools with enableInternalToolcall enabled
+      if (!toolConfig.enableInternalToolcall) {
+        continue
+      }
+
+      // Convert inputSchema array to JSON string
+      let inputSchemaJson = '[]'
+      if (toolConfig.inputSchema && Array.isArray(toolConfig.inputSchema)) {
+        inputSchemaJson = JSON.stringify(toolConfig.inputSchema)
+      }
+
+      const tool: {
+        toolName: string
+        toolDescription: string
+        planTemplateId: string
+        inputSchema: string
+        enableInternalToolcall: boolean
+        enableHttpService: boolean
+        enableMcpService: boolean
+        serviceGroup?: string
+      } = {
+        toolName: template.title || '',
+        toolDescription: toolConfig.toolDescription || '',
+        planTemplateId: template.planTemplateId || '',
+        inputSchema: inputSchemaJson,
+        enableInternalToolcall: toolConfig.enableInternalToolcall ?? true,
+        enableHttpService: toolConfig.enableHttpService ?? false,
+        enableMcpService: toolConfig.enableMcpService ?? false,
+      }
+
+      if (template.serviceGroup) {
+        tool.serviceGroup = template.serviceGroup
+      }
+
+      tools.push(tool)
+    }
+
+    return tools
+  }
+
+  /**
+   * Get coordinator tool configuration status
+   * Determines if coordinator tools are enabled based on planTemplateList
+   * @returns boolean indicating if coordinator tools are enabled
+   */
+  const getCoordinatorToolConfig = (): boolean => {
+    // Check if there are any templates with toolConfig
+    return planTemplateList.value.some(template => template.toolConfig !== undefined)
+  }
+
   return {
     // State
     config,
@@ -522,6 +595,10 @@ export function usePlanTemplateConfig() {
 
     // Utility functions
     parseDateTime,
+
+    // Coordinator tools methods
+    getAllCoordinatorToolsFromTemplates,
+    getCoordinatorToolConfig,
   }
 }
 
@@ -537,4 +614,3 @@ export function usePlanTemplateConfigSingleton() {
   }
   return singletonInstance
 }
-
