@@ -85,17 +85,20 @@
 <script setup lang="ts">
 import { FileInfo } from '@/api/file-upload-api-service'
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
-import type { InputMessage } from '@/stores/memory'
+import type { InputMessage } from '@/types/message-dialog'
 import { memoryStore } from '@/stores/memory'
 import { useTaskStore } from '@/stores/task'
+import { sidebarStore } from '@/stores/sidebar'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 
 const { t } = useI18n()
 const taskStore = useTaskStore()
 const templateConfig = usePlanTemplateConfigSingleton()
+const messageDialog = useMessageDialogSingleton()
 
 // Track if task is running
 const isTaskRunning = computed(() => taskStore.hasRunningTask())
@@ -116,10 +119,6 @@ interface InnerToolOption {
 }
 
 interface Emits {
-  (e: 'send', message: InputMessage): void
-  (e: 'clear'): void
-  (e: 'update-state', enabled: boolean, placeholder?: string): void
-  (e: 'plan-mode-clicked'): void
   (e: 'selection-changed', value: string): void
 }
 
@@ -447,7 +446,6 @@ const handleSend = async () => {
 
     if (selectedTool) {
       // Add tool information to query for backend processing
-      // This will be handled by handleChatSendMessage which will call executeByToolName
       const extendedQuery = query as InputMessage & {
         toolName?: string
         replacementParams?: Record<string, string>
@@ -460,16 +458,22 @@ const handleSend = async () => {
     }
   }
 
-  // Use Vue's emit to send a message (this will trigger handleChatSendMessage which shows assistant message)
-  emit('send', query)
+  // Call sendMessage from useMessageDialog directly
+  try {
+    await messageDialog.sendMessage(query)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('[InputArea] Send message failed:', errorMessage)
+  }
 
   // Clear the input but keep uploaded files and uploadKey for follow-up conversations
   clearInput()
 }
 
 const handlePlanModeClick = () => {
-  // Trigger the plan mode toggle event
-  emit('plan-mode-clicked')
+  // Toggle sidebar display state
+  sidebarStore.toggleSidebar()
+  console.log('[InputArea] Plan mode button clicked, sidebar toggled, isCollapsed:', sidebarStore.isCollapsed)
 }
 
 const handleStop = async () => {
@@ -488,7 +492,6 @@ const handleStop = async () => {
 const clearInput = () => {
   currentInput.value = ''
   adjustInputHeight()
-  emit('clear')
 }
 
 /**
@@ -500,7 +503,8 @@ const updateState = (enabled: boolean, placeholder?: string) => {
   if (placeholder) {
     currentPlaceholder.value = enabled ? placeholder : t('input.waiting')
   }
-  emit('update-state', enabled, placeholder)
+  // Update state in useMessageDialog
+  messageDialog.updateInputState(enabled, placeholder)
 }
 
 /**

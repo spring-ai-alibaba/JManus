@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { useMessageFormatting } from './composables/useMessageFormatting'
-import type { ChatMessage } from './composables/useChatMessages'
+import type { ChatMessage } from '@/types/message-dialog'
 
 interface Props {
   message: ChatMessage

@@ -35,7 +35,7 @@
 import { computed } from 'vue'
 import UserMessage from './UserMessage.vue'
 import AssistantMessage from './AssistantMessage.vue'
-import type { ChatMessage } from './composables/useChatMessages'
+import type { ChatMessage } from '@/types/message-dialog'
 import { useMessageFormatting } from './composables/useMessageFormatting'
 
 interface Props {

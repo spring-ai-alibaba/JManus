@@ -66,11 +66,8 @@ import { useI18n } from 'vue-i18n'
 import ChatMessage from './ChatMessage.vue'
 
 // Import composables
-import {
-  convertMessageToCompatible,
-  useChatMessages,
-  type ChatMessage as ChatMessageType,
-} from './composables/useChatMessages'
+import { convertMessageToCompatible, useChatMessages } from './composables/useChatMessages'
+import type { ChatMessage as ChatMessageType } from '@/types/message-dialog'
 import { useScrollBehavior } from './composables/useScrollBehavior'
 
 // Import plan execution manager
@@ -102,6 +99,7 @@ const {
   stopStreaming,
   clearMessages,
   findMessage,
+  sendChatMessage,
 } = useChatMessages()
 
 // Scroll behavior
@@ -328,6 +326,7 @@ defineExpose({
   startStreaming,
   stopStreaming,
   clearMessages,
+  sendChatMessage,
 })
 </script>
 

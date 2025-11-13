@@ -19,13 +19,6 @@ export interface MemoryEmits {
   (e: 'memory-selected'): void
 }
 
-export interface InputMessage {
-  input: string
-  memoryId?: string
-  uploadedFiles?: string[]
-  uploadKey?: string
-}
-
 export class MemoryStore {
   // Basic state
   isCollapsed = false

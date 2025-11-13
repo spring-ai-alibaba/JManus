@@ -132,7 +132,7 @@ import type {
   AgentExecutionRecord,
   ExecutionStatus,
 } from '@/types/plan-execution-record'
-import type { CompatiblePlanExecutionRecord } from './composables/useChatMessages'
+import type { CompatiblePlanExecutionRecord } from '@/types/message-dialog'
 import RecursiveSubPlan from './RecursiveSubPlan.vue'
 
 interface Props {

@@ -66,7 +66,7 @@
 import ThinkingSection from './ThinkingSection.vue'
 import ResponseSection from './ResponseSection.vue'
 import ExecutionDetails from './ExecutionDetails.vue'
-import type { ChatMessage } from './composables/useChatMessages'
+import type { ChatMessage } from '@/types/message-dialog'
 
 interface Props {
   message: ChatMessage

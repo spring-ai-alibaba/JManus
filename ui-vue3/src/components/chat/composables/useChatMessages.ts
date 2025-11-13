@@ -16,34 +16,10 @@
 
 import { ref, computed, readonly } from 'vue'
 import type { PlanExecutionRecord, AgentExecutionRecord } from '@/types/plan-execution-record'
-
-// Local interface to handle readonly compatibility issues
-export interface CompatiblePlanExecutionRecord
-  extends Omit<PlanExecutionRecord, 'agentExecutionSequence'> {
-  agentExecutionSequence?: AgentExecutionRecord[]
-}
-
-// Message interface
-export interface ChatMessage {
-  id: string
-  type: 'user' | 'assistant'
-  content: string
-  timestamp: Date
-  thinking?: string
-  thinkingDetails?: CompatiblePlanExecutionRecord
-  planExecution?: CompatiblePlanExecutionRecord
-  stepActions?: unknown[]
-  genericInput?: string
-  isStreaming?: boolean
-  error?: string
-  attachments?: File[]
-}
-
-// Input message interface
-export interface InputMessage {
-  input: string
-  attachments?: File[]
-}
+import type { ChatMessage, CompatiblePlanExecutionRecord, InputMessage } from '@/types/message-dialog'
+import { DirectApiService } from '@/api/direct-api-service'
+import { memoryStore } from '@/stores/memory'
+import { planExecutionManager } from '@/utils/plan-execution-manager'
 
 /**
  * Utility type to convert readonly arrays to mutable ones
@@ -218,6 +194,142 @@ export function useChatMessages() {
     return messages.value.findIndex(m => m.id === id)
   }
 
+  /**
+   * Send chat message and handle response
+   * This method handles sending messages via DirectApiService and updating the message list
+   */
+  const sendChatMessage = async (
+    query: InputMessage,
+    options?: {
+      thinkingText?: string
+      planningText?: string
+      onPlanIdReceived?: (planId: string) => void
+    }
+  ): Promise<{ success: boolean; planId?: string; conversationId?: string; error?: string }> => {
+    let assistantMessage: ChatMessage | null = null
+
+    try {
+      console.log('[useChatMessages] Processing send-message event:', query)
+
+      // Validate input - don't send empty requests to backend
+      if (!query.input.trim()) {
+        console.warn('[useChatMessages] Empty input detected, skipping backend request')
+        return { success: false, error: 'Empty input' }
+      }
+
+      // Add user message to UI
+      const userMessage = addMessage('user', query.input)
+      const extendedQuery = query as InputMessage & {
+        attachments?: unknown[]
+        toolName?: string
+        replacementParams?: Record<string, unknown>
+      }
+      if (extendedQuery.attachments) {
+        updateMessage(userMessage.id, { attachments: extendedQuery.attachments as File[] })
+      }
+
+      // Add assistant thinking message
+      assistantMessage = addMessage('assistant', '', {
+        thinking: options?.thinkingText || 'Processing...',
+      })
+
+      if (assistantMessage) {
+        startStreaming(assistantMessage.id)
+      }
+
+      // Call DirectApiService to send message to backend
+      let response: { planId?: string; conversationId?: string; message?: string; result?: string; [key: string]: unknown }
+
+      if (extendedQuery.toolName && extendedQuery.replacementParams) {
+        // Execute selected tool (from dialog)
+        console.log(
+          '[useChatMessages] Calling DirectApiService.executeByToolName with tool:',
+          extendedQuery.toolName
+        )
+        response = (await DirectApiService.executeByToolName(
+          extendedQuery.toolName,
+          extendedQuery.replacementParams as Record<string, string>,
+          query.uploadedFiles,
+          query.uploadKey,
+          'VUE_DIALOG'
+        )) as typeof response
+      } else {
+        // Use default plan template (from dialog)
+        console.log('[useChatMessages] Calling DirectApiService.sendMessageWithDefaultPlan')
+        response = (await DirectApiService.sendMessageWithDefaultPlan(query, 'VUE_DIALOG')) as typeof response
+      }
+
+      console.log('[useChatMessages] API response received:', response)
+
+      // Save conversationId from response to memoryStore
+      if (response.conversationId) {
+        memoryStore.setConversationId(response.conversationId as string)
+        console.log('[useChatMessages] Saved conversationId to memoryStore:', response.conversationId)
+      }
+
+      // Handle the response
+      if (response.planId && assistantMessage) {
+        // Plan mode: Update message with plan execution info
+        updateMessage(assistantMessage.id, {
+          thinking: options?.planningText || 'Planning execution...',
+          planExecution: {
+            currentPlanId: response.planId,
+            rootPlanId: response.planId,
+            status: 'running',
+          },
+        })
+
+        // Notify callback if provided
+        if (options?.onPlanIdReceived) {
+          options.onPlanIdReceived(response.planId)
+        }
+
+        // Start polling for plan updates
+        planExecutionManager.handlePlanExecutionRequested(response.planId, query.input)
+        console.log('[useChatMessages] Started polling for plan execution updates')
+
+        const result: { success: boolean; planId?: string; conversationId?: string; error?: string } = {
+          success: true,
+          planId: response.planId,
+        }
+        if (response.conversationId) {
+          result.conversationId = response.conversationId as string
+        }
+        return result
+      } else if (assistantMessage) {
+        // Direct response mode: Show the response
+        updateMessage(assistantMessage.id, {
+          content: (response.message || response.result || 'No response received from backend') as string,
+        })
+        stopStreaming(assistantMessage.id)
+
+        const result: { success: boolean; planId?: string; conversationId?: string; error?: string } = {
+          success: true,
+        }
+        if (response.conversationId) {
+          result.conversationId = response.conversationId as string
+        }
+        return result
+      }
+
+      return { success: true }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('[useChatMessages] Send message failed:', errorMessage)
+
+      // Show error message
+      addMessage('assistant', `Error: ${errorMessage}`)
+      if (assistantMessage) {
+        stopStreaming(assistantMessage.id)
+      }
+
+      return {
+        success: false,
+        error: errorMessage,
+      }
+    }
+  }
+
   return {
     // State
     messages: readonly(messages),
@@ -244,6 +356,7 @@ export function useChatMessages() {
     updateMessagePlanExecution,
     findMessage,
     getMessageIndex,
+    sendChatMessage,
   }
 }
 

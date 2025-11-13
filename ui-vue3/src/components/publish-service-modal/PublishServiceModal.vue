@@ -371,7 +371,6 @@ const handlePublish = async () => {
     templateConfig.setToolDescription(formData.userRequest.trim())
     templateConfig.setEnableInternalToolcall(publishAsInternalToolcall.value)
     templateConfig.setEnableHttpService(publishAsHttpService.value)
-    templateConfig.setEnableMcpService(false)
     templateConfig.setInputSchema(inputSchema)
 
     // Save the plan template with updated toolConfig

@@ -55,13 +55,8 @@ export function usePlanTemplateConfig() {
 
   // Getters
   const getTitle = () => config.title
-  const getSteps = () => config.steps || []
-  const getDirectResponse = () => config.directResponse || false
   const getPlanType = () => config.planType || 'dynamic_agent'
-  const getPlanTemplateId = () => config.planTemplateId || ''
-  const getReadOnly = () => config.readOnly || false
   const getServiceGroup = () => config.serviceGroup || ''
-  const getToolConfig = () => config.toolConfig
 
   // Setters
   const setTitle = (title: string) => {
@@ -72,39 +67,12 @@ export function usePlanTemplateConfig() {
     config.steps = steps || []
   }
 
-  const addStep = (step: StepConfig) => {
-    if (!config.steps) {
-      config.steps = []
-    }
-    config.steps.push(step)
-  }
-
-  const removeStep = (index: number) => {
-    if (config.steps && index >= 0 && index < config.steps.length) {
-      config.steps.splice(index, 1)
-    }
-  }
-
-  const updateStep = (index: number, step: StepConfig) => {
-    if (config.steps && index >= 0 && index < config.steps.length) {
-      config.steps[index] = { ...config.steps[index], ...step }
-    }
-  }
-
-  const setDirectResponse = (directResponse: boolean) => {
-    config.directResponse = directResponse
-  }
-
   const setPlanType = (planType: string) => {
     config.planType = planType
   }
 
   const setPlanTemplateId = (planTemplateId: string) => {
     config.planTemplateId = planTemplateId
-  }
-
-  const setReadOnly = (readOnly: boolean) => {
-    config.readOnly = readOnly
   }
 
   const setServiceGroup = (serviceGroup: string) => {
@@ -119,13 +87,7 @@ export function usePlanTemplateConfig() {
     }
   }
 
-  // ToolConfig getters
-  const getToolDescription = () => config.toolConfig?.toolDescription || ''
-  const getEnableInternalToolcall = () => config.toolConfig?.enableInternalToolcall ?? true
-  const getEnableHttpService = () => config.toolConfig?.enableHttpService ?? false
-  const getEnableMcpService = () => config.toolConfig?.enableMcpService ?? false
-  const getPublishStatus = () => config.toolConfig?.publishStatus || 'PUBLISHED'
-  const getInputSchema = () => config.toolConfig?.inputSchema || []
+  // ToolConfig getters (no getters are used, only setters)
 
   // ToolConfig setters
   const setToolDescription = (toolDescription: string) => {
@@ -149,55 +111,11 @@ export function usePlanTemplateConfig() {
     config.toolConfig.enableHttpService = enable
   }
 
-  const setEnableMcpService = (enable: boolean) => {
-    if (!config.toolConfig) {
-      config.toolConfig = {}
-    }
-    config.toolConfig.enableMcpService = enable
-  }
-
-  const setPublishStatus = (status: string) => {
-    if (!config.toolConfig) {
-      config.toolConfig = {}
-    }
-    config.toolConfig.publishStatus = status
-  }
-
   const setInputSchema = (inputSchema: InputSchemaParam[]) => {
     if (!config.toolConfig) {
       config.toolConfig = {}
     }
     config.toolConfig.inputSchema = inputSchema || []
-  }
-
-  const addInputSchemaParam = (param: InputSchemaParam) => {
-    if (!config.toolConfig) {
-      config.toolConfig = {}
-    }
-    if (!config.toolConfig.inputSchema) {
-      config.toolConfig.inputSchema = []
-    }
-    config.toolConfig.inputSchema.push(param)
-  }
-
-  const removeInputSchemaParam = (index: number) => {
-    if (
-      config.toolConfig?.inputSchema &&
-      index >= 0 &&
-      index < config.toolConfig.inputSchema.length
-    ) {
-      config.toolConfig.inputSchema.splice(index, 1)
-    }
-  }
-
-  const updateInputSchemaParam = (index: number, param: InputSchemaParam) => {
-    if (
-      config.toolConfig?.inputSchema &&
-      index >= 0 &&
-      index < config.toolConfig.inputSchema.length
-    ) {
-      config.toolConfig.inputSchema[index] = { ...config.toolConfig.inputSchema[index], ...param }
-    }
   }
 
   // Get full config
@@ -240,11 +158,6 @@ export function usePlanTemplateConfig() {
     planVersions.value = []
     currentVersionIndex.value = -1
     error.value = null
-  }
-
-  // Convert config to JSON string
-  const toJsonString = (): string => {
-    return JSON.stringify(config, null, 2)
   }
 
   // Dynamically generate JSON from current config state (not cached, regenerated each time)
@@ -428,9 +341,7 @@ export function usePlanTemplateConfig() {
     }
   }
 
-  // Computed properties
-  const isValid = computed(() => validate().isValid)
-  const hasToolConfig = computed(() => config.toolConfig !== undefined)
+  // Computed properties (isValid and hasToolConfig are not used)
 
   // Utility function to parse date from different formats
   const parseDateTime = (dateValue: unknown): Date => {
@@ -461,18 +372,7 @@ export function usePlanTemplateConfig() {
     return new Date()
   }
 
-  // Action handlers for UI components
-  const handleRollback = () => {
-    rollbackVersion()
-  }
-
-  const handleRestore = () => {
-    restoreVersion()
-  }
-
-  const handleSave = async (): Promise<boolean> => {
-    return await save()
-  }
+  // Action handlers (handleRollback, handleRestore, handleSave are not used)
 
   /**
    * Get all coordinator tools from planTemplateList
@@ -562,42 +462,21 @@ export function usePlanTemplateConfig() {
 
     // Getters
     getTitle,
-    getSteps,
-    getDirectResponse,
     getPlanType,
-    getPlanTemplateId,
-    getReadOnly,
     getServiceGroup,
-    getToolConfig,
-    getToolDescription,
-    getEnableInternalToolcall,
-    getEnableHttpService,
-    getEnableMcpService,
-    getPublishStatus,
-    getInputSchema,
     getConfig,
 
     // Setters
     setTitle,
     setSteps,
-    addStep,
-    removeStep,
-    updateStep,
-    setDirectResponse,
     setPlanType,
     setPlanTemplateId,
-    setReadOnly,
     setServiceGroup,
     setToolConfig,
     setToolDescription,
     setEnableInternalToolcall,
     setEnableHttpService,
-    setEnableMcpService,
-    setPublishStatus,
     setInputSchema,
-    addInputSchemaParam,
-    removeInputSchemaParam,
-    updateInputSchemaParam,
     setConfig,
 
     // Actions
@@ -605,7 +484,6 @@ export function usePlanTemplateConfig() {
     load,
     save,
     validate,
-    toJsonString,
     generateJsonString,
     fromJsonString,
     rollbackVersion,
@@ -613,15 +491,8 @@ export function usePlanTemplateConfig() {
     updateVersionsAfterSave,
 
     // Computed
-    isValid,
-    hasToolConfig,
     canRollback,
     canRestore,
-
-    // Action handlers
-    handleRollback,
-    handleRestore,
-    handleSave,
 
     // Utility functions
     parseDateTime,

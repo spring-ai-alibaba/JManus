@@ -60,14 +60,9 @@
         <InputArea
           :key="$i18n.locale"
           ref="inputRef"
-          :disabled="isLoading"
-          :placeholder="isLoading ? t('input.waiting') : t('input.placeholder')"
+          :disabled="messageDialog.isLoading.value"
+          :placeholder="messageDialog.isLoading.value ? t('input.waiting') : t('input.placeholder')"
           :initial-value="prompt"
-          @send="handleSendMessage"
-          @clear="handleInputClear"
-          @focus="handleInputFocus"
-          @update-state="handleInputUpdateState"
-          @plan-mode-clicked="handlePlanModeClicked"
         />
       </div>
 
@@ -92,10 +87,10 @@
     <!-- Memory Modal -->
     <Memory @memory-selected="memorySelected" />
 
-    <!-- Message toast component -->
-    <div v-if="message.show" class="message-toast" :class="message.type">
+    <!-- Toast notification component -->
+    <div v-if="toast.show" class="message-toast" :class="toast.type">
       <div class="message-content">
-        <span>{{ message.text }}</span>
+        <span>{{ toast.text }}</span>
       </div>
     </div>
   </div>
@@ -111,9 +106,9 @@ import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vu
 import Memory from '@/components/memory/Memory.vue'
 import RightPanel from '@/components/right-panel/RightPanel.vue'
 import Sidebar from '@/components/sidebar/Sidebar.vue'
-import { useMessage } from '@/composables/useMessage'
-import type { InputMessage } from '@/stores/memory'
+import { useToast } from '@/composables/useToast'
 import { memoryStore } from '@/stores/memory'
+import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { sidebarStore } from '@/stores/sidebar'
 import { templateStore } from '@/stores/templateStore'
 import { useTaskStore } from '@/stores/task'
@@ -130,20 +125,6 @@ defineOptions({
   name: 'DirectIndex',
 })
 
-// Extended InputMessage with optional properties
-interface ExtendedInputMessage extends InputMessage {
-  attachments?: unknown[]
-  toolName?: string
-  replacementParams?: Record<string, unknown>
-}
-
-// API Response type
-interface ApiResponse {
-  planId?: string
-  message?: string
-  result?: string
-  [key: string]: unknown
-}
 
 // Message type from chat component
 interface ChatMessage {
@@ -154,7 +135,8 @@ const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()
 const { t } = useI18n()
-const { message, showMessage } = useMessage()
+const { toast, showToast } = useToast()
+const messageDialog = useMessageDialogSingleton()
 
 const prompt = ref<string>('')
 const inputOnlyContent = ref<string>('')
@@ -163,7 +145,6 @@ const chatRef = ref()
 const inputRef = ref()
 const sidebarRef = ref()
 const isExecutingPlan = ref(false)
-const isLoading = ref(false)
 const currentRootPlanId = ref<string | null>(null)
 
 // Related to panel width
@@ -317,7 +298,7 @@ onMounted(() => {
 
     onChatInputClear: () => {
       console.log('[Direct] Chat input clear event received')
-      handleInputClear()
+      // InputArea handles clearing internally, no action needed
     },
 
     onChatInputUpdateState: (rootPlanId: string) => {
@@ -329,7 +310,7 @@ onMounted(() => {
 
       const uiState = planExecutionManager.getCachedUIState(rootPlanId)
       if (uiState) {
-        handleInputUpdateState(uiState.enabled, uiState.placeholder)
+        messageDialog.updateInputState(uiState.enabled, uiState.placeholder)
       }
     },
 
@@ -435,12 +416,12 @@ onMounted(() => {
       // Execute task directly without showing content in input box
       nextTick(async () => {
         try {
-          console.log('[Direct] Calling handleChatSendMessage with taskContent:', taskContent)
-          await handleChatSendMessage({
+          console.log('[Direct] Calling messageDialog.sendMessage with taskContent:', taskContent)
+          await messageDialog.sendMessage({
             input: taskContent,
           })
         } catch (error) {
-          console.warn('[Direct] handleChatSendMessage failed, falling back to prompt:', error)
+          console.warn('[Direct] messageDialog.sendMessage failed, falling back to prompt:', error)
           prompt.value = taskContent
         }
       })
@@ -507,12 +488,12 @@ watch(
       nextTick(async () => {
         try {
           console.log(
-            '[Direct] Directly executing new task via handleChatSendMessage:',
+            '[Direct] Directly executing new task via messageDialog.sendMessage:',
             taskContent
           )
-          await handleChatSendMessage({ input: taskContent })
+          await messageDialog.sendMessage({ input: taskContent })
         } catch (error) {
-          console.warn('[Direct] handleChatSendMessage failed for new task:', error)
+          console.warn('[Direct] messageDialog.sendMessage failed for new task:', error)
         }
       })
     } else {
@@ -644,137 +625,8 @@ const shouldProcessEventForCurrentPlan = (
   return false
 }
 
-// Handle message sending from ChatContainer via event
-const handleChatSendMessage = async (query: InputMessage) => {
-  let assistantMessage: ChatMessage | null = null
 
-  try {
-    console.log('[DirectView] Processing send-message event:', query)
 
-    // Validate input - don't send empty requests to backend
-    if (!query.input.trim()) {
-      console.warn('[DirectView] Empty input detected, skipping backend request')
-      return
-    }
-
-    // Add user message to UI
-    const userMessage = chatRef.value?.addMessage('user', query.input)
-    const extendedQuery = query as ExtendedInputMessage
-    if (extendedQuery.attachments && userMessage) {
-      chatRef.value?.updateMessage(userMessage.id, { attachments: extendedQuery.attachments })
-    }
-
-    // Add assistant thinking message
-    assistantMessage = chatRef.value?.addMessage('assistant', '', {
-      thinking: t('chat.thinkingProcessing'),
-    })
-
-    if (assistantMessage) {
-      chatRef.value?.startStreaming(assistantMessage.id)
-    }
-
-    // Import and call DirectApiService to send message to backend
-    const { DirectApiService } = await import('@/api/direct-api-service')
-
-    // Check if a specific tool is selected (toolName and replacementParams in query)
-    let response: ApiResponse
-
-    if (extendedQuery.toolName && extendedQuery.replacementParams) {
-      // Execute selected tool (from dialog)
-      console.log(
-        '[DirectView] Calling DirectApiService.executeByToolName with tool:',
-        extendedQuery.toolName
-      )
-      response = (await DirectApiService.executeByToolName(
-        extendedQuery.toolName,
-        extendedQuery.replacementParams as Record<string, string>,
-        query.uploadedFiles,
-        query.uploadKey,
-        'VUE_DIALOG'
-      )) as ApiResponse
-    } else {
-      // Use default plan template (from dialog)
-      console.log('[DirectView] Calling DirectApiService.sendMessageWithDefaultPlan')
-      response = (await DirectApiService.sendMessageWithDefaultPlan(
-        query,
-        'VUE_DIALOG'
-      )) as ApiResponse
-    }
-
-    console.log('[DirectView] API response received:', response)
-
-    // Save conversationId from response to memoryStore
-    const responseWithConversationId = response as { conversationId?: string }
-    if (responseWithConversationId.conversationId) {
-      memoryStore.setConversationId(responseWithConversationId.conversationId)
-      console.log(
-        '[DirectView] Saved conversationId to memoryStore:',
-        responseWithConversationId.conversationId
-      )
-    }
-
-    // Handle the response
-    const typedResponse = response as { planId?: string }
-    if (typedResponse.planId && assistantMessage) {
-      // Plan mode: Update message with plan execution info
-      chatRef.value?.updateMessage(assistantMessage.id, {
-        thinking: t('chat.planningExecution'),
-        planExecution: {
-          currentPlanId: typedResponse.planId,
-          rootPlanId: typedResponse.planId,
-          status: 'running',
-        },
-      })
-
-      // Set current root plan ID for the new plan execution
-      currentRootPlanId.value = typedResponse.planId || null
-      console.log('[DirectView] Set currentRootPlanId to:', typedResponse.planId)
-
-      // Start polling for plan updates
-      planExecutionManager.handlePlanExecutionRequested(typedResponse.planId!, query.input)
-      console.log('[DirectView] Started polling for plan execution updates')
-    } else if (assistantMessage) {
-      // Direct mode: Show the response
-      chatRef.value?.updateMessage(assistantMessage.id, {
-        content: response.message || response.result || 'No response received from backend',
-      })
-      chatRef.value?.stopStreaming(assistantMessage.id)
-    }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error('[DirectView] Send message failed:', errorMessage)
-
-    // Show error message
-    chatRef.value?.addMessage('assistant', `Error: ${errorMessage}`)
-    if (assistantMessage) {
-      chatRef.value?.stopStreaming(assistantMessage.id)
-    }
-  }
-}
-
-// Event handler for input area send button
-const handleSendMessage = async (message: InputMessage) => {
-  console.log('[DirectView] Send message from input:', JSON.stringify(message))
-
-  // Directly handle the message sending
-  await handleChatSendMessage(message)
-}
-
-const handleInputClear = () => {
-  console.log('[DirectView] Input cleared')
-  if (inputRef.value && typeof inputRef.value.clear === 'function') {
-    inputRef.value.clear()
-  }
-}
-
-const handleInputFocus = () => {
-  console.log('[DirectView] Input focused')
-}
-
-const handleInputUpdateState = (enabled: boolean, placeholder?: string) => {
-  console.log('[DirectView] Input state updated:', enabled, placeholder)
-  isLoading.value = !enabled
-}
 
 const handleStepSelected = (stepId: string) => {
   console.log('[DirectView] Step selected:', stepId)
@@ -815,12 +667,6 @@ const handleSubPlanStepSelected = (
   }
 }
 
-const handlePlanModeClicked = () => {
-  console.log('[DirectView] Plan mode button clicked')
-  // Toggle sidebar display state
-  sidebarStore.toggleSidebar()
-  console.log('[DirectView] Sidebar toggled, isCollapsed:', sidebarStore.isCollapsed)
-}
 
 const goBack = () => {
   router.push('/home')
@@ -845,7 +691,7 @@ const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload
   let userMessageAdded = false
   let assistantMessage: ChatMessage | null = null
 
-  // Add user and assistant messages using the same pattern as handleChatSendMessage
+  // Add user and assistant messages using the same pattern as messageDialog.sendMessage
   try {
     console.log('[DirectView] Adding messages for plan execution:', payload.title)
 
@@ -1083,7 +929,7 @@ const memorySelected = async () => {
       )
     } catch (error) {
       console.error('[DirectView] Failed to load conversation history:', error)
-      showMessage(t('memory.loadHistoryFailed'), 'error')
+      showToast(t('memory.loadHistoryFailed'), 'error')
     }
   }
 }
