@@ -19,13 +19,18 @@ import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { DirectApiService } from '@/api/direct-api-service'
 import { PlanActApiService } from '@/api/plan-act-api-service'
 import { memoryStore } from '@/stores/memory'
-import type { ChatMessage, MessageDialog, InputMessage } from '@/types/message-dialog'
+import type { ChatMessage, MessageDialog, InputMessage, CompatiblePlanExecutionRecord } from '@/types/message-dialog'
+import type { PlanExecutionRecord, AgentExecutionRecord } from '@/types/plan-execution-record'
+import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 
 /**
  * Composable for managing message dialogs
  * Provides methods to manage dialog list and send messages
  */
 export function useMessageDialog() {
+  // Plan execution manager
+  const planExecution = usePlanExecutionSingleton()
+
   // Dialog list state
   const dialogList = ref<MessageDialog[]>([])
   const activeDialogId = ref<string | null>(null)
@@ -33,6 +38,8 @@ export function useMessageDialog() {
   // Loading state
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const streamingMessageId = ref<string | null>(null)
+  const inputPlaceholder = ref<string | null>(null)
 
   // Computed properties
   const activeDialog = computed(() => {
@@ -48,6 +55,11 @@ export function useMessageDialog() {
 
   const dialogCount = computed(() => {
     return dialogList.value.length
+  })
+
+  // Messages from active dialog
+  const messages = computed(() => {
+    return activeDialog.value?.messages || []
   })
 
   /**
@@ -110,7 +122,11 @@ export function useMessageDialog() {
   /**
    * Update message in a dialog
    */
-  const updateMessageInDialog = (dialogId: string, messageId: string, updates: Partial<ChatMessage>) => {
+  const updateMessageInDialog = (
+    dialogId: string,
+    messageId: string,
+    updates: Partial<ChatMessage>
+  ) => {
     const dialog = dialogList.value.find(d => d.id === dialogId)
     if (dialog) {
       const messageIndex = dialog.messages.findIndex(m => m.id === messageId)
@@ -219,7 +235,10 @@ export function useMessageDialog() {
         )) as typeof response
       } else {
         // Use default plan template
-        response = (await DirectApiService.sendMessageWithDefaultPlan(query, 'VUE_DIALOG')) as typeof response
+        response = (await DirectApiService.sendMessageWithDefaultPlan(
+          query,
+          'VUE_DIALOG'
+        )) as typeof response
       }
 
       // Update conversationId if present
@@ -241,6 +260,10 @@ export function useMessageDialog() {
           isStreaming: false,
         })
         targetDialog.planId = response.planId
+
+        // Start polling for plan updates
+        planExecution.handlePlanExecutionRequested(response.planId, query.input)
+        console.log('[useMessageDialog] Started polling for plan execution updates')
       } else {
         // Direct response mode
         const updates: Partial<ChatMessage> = {
@@ -371,6 +394,10 @@ export function useMessageDialog() {
           isStreaming: false,
         })
         targetDialog.planId = response.planId
+
+        // Start polling for plan updates
+        planExecution.handlePlanExecutionRequested(response.planId, payload.title)
+        console.log('[useMessageDialog] Started polling for plan execution updates')
       } else {
         const updates: Partial<ChatMessage> = {
           content: 'Plan execution started',
@@ -423,12 +450,160 @@ export function useMessageDialog() {
   }
 
   /**
+   * Convert readonly PlanExecutionRecord to mutable CompatiblePlanExecutionRecord
+   */
+  const convertPlanExecutionRecord = (
+    record: PlanExecutionRecord | CompatiblePlanExecutionRecord
+  ): CompatiblePlanExecutionRecord => {
+    const converted = { ...record } as CompatiblePlanExecutionRecord
+
+    if ('agentExecutionSequence' in record && Array.isArray(record.agentExecutionSequence)) {
+      converted.agentExecutionSequence = record.agentExecutionSequence.map((agent: unknown) =>
+        convertAgentExecutionRecord(agent as AgentExecutionRecord)
+      )
+    }
+
+    return converted
+  }
+
+  /**
+   * Convert readonly AgentExecutionRecord to mutable version
+   */
+  const convertAgentExecutionRecord = (record: AgentExecutionRecord): AgentExecutionRecord => {
+    const converted = { ...record } as AgentExecutionRecord
+
+    if ('subPlanExecutionRecords' in record && Array.isArray(record.subPlanExecutionRecords)) {
+      converted.subPlanExecutionRecords = record.subPlanExecutionRecords.map((subPlan: unknown) =>
+        convertPlanExecutionRecord(subPlan as PlanExecutionRecord)
+      )
+    }
+
+    return converted
+  }
+
+  /**
+   * Add message to active dialog (convenience method for ChatContainer)
+   * Automatically converts readonly planExecution and thinkingDetails to mutable versions
+   */
+  const addMessage = (
+    type: 'user' | 'assistant',
+    content: string,
+    options?: Partial<ChatMessage>
+  ): ChatMessage => {
+    if (!activeDialog.value) {
+      // Create a new dialog if none exists
+      createDialog()
+    }
+
+    const dialog = activeDialog.value!
+    
+    // Convert planExecution and thinkingDetails if they exist
+    const processedOptions: Partial<ChatMessage> = { ...options }
+    if (options?.planExecution) {
+      processedOptions.planExecution = convertPlanExecutionRecord(options.planExecution)
+    }
+    if (options?.thinkingDetails) {
+      processedOptions.thinkingDetails = convertPlanExecutionRecord(options.thinkingDetails)
+    }
+    
+    const message: ChatMessage = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type,
+      content,
+      timestamp: new Date(),
+      isStreaming: false,
+      ...processedOptions,
+    }
+
+    dialog.messages.push(message)
+    dialog.updatedAt = new Date()
+    return message
+  }
+
+  /**
+   * Update message in active dialog (convenience method for ChatContainer)
+   * Automatically converts readonly planExecution and thinkingDetails to mutable versions
+   */
+  const updateMessage = (messageId: string, updates: Partial<ChatMessage>) => {
+    if (!activeDialog.value) {
+      return
+    }
+
+    // Convert planExecution and thinkingDetails if they exist
+    const processedUpdates: Partial<ChatMessage> = { ...updates }
+    if (updates.planExecution) {
+      processedUpdates.planExecution = convertPlanExecutionRecord(updates.planExecution)
+    }
+    if (updates.thinkingDetails) {
+      processedUpdates.thinkingDetails = convertPlanExecutionRecord(updates.thinkingDetails)
+    }
+
+    const messageIndex = activeDialog.value.messages.findIndex(m => m.id === messageId)
+    if (messageIndex !== -1) {
+      activeDialog.value.messages[messageIndex] = {
+        ...activeDialog.value.messages[messageIndex],
+        ...processedUpdates,
+      }
+      activeDialog.value.updatedAt = new Date()
+    }
+  }
+
+  /**
+   * Find message in active dialog (convenience method for ChatContainer)
+   */
+  const findMessage = (messageId: string): ChatMessage | undefined => {
+    if (!activeDialog.value) {
+      return undefined
+    }
+    return activeDialog.value.messages.find(m => m.id === messageId)
+  }
+
+  /**
+   * Start streaming for a message (convenience method for ChatContainer)
+   */
+  const startStreaming = (messageId: string) => {
+    streamingMessageId.value = messageId
+    updateMessage(messageId, { isStreaming: true })
+  }
+
+  /**
+   * Stop streaming for a message (convenience method for ChatContainer)
+   */
+  const stopStreaming = (messageId?: string) => {
+    if (messageId) {
+      updateMessage(messageId, { isStreaming: false })
+    }
+    if (streamingMessageId.value === messageId || !messageId) {
+      streamingMessageId.value = null
+    }
+  }
+
+  /**
+   * Clear messages in active dialog (convenience method for ChatContainer)
+   */
+  const clearMessages = () => {
+    if (!activeDialog.value) {
+      return
+    }
+    activeDialog.value.messages = []
+    activeDialog.value.updatedAt = new Date()
+    streamingMessageId.value = null
+  }
+
+  /**
    * Update input state (enabled/disabled)
    */
   const updateInputState = (enabled: boolean, placeholder?: string) => {
     // isLoading is the inverse of enabled
     isLoading.value = !enabled
-    console.log('[useMessageDialog] Input state updated:', { enabled, placeholder, isLoading: isLoading.value })
+    if (placeholder !== undefined) {
+      inputPlaceholder.value = placeholder
+    }
+    console.log('[useMessageDialog] Input state updated:', {
+      enabled,
+      placeholder,
+      isLoading: isLoading.value,
+    })
   }
 
   /**
@@ -439,6 +614,7 @@ export function useMessageDialog() {
     activeDialogId.value = null
     isLoading.value = false
     error.value = null
+    inputPlaceholder.value = null
   }
 
   return {
@@ -447,11 +623,14 @@ export function useMessageDialog() {
     activeDialogId: readonly(activeDialogId),
     isLoading,
     error,
+    streamingMessageId: readonly(streamingMessageId),
+    inputPlaceholder: readonly(inputPlaceholder),
 
     // Computed
     activeDialog,
     hasDialogs,
     dialogCount,
+    messages,
 
     // Methods
     createDialog,
@@ -466,6 +645,14 @@ export function useMessageDialog() {
     updatePlanExecutionStatus,
     updateInputState,
     reset,
+
+    // Convenience methods for ChatContainer
+    addMessage,
+    updateMessage,
+    findMessage,
+    startStreaming,
+    stopStreaming,
+    clearMessages,
   }
 }
 
@@ -481,4 +668,3 @@ export function useMessageDialogSingleton() {
   }
   return singletonInstance
 }
-

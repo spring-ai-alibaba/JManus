@@ -19,7 +19,7 @@
 <template>
   <div class="direct-page">
     <div class="direct-chat">
-      <Sidebar ref="sidebarRef" @planExecutionRequested="handlePlanExecutionRequested" />
+      <Sidebar ref="sidebarRef" />
       <!-- Left Panel - Chat -->
       <div class="left-panel" :style="{ width: computedLeftPanelWidth + '%' }">
         <div class="chat-header">
@@ -47,23 +47,11 @@
 
         <!-- Chat Container -->
         <div class="chat-content">
-          <ChatContainer
-            ref="chatRef"
-            mode="direct"
-            :initial-prompt="prompt || ''"
-            @step-selected="handleStepSelected"
-            @sub-plan-step-selected="handleSubPlanStepSelected"
-          />
+          <ChatContainer @step-selected="handleStepSelected" />
         </div>
 
         <!-- Input Area -->
-        <InputArea
-          :key="$i18n.locale"
-          ref="inputRef"
-          :disabled="messageDialog.isLoading.value"
-          :placeholder="messageDialog.isLoading.value ? t('input.waiting') : t('input.placeholder')"
-          :initial-value="prompt"
-        />
+        <InputArea :key="$i18n.locale" :initial-value="prompt" />
       </div>
 
       <!-- Resizer -->
@@ -97,9 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { CommonApiService } from '@/api/common-api-service'
 import { MemoryApiService } from '@/api/memory-api-service'
-import { PlanActApiService } from '@/api/plan-act-api-service'
 import ChatContainer from '@/components/chat/ChatContainer.vue'
 import InputArea from '@/components/input/InputArea.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
@@ -112,9 +98,8 @@ import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { sidebarStore } from '@/stores/sidebar'
 import { templateStore } from '@/stores/templateStore'
 import { useTaskStore } from '@/stores/task'
-import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 import type { PlanExecutionRecord } from '@/types/plan-execution-record'
-import { planExecutionManager } from '@/utils/plan-execution-manager'
+import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -125,26 +110,17 @@ defineOptions({
   name: 'DirectIndex',
 })
 
-
-// Message type from chat component
-interface ChatMessage {
-  id: string
-  [key: string]: unknown
-}
 const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()
 const { t } = useI18n()
 const { toast, showToast } = useToast()
 const messageDialog = useMessageDialogSingleton()
+const planExecution = usePlanExecutionSingleton()
 
 const prompt = ref<string>('')
-const inputOnlyContent = ref<string>('')
 const rightPanelRef = ref()
-const chatRef = ref()
-const inputRef = ref()
 const sidebarRef = ref()
-const isExecutingPlan = ref(false)
 const currentRootPlanId = ref<string | null>(null)
 
 // Related to panel width
@@ -182,8 +158,10 @@ onMounted(() => {
   console.log('[Direct] taskStore.currentTask:', taskStore.currentTask)
   console.log('[Direct] taskStore.hasUnprocessedTask():', taskStore.hasUnprocessedTask())
 
-  // Register event callbacks to planExecutionManager
-  planExecutionManager.setEventCallbacks({
+  // Register event callbacks to planExecution
+  // Note: Plan execution handlers (onPlanUpdate, onPlanCompleted, onDialogRoundStart, onPlanError)
+  // are already registered in ChatContainer.vue, so we only need to handle right panel updates here
+  planExecution.setEventCallbacks({
     onPlanUpdate: (rootPlanId: string) => {
       console.log('[Direct] Plan update event received for rootPlanId:', rootPlanId)
 
@@ -192,14 +170,6 @@ onMounted(() => {
       }
 
       console.log('[Direct] Processing plan update for current rootPlanId:', rootPlanId)
-
-      // Call chat component's handlePlanUpdate method
-      if (chatRef.value && typeof chatRef.value.handlePlanUpdate === 'function') {
-        console.log('[Direct] Calling chatRef.handlePlanUpdate with rootPlanId:', rootPlanId)
-        chatRef.value.handlePlanUpdate(rootPlanId)
-      } else {
-        console.warn('[Direct] chatRef.handlePlanUpdate method not available')
-      }
 
       // Call right panel component's updateDisplayedPlanProgress method
       if (
@@ -225,59 +195,10 @@ onMounted(() => {
 
       console.log('[Direct] Processing plan completion for current rootPlanId:', rootPlanId)
 
-      // Call chat component's handlePlanCompleted method
-      if (chatRef.value && typeof chatRef.value.handlePlanCompleted === 'function') {
-        const planDetails = planExecutionManager.getCachedPlanRecord(rootPlanId)
-
-        // Retrieved plan details from cache for processing
-        if (planDetails && planDetails.completed) {
-          if (planDetails.summary && planDetails.summary.trim().length > 0) {
-            console.log(
-              '[Direct]  Plan details are valid and complete from polling cache, updating UI'
-            )
-            chatRef.value.handlePlanCompleted(planDetails)
-          } else {
-            console.warn(
-              '[Direct]  Plan completed but summary is empty, still proceeding with available data'
-            )
-            chatRef.value.handlePlanCompleted(planDetails)
-          }
-        } else {
-          console.warn('[Direct]  Plan details incomplete in cache, attempting API fallback')
-          // Fallback: try getting it from the API (maybe it has been deleted)
-          CommonApiService.getDetails(rootPlanId)
-            .then(freshDetails => {
-              console.log('[Direct]  Got fresh details from API:', freshDetails)
-              if (freshDetails && freshDetails.completed) {
-                console.log('[Direct] Fresh details from API are valid, updating UI')
-                planExecutionManager.setCachedPlanRecord(rootPlanId, freshDetails)
-                chatRef.value.handlePlanCompleted(freshDetails)
-              } else {
-                console.warn('[Direct]  API details also incomplete, using best available data')
-                chatRef.value.handlePlanCompleted(planDetails ?? { planId: rootPlanId })
-              }
-            })
-            .catch(error => {
-              console.error(
-                '[Direct] API call failed (likely record deleted), using cached data:',
-                error
-              )
-              chatRef.value.handlePlanCompleted(planDetails ?? { planId: rootPlanId })
-            })
-        }
-      } else {
-        console.warn('[Direct] chatRef.handlePlanCompleted method not available')
-      }
-
       // Clear current root plan ID when plan is completed
       currentRootPlanId.value = null
       console.log('[Direct] 🧹 Cleared currentRootPlanId after plan completion')
-
-      //Clear sessionPlanId to ensure that subsequent file uploads use the new planId
-      if (inputRef.value && typeof inputRef.value.resetSession === 'function') {
-        console.log('[Direct] 🧹 Calling inputRef.resetSession to clear sessionPlanId')
-        inputRef.value.resetSession()
-      }
+      // Note: InputArea automatically resets session on plan completion
     },
 
     onDialogRoundStart: (rootPlanId: string) => {
@@ -286,14 +207,6 @@ onMounted(() => {
       // Set current root plan ID when dialog starts
       currentRootPlanId.value = rootPlanId
       console.log('[Direct] Set currentRootPlanId to:', rootPlanId)
-
-      // Call chat component's handleDialogRoundStart method (without query parameter)
-      if (chatRef.value && typeof chatRef.value.handleDialogRoundStart === 'function') {
-        console.log('[Direct] Calling chatRef.handleDialogRoundStart with planId:', rootPlanId)
-        chatRef.value.handleDialogRoundStart(rootPlanId)
-      } else {
-        console.warn('[Direct] chatRef.handleDialogRoundStart method not available')
-      }
     },
 
     onChatInputClear: () => {
@@ -308,20 +221,19 @@ onMounted(() => {
         return
       }
 
-      const uiState = planExecutionManager.getCachedUIState(rootPlanId)
+      const uiState = planExecution.getCachedUIState(rootPlanId)
       if (uiState) {
         messageDialog.updateInputState(uiState.enabled, uiState.placeholder)
       }
     },
 
     onPlanError: (message: string) => {
-      // No right panel notification needed, uncomment if needed
-      // showMessage(`${t('planTemplate.executionFailed')}: ${message}`, 'error')
-      chatRef.value.handlePlanError(message)
+      // Plan error is already handled in ChatContainer.vue
+      console.log('[Direct] Plan error event received:', message)
     },
   })
 
-  console.log('[Direct] Event callbacks registered to planExecutionManager')
+  console.log('[Direct] Event callbacks registered to planExecution')
 
   // Restore conversation history if conversationId exists in localStorage
   const savedConversationId = memoryStore.getConversationId()
@@ -338,14 +250,14 @@ onMounted(() => {
           if (!record) continue
 
           // Add user message (the original query)
-          if (record.userRequest && chatRef.value && record.startTime) {
-            chatRef.value.addMessage('user', record.userRequest, {
+          if (record.userRequest && record.startTime) {
+            messageDialog.addMessage('user', record.userRequest, {
               timestamp: new Date(record.startTime),
             })
           }
 
           // Add assistant message (the result/summary)
-          if (chatRef.value && record.currentPlanId) {
+          if (record.currentPlanId) {
             const assistantContent =
               record.summary || record.result || record.message || 'Execution completed'
 
@@ -362,7 +274,7 @@ onMounted(() => {
             if (record.agentExecutionSequence)
               planExecutionRecord.agentExecutionSequence = record.agentExecutionSequence
 
-            chatRef.value.addMessage('assistant', assistantContent, {
+            messageDialog.addMessage('assistant', assistantContent, {
               timestamp:
                 record.endTime && record.endTime
                   ? new Date(record.endTime)
@@ -374,18 +286,12 @@ onMounted(() => {
 
             // Store the plan record in the plan execution manager cache for future reference
             if (record.rootPlanId) {
-              planExecutionManager.setCachedPlanRecord(
+              planExecution.setCachedPlanRecord(
                 record.rootPlanId,
                 planExecutionRecord as PlanExecutionRecord
               )
             }
           }
-        }
-
-        // Scroll to bottom after loading history
-        await nextTick()
-        if (chatRef.value) {
-          chatRef.value.scrollToBottom()
         }
 
         console.log(
@@ -432,11 +338,9 @@ onMounted(() => {
     }
   } else {
     // Check if there is a task to input (for pre-filling input without executing)
-    const taskToInput = taskStore.getAndClearTaskToInput()
-    if (taskToInput) {
-      inputOnlyContent.value = taskToInput
-      console.log('[Direct] Setting inputOnlyContent for input only:', inputOnlyContent.value)
-      // Don't set prompt.value since this is just for input pre-filling
+    // Note: InputArea automatically handles taskToInput via watch, so we don't need to clear it here
+    if (taskStore.taskToInput) {
+      console.log('[Direct] taskToInput available, InputArea will handle it automatically')
     } else {
       // Degrade to URL parameters (backward compatibility)
       prompt.value = (route.query.prompt as string) || ''
@@ -452,26 +356,8 @@ onMounted(() => {
   }
 
   console.log('[Direct] Final prompt value:', prompt.value)
-
-  // Set input content if there's inputOnlyContent (after component is mounted)
-  if (inputOnlyContent.value) {
-    nextTick(() => {
-      if (inputRef.value && typeof inputRef.value.setInputValue === 'function') {
-        inputRef.value.setInputValue(inputOnlyContent.value)
-        console.log('[Direct] Set input value:', inputOnlyContent.value)
-        inputOnlyContent.value = '' // Clear after setting
-      }
-    })
-  }
-
-  // Listen for plan-execution-requested events on window
-  window.addEventListener('plan-execution-requested', ((event: CustomEvent) => {
-    console.log('[DirectView] Received plan-execution-requested event:', event.detail)
-    handlePlanExecutionRequested(event.detail)
-  }) as EventListener)
-
-  // No longer need to check pending plans in sessionStorage
-  // Because emitPlanExecutionRequested in task.ts already sends events directly
+  // Note: InputArea automatically handles taskToInput via watch
+  // Note: Plan execution is now handled directly by Sidebar.vue using messageDialog.executePlan()
 })
 
 // Listen for changes in the store's task (only handle unprocessed tasks)
@@ -513,25 +399,7 @@ watch(
   { immediate: false }
 )
 
-// Listen for changes in taskToInput (for handling cron task template setting)
-watch(
-  () => taskStore.taskToInput,
-  newTaskToInput => {
-    console.log('[Direct] Watch taskStore.taskToInput triggered, newTaskToInput:', newTaskToInput)
-    if (newTaskToInput.trim()) {
-      console.log('[Direct] Setting input value from taskToInput:', newTaskToInput)
-      nextTick(() => {
-        if (inputRef.value && typeof inputRef.value.setInputValue === 'function') {
-          inputRef.value.setInputValue(newTaskToInput.trim())
-          console.log('[Direct] Input value set from taskToInput watch:', newTaskToInput.trim())
-          // Clear the taskToInput after setting
-          taskStore.getAndClearTaskToInput()
-        }
-      })
-    }
-  },
-  { immediate: false }
-)
+// Note: taskToInput is now handled automatically by InputArea.vue
 
 onUnmounted(() => {
   console.log('[Direct] onUnmounted called, cleaning up resources')
@@ -539,15 +407,12 @@ onUnmounted(() => {
   // Clear current root plan ID
   currentRootPlanId.value = null
 
-  // Clean up plan execution manager resources
-  planExecutionManager.cleanup()
+  // Clean up plan execution resources
+  planExecution.cleanup()
 
   // Remove event listeners
   document.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('mouseup', handleMouseUp)
-  window.removeEventListener('plan-execution-requested', ((event: CustomEvent) => {
-    handlePlanExecutionRequested(event.detail)
-  }) as EventListener)
 })
 
 // Methods related to panel size adjustment
@@ -625,9 +490,6 @@ const shouldProcessEventForCurrentPlan = (
   return false
 }
 
-
-
-
 const handleStepSelected = (stepId: string) => {
   console.log('[DirectView] Step selected:', stepId)
 
@@ -640,201 +502,12 @@ const handleStepSelected = (stepId: string) => {
   }
 }
 
-const handleSubPlanStepSelected = (
-  parentPlanId: string,
-  subPlanId: string,
-  stepIndex: number,
-  subStepIndex: number
-) => {
-  console.log('[DirectView] Sub plan step selected:', {
-    parentPlanId,
-    subPlanId,
-    stepIndex,
-    subStepIndex,
-  })
-
-  // Forward sub plan step selection to right panel
-  if (rightPanelRef.value && typeof rightPanelRef.value.handleSubPlanStepSelected === 'function') {
-    console.log('[DirectView] Forwarding sub plan step selection to right panel:', {
-      parentPlanId,
-      subPlanId,
-      stepIndex,
-      subStepIndex,
-    })
-    rightPanelRef.value.handleSubPlanStepSelected(parentPlanId, subPlanId, stepIndex, subStepIndex)
-  } else {
-    console.warn('[DirectView] rightPanelRef.handleSubPlanStepSelected method not available')
-  }
-}
-
-
 const goBack = () => {
   router.push('/home')
 }
 
 const handleConfig = () => {
   router.push('/configs')
-}
-
-const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload) => {
-  console.log('[DirectView] Plan execution requested:', payload)
-
-  // Prevent duplicate execution
-  if (isExecutingPlan.value) {
-    console.log('[DirectView] Plan execution already in progress, ignoring request')
-    return
-  }
-
-  isExecutingPlan.value = true
-
-  // Mark whether user message has been added
-  let userMessageAdded = false
-  let assistantMessage: ChatMessage | null = null
-
-  // Add user and assistant messages using the same pattern as messageDialog.sendMessage
-  try {
-    console.log('[DirectView] Adding messages for plan execution:', payload.title)
-
-    // Add user message
-    chatRef.value?.addMessage('user', payload.title)
-    userMessageAdded = true
-
-    // Add assistant message to show system feedback
-    assistantMessage = chatRef.value?.addMessage('assistant', '', {
-      thinking: t('chat.planningExecution'),
-    })
-
-    if (assistantMessage) {
-      chatRef.value?.startStreaming(assistantMessage.id)
-      console.log('[DirectView] Added assistant message for plan execution:', assistantMessage.id)
-    }
-  } catch (messageError) {
-    console.warn('[DirectView] Failed to add messages:', messageError)
-  }
-  try {
-    // Get the plan template ID
-    const planTemplateId = payload.planData.planTemplateId
-
-    if (!planTemplateId) {
-      throw new Error(t('direct.planTemplateIdNotFound'))
-    }
-
-    console.log(
-      '[Direct] Executing plan with templateId:',
-      planTemplateId,
-      'params:',
-      payload.params
-    )
-
-    // Call real API to execute plan
-    console.log('[Direct] About to call PlanActApiService.executePlan')
-
-    // Get uploaded files from InputArea component
-    const uploadedFiles = payload.uploadedFiles ?? []
-    const uploadKey = payload.uploadKey ?? undefined
-
-    console.log('[Direct] 🔍 DEBUG - InputArea uploadedFiles:', uploadedFiles)
-    console.log('[Direct] 🔍 DEBUG - InputArea uploadKey:', uploadKey)
-    console.log('[Direct] Executing with uploaded files:', uploadedFiles.length)
-    console.log('[Direct] Executing with replacement params:', payload.replacementParams)
-
-    let response
-    if (payload.params?.trim()) {
-      console.log('[Direct] Calling executePlan with rawParam:', payload.params.trim())
-      response = await PlanActApiService.executePlan(
-        planTemplateId,
-        payload.params.trim(),
-        uploadedFiles,
-        payload.replacementParams,
-        uploadKey,
-        'VUE_SIDEBAR' // Request from sidebar
-      )
-    } else {
-      console.log('[Direct] Calling executePlan without rawParam')
-      response = await PlanActApiService.executePlan(
-        planTemplateId,
-        undefined,
-        uploadedFiles,
-        payload.replacementParams,
-        uploadKey,
-        'VUE_SIDEBAR' // Request from sidebar
-      )
-    }
-
-    console.log('[Direct] Plan execution API response:', response)
-
-    // Use the returned planId to start the plan execution process
-    const executionResponse = response as { planId?: string }
-    if (executionResponse.planId && assistantMessage) {
-      console.log(
-        '[Direct] Got planId from response:',
-        executionResponse.planId,
-        'starting plan execution'
-      )
-
-      // Update assistant message with plan execution info
-      chatRef.value?.updateMessage(assistantMessage.id, {
-        thinking: t('chat.planningExecution'),
-        planExecution: {
-          currentPlanId: executionResponse.planId,
-          rootPlanId: executionResponse.planId,
-          status: 'running',
-        },
-      })
-
-      // Set current root plan ID for the new plan execution
-      currentRootPlanId.value = executionResponse.planId || null
-      console.log('[Direct] Set currentRootPlanId to:', executionResponse.planId)
-
-      // Use planExecutionManager to handle plan execution
-      console.log('[Direct] Delegating plan execution to planExecutionManager')
-      planExecutionManager.handlePlanExecutionRequested(executionResponse.planId!, payload.title)
-    } else {
-      console.error('[Direct] No planId in response:', response)
-      throw new Error(t('direct.executionFailedNoPlanId'))
-    }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error('[Direct] Plan execution failed:', errorMessage)
-    const errorStack = error instanceof Error ? error.stack : undefined
-    console.error('[Direct] Error details:', { message: errorMessage, stack: errorStack })
-
-    // Clear current root plan ID on error
-    currentRootPlanId.value = null
-
-    // Handle error messages using consistent pattern
-    try {
-      console.log('[Direct] Adding error messages to chat')
-
-      // Only add user message if it hasn't been added before
-      if (!userMessageAdded) {
-        chatRef.value?.addMessage('user', payload.title)
-      }
-
-      // Update assistant message with error or add new error message
-      if (assistantMessage) {
-        chatRef.value?.updateMessage(assistantMessage.id, {
-          content: `${t('direct.executionFailed')}: ${(error as Error).message || t('common.unknownError')}`,
-          thinking: undefined,
-        })
-        chatRef.value?.stopStreaming(assistantMessage.id)
-      } else {
-        chatRef.value?.addMessage(
-          'assistant',
-          `${t('direct.executionFailed')}: ${(error as Error).message || t('common.unknownError')}`
-        )
-      }
-    } catch (errorHandlingError) {
-      console.error('[Direct] Failed to add error messages:', errorHandlingError)
-      // Note: This would need toast import if used in this context
-      alert(
-        `${t('direct.executionFailed')}: ${(error as Error).message || t('common.unknownError')}`
-      )
-    }
-  } finally {
-    console.log('[Direct] Plan execution finished, resetting isExecutingPlan flag')
-    isExecutingPlan.value = false
-  }
 }
 
 const memorySelected = async () => {
@@ -845,9 +518,7 @@ const memorySelected = async () => {
 
     try {
       // Clear current chat first
-      if (chatRef.value) {
-        chatRef.value.clearMessages()
-      }
+      messageDialog.clearMessages()
 
       // Set the conversation ID in memory store
       memoryStore.setConversationId(memoryStore.selectMemoryId)
@@ -863,15 +534,15 @@ const memorySelected = async () => {
         if (!record) continue
 
         // Add user message (the original query)
-        if (record.userRequest && chatRef.value && record.startTime) {
-          const userMessage = chatRef.value.addMessage('user', record.userRequest, {
+        if (record.userRequest && record.startTime) {
+          const userMessage = messageDialog.addMessage('user', record.userRequest, {
             timestamp: new Date(record.startTime),
           })
           console.log('[DirectView] Added user message:', userMessage)
         }
 
         // Add assistant message (the result/summary)
-        if (chatRef.value && record.currentPlanId) {
+        if (record.currentPlanId) {
           const assistantContent =
             record.summary || record.result || record.message || 'Execution completed'
 
@@ -895,7 +566,7 @@ const memorySelected = async () => {
             planExecutionRecord.agentExecutionSequence = record.agentExecutionSequence
           }
 
-          const assistantMessage = chatRef.value.addMessage('assistant', assistantContent, {
+          const assistantMessage = messageDialog.addMessage('assistant', assistantContent, {
             timestamp:
               record.endTime && record.endTime
                 ? new Date(record.endTime)
@@ -908,18 +579,12 @@ const memorySelected = async () => {
 
           // Store the plan record in the plan execution manager cache for future reference
           if (record.rootPlanId) {
-            planExecutionManager.setCachedPlanRecord(
+            planExecution.setCachedPlanRecord(
               record.rootPlanId,
               planExecutionRecord as PlanExecutionRecord
             )
           }
         }
-      }
-
-      // Scroll to bottom after loading history
-      await nextTick()
-      if (chatRef.value) {
-        chatRef.value.scrollToBottom()
       }
 
       console.log(
@@ -937,9 +602,7 @@ const memorySelected = async () => {
 const newChat = () => {
   memoryStore.clearMemoryId()
   memoryStore.clearConversationId()
-  if (chatRef.value) {
-    chatRef.value.clearMessages()
-  }
+  messageDialog.clearMessages()
 }
 </script>
 

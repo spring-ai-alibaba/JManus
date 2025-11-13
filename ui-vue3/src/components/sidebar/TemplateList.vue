@@ -266,12 +266,12 @@ const filteredGroupedTemplates = computed(() => {
   // Access planTemplateList directly to ensure reactivity
   // This ensures Vue tracks changes to the list
   void templateConfig.planTemplateList.value
-
+  
   const keyword = searchKeyword.value.trim().toLowerCase()
-
+  
   // Get grouped templates from templateStore
   const grouped = (templateStore as TemplateStoreType).groupedTemplates
-
+  
   if (!keyword) {
     return grouped
   }
@@ -304,7 +304,7 @@ const filteredGroupedTemplates = computed(() => {
 watch(searchKeyword, newKeyword => {
   // Access planTemplateList to ensure reactivity
   void templateConfig.planTemplateList.value
-
+  
   const keyword = newKeyword.trim().toLowerCase()
   if (!keyword) {
     return

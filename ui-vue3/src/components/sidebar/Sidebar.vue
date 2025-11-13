@@ -107,6 +107,7 @@ import { sidebarStore } from '@/stores/sidebar'
 import { templateStore } from '@/stores/templateStore'
 import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
 import { onMounted, onUnmounted, ref } from 'vue'
@@ -120,24 +121,27 @@ const availableToolsStore = useAvailableToolsSingleton()
 // Template config management
 const templateConfig = usePlanTemplateConfigSingleton()
 
+// Message dialog management (singleton)
+const messageDialog = useMessageDialogSingleton()
+
 // Sidebar width management
 const sidebarWidth = ref(80) // Default width percentage
 const isResizing = ref(false)
 const startX = ref(0)
 const startWidth = ref(0)
 
-// Emits - Keep some events for communication with external components
-const emit = defineEmits<{
-  planExecutionRequested: [payload: PlanExecutionRequestPayload]
-}>()
-
-const handlePlanExecutionRequested = (payload: PlanExecutionRequestPayload) => {
+const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload) => {
   console.log(
     '[Sidebar] 🎯 handlePlanExecutionRequested called with payload:',
     JSON.stringify(payload, null, 2)
   )
-  // Forward the event to parent component
-  emit('planExecutionRequested', payload)
+  // Use messageDialog to execute plan directly
+  try {
+    await messageDialog.executePlan(payload)
+    console.log('[Sidebar] Plan execution started successfully')
+  } catch (error) {
+    console.error('[Sidebar] Failed to execute plan:', error)
+  }
 }
 
 // MCP service publishing related state

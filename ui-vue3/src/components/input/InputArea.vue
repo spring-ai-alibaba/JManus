@@ -94,18 +94,18 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
+import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 
 const { t } = useI18n()
 const taskStore = useTaskStore()
 const templateConfig = usePlanTemplateConfigSingleton()
 const messageDialog = useMessageDialogSingleton()
+const planExecution = usePlanExecutionSingleton()
 
 // Track if task is running
 const isTaskRunning = computed(() => taskStore.hasRunningTask())
 
 interface Props {
-  placeholder?: string
-  disabled?: boolean
   initialValue?: string
   selectionOptions?: Array<{ value: string; label: string }>
 }
@@ -123,8 +123,6 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: '',
-  disabled: false,
   initialValue: '',
   selectionOptions: () => [],
 })
@@ -134,8 +132,18 @@ const emit = defineEmits<Emits>()
 const inputRef = ref<HTMLTextAreaElement>()
 const fileUploadRef = ref<InstanceType<typeof FileUploadComponent>>()
 const currentInput = ref('')
-const defaultPlaceholder = computed(() => props.placeholder || t('input.placeholder'))
-const currentPlaceholder = ref(defaultPlaceholder.value)
+const defaultPlaceholder = computed(() => t('input.placeholder'))
+const fileUploadPlaceholder = ref<string | null>(null)
+const currentPlaceholder = computed(() => {
+  // Priority: messageDialog inputPlaceholder > fileUploadPlaceholder > default
+  if (messageDialog.inputPlaceholder.value) {
+    return messageDialog.inputPlaceholder.value
+  }
+  if (fileUploadPlaceholder.value) {
+    return fileUploadPlaceholder.value
+  }
+  return defaultPlaceholder.value
+})
 const uploadedFiles = ref<string[]>([])
 const uploadKey = ref<string | null>(null)
 const selectedOption = ref('')
@@ -308,6 +316,29 @@ const navigateHistory = (direction: number) => {
 onMounted(() => {
   loadInnerTools()
   loadHistory()
+
+  // Register plan execution callbacks to auto-reset session on plan completion
+  planExecution.setEventCallbacks({
+    onPlanCompleted: () => {
+      console.log('[InputArea] Plan completed, resetting session')
+      resetSession()
+    },
+  })
+
+  // Watch for taskToInput changes and set input value automatically
+  watch(
+    () => taskStore.taskToInput,
+    newTaskToInput => {
+      if (newTaskToInput?.trim()) {
+        console.log('[InputArea] taskToInput changed, setting input value:', newTaskToInput)
+        nextTick(() => {
+          setInputValue(newTaskToInput.trim())
+          taskStore.getAndClearTaskToInput()
+        })
+      }
+    },
+    { immediate: false }
+  )
 })
 
 // Function to reset session when starting a new conversation session
@@ -328,7 +359,7 @@ const handleFilesUploaded = (files: FileInfo[], key: string | null) => {
 
   // Update placeholder to show files are attached
   if (uploadedFiles.value.length > 0) {
-    currentPlaceholder.value = t('input.filesAttached', { count: uploadedFiles.value.length })
+    fileUploadPlaceholder.value = t('input.filesAttached', { count: uploadedFiles.value.length })
   }
 }
 
@@ -338,9 +369,9 @@ const handleFilesRemoved = (files: FileInfo[]) => {
 
   // Update placeholder
   if (uploadedFiles.value.length === 0) {
-    currentPlaceholder.value = defaultPlaceholder.value
+    fileUploadPlaceholder.value = null
   } else {
-    currentPlaceholder.value = t('input.filesAttached', { count: uploadedFiles.value.length })
+    fileUploadPlaceholder.value = t('input.filesAttached', { count: uploadedFiles.value.length })
   }
 }
 
@@ -361,8 +392,8 @@ const handleUploadError = (error: unknown) => {
   console.error('[InputArea] Upload error:', error)
 }
 
-// Computed property to ensure 'disabled' is a boolean type
-const isDisabled = computed(() => Boolean(props.disabled))
+// Computed property for disabled state - use messageDialog isLoading
+const isDisabled = computed(() => messageDialog.isLoading.value)
 
 const adjustInputHeight = () => {
   nextTick(() => {
@@ -473,7 +504,10 @@ const handleSend = async () => {
 const handlePlanModeClick = () => {
   // Toggle sidebar display state
   sidebarStore.toggleSidebar()
-  console.log('[InputArea] Plan mode button clicked, sidebar toggled, isCollapsed:', sidebarStore.isCollapsed)
+  console.log(
+    '[InputArea] Plan mode button clicked, sidebar toggled, isCollapsed:',
+    sidebarStore.isCollapsed
+  )
 }
 
 const handleStop = async () => {
@@ -500,10 +534,7 @@ const clearInput = () => {
  * @param {string} [placeholder] - Placeholder text when enabled
  */
 const updateState = (enabled: boolean, placeholder?: string) => {
-  if (placeholder) {
-    currentPlaceholder.value = enabled ? placeholder : t('input.waiting')
-  }
-  // Update state in useMessageDialog
+  // Update state in useMessageDialog (which will update inputPlaceholder)
   messageDialog.updateInputState(enabled, placeholder)
 }
 
@@ -536,13 +567,11 @@ watch(
   { immediate: true }
 )
 
-// Expose methods to the parent component
+// Expose methods to the parent component (if needed)
 defineExpose({
   clearInput,
   updateState,
-  setInputValue,
   getQuery,
-  resetSession,
   focus: () => inputRef.value?.focus(),
   get uploadedFiles() {
     return fileUploadRef.value?.uploadedFiles?.map(f => f.originalName) || []
@@ -550,14 +579,6 @@ defineExpose({
   get uploadKey() {
     return fileUploadRef.value?.uploadKey || null
   },
-})
-
-onMounted(() => {
-  // Initialization logic after component mounting
-})
-
-onUnmounted(() => {
-  // Cleanup logic before component unmounting
 })
 </script>
 

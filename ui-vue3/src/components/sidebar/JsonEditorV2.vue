@@ -988,10 +988,10 @@ const selectServiceGroup = (group: string) => {
 onMounted(() => {
   // Sync displayData from templateConfig
   syncDisplayDataFromConfig()
-
+  
   // Load service group
   loadServiceGroup()
-
+  
   // Load available service groups
   loadAvailableServiceGroups()
 

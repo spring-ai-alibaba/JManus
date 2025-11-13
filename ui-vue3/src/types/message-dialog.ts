@@ -42,7 +42,6 @@ export interface ChatMessage {
   attachments?: File[]
 }
 
-
 /**
  * Message Dialog interface for the dialog list
  */
@@ -66,5 +65,3 @@ export interface InputMessage {
   uploadedFiles?: string[]
   uploadKey?: string
 }
-
-

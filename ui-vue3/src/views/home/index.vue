@@ -232,7 +232,7 @@ const saveJsonPlanToTemplate = async (jsonPlan: JsonPlan) => {
     await templateStore.createNewTemplate(jsonPlan.planType)
     templateConfig.fromJsonString(JSON.stringify(jsonPlan))
     const saveSuccess = await templateConfig.save()
-    
+
     if (!saveSuccess) {
       throw new Error('Failed to save plan template')
     }
@@ -241,9 +241,11 @@ const saveJsonPlanToTemplate = async (jsonPlan: JsonPlan) => {
     const result = {
       saved: true,
       message: 'Plan template saved successfully',
-      planId: templateConfig.config.planTemplateId || templateConfig.selectedTemplate.value?.planTemplateId,
+      planId:
+        templateConfig.config.planTemplateId ||
+        templateConfig.selectedTemplate.value?.planTemplateId,
     }
-    
+
     console.log('[Home] Plan template saved successfully:', result.planId)
     return result
   } catch (error: unknown) {
@@ -365,7 +367,9 @@ const selectPlan = async (plan: PlanItem) => {
 
       // Find and select the template - use the updated ID from saveResult or fallback to original
       const templateId = (saveResult as { planId?: string })?.planId || plan.planJson.planTemplateId
-      const template = templateConfig.planTemplateList.value.find(t => t.planTemplateId === templateId)
+      const template = templateConfig.planTemplateList.value.find(
+        t => t.planTemplateId === templateId
+      )
       if (!template) {
         console.error('[Home] Template not found for ID:', templateId)
         console.log(
