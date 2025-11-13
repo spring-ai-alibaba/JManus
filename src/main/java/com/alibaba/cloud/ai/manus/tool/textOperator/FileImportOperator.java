@@ -36,8 +36,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * File import operator that imports all files and subdirectories from a specified
- * real path to root-plan-id/shared/ directory. This tool recursively copies all
- * files and folders from the source path to the shared directory.
+ * real path to the current directory. This tool recursively copies all
+ * files and folders from the source path to the current directory.
  */
 public class FileImportOperator extends AbstractBaseTool<FileImportOperator.FileImportInput> {
 
@@ -204,26 +204,7 @@ public class FileImportOperator extends AbstractBaseTool<FileImportOperator.File
 
 	@Override
 	public String getCurrentToolStateString() {
-		try {
-			if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
-				return "Current File Import Operation State:\n- Error: No root plan ID available";
-			}
-
-			Path workingDir = textFileService.getRootPlanDirectory(this.rootPlanId);
-			Path sharedDir = workingDir.resolve("shared");
-			return String.format(
-					"""
-							Current File Import Operation State:
-							- Working Directory: %s
-							- Shared Directory: %s
-							- Scope: Import files from real file system path to rootPlanId/shared/
-							""",
-					workingDir.toString(), sharedDir.toString());
-		}
-		catch (Exception e) {
-			return String.format("Current File Import Operation State:\n- Error getting working directory: %s",
-					e.getMessage());
-		}
+		return "";
 	}
 
 	@Override
@@ -235,15 +216,14 @@ public class FileImportOperator extends AbstractBaseTool<FileImportOperator.File
 	public String getDescription() {
 		return """
 				Import all files and subdirectories from a specified real file system path to
-				root-plan-id/shared/ directory. This tool recursively copies all files and folders
-				from the source path to the shared directory, making them accessible across all
-				sub-plans within the same execution context.
+				the current directory. This tool recursively copies all files and folders
+				from the source path to the current directory.
 
 				Keywords: import files, copy files, file import, directory import, bulk import,
 				file migration, shared files import.
 
 				Operation:
-				- import: Import all files and subdirectories from real_path to shared directory
+				- import: Import all files and subdirectories from real_path to current directory
 				  Requires real_path parameter (absolute or relative file system path)
 				""";
 	}
@@ -256,7 +236,7 @@ public class FileImportOperator extends AbstractBaseTool<FileImportOperator.File
 				    "properties": {
 				        "real_path": {
 				            "type": "string",
-				            "description": "Real file system path (absolute or relative) to import files from. All files and subdirectories will be recursively copied to root-plan-id/shared/"
+				            "description": "Real file system path (absolute or relative) to import files from. All files and subdirectories will be recursively copied to the current directory"
 				        }
 				    },
 				    "required": ["real_path"],

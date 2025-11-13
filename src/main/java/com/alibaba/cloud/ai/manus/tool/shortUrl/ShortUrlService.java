@@ -34,7 +34,16 @@ public class ShortUrlService {
 
 	private static final Logger log = LoggerFactory.getLogger(ShortUrlService.class);
 
-	private static final String SHORT_URL_PREFIX = "http://sUrl.a/";
+	/**
+	 * Short URL prefix constant
+	 * Public so other classes can use it to check if a URL is a short URL
+	 */
+	public static final String SHORT_URL_PREFIX = "http://s@Url.a/";
+
+	/**
+	 * HTTPS version of short URL prefix
+	 */
+	public static final String SHORT_URL_PREFIX_HTTPS = "https://s@Url.a/";
 
 	// Map to store URL mappings per planId: planId -> (shortUrl -> realUrl)
 	private final ConcurrentHashMap<String, Map<String, String>> planUrlMappings = new ConcurrentHashMap<>();
@@ -86,7 +95,7 @@ public class ShortUrlService {
 	 * Create a short URL for the given real URL
 	 * @param planId Plan ID for URL isolation
 	 * @param realUrl The real URL to shorten
-	 * @return The short URL (e.g., http://sUrl.a/1)
+	 * @return The short URL (e.g., http://s@Url.a/1)
 	 */
 	public String createShortUrl(String planId, String realUrl) {
 		if (planId == null || realUrl == null || realUrl.trim().isEmpty()) {
@@ -123,9 +132,21 @@ public class ShortUrlService {
 	}
 
 	/**
+	 * Check if a URL is a short URL
+	 * @param url The URL to check
+	 * @return true if the URL is a short URL, false otherwise
+	 */
+	public static boolean isShortUrl(String url) {
+		if (url == null || url.trim().isEmpty()) {
+			return false;
+		}
+		return url.startsWith(SHORT_URL_PREFIX) || url.startsWith(SHORT_URL_PREFIX_HTTPS);
+	}
+
+	/**
 	 * Get the real URL from a short URL
 	 * @param planId Plan ID for URL isolation
-	 * @param shortUrl The short URL (e.g., http://sUrl.a/1)
+	 * @param shortUrl The short URL (e.g., http://s@Url.a/1)
 	 * @return The real URL, or null if not found
 	 */
 	public String getRealUrl(String planId, String shortUrl) {
@@ -227,7 +248,7 @@ public class ShortUrlService {
 	 * Get the real URL from short URL (compatibility method for DriverWrapper)
 	 * Always uses rootPlanId for short URL lifetime management
 	 * @param rootPlanId Root plan ID (required)
-	 * @param shortUrl The short URL (e.g., http://sUrl.a/1)
+	 * @param shortUrl The short URL (e.g., http://s@Url.a/1)
 	 * @return The real URL, or null if not found
 	 */
 	public String getRealUrlFromShortUrl(String rootPlanId, String shortUrl) {
@@ -243,7 +264,7 @@ public class ShortUrlService {
 	 * Always uses rootPlanId for short URL lifetime management
 	 * @param rootPlanId Root plan ID (required)
 	 * @param realUrl The real URL
-	 * @return The short URL (e.g., http://sUrl.a/1)
+	 * @return The short URL (e.g., http://s@Url.a/1)
 	 */
 	public synchronized String addUrlMapping(String rootPlanId, String realUrl) {
 		if (rootPlanId == null) {

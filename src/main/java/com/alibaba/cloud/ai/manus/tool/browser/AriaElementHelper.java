@@ -119,7 +119,7 @@ public class AriaElementHelper {
 	}
 
 	/**
-	 * Compress URLs in snapshot: replace with short URLs (http://sUrl.a/1, etc.)
+	 * Compress URLs in snapshot: replace with short URLs (http://s@Url.a/1, etc.)
 	 * @param snapshot The snapshot text
 	 * @param page The page to get current URL from
 	 * @param shortUrlService ShortUrlService instance to store URL mappings
@@ -167,7 +167,7 @@ public class AriaElementHelper {
 			}
 			matcher.appendTail(result);
 
-			log.debug("Compressed URLs in snapshot using http://sUrl.a/ format");
+			log.debug("Compressed URLs in snapshot using http://s@Url.a/ format");
 			return result.toString();
 		}
 		catch (Exception e) {

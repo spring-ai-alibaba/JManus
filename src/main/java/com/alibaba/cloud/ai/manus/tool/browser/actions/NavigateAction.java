@@ -17,6 +17,7 @@ package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Page.WaitForLoadStateOptions;
 import com.microsoft.playwright.options.LoadState;
@@ -37,8 +38,8 @@ public class NavigateAction extends BrowserAction {
 			return new ToolExecuteResult("URL is required for 'navigate' action");
 		}
 
-		// Check if URL is a short URL (http://sUrl.a/...)
-		if (url.startsWith("http://sUrl.a/") || url.startsWith("https://sUrl.a/")) {
+		// Check if URL is a short URL
+		if (ShortUrlService.isShortUrl(url)) {
 			String realUrl = getShortUrlService().getRealUrlFromShortUrl(getRootPlanId(), url);
 			if (realUrl == null) {
 				return new ToolExecuteResult("Short URL not found in mapping: " + url);
