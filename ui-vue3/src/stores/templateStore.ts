@@ -17,9 +17,9 @@
 import { PlanActApiService } from '@/api/plan-act-api-service'
 import { PlanTemplateApiService } from '@/api/plan-template-with-tool-api-service'
 import { i18n } from '@/base/i18n'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
 import { computed, reactive } from 'vue'
-import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 
 export class TemplateStore {
   // Loading and error state
@@ -35,7 +35,8 @@ export class TemplateStore {
   templateServiceGroups: Map<string, string> = new Map()
 
   // Group collapse state (groupName -> isCollapsed)
-  groupCollapseState: Map<string | null, boolean> = new Map()
+  // Using plain object instead of Map for Vue reactivity
+  groupCollapseState: Record<string, boolean> = {}
 
   constructor() {
     // Load organization method from localStorage
@@ -60,9 +61,7 @@ export class TemplateStore {
       const saved = localStorage.getItem('sidebarGroupCollapseState')
       if (saved) {
         const parsed = JSON.parse(saved)
-        this.groupCollapseState = new Map(
-          Object.entries(parsed).map(([k, v]) => [k === 'null' ? null : k, v as boolean])
-        )
+        this.groupCollapseState = parsed || {}
       }
     } catch (error) {
       console.warn('[TemplateStore] Failed to load group collapse state:', error)
@@ -72,14 +71,7 @@ export class TemplateStore {
   // Save group collapse state to localStorage
   saveGroupCollapseState() {
     try {
-      // Convert Map to object, handling null keys properly
-      const obj: Record<string, boolean> = {}
-      this.groupCollapseState.forEach((value, key) => {
-        // Convert null key to 'null' string for JSON serialization
-        const objKey = key ?? 'null'
-        obj[objKey] = value
-      })
-      localStorage.setItem('sidebarGroupCollapseState', JSON.stringify(obj))
+      localStorage.setItem('sidebarGroupCollapseState', JSON.stringify(this.groupCollapseState))
     } catch (error) {
       console.warn('[TemplateStore] Failed to save group collapse state:', error)
     }
@@ -87,16 +79,18 @@ export class TemplateStore {
 
   // Toggle group collapse state
   toggleGroupCollapse(groupName: string | null) {
-    // Use null as the key in Map, but convert to 'null' string for localStorage
-    const currentState = this.groupCollapseState.get(groupName) ?? false
-    this.groupCollapseState.set(groupName, !currentState)
+    // Convert null to string key for object property access
+    const key = groupName ?? 'null'
+    const currentState = this.groupCollapseState[key] ?? false
+    this.groupCollapseState[key] = !currentState
     this.saveGroupCollapseState()
   }
 
   // Check if group is collapsed
   isGroupCollapsed(groupName: string | null): boolean {
-    // Use null as the key directly in Map
-    return this.groupCollapseState.get(groupName) ?? false
+    // Convert null to string key for object property access
+    const key = groupName ?? 'null'
+    return this.groupCollapseState[key] ?? false
   }
 
   // Helper function to parse date from different formats
@@ -245,7 +239,14 @@ export const templateStore = reactive({
   // Methods
   loadGroupCollapseState: () => storeInstance.loadGroupCollapseState(),
   saveGroupCollapseState: () => storeInstance.saveGroupCollapseState(),
-  toggleGroupCollapse: (groupName: string | null) => storeInstance.toggleGroupCollapse(groupName),
+  toggleGroupCollapse: (groupName: string | null) => {
+    storeInstance.toggleGroupCollapse(groupName)
+    // Update reactive object - Vue can track object property changes directly
+    const key = groupName ?? 'null'
+    templateStore.groupCollapseState[key] = storeInstance.groupCollapseState[key]
+    // Force reactivity by creating new object reference
+    templateStore.groupCollapseState = { ...templateStore.groupCollapseState }
+  },
   isGroupCollapsed: (groupName: string | null) => storeInstance.isGroupCollapsed(groupName),
   parseDateTime: (dateValue: unknown) => storeInstance.parseDateTime(dateValue),
   setOrganizationMethod: (method: 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc') => {

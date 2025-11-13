@@ -93,27 +93,26 @@
               templates.length > 0
             "
             class="group-header"
-            @click="templateStore.toggleGroupCollapse(groupName)"
+            @click.prevent="handleToggleGroupCollapse(groupName)"
             :title="
-              templateStore.isGroupCollapsed(groupName)
+              getGroupCollapseState(groupName)
                 ? $t('sidebar.expandGroup')
                 : $t('sidebar.collapseGroup')
             "
           >
             <button
+              type="button"
               class="group-toggle-btn"
-              @click.stop="templateStore.toggleGroupCollapse(groupName)"
+              @click.stop.prevent="handleToggleGroupCollapse(groupName)"
               :title="
-                templateStore.isGroupCollapsed(groupName)
+                getGroupCollapseState(groupName)
                   ? $t('sidebar.expandGroup')
                   : $t('sidebar.collapseGroup')
               "
             >
               <Icon
                 :icon="
-                  templateStore.isGroupCollapsed(groupName)
-                    ? 'carbon:chevron-right'
-                    : 'carbon:chevron-down'
+                  getGroupCollapseState(groupName) ? 'carbon:chevron-right' : 'carbon:chevron-down'
                 "
                 width="14"
               />
@@ -132,7 +131,7 @@
               !(
                 (templateStore.organizationMethod === 'by_group_time' ||
                   templateStore.organizationMethod === 'by_group_abc') &&
-                templateStore.isGroupCollapsed(groupName)
+                getGroupCollapseState(groupName)
               )
             "
           >
@@ -180,10 +179,10 @@
 </template>
 
 <script setup lang="ts">
+import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { sidebarStore } from '@/stores/sidebar'
 import { templateStore, type TemplateStoreType } from '@/stores/templateStore'
-import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
-import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
 import { Icon } from '@iconify/vue'
 import { computed, ref, watch } from 'vue'
@@ -266,12 +265,12 @@ const filteredGroupedTemplates = computed(() => {
   // Access planTemplateList directly to ensure reactivity
   // This ensures Vue tracks changes to the list
   void templateConfig.planTemplateList.value
-  
+
   const keyword = searchKeyword.value.trim().toLowerCase()
-  
+
   // Get grouped templates from templateStore
   const grouped = (templateStore as TemplateStoreType).groupedTemplates
-  
+
   if (!keyword) {
     return grouped
   }
@@ -304,7 +303,7 @@ const filteredGroupedTemplates = computed(() => {
 watch(searchKeyword, newKeyword => {
   // Access planTemplateList to ensure reactivity
   void templateConfig.planTemplateList.value
-  
+
   const keyword = newKeyword.trim().toLowerCase()
   if (!keyword) {
     return
@@ -335,6 +334,18 @@ watch(searchKeyword, newKeyword => {
     }
   }
 })
+
+// Get group collapse state - helper function to access reactive property directly
+const getGroupCollapseState = (groupName: string | null): boolean => {
+  const key = groupName ?? 'null'
+  // Directly access reactive object property so Vue can track it
+  return templateStore.groupCollapseState[key] ?? false
+}
+
+// Handle group collapse toggle
+const handleToggleGroupCollapse = (groupName: string | null) => {
+  templateStore.toggleGroupCollapse(groupName)
+}
 
 // Handle select template
 const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
@@ -585,6 +596,8 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .group-header:hover {
@@ -608,6 +621,9 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
   justify-content: center;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  pointer-events: auto;
+  position: relative;
+  z-index: 2;
 }
 
 .group-toggle-btn:hover {
