@@ -94,7 +94,7 @@
       <button
         class="btn publish-mcp-btn"
         @click="handlePublishMcpService"
-        :disabled="!currentPlanTemplateId"
+        :disabled="!templateConfig.currentPlanTemplateId.value"
         v-if="showPublishButton"
       >
         <Icon icon="carbon:application" width="16" />
@@ -102,7 +102,10 @@
       </button>
 
       <!-- Internal Call wrapper - only show when enableInternalToolcall is true -->
-      <div v-if="toolInfo?.enableInternalToolcall" class="call-example-wrapper">
+      <div
+        v-if="templateConfig.selectedTemplate.value?.toolConfig?.enableInternalToolcall"
+        class="call-example-wrapper"
+      >
         <div class="call-example-header">
           <h4 class="call-example-title">{{ t('sidebar.internalCall') }}</h4>
           <p class="call-example-description">{{ t('sidebar.internalCallDescription') }}</p>
@@ -111,10 +114,16 @@
           <div class="call-info">
             <div class="call-method">{{ t('sidebar.internalMethodCall') }}</div>
             <div class="call-endpoint">
-              {{ t('sidebar.toolName') }}: {{ toolInfo?.toolName || currentPlanTemplateId }}
+              {{ t('sidebar.toolName') }}:
+              {{
+                templateConfig.selectedTemplate.value?.title ||
+                templateConfig.currentPlanTemplateId.value ||
+                ''
+              }}
             </div>
-            <div v-if="toolInfo?.serviceGroup" class="call-endpoint">
-              {{ t('sidebar.serviceGroup') }}: {{ toolInfo.serviceGroup }}
+            <div v-if="templateConfig.selectedTemplate.value?.serviceGroup" class="call-endpoint">
+              {{ t('sidebar.serviceGroup') }}:
+              {{ templateConfig.selectedTemplate.value.serviceGroup }}
             </div>
             <div class="call-description">{{ t('sidebar.internalCallUsage') }}</div>
             <div class="call-example">
@@ -126,7 +135,10 @@
       </div>
 
       <!-- HTTP API URLs wrapper with tabs - only show when enableHttpService is true -->
-      <div v-if="toolInfo?.enableHttpService" class="call-example-wrapper">
+      <div
+        v-if="templateConfig.selectedTemplate.value?.toolConfig?.enableHttpService"
+        class="call-example-wrapper"
+      >
         <div class="call-example-header">
           <h4 class="call-example-title">{{ t('sidebar.httpCallExample') }}</h4>
           <p class="call-example-description">{{ t('sidebar.httpCallDescription') }}</p>
@@ -166,7 +178,10 @@
       </div>
 
       <!-- MCP Call wrapper - only show when enableMcpService is true -->
-      <div v-if="toolInfo?.enableMcpService" class="call-example-wrapper">
+      <div
+        v-if="templateConfig.selectedTemplate.value?.toolConfig?.enableMcpService"
+        class="call-example-wrapper"
+      >
         <div class="call-example-header">
           <h4 class="call-example-title">{{ t('sidebar.mcpCall') }}</h4>
           <p class="call-example-description">{{ t('sidebar.mcpCallDescription') }}</p>
@@ -195,11 +210,6 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  CoordinatorToolConfig,
-  CoordinatorToolVO,
-} from '@/api/coordinator-tool-api-service'
-import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
 import { FileInfo } from '@/api/file-upload-api-service'
 import {
   PlanParameterApiService,
@@ -224,28 +234,13 @@ const templateConfig = usePlanTemplateConfigSingleton()
 
 // Props
 interface Props {
-  currentPlanTemplateId?: string
   isExecuting?: boolean
   isGenerating?: boolean
-  toolInfo?: CoordinatorToolVO
-  publishModalRef?: { loadParameterRequirements: () => void } | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  currentPlanTemplateId: '',
   isExecuting: false,
   isGenerating: false,
-  toolInfo: () => ({
-    toolName: '',
-    toolDescription: '',
-    planTemplateId: '',
-    inputSchema: '[]',
-    enableHttpService: false,
-    enableMcpService: false,
-    enableInternalToolcall: false,
-    serviceGroup: '',
-  }),
-  publishModalRef: null,
 })
 
 // Emits
@@ -268,15 +263,9 @@ const parameterErrors = ref<Record<string, string>>({})
 const isValidationError = ref(false)
 const isExecutingPlan = ref(false) // Flag to prevent parameter reload during execution
 
-// CoordinatorTool configuration
-const coordinatorToolConfig = ref<CoordinatorToolConfig>({
-  enabled: true,
-  success: true,
-})
-
 // Computed property: whether to show publish MCP service button
 const showPublishButton = computed(() => {
-  return coordinatorToolConfig.value.enabled
+  return templateConfig.getCoordinatorToolConfig()
 })
 
 // File upload state
@@ -380,10 +369,12 @@ Response: {
 
 // Computed properties
 const isAnyServiceEnabled = computed(() => {
+  const toolConfig = templateConfig.selectedTemplate.value?.toolConfig
   return (
-    props.toolInfo.enableInternalToolcall ??
-    props.toolInfo.enableHttpService ??
-    props.toolInfo.enableMcpService
+    toolConfig?.enableInternalToolcall ??
+    toolConfig?.enableHttpService ??
+    toolConfig?.enableMcpService ??
+    false
   )
 })
 
@@ -548,9 +539,7 @@ const proceedWithExecution = () => {
     // Emit to parent component via Vue event
     emit('planExecutionRequested', finalPayload)
     // Also dispatch window event for global listeners (like direct/index.vue)
-    window.dispatchEvent(
-      new CustomEvent('plan-execution-requested', { detail: finalPayload })
-    )
+    window.dispatchEvent(new CustomEvent('plan-execution-requested', { detail: finalPayload }))
 
     console.log('[ExecutionController] ✅ Event emitted successfully')
   } catch (error: unknown) {
@@ -578,7 +567,9 @@ const handleSaveAndExecute = async () => {
     // Validate config
     const validation = templateConfig.validate()
     if (!validation.isValid) {
-      toast.error('Invalid format, please correct and save.\nErrors: ' + validation.errors.join(', '))
+      toast.error(
+        'Invalid format, please correct and save.\nErrors: ' + validation.errors.join(', ')
+      )
       return
     }
 
@@ -678,7 +669,10 @@ const handleContinueExecution = () => {
 
 const handlePublishMcpService = () => {
   console.log('[ExecutionController] Publish MCP service button clicked')
-  console.log('[ExecutionController] currentPlanTemplateId:', templateConfig.currentPlanTemplateId.value)
+  console.log(
+    '[ExecutionController] currentPlanTemplateId:',
+    templateConfig.currentPlanTemplateId.value
+  )
 
   if (!templateConfig.currentPlanTemplateId.value) {
     console.log('[ExecutionController] No plan template selected, showing warning')
@@ -719,28 +713,21 @@ const refreshParameterRequirements = async () => {
 
   // Reload parameter requirements
   await loadParameterRequirements()
-
-  // Refresh parameter requirements in PublishMcpServiceModal if available
-  if (props.publishModalRef) {
-    console.log('[ExecutionController] 📞 Calling PublishMcpServiceModal.loadParameterRequirements()')
-    props.publishModalRef.loadParameterRequirements()
-  } else {
-    console.warn('[ExecutionController] ⚠️ PublishMcpServiceModal ref not available')
-  }
 }
 
 // Load parameter requirements when plan template changes
 const loadParameterRequirements = async () => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
   console.log(
     '[ExecutionController] 🔄 loadParameterRequirements called for templateId:',
-    props.currentPlanTemplateId
+    planTemplateId
   )
   console.log(
     '[ExecutionController] 📊 Current parameterRequirements before load:',
     JSON.stringify(parameterRequirements.value, null, 2)
   )
 
-  if (!props.currentPlanTemplateId) {
+  if (!planTemplateId) {
     console.log('[ExecutionController] ❌ No template ID, resetting parameters')
     parameterRequirements.value = {
       parameters: [],
@@ -763,9 +750,7 @@ const loadParameterRequirements = async () => {
   isLoadingParameters.value = true
   try {
     console.log('[ExecutionController] 🌐 Fetching parameter requirements from API...')
-    const requirements = await PlanParameterApiService.getParameterRequirements(
-      props.currentPlanTemplateId
-    )
+    const requirements = await PlanParameterApiService.getParameterRequirements(planTemplateId)
     console.log(
       '[ExecutionController] 📥 Received requirements from API:',
       JSON.stringify(requirements, null, 2)
@@ -866,7 +851,7 @@ const updateExecutionParamsFromParameters = () => {
 
 // Watch for changes in plan template ID
 watch(
-  () => props.currentPlanTemplateId,
+  () => templateConfig.currentPlanTemplateId.value,
   (newId, oldId) => {
     if (newId && newId !== oldId) {
       // Skip parameter reload if we're currently executing a plan
@@ -894,26 +879,9 @@ watch(
 
 // Execution params are now managed internally, no need to emit updates
 
-// Load CoordinatorTool configuration
-const loadCoordinatorToolConfig = async () => {
-  try {
-    const config = await CoordinatorToolApiService.getCoordinatorToolConfig()
-    coordinatorToolConfig.value = config
-  } catch (error) {
-    console.error('[ExecutionController] Failed to load CoordinatorTool configuration:', error)
-    // Use default configuration
-    coordinatorToolConfig.value = {
-      enabled: true,
-      success: false,
-      message: error instanceof Error ? error.message : 'Unknown error',
-    }
-  }
-}
-
 // Load parameters on mount
 onMounted(() => {
   loadParameterRequirements()
-  loadCoordinatorToolConfig()
 })
 
 // Expose methods for parent component

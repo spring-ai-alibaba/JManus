@@ -61,7 +61,7 @@ import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import ExecutionDetails from './ExecutionDetails.vue'
 import type { PlanExecutionRecord, AgentExecutionRecord } from '@/types/plan-execution-record'
-import type { CompatiblePlanExecutionRecord } from './composables/useChatMessages'
+import type { CompatiblePlanExecutionRecord } from '@/types/message-dialog'
 
 interface Props {
   thinking?: string

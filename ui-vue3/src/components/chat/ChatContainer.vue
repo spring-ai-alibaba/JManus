@@ -23,16 +23,93 @@
       @click="handleMessageContainerClick"
     >
       <!-- Message list -->
-      <ChatMessage
+      <div
         v-for="message in compatibleMessages"
         :key="message.id"
-        :message="message"
-        :is-streaming="isMessageStreaming(message.id)"
-        @copy="handleCopyMessage"
-        @regenerate="handleRegenerateMessage"
-        @retry="handleRetryMessage"
-        @step-selected="handleStepSelected"
-      />
+        class="chat-message"
+        :class="[getMessageClasses(message), { streaming: isMessageStreaming(message.id) }]"
+      >
+        <!-- User message -->
+        <div v-if="message.type === 'user'" class="user-message" :data-message-id="message.id">
+          <div class="user-content">
+            <div class="message-text">
+              {{ message.content }}
+            </div>
+
+            <!-- Attachments if any -->
+            <div v-if="message.attachments?.length" class="attachments">
+              <div
+                v-for="(attachment, index) in message.attachments"
+                :key="index"
+                class="attachment-item"
+              >
+                <Icon icon="carbon:document" class="attachment-icon" />
+                <span class="attachment-name">{{ attachment.name }}</span>
+                <span class="attachment-size">{{ formatFileSize(attachment.size) }}</span>
+              </div>
+            </div>
+
+            <!-- Timestamp -->
+            <div class="message-timestamp">
+              {{ formatTimestamp(message.timestamp) }}
+            </div>
+          </div>
+
+          <!-- Message status indicator -->
+          <div v-if="message.error" class="message-status error">
+            <Icon icon="carbon:warning" class="status-icon" />
+            <span class="status-text">{{ message.error }}</span>
+          </div>
+        </div>
+
+        <!-- Assistant message -->
+        <div v-else-if="message.type === 'assistant'" class="assistant-message">
+          <!-- Thinking section (when available) -->
+          <ThinkingSection
+            v-if="message.thinkingDetails"
+            :thinking-details="message.thinkingDetails"
+            @step-selected="handleStepSelected"
+          />
+
+          <!-- Plan execution section (when available) -->
+          <ExecutionDetails
+            v-if="message.planExecution"
+            :plan-execution="message.planExecution"
+            :step-actions="message.stepActions || []"
+            :generic-input="message.genericInput || ''"
+            @step-selected="handleStepSelected"
+          />
+
+          <!-- Response section -->
+          <ResponseSection
+            v-if="
+              message.content ||
+              message.error ||
+              isMessageStreaming(message.id) ||
+              message.planExecution?.userInputWaitState?.waiting
+            "
+            :content="message.content || ''"
+            :is-streaming="isMessageStreaming(message.id) || false"
+            v-bind="{
+              ...(message.error ? { error: message.error } : {}),
+              ...(message.planExecution?.userInputWaitState
+                ? { userInputWaitState: message.planExecution.userInputWaitState }
+                : {}),
+              ...(message.planExecution?.currentPlanId
+                ? { planId: message.planExecution.currentPlanId }
+                : {}),
+            }"
+            :timestamp="message.timestamp"
+            :generic-input="message.genericInput || ''"
+            @copy="() => handleCopyMessage(message.id)"
+            @regenerate="() => handleRegenerateMessage(message.id)"
+            @retry="() => handleRetryMessage(message.id)"
+            @user-input-submitted="
+              (inputData: Record<string, unknown>) => handleUserInputSubmit(message, inputData)
+            "
+          />
+        </div>
+      </div>
 
       <!-- Loading indicator -->
       <div v-if="isLoading" class="loading-message">
@@ -63,18 +140,18 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 // Import new modular components
-import ChatMessage from './ChatMessage.vue'
+import ThinkingSection from './ThinkingSection.vue'
+import ResponseSection from './ResponseSection.vue'
+import ExecutionDetails from './ExecutionDetails.vue'
 
 // Import composables
-import {
-  convertMessageToCompatible,
-  useChatMessages,
-  type ChatMessage as ChatMessageType,
-} from './composables/useChatMessages'
+import type { ChatMessage as ChatMessageType } from '@/types/message-dialog'
 import { useScrollBehavior } from './composables/useScrollBehavior'
+import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
+import { useMessageFormatting } from './composables/useMessageFormatting'
 
 // Import plan execution manager
-import { planExecutionManager } from '@/utils/plan-execution-manager'
+import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 
 interface Emits {
   (e: 'step-selected', stepId: string): void
@@ -91,7 +168,8 @@ const emit = defineEmits<Emits>()
 // Initialize composables
 const { t } = useI18n()
 
-// Chat messages state
+// Message dialog state
+const messageDialog = useMessageDialogSingleton()
 const {
   messages,
   isLoading,
@@ -99,14 +177,18 @@ const {
   addMessage,
   updateMessage,
   startStreaming,
-  stopStreaming,
-  clearMessages,
   findMessage,
-} = useChatMessages()
+} = messageDialog
+
+// Plan execution manager
+const planExecution = usePlanExecutionSingleton()
 
 // Scroll behavior
 const messagesRef = ref<HTMLElement | null>(null)
 const { scrollToBottom, autoScrollToBottom, showScrollToBottom } = useScrollBehavior(messagesRef)
+
+// Message formatting
+const { getMessageClasses, formatTimestamp, formatFileSize } = useMessageFormatting()
 
 // Local state
 const pollingInterval = ref<number>()
@@ -116,10 +198,8 @@ const isMessageStreaming = (messageId: string) => {
   return streamingMessageId.value === messageId
 }
 
-// Convert messages to compatible format for ChatMessage component
-const compatibleMessages = computed(() => {
-  return messages.value.map(convertMessageToCompatible)
-})
+// Messages are already in compatible format (useMessageDialog handles conversion)
+const compatibleMessages = computed(() => messages.value)
 
 // Event handlers
 const handleScroll = () => {
@@ -189,6 +269,11 @@ const handleStepSelected = (stepId: string) => {
   emit('step-selected', stepId)
 }
 
+const handleUserInputSubmit = (message: ChatMessageType, inputData: Record<string, unknown>) => {
+  console.log('[ChatContainer] User input submitted:', inputData, 'for message:', message.id)
+  // Handle user input submission - can be extended for more functionality
+}
+
 // Message handling methods removed - ChatContainer is now a pure display component
 
 // Plan execution handlers
@@ -196,7 +281,7 @@ const handlePlanUpdate = (rootPlanId: string) => {
   console.log('[ChatContainer] Plan update received:', rootPlanId)
 
   // Get the PlanExecutionRecord from the cache
-  const planDetails = planExecutionManager.getCachedPlanRecord(rootPlanId)
+  const planDetails = planExecution.getCachedPlanRecord(rootPlanId)
 
   if (!planDetails) {
     console.warn('[ChatContainer] No cached plan data found for rootPlanId:', rootPlanId)
@@ -302,7 +387,7 @@ onMounted(() => {
   )
 
   // Register plan execution callbacks
-  planExecutionManager.setEventCallbacks({
+  planExecution.setEventCallbacks({
     onPlanUpdate: handlePlanUpdate,
     onPlanCompleted: handlePlanCompleted,
     onDialogRoundStart: handleDialogRoundStart,
@@ -314,20 +399,6 @@ onUnmounted(() => {
   if (pollingInterval.value) {
     clearInterval(pollingInterval.value)
   }
-})
-
-// Expose methods for parent components
-defineExpose({
-  scrollToBottom,
-  handlePlanUpdate,
-  handlePlanCompleted,
-  handleDialogRoundStart,
-  handlePlanError,
-  addMessage,
-  updateMessage,
-  startStreaming,
-  stopStreaming,
-  clearMessages,
 })
 </script>
 
@@ -362,6 +433,115 @@ defineExpose({
       &:hover {
         background: rgba(255, 255, 255, 0.5);
       }
+    }
+  }
+
+  .chat-message {
+    width: 100%;
+
+    &.streaming {
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #4f46e5, transparent);
+        animation: streaming-pulse 2s ease-in-out infinite;
+      }
+    }
+  }
+
+  .user-message {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-bottom: 16px;
+
+    .user-content {
+      max-width: 70%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      padding: 12px 16px;
+      border-radius: 18px 18px 4px 18px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      position: relative;
+
+      .message-text {
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        line-height: 1.5;
+        font-size: 14px;
+      }
+
+      .attachments {
+        margin-top: 8px;
+
+        .attachment-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 8px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          margin-bottom: 4px;
+          font-size: 12px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .attachment-icon {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+          }
+
+          .attachment-name {
+            flex: 1;
+            color: #ffffff;
+          }
+
+          .attachment-size {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+          }
+        }
+      }
+
+      .message-timestamp {
+        margin-top: 6px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.7);
+        text-align: right;
+      }
+    }
+
+    .message-status {
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+
+      &.error {
+        color: #ff6b6b;
+
+        .status-icon {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+
+  .assistant-message {
+    margin-bottom: 24px;
+
+    // Add spacing between thinking and response sections
+    > * + * {
+      margin-top: 16px;
     }
   }
 
@@ -431,6 +611,20 @@ defineExpose({
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes streaming-pulse {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
   }
 }
 

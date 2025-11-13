@@ -54,7 +54,6 @@ export class TemplateStore {
     this.loadGroupCollapseState()
   }
 
-
   // Load group collapse state from localStorage
   loadGroupCollapseState() {
     try {
@@ -154,7 +153,7 @@ export class TemplateStore {
       for (const config of this.templateConfig.planTemplateList.value) {
         const planTemplateId = config.planTemplateId
         if (planTemplateId) {
-          const serviceGroup = config.serviceGroup  || ''
+          const serviceGroup = config.serviceGroup || ''
           if (serviceGroup) {
             this.templateServiceGroups.set(planTemplateId, serviceGroup)
           }
@@ -353,7 +352,10 @@ const sortedTemplatesComputed = computed(() => {
 })
 
 const groupedTemplatesComputed = computed(() => {
-  if (templateStore.organizationMethod !== 'by_group_time' && templateStore.organizationMethod !== 'by_group_abc') {
+  if (
+    templateStore.organizationMethod !== 'by_group_time' &&
+    templateStore.organizationMethod !== 'by_group_abc'
+  ) {
     return new Map([[null, sortedTemplatesComputed.value]])
   }
 
@@ -386,7 +388,6 @@ const groupedTemplatesComputed = computed(() => {
   return result
 })
 
-
 // Add computed properties to reactive store using Object.defineProperty
 Object.defineProperty(templateStore, 'sortedTemplates', {
   get: () => sortedTemplatesComputed.value,
@@ -408,4 +409,3 @@ export interface TemplateStoreWithComputed {
 
 // Type assertion to help TypeScript understand the computed properties
 export type TemplateStoreType = typeof templateStore & TemplateStoreWithComputed
-

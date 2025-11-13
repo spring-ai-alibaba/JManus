@@ -17,12 +17,10 @@
 // Plan-related API wrapper (TypeScript version for Vue projects)
 
 import { DirectApiService } from '@/api/direct-api-service'
-import type { CronConfig } from '@/types/cron-task'
 import { LlmCheckService } from '@/utils/llm-check'
 
 export class PlanActApiService {
   private static readonly PLAN_TEMPLATE_URL = '/api/plan-template'
-  private static readonly CRON_TASK_URL = '/api/cron-tasks'
 
   // Execute generated plan using ManusController.executeByToolNameAsync
   public static async executePlan(
@@ -85,17 +83,6 @@ export class PlanActApiService {
     return await response.json()
   }
 
-  // Get specific version of plan
-  public static async getVersionPlan(planId: string, versionIndex: number): Promise<unknown> {
-    const response = await fetch(`${this.PLAN_TEMPLATE_URL}/get-version`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId, versionIndex: versionIndex.toString() }),
-    })
-    if (!response.ok) throw new Error(`Failed to get specific version plan: ${response.status}`)
-    return await response.json()
-  }
-
   // Get all plan template list
   public static async getAllPlanTemplates(): Promise<unknown> {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/list`)
@@ -111,24 +98,6 @@ export class PlanActApiService {
       body: JSON.stringify({ planId }),
     })
     if (!response.ok) throw new Error(`Failed to delete plan template: ${response.status}`)
-    return await response.json()
-  }
-
-  // Create cron task
-  public static async createCronTask(cronConfig: CronConfig): Promise<CronConfig> {
-    const response = await fetch(this.CRON_TASK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cronConfig),
-    })
-    if (!response.ok) {
-      try {
-        const errorData = await response.json()
-        throw new Error(errorData.message || `Failed to create cron task: ${response.status}`)
-      } catch {
-        throw new Error(`Failed to create cron task: ${response.status}`)
-      }
-    }
     return await response.json()
   }
 }

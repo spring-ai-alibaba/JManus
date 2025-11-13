@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { InputMessage } from '@/stores/memory'
+import type { InputMessage } from '@/types/message-dialog'
 import { memoryStore } from '@/stores/memory'
 import { LlmCheckService } from '@/utils/llm-check'
 

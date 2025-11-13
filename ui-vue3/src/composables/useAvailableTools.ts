@@ -99,4 +99,3 @@ export function useAvailableToolsSingleton() {
   }
   return singletonInstance
 }
-

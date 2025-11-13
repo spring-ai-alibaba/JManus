@@ -433,7 +433,8 @@ const words: I18nType = {
       enable: 'Enable',
       url: 'URL',
       urlPlaceholder: 'e.g.: localhost:3306/dbname',
-      urlHint: 'Enter connection string (e.g., localhost:3306/dbname). JDBC prefix will be added automatically.',
+      urlHint:
+        'Enter connection string (e.g., localhost:3306/dbname). JDBC prefix will be added automatically.',
       driverClassName: 'Driver Class Name',
       driverClassNamePlaceholder: 'e.g.: com.mysql.cj.jdbc.Driver',
       driverClassNameHint: 'Auto-filled based on database type',

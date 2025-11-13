@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.cloud.ai.manus.coordinator.entity.po;
+package com.alibaba.cloud.ai.manus.planning.model.po;
 
 import java.time.LocalDateTime;
 
@@ -31,7 +31,7 @@ import jakarta.persistence.UniqueConstraint;
  */
 @Entity
 @Table(name = "coordinator_tools", uniqueConstraints = @UniqueConstraint(columnNames = { "toolName" }))
-public class CoordinatorToolEntity {
+public class FuncAgentToolEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,12 +49,6 @@ public class CoordinatorToolEntity {
 	@Column(nullable = false, length = 50)
 	private String planTemplateId;
 
-	@Column(length = 100)
-	private String httpEndpoint;
-
-	@Column(length = 100)
-	private String mcpEndpoint;
-
 	@Column(nullable = false)
 	private Boolean enableInternalToolcall = true;
 
@@ -70,7 +64,7 @@ public class CoordinatorToolEntity {
 	@Column(nullable = false)
 	private LocalDateTime updateTime;
 
-	public CoordinatorToolEntity() {
+	public FuncAgentToolEntity() {
 		this.createTime = LocalDateTime.now();
 		this.updateTime = LocalDateTime.now();
 		this.enableInternalToolcall = true;
@@ -117,22 +111,6 @@ public class CoordinatorToolEntity {
 
 	public void setPlanTemplateId(String planTemplateId) {
 		this.planTemplateId = planTemplateId;
-	}
-
-	public String getHttpEndpoint() {
-		return httpEndpoint;
-	}
-
-	public void setHttpEndpoint(String httpEndpoint) {
-		this.httpEndpoint = httpEndpoint;
-	}
-
-	public String getMcpEndpoint() {
-		return mcpEndpoint;
-	}
-
-	public void setMcpEndpoint(String mcpEndpoint) {
-		this.mcpEndpoint = mcpEndpoint;
 	}
 
 	public Boolean getEnableInternalToolcall() {
@@ -186,8 +164,7 @@ public class CoordinatorToolEntity {
 	@Override
 	public String toString() {
 		return "CoordinatorToolEntity{" + "id=" + id + ", toolName='" + toolName + '\'' + ", toolDescription='"
-				+ toolDescription + '\'' + ", planTemplateId='" + planTemplateId + '\'' + ", httpEndpoint='"
-				+ httpEndpoint + '\'' + ", mcpEndpoint='" + mcpEndpoint + '\'' + ", enableInternalToolcall="
+				+ toolDescription + '\'' + ", planTemplateId='" + planTemplateId + '\'' + ", enableInternalToolcall="
 				+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableMcpService="
 				+ enableMcpService + ", createTime=" + createTime + ", updateTime=" + updateTime + '}';
 	}

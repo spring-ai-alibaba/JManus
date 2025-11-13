@@ -55,13 +55,8 @@ export function usePlanTemplateConfig() {
 
   // Getters
   const getTitle = () => config.title
-  const getSteps = () => config.steps || []
-  const getDirectResponse = () => config.directResponse || false
   const getPlanType = () => config.planType || 'dynamic_agent'
-  const getPlanTemplateId = () => config.planTemplateId || ''
-  const getReadOnly = () => config.readOnly || false
   const getServiceGroup = () => config.serviceGroup || ''
-  const getToolConfig = () => config.toolConfig
 
   // Setters
   const setTitle = (title: string) => {
@@ -72,39 +67,12 @@ export function usePlanTemplateConfig() {
     config.steps = steps || []
   }
 
-  const addStep = (step: StepConfig) => {
-    if (!config.steps) {
-      config.steps = []
-    }
-    config.steps.push(step)
-  }
-
-  const removeStep = (index: number) => {
-    if (config.steps && index >= 0 && index < config.steps.length) {
-      config.steps.splice(index, 1)
-    }
-  }
-
-  const updateStep = (index: number, step: StepConfig) => {
-    if (config.steps && index >= 0 && index < config.steps.length) {
-      config.steps[index] = { ...config.steps[index], ...step }
-    }
-  }
-
-  const setDirectResponse = (directResponse: boolean) => {
-    config.directResponse = directResponse
-  }
-
   const setPlanType = (planType: string) => {
     config.planType = planType
   }
 
   const setPlanTemplateId = (planTemplateId: string) => {
     config.planTemplateId = planTemplateId
-  }
-
-  const setReadOnly = (readOnly: boolean) => {
-    config.readOnly = readOnly
   }
 
   const setServiceGroup = (serviceGroup: string) => {
@@ -119,13 +87,7 @@ export function usePlanTemplateConfig() {
     }
   }
 
-  // ToolConfig getters
-  const getToolDescription = () => config.toolConfig?.toolDescription || ''
-  const getEnableInternalToolcall = () => config.toolConfig?.enableInternalToolcall ?? true
-  const getEnableHttpService = () => config.toolConfig?.enableHttpService ?? false
-  const getEnableMcpService = () => config.toolConfig?.enableMcpService ?? false
-  const getPublishStatus = () => config.toolConfig?.publishStatus || 'PUBLISHED'
-  const getInputSchema = () => config.toolConfig?.inputSchema || []
+  // ToolConfig getters (no getters are used, only setters)
 
   // ToolConfig setters
   const setToolDescription = (toolDescription: string) => {
@@ -149,55 +111,11 @@ export function usePlanTemplateConfig() {
     config.toolConfig.enableHttpService = enable
   }
 
-  const setEnableMcpService = (enable: boolean) => {
-    if (!config.toolConfig) {
-      config.toolConfig = {}
-    }
-    config.toolConfig.enableMcpService = enable
-  }
-
-  const setPublishStatus = (status: string) => {
-    if (!config.toolConfig) {
-      config.toolConfig = {}
-    }
-    config.toolConfig.publishStatus = status
-  }
-
   const setInputSchema = (inputSchema: InputSchemaParam[]) => {
     if (!config.toolConfig) {
       config.toolConfig = {}
     }
     config.toolConfig.inputSchema = inputSchema || []
-  }
-
-  const addInputSchemaParam = (param: InputSchemaParam) => {
-    if (!config.toolConfig) {
-      config.toolConfig = {}
-    }
-    if (!config.toolConfig.inputSchema) {
-      config.toolConfig.inputSchema = []
-    }
-    config.toolConfig.inputSchema.push(param)
-  }
-
-  const removeInputSchemaParam = (index: number) => {
-    if (
-      config.toolConfig?.inputSchema &&
-      index >= 0 &&
-      index < config.toolConfig.inputSchema.length
-    ) {
-      config.toolConfig.inputSchema.splice(index, 1)
-    }
-  }
-
-  const updateInputSchemaParam = (index: number, param: InputSchemaParam) => {
-    if (
-      config.toolConfig?.inputSchema &&
-      index >= 0 &&
-      index < config.toolConfig.inputSchema.length
-    ) {
-      config.toolConfig.inputSchema[index] = { ...config.toolConfig.inputSchema[index], ...param }
-    }
   }
 
   // Get full config
@@ -242,11 +160,6 @@ export function usePlanTemplateConfig() {
     error.value = null
   }
 
-  // Convert config to JSON string
-  const toJsonString = (): string => {
-    return JSON.stringify(config, null, 2)
-  }
-
   // Dynamically generate JSON from current config state (not cached, regenerated each time)
   const generateJsonString = (): string => {
     // Generate fresh JSON from current config state
@@ -285,8 +198,7 @@ export function usePlanTemplateConfig() {
 
   const canRestore = computed(() => {
     return (
-      planVersions.value.length > 1 &&
-      currentVersionIndex.value < planVersions.value.length - 1
+      planVersions.value.length > 1 && currentVersionIndex.value < planVersions.value.length - 1
     )
   })
 
@@ -333,8 +245,7 @@ export function usePlanTemplateConfig() {
       // Load versions for version control
       try {
         const versionsResponse = await PlanActApiService.getPlanVersions(planTemplateId)
-        planVersions.value =
-          (versionsResponse as { versions?: string[] }).versions || []
+        planVersions.value = (versionsResponse as { versions?: string[] }).versions || []
         if (planVersions.value.length > 0) {
           currentVersionIndex.value = planVersions.value.length - 1
         } else {
@@ -368,6 +279,36 @@ export function usePlanTemplateConfig() {
       error.value = null
 
       const result = await PlanTemplateApiService.createOrUpdatePlanTemplateWithTool(getConfig())
+
+      if (result.success) {
+        // Reload the template to get updated data from backend
+        const planTemplateId = config.planTemplateId
+        if (planTemplateId) {
+          await load(planTemplateId)
+
+          // Update selectedTemplate if it matches the saved template
+          if (selectedTemplate.value?.planTemplateId === planTemplateId) {
+            const loadedConfig = getConfig()
+            selectedTemplate.value = {
+              ...selectedTemplate.value,
+              ...loadedConfig,
+            }
+          }
+
+          // Update planTemplateList if the template exists in the list
+          const templateIndex = planTemplateList.value.findIndex(
+            t => t.planTemplateId === planTemplateId
+          )
+          if (templateIndex >= 0) {
+            const loadedConfig = getConfig()
+            planTemplateList.value[templateIndex] = {
+              ...planTemplateList.value[templateIndex],
+              ...loadedConfig,
+            }
+          }
+        }
+      }
+
       return result.success
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to save plan template config'
@@ -400,9 +341,7 @@ export function usePlanTemplateConfig() {
     }
   }
 
-  // Computed properties
-  const isValid = computed(() => validate().isValid)
-  const hasToolConfig = computed(() => config.toolConfig !== undefined)
+  // Computed properties (isValid and hasToolConfig are not used)
 
   // Utility function to parse date from different formats
   const parseDateTime = (dateValue: unknown): Date => {
@@ -433,17 +372,81 @@ export function usePlanTemplateConfig() {
     return new Date()
   }
 
-  // Action handlers for UI components
-  const handleRollback = () => {
-    rollbackVersion()
+  // Action handlers (handleRollback, handleRestore, handleSave are not used)
+
+  /**
+   * Get all coordinator tools from planTemplateList
+   * Filters templates that have toolConfig with enableInternalToolcall enabled
+   * @returns Array of coordinator tools with tool configuration data
+   */
+  const getAllCoordinatorToolsFromTemplates = () => {
+    const tools: Array<{
+      toolName: string
+      toolDescription: string
+      planTemplateId: string
+      inputSchema: string
+      enableInternalToolcall: boolean
+      enableHttpService: boolean
+      enableMcpService: boolean
+      serviceGroup?: string
+    }> = []
+
+    for (const template of planTemplateList.value) {
+      // Only include templates with toolConfig
+      if (!template.toolConfig) {
+        continue
+      }
+
+      const toolConfig = template.toolConfig
+
+      // Only include tools with enableInternalToolcall enabled
+      if (!toolConfig.enableInternalToolcall) {
+        continue
+      }
+
+      // Convert inputSchema array to JSON string
+      let inputSchemaJson = '[]'
+      if (toolConfig.inputSchema && Array.isArray(toolConfig.inputSchema)) {
+        inputSchemaJson = JSON.stringify(toolConfig.inputSchema)
+      }
+
+      const tool: {
+        toolName: string
+        toolDescription: string
+        planTemplateId: string
+        inputSchema: string
+        enableInternalToolcall: boolean
+        enableHttpService: boolean
+        enableMcpService: boolean
+        serviceGroup?: string
+      } = {
+        toolName: template.title || '',
+        toolDescription: toolConfig.toolDescription || '',
+        planTemplateId: template.planTemplateId || '',
+        inputSchema: inputSchemaJson,
+        enableInternalToolcall: toolConfig.enableInternalToolcall ?? true,
+        enableHttpService: toolConfig.enableHttpService ?? false,
+        enableMcpService: toolConfig.enableMcpService ?? false,
+      }
+
+      if (template.serviceGroup) {
+        tool.serviceGroup = template.serviceGroup
+      }
+
+      tools.push(tool)
+    }
+
+    return tools
   }
 
-  const handleRestore = () => {
-    restoreVersion()
-  }
-
-  const handleSave = async (): Promise<boolean> => {
-    return await save()
+  /**
+   * Get coordinator tool configuration status
+   * Determines if coordinator tools are enabled based on planTemplateList
+   * @returns boolean indicating if coordinator tools are enabled
+   */
+  const getCoordinatorToolConfig = (): boolean => {
+    // Check if there are any templates with toolConfig
+    return planTemplateList.value.some(template => template.toolConfig !== undefined)
   }
 
   return {
@@ -459,42 +462,21 @@ export function usePlanTemplateConfig() {
 
     // Getters
     getTitle,
-    getSteps,
-    getDirectResponse,
     getPlanType,
-    getPlanTemplateId,
-    getReadOnly,
     getServiceGroup,
-    getToolConfig,
-    getToolDescription,
-    getEnableInternalToolcall,
-    getEnableHttpService,
-    getEnableMcpService,
-    getPublishStatus,
-    getInputSchema,
     getConfig,
 
     // Setters
     setTitle,
     setSteps,
-    addStep,
-    removeStep,
-    updateStep,
-    setDirectResponse,
     setPlanType,
     setPlanTemplateId,
-    setReadOnly,
     setServiceGroup,
     setToolConfig,
     setToolDescription,
     setEnableInternalToolcall,
     setEnableHttpService,
-    setEnableMcpService,
-    setPublishStatus,
     setInputSchema,
-    addInputSchemaParam,
-    removeInputSchemaParam,
-    updateInputSchemaParam,
     setConfig,
 
     // Actions
@@ -502,7 +484,6 @@ export function usePlanTemplateConfig() {
     load,
     save,
     validate,
-    toJsonString,
     generateJsonString,
     fromJsonString,
     rollbackVersion,
@@ -510,18 +491,15 @@ export function usePlanTemplateConfig() {
     updateVersionsAfterSave,
 
     // Computed
-    isValid,
-    hasToolConfig,
     canRollback,
     canRestore,
 
-    // Action handlers
-    handleRollback,
-    handleRestore,
-    handleSave,
-
     // Utility functions
     parseDateTime,
+
+    // Coordinator tools methods
+    getAllCoordinatorToolsFromTemplates,
+    getCoordinatorToolConfig,
   }
 }
 
@@ -537,4 +515,3 @@ export function usePlanTemplateConfigSingleton() {
   }
   return singletonInstance
 }
-

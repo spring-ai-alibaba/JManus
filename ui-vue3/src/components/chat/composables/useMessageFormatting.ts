@@ -15,7 +15,7 @@
  */
 
 import { computed } from 'vue'
-import type { ChatMessage } from './useChatMessages'
+import type { ChatMessage } from '@/types/message-dialog'
 
 /**
  * Message formatting utilities

@@ -15,12 +15,6 @@
  */
 
 import type {
-  PlanTemplateInitRequest,
-  PlanTemplateInitResponse,
-  PlanTemplateRegisterRequest,
-  PlanTemplateRegisterResponse,
-  PlanTemplateStatus,
-  RegisteredPlanTemplatesResponse,
   PlanTemplateConfigVO,
   CreateOrUpdatePlanTemplateWithToolResponse,
 } from '../types/plan-template'
@@ -43,100 +37,6 @@ export class PlanTemplateApiService {
       }
     }
     return response
-  }
-
-  /**
-   * Initialize and register plan templates as inner toolcalls
-   */
-  static async initAndRegisterPlanTemplates(
-    data: PlanTemplateInitRequest
-  ): Promise<PlanTemplateInitResponse> {
-    try {
-      const response = await fetch('/api/plan-template-publish/init-and-register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-      const result = await this.handleResponse(response)
-      return await result.json()
-    } catch (error) {
-      console.error('Failed to initialize and register plan templates:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Register specific plan templates as inner toolcalls
-   */
-  static async registerPlanTemplates(
-    data: PlanTemplateRegisterRequest
-  ): Promise<PlanTemplateRegisterResponse> {
-    try {
-      const response = await fetch('/api/plan-template-publish/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-      const result = await this.handleResponse(response)
-      return await result.json()
-    } catch (error) {
-      console.error('Failed to register plan templates:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Unregister plan templates from inner toolcalls
-   */
-  static async unregisterPlanTemplates(
-    data: PlanTemplateRegisterRequest
-  ): Promise<PlanTemplateRegisterResponse> {
-    try {
-      const response = await fetch('/api/plan-template-publish/unregister', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-      const result = await this.handleResponse(response)
-      return await result.json()
-    } catch (error) {
-      console.error('Failed to unregister plan templates:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Get registration status
-   */
-  static async getPlanTemplateStatus(): Promise<PlanTemplateStatus> {
-    try {
-      const response = await fetch('/api/plan-template-publish/status')
-      const result = await this.handleResponse(response)
-      return await result.json()
-    } catch (error) {
-      console.error('Failed to get plan template status:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Get all registered plan templates
-   */
-  static async getRegisteredPlanTemplates(): Promise<RegisteredPlanTemplatesResponse> {
-    try {
-      const response = await fetch('/api/plan-template-publish/registered')
-      const result = await this.handleResponse(response)
-      return await result.json()
-    } catch (error) {
-      console.error('Failed to get registered plan templates:', error)
-      throw error
-    }
   }
 
   /**

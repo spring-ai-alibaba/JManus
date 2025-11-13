@@ -157,7 +157,7 @@ onMounted(() => {
 // Also load when modal opens
 watch(
   () => props.modelValue,
-  (isVisible) => {
+  isVisible => {
     if (isVisible && tools.value.length === 0 && !availableToolsStore.isLoading.value) {
       availableToolsStore.loadAvailableTools()
     }
@@ -174,8 +174,6 @@ const searchQuery = ref('')
 const sortBy = ref<'group' | 'name' | 'enabled'>('group')
 const collapsedGroups = ref(new Set<string>())
 const selectedTools = ref<string[]>([])
-// Store the collapsed state before search to restore when search is cleared
-const collapsedGroupsBeforeSearch = ref<Set<string> | null>(null)
 // Store the collapsed state before search to restore when search is cleared
 const collapsedGroupsBeforeSearch = ref<Set<string> | null>(null)
 
@@ -380,13 +378,13 @@ const handleCancel = () => {
 // Auto-expand groups that contain matching tools when searching
 watch(searchQuery, newQuery => {
   const query = newQuery.trim().toLowerCase()
-  
+
   if (query) {
     // Save current collapsed state before search if not already saved
     if (collapsedGroupsBeforeSearch.value === null) {
       collapsedGroupsBeforeSearch.value = new Set(collapsedGroups.value)
     }
-    
+
     // Expand all groups that contain matching tools (check all original tools, not just filtered)
     for (const [groupName, tools] of allGroupedTools.value) {
       const hasMatchingTool = tools.some(
@@ -395,7 +393,7 @@ watch(searchQuery, newQuery => {
           (tool.description && tool.description.toLowerCase().includes(query)) ||
           (tool.serviceGroup && tool.serviceGroup.toLowerCase().includes(query))
       )
-      
+
       if (hasMatchingTool) {
         // Expand the group if it contains matching tools
         collapsedGroups.value.delete(groupName)

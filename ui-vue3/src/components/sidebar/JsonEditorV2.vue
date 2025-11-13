@@ -19,19 +19,8 @@
       <Icon icon="carbon:code" width="16" />
       <span>{{ $t('sidebar.dynamicAgentPlan') }}</span>
     </div>
-    <!-- Error Display -->
-    <div v-if="planTypeError" class="error-section">
-      <div class="error-message">
-        <Icon icon="carbon:warning" width="16" />
-        <div class="error-content">
-          <div class="error-title">{{ $t('sidebar.planTypeError') }}</div>
-          <div class="error-description">{{ planTypeError }}</div>
-        </div>
-      </div>
-    </div>
-
     <!-- Visual JSON Editor -->
-    <div v-else class="visual-editor">
+    <div class="visual-editor">
       <!-- Plan Basic Info -->
       <div class="plan-basic-info">
         <div class="form-row">
@@ -84,23 +73,20 @@
 
       <!-- Steps Editor -->
       <div class="steps-section">
-        <div class="steps-header">
-          <label class="form-label">{{ $t('sidebar.tasks') }}</label>
-        </div>
-
         <div class="steps-container">
           <div v-for="(step, index) in displayData.steps" :key="index" class="step-item">
-            <div class="step-header">
-              <span class="step-number">{{ $t('sidebar.subtask') }} {{ index + 1 }}</span>
-            </div>
-
             <div class="step-content">
               <!-- Step Requirement -->
               <div class="form-row">
                 <label class="form-label">{{ $t('sidebar.stepRequirement') }}</label>
                 <textarea
                   :value="step.stepRequirement || ''"
-                  @input="(e) => { step.stepRequirement = (e.target as HTMLTextAreaElement).value; autoResizeTextarea(e) }"
+                  @input="
+                    e => {
+                      step.stepRequirement = (e.target as HTMLTextAreaElement).value
+                      autoResizeTextarea(e)
+                    }
+                  "
                   class="form-textarea auto-resize"
                   :placeholder="$t('sidebar.stepRequirementPlaceholder')"
                   rows="4"
@@ -113,7 +99,12 @@
 
                 <textarea
                   :value="step.terminateColumns || ''"
-                  @input="(e) => { step.terminateColumns = (e.target as HTMLTextAreaElement).value; autoResizeTextarea(e) }"
+                  @input="
+                    e => {
+                      step.terminateColumns = (e.target as HTMLTextAreaElement).value
+                      autoResizeTextarea(e)
+                    }
+                  "
                   class="form-textarea auto-resize"
                   :placeholder="$t('sidebar.terminateColumnsPlaceholder')"
                   rows="4"
@@ -261,7 +252,7 @@
               <div class="form-row">
                 <AssignedTools
                   :title="$t('sidebar.selectedTools')"
-                  :selected-tool-ids="(step as any).selectedToolKeys || []"
+                  :selected-tool-ids="(step as StepConfigWithTools).selectedToolKeys || []"
                   :add-button-text="$t('sidebar.addRemoveTools')"
                   :empty-text="$t('sidebar.noTools')"
                   :use-grid-layout="true"
@@ -341,7 +332,9 @@
     <ToolSelectionModal
       v-model="showToolModal"
       :selected-tool-ids="
-        currentStepIndex >= 0 ? ((displayData.steps[currentStepIndex] as any)?.selectedToolKeys || []) : []
+        currentStepIndex >= 0
+          ? (displayData.steps[currentStepIndex] as StepConfigWithTools)?.selectedToolKeys || []
+          : []
       "
       @confirm="handleToolSelectionConfirm"
     />
@@ -395,6 +388,11 @@ import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateCon
 import { templateStore } from '@/stores/templateStore'
 import { useToast } from '@/plugins/useToast'
 import type { StepConfig } from '@/types/plan-template'
+
+// Extended StepConfig with selectedToolKeys for UI state
+interface StepConfigWithTools extends StepConfig {
+  selectedToolKeys?: string[]
+}
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -411,25 +409,16 @@ interface JsonEditorV2Props {
 // Props
 const { isGenerating = false, isExecuting = false } = defineProps<JsonEditorV2Props>()
 
-// Emits - no longer needed, all logic is internal
-const emit = defineEmits<{}>()
-
 // Get template config singleton
 const templateConfig = usePlanTemplateConfigSingleton()
 
 // Display data - sync with templateConfig
 const displayData = reactive<{
   title: string
-  steps: StepConfig[]
-  directResponse: boolean
-  planTemplateId: string
-  planType: string
+  steps: StepConfigWithTools[]
 }>({
   title: '',
   steps: [],
-  directResponse: false,
-  planTemplateId: templateConfig.currentPlanTemplateId.value || '',
-  planType: 'dynamic_agent',
 })
 
 // JSON preview state
@@ -451,9 +440,6 @@ const syncDisplayDataFromConfig = () => {
   const config = templateConfig.getConfig()
   displayData.title = config.title || ''
   displayData.steps = config.steps || []
-  displayData.directResponse = config.directResponse || false
-  displayData.planTemplateId = config.planTemplateId || templateConfig.currentPlanTemplateId.value || ''
-  displayData.planType = config.planType || 'dynamic_agent'
   // Sync service group
   serviceGroup.value = config.serviceGroup || ''
 }
@@ -465,8 +451,6 @@ watch(
     // Update templateConfig when displayData changes
     templateConfig.setTitle(displayData.title)
     templateConfig.setSteps(displayData.steps)
-    templateConfig.setDirectResponse(displayData.directResponse)
-    templateConfig.setPlanType(displayData.planType)
   },
   { deep: true }
 )
@@ -509,7 +493,9 @@ const handleSave = async () => {
     // Validate config
     const validation = templateConfig.validate()
     if (!validation.isValid) {
-      toast.error('Invalid format, please correct and save.\nErrors: ' + validation.errors.join(', '))
+      toast.error(
+        'Invalid format, please correct and save.\nErrors: ' + validation.errors.join(', ')
+      )
       return
     }
 
@@ -587,7 +573,6 @@ const handleSave = async () => {
 }
 
 // Error state
-const planTypeError = ref<string | null>(null)
 const titleError = ref<string>('')
 
 // Model selection state
@@ -804,7 +789,7 @@ const showToolSelectionModal = (stepIndex: number) => {
 const handleToolSelectionConfirm = (selectedToolIds: string[]) => {
   if (currentStepIndex.value >= 0 && currentStepIndex.value < displayData.steps.length) {
     // Update the specific step's selected tool keys
-    ;(displayData.steps[currentStepIndex.value] as any).selectedToolKeys = [...selectedToolIds]
+    displayData.steps[currentStepIndex.value].selectedToolKeys = [...selectedToolIds]
   }
   showToolModal.value = false
   currentStepIndex.value = -1
@@ -813,7 +798,7 @@ const handleToolSelectionConfirm = (selectedToolIds: string[]) => {
 const handleToolsFiltered = (stepIndex: number, filteredTools: string[]) => {
   if (stepIndex >= 0 && stepIndex < displayData.steps.length) {
     // Update the step's selected tool keys with filtered tools
-    ;(displayData.steps[stepIndex] as any).selectedToolKeys = [...filteredTools]
+    displayData.steps[stepIndex].selectedToolKeys = [...filteredTools]
   }
 }
 
@@ -832,7 +817,8 @@ const handleCopyPlan = () => {
     return
   }
 
-  newPlanTitle.value = (templateConfig.selectedTemplate.value.title ?? t('sidebar.unnamedPlan')) + ' (copy)'
+  newPlanTitle.value =
+    (templateConfig.selectedTemplate.value.title ?? t('sidebar.unnamedPlan')) + ' (copy)'
   console.log('[JsonEditorV2] Opening copy plan modal')
   showCopyPlanModal.value = true
 }
@@ -886,15 +872,13 @@ const confirmCopyPlan = async () => {
 // Watch for displayData changes to validate structure
 watch(
   () => displayData.title,
-  (newTitle) => {
+  newTitle => {
     // Soft validation for title - show warning but don't block the form
     if (!newTitle?.trim()) {
       titleError.value = 'Title is required field'
     } else {
       titleError.value = ''
     }
-    // Clear any structural errors
-    planTypeError.value = null
   },
   { immediate: true }
 )
@@ -939,11 +923,10 @@ watch(
   { immediate: true }
 )
 
-
 // Watch service group changes and sync to template config
 watch(
   () => serviceGroup.value,
-  (newGroup) => {
+  newGroup => {
     templateConfig.setServiceGroup(newGroup)
   }
 )
@@ -1000,7 +983,6 @@ const selectServiceGroup = (group: string) => {
   serviceGroup.value = group
   showGroupSuggestions.value = false
 }
-
 
 // Initialize on mount
 onMounted(() => {
@@ -1329,19 +1311,10 @@ const formatTableHeader = (terminateColumns: string): string => {
   cursor: not-allowed;
 }
 
-
 /* Steps Section */
 .steps-section {
   margin-bottom: 20px;
 }
-
-.steps-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
 
 .error-message {
   display: flex;
@@ -1367,21 +1340,6 @@ const formatTableHeader = (terminateColumns: string): string => {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   overflow: hidden;
-}
-
-.step-header {
-  display: flex;
-  align-items: center;
-  padding: 9px 16px;
-  background: rgba(102, 126, 234, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.step-number {
-  font-weight: 600;
-  color: #667eea;
-  font-size: 11px;
-  min-width: 20px;
 }
 
 .step-content {
