@@ -176,15 +176,15 @@
 </template>
 
 <script setup lang="ts">
-import {} from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
 import type {
-  PlanExecutionRecord,
   AgentExecutionRecord,
   ExecutionStatus,
+  PlanExecutionRecord,
   ThinkActRecord,
 } from '@/types/plan-execution-record'
+import { Icon } from '@iconify/vue'
+import {} from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   subPlan: PlanExecutionRecord

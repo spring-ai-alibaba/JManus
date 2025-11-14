@@ -22,6 +22,7 @@ import { reactive, readonly, ref } from 'vue'
 /**
  * Composable for managing plan execution with reactive state
  * Singleton pattern - maintains reactive PlanExecutionRecord map
+ * Pure business logic layer - no dependency on UI layer
  */
 export function usePlanExecution() {
   const POLL_INTERVAL = 5000
@@ -115,6 +116,7 @@ export function usePlanExecution() {
       }
 
       // Determine the key to use (rootPlanId or currentPlanId)
+      // Priority: use rootPlanId if available, otherwise use currentPlanId
       const recordKey = details.rootPlanId || details.currentPlanId
 
       if (!recordKey) {
@@ -123,7 +125,25 @@ export function usePlanExecution() {
       }
 
       // Update reactive map - this will trigger watchers in components
+      // Always use recordKey (rootPlanId or currentPlanId) as the map key
+      // This ensures consistency with how useMessageDialog stores planId in dialog.planId
       planExecutionRecords.set(recordKey, details)
+
+      // If the passed planId is different from recordKey, also store it with the passed planId
+      // This handles cases where the API returns a different planId than what was requested
+      if (planId !== recordKey) {
+        planExecutionRecords.set(planId, details)
+        console.log('[usePlanExecution] Stored record with both keys:', { planId, recordKey })
+      }
+
+      console.log('[usePlanExecution] Updated plan execution record:', {
+        planId,
+        recordKey,
+        rootPlanId: details.rootPlanId,
+        currentPlanId: details.currentPlanId,
+        completed: details.completed,
+        status: details.status,
+      })
 
       // Handle completion - delete execution details and untrack
       if (details.completed) {
@@ -229,6 +249,8 @@ export function usePlanExecution() {
 
   /**
    * Handle plan execution request - track the planId and start polling
+   * Called by useMessageDialog when a new plan execution starts
+   * This method is the entry point for tracking plan execution
    */
   const handlePlanExecutionRequested = (planId: string): void => {
     console.log('[usePlanExecution] Received plan execution request:', { planId })

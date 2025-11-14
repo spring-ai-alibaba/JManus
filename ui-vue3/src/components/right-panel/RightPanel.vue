@@ -302,12 +302,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
-import { fetchAgentExecutionDetail, refreshAgentExecutionDetail } from '@/api/agent-execution'
-import type { AgentExecutionRecordDetail } from '@/types/agent-execution-detail'
 import FileBrowser from '@/components/file-browser/index.vue'
+import { useRightPanelSingleton } from '@/composables/useRightPanel'
+import { Icon } from '@iconify/vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 // Define props interface
 interface Props {
@@ -317,33 +316,27 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Define selected step interface
-interface SelectedStep {
-  stepId: string
-  title: string
-  description: string
-  agentExecution?: AgentExecutionRecordDetail
-  completed: boolean
-  current: boolean
-}
-
 const { t } = useI18n()
+
+// Use singleton composable for right panel state
+const rightPanel = useRightPanelSingleton()
 
 // DOM element reference
 const scrollContainer = ref<HTMLElement>()
 
-// Local state
-const selectedStep = ref<SelectedStep | null>()
-const activeTab = ref<'details' | 'files'>('details')
-
-// Keep track of the last executed plan for file browser
-const lastExecutedPlanId = ref<string | null>(localStorage.getItem('jmanus-last-plan-id'))
-const hasExecutedAnyPlan = ref(localStorage.getItem('jmanus-has-executed-plan') === 'true')
-
-// Scroll-related state
+// Scroll-related state (component-specific, not in composable)
 const showScrollToBottomButton = ref(false)
 const isNearBottom = ref(true)
 const shouldAutoScrollToBottom = ref(true)
+
+// Computed properties using composable state
+const selectedStep = computed(() => rightPanel.selectedStep.value)
+const activeTab = computed({
+  get: () => rightPanel.activeTab.value,
+  set: (value: 'details' | 'files') => rightPanel.setActiveTab(value),
+})
+const fileBrowserPlanId = computed(() => rightPanel.fileBrowserPlanId.value)
+const shouldShowNoTaskMessage = computed(() => rightPanel.shouldShowNoTaskMessage.value)
 
 const stepStatusText = computed(() => {
   if (!selectedStep.value) return ''
@@ -352,112 +345,34 @@ const stepStatusText = computed(() => {
   return t('rightPanel.status.waiting')
 })
 
-// Computed property to determine which planId to show in file browser
-const fileBrowserPlanId = computed(() => {
-  // If there's a current plan, use it
-  if (props.currentRootPlanId) {
-    return props.currentRootPlanId
-  }
-  // Otherwise, use the last executed plan if any
-  return lastExecutedPlanId.value
-})
-
-// Computed property to determine if we should show the "no task" message
-const shouldShowNoTaskMessage = computed(() => {
-  return !fileBrowserPlanId.value && !hasExecutedAnyPlan.value
-})
-
 // Actions - Step selection and refresh control
 
 /**
  * Handle step selection by stepId
+ * Wrapper around composable method with scroll management
  * @param stepId - The step ID to display
  */
-const handleStepSelected = async (stepId: string) => {
-  console.log('[RightPanel] Step selected:', { stepId })
+const handleStepSelected = async (stepId: string): Promise<void> => {
+  await rightPanel.handleStepSelected(stepId)
 
-  if (!stepId) {
-    console.warn('[RightPanel] No stepId provided')
-    selectedStep.value = null
-    return
-  }
+  // Delay scroll state check to ensure DOM is updated
+  setTimeout(() => {
+    checkScrollState()
+  }, 100)
 
-  try {
-    // Fetch agent execution detail from API
-    const agentExecutionDetail = await fetchAgentExecutionDetail(stepId)
-
-    if (!agentExecutionDetail) {
-      console.warn('[RightPanel] Agent execution detail not found for stepId:', stepId)
-      selectedStep.value = null
-      return
-    }
-
-    // Create step data object
-    const stepData: SelectedStep = {
-      stepId: stepId,
-      title: agentExecutionDetail.agentName ?? `Step ${stepId}`,
-      description: agentExecutionDetail.agentDescription ?? '',
-      agentExecution: agentExecutionDetail,
-      completed: agentExecutionDetail.status === 'FINISHED',
-      current: agentExecutionDetail.status === 'RUNNING',
-    }
-
-    selectedStep.value = stepData
-    console.log('[RightPanel] Step details updated:', stepData)
-    console.log('[RightPanel] activeTab:', activeTab.value)
-    console.log('[RightPanel] selectedStep.value:', selectedStep.value)
-    console.log('[RightPanel] agentExecution:', selectedStep.value.agentExecution)
-    console.log('[RightPanel] thinkActSteps:', selectedStep.value.agentExecution?.thinkActSteps)
-    console.log(
-      '[RightPanel] thinkActSteps length:',
-      selectedStep.value.agentExecution?.thinkActSteps?.length
-    )
-
-    // Force reactivity update
-    await nextTick()
-    console.log('[RightPanel] After nextTick - selectedStep:', selectedStep.value)
-
-    // Delay scroll state check to ensure DOM is updated
-    setTimeout(() => {
-      checkScrollState()
-    }, 100)
-
-    // Auto-scroll to latest content if previously at bottom
-    autoScrollToBottomIfNeeded()
-  } catch (error) {
-    console.error('[RightPanel] Error fetching step details:', error)
-    selectedStep.value = null
-  }
+  // Auto-scroll to latest content if previously at bottom
+  autoScrollToBottomIfNeeded()
 }
 
 /**
  * Refresh the currently selected step
+ * Wrapper around composable method with scroll management
  */
-const refreshCurrentStep = async () => {
-  if (!selectedStep.value?.stepId) {
-    console.warn('[RightPanel] No step selected for refresh')
-    return
-  }
+const refreshCurrentStep = async (): Promise<void> => {
+  await rightPanel.refreshCurrentStep()
 
-  console.log('[RightPanel] Refreshing current step:', selectedStep.value.stepId)
-
-  try {
-    const agentExecutionDetail = await refreshAgentExecutionDetail(selectedStep.value.stepId)
-
-    if (agentExecutionDetail) {
-      // Update the existing step data
-      selectedStep.value.agentExecution = agentExecutionDetail
-      selectedStep.value.completed = agentExecutionDetail.status === 'FINISHED'
-      selectedStep.value.current = agentExecutionDetail.status === 'RUNNING'
-
-      console.log('[RightPanel] Step refreshed successfully')
-
-      // Auto-scroll to latest content if previously at bottom
-      autoScrollToBottomIfNeeded()
-    }
-  } catch (error) {
-    console.error('[RightPanel] Error refreshing step:', error)
-  }
+  // Auto-scroll to latest content if previously at bottom
+  autoScrollToBottomIfNeeded()
 }
 
 // Watch for selectedStepId prop changes
@@ -467,7 +382,7 @@ watch(
     if (newStepId) {
       await handleStepSelected(newStepId)
     } else {
-      selectedStep.value = null
+      rightPanel.clearSelectedStep()
     }
   },
   { immediate: true }
@@ -535,22 +450,11 @@ const autoScrollToBottomIfNeeded = () => {
 }
 
 // Actions - Utility functions
-const formatJson = (jsonData: unknown): string => {
-  if (jsonData === null || typeof jsonData === 'undefined' || jsonData === '') {
-    return 'N/A'
-  }
-  try {
-    const jsonObj = typeof jsonData === 'object' ? jsonData : JSON.parse(jsonData as string)
-    return JSON.stringify(jsonObj, null, 2)
-  } catch {
-    // If parsing fails, return string format directly (similar to _escapeHtml in right-sidebar.js)
-    return String(jsonData)
-  }
-}
+// Use formatJson from composable
+const formatJson = rightPanel.formatJson
 
 // Actions - Resource cleanup
 const cleanup = () => {
-  selectedStep.value = null
   shouldAutoScrollToBottom.value = true
 
   if (scrollContainer.value) {
@@ -589,30 +493,8 @@ const initScrollListener = () => {
   })
 }
 
-// Watch for currentRootPlanId changes to track execution history
-watch(
-  () => props.currentRootPlanId,
-  (newPlanId, oldPlanId) => {
-    if (newPlanId && newPlanId !== oldPlanId) {
-      // A new plan has started executing
-      lastExecutedPlanId.value = newPlanId
-      hasExecutedAnyPlan.value = true
-
-      // Persist to localStorage
-      localStorage.setItem('jmanus-last-plan-id', newPlanId)
-      localStorage.setItem('jmanus-has-executed-plan', 'true')
-
-      console.log('[RightPanel] New plan started:', newPlanId)
-    } else if (!newPlanId && oldPlanId) {
-      // Plan execution finished, but keep the lastExecutedPlanId for file browser
-      console.log(
-        '[RightPanel] Plan execution finished, keeping last plan:',
-        lastExecutedPlanId.value
-      )
-    }
-  },
-  { immediate: true }
-)
+// Note: currentRootPlanId is now reactively derived from useMessageDialog
+// No need to watch props.currentRootPlanId anymore
 
 // Lifecycle - initialization on mount
 onMounted(() => {
@@ -632,22 +514,11 @@ onUnmounted(() => {
 /**
  * Update displayed plan progress
  * This method is called when a plan is updated to refresh the display
+ * Wrapper around composable method
  * @param rootPlanId - The root plan ID to update
  */
-const updateDisplayedPlanProgress = (rootPlanId: string) => {
-  console.log('[RightPanel] updateDisplayedPlanProgress called with rootPlanId:', rootPlanId)
-
-  // Update the last executed plan ID for file browser
-  if (rootPlanId) {
-    lastExecutedPlanId.value = rootPlanId
-    hasExecutedAnyPlan.value = true
-
-    // Persist to localStorage
-    localStorage.setItem('jmanus-last-plan-id', rootPlanId)
-    localStorage.setItem('jmanus-has-executed-plan', 'true')
-
-    console.log('[RightPanel] Plan progress updated:', rootPlanId)
-  }
+const updateDisplayedPlanProgress = (rootPlanId: string): void => {
+  rightPanel.updateDisplayedPlanProgress(rootPlanId)
 }
 
 // Expose methods to parent component - only keep necessary interfaces

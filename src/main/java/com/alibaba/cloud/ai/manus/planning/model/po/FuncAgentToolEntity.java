@@ -24,13 +24,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 
 /**
  * Coordinator Tool Entity Class
  */
 @Entity
-@Table(name = "coordinator_tools", uniqueConstraints = @UniqueConstraint(columnNames = { "toolName" }))
+@Table(name = "coordinator_tools")
 public class FuncAgentToolEntity {
 
 	@Id

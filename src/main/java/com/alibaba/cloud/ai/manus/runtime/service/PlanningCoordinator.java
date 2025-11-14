@@ -95,22 +95,22 @@ public class PlanningCoordinator {
 				log.debug("Setting needSummary=false for planId: {}, toolcallId: {}, requestSource: {}", currentPlanId,
 						toolcallId, requestSource);
 			}
-			// Set conversation ID (use provided or generate ONLY for VUE_DIALOG requests)
+			// Set conversation ID (use provided or generate for VUE_DIALOG and VUE_SIDEBAR requests)
+			// Both VUE_DIALOG and VUE_SIDEBAR should use the same conversation memory
 			if (conversationId != null && !conversationId.trim().isEmpty()) {
 				context.setConversationId(conversationId);
 			}
-			else if (requestSource == RequestSource.VUE_DIALOG) {
-				// Generate conversation ID ONLY for VUE_DIALOG requests (user-initiated from chat dialog)
-				// VUE_SIDEBAR and internal calls (subplans, cron tasks) should not generate conversationId
+			else if (requestSource == RequestSource.VUE_DIALOG || requestSource == RequestSource.VUE_SIDEBAR) {
+				// Generate conversation ID for VUE_DIALOG and VUE_SIDEBAR requests
+				// Both should use the same conversation memory
 				String generatedConversationId = memoryService.generateConversationId();
 				context.setConversationId(generatedConversationId);
-				log.info("Generated conversation ID for VUE_DIALOG request plan execution: {} (source: {})",
-						generatedConversationId, requestSource);
+				log.info("Generated conversation ID for {} request plan execution: {} (source: {})",
+						requestSource, generatedConversationId, requestSource);
 			}
 			else {
-				// For non-VUE_DIALOG requests (VUE_SIDEBAR, HTTP_REQUEST, internal calls), do not set conversationId
-				// This ensures conversationId is ONLY generated when user sends message in chat dialog
-				log.debug("No conversationId provided for non-VUE_DIALOG request, skipping conversationId (source: {})",
+				// For non-Vue requests (HTTP_REQUEST, internal calls), do not set conversationId
+				log.debug("No conversationId provided for non-Vue request, skipping conversationId (source: {})",
 						requestSource);
 			}
 			context.setUseConversation(true);

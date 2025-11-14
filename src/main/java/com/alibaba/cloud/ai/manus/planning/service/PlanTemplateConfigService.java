@@ -308,9 +308,9 @@ public class PlanTemplateConfigService {
 			}
 			else {
 				// Set default serviceGroup if not provided
-				savedTemplate.setServiceGroup("inited-toolcall");
+				savedTemplate.setServiceGroup("ungrouped");
 				planTemplateRepository.save(savedTemplate);
-				log.info("Set default serviceGroup 'inited-toolcall' on PlanTemplate with ID: {}", planTemplateId);
+				log.info("Set default serviceGroup 'ungrouped' on PlanTemplate with ID: {}", planTemplateId);
 			}
 
 			log.info("Successfully created PlanTemplate with ID: {}", planTemplateId);

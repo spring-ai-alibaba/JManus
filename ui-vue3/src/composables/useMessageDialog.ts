@@ -40,10 +40,20 @@ export function useMessageDialog() {
   const dialogList = ref<MessageDialog[]>([])
   const activeDialogId = ref<string | null>(null)
 
-  // Computed active rootPlanId derived from active dialog
-  // This is more reactive and eliminates duplicate state
+  // Maintain conversationId independently (persisted)
+  // Relationship: conversationId 1:n rootPlanId 1:n dialogId
+  // - conversationId: Persistent conversation identifier
+  // - rootPlanId: Plan execution identifier (one conversation can have multiple plans)
+  // - dialogId: Round identifier (one plan can have multiple dialog rounds)
+  const conversationId = ref<string | null>(null)
+
+  // Maintain rootPlanId independently (not persisted)
+  // Relationship: rootPlanId 1:n dialogId (one plan can have multiple dialog rounds)
+  const rootPlanId = ref<string | null>(null)
+
+  // Computed active rootPlanId - now just returns the maintained rootPlanId
   const activeRootPlanId = computed(() => {
-    return activeDialog.value?.planId || null
+    return rootPlanId.value
   })
 
   // Loading state
@@ -68,19 +78,37 @@ export function useMessageDialog() {
     return dialogList.value.length
   })
 
-  // Messages from active dialog
+  // Messages from all dialogs in the current conversation
+  // Since each round has its own dialogId, we need to merge messages from all dialogs
+  // that share the same conversationId
   const messages = computed(() => {
-    return activeDialog.value?.messages || []
+    if (!conversationId.value) {
+      // If no conversationId, return messages from active dialog only
+      return activeDialog.value?.messages || []
+    }
+    // Merge messages from all dialogs with the same conversationId
+    const allMessages: ChatMessage[] = []
+    for (const dialog of dialogList.value) {
+      if (dialog.conversationId === conversationId.value) {
+        allMessages.push(...dialog.messages)
+      }
+    }
+    // Sort by timestamp to maintain chronological order
+    return allMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
   })
 
   /**
-   * Create a new dialog
+   * Create a new dialog for each conversation round
+   * Each round (user message + assistant response) gets a new dialogId
+   * Relationship: conversationId 1:n rootPlanId 1:n dialogId
    */
   const createDialog = (title?: string): MessageDialog => {
     const dialog: MessageDialog = {
       id: `dialog_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       title: title || 'New Conversation',
       messages: [],
+      ...(conversationId.value && { conversationId: conversationId.value }), // Link to conversation if exists
+      ...(rootPlanId.value && { planId: rootPlanId.value }), // Link to plan if exists
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
@@ -88,6 +116,10 @@ export function useMessageDialog() {
 
     dialogList.value.push(dialog)
     activeDialogId.value = dialog.id
+    console.log('[useMessageDialog] Created new dialog round:', dialog.id, {
+      conversationId: conversationId.value,
+      rootPlanId: rootPlanId.value,
+    })
     return dialog
   }
 
@@ -149,19 +181,62 @@ export function useMessageDialog() {
   }
 
   /**
-   * Delete a dialog
+   * Delete a dialog (one conversation round)
+   * @param dialogId - The dialog ID to delete
    */
   const deleteDialog = (dialogId: string) => {
     const index = dialogList.value.findIndex(d => d.id === dialogId)
     if (index !== -1) {
+      const deletedDialog = dialogList.value[index]
       dialogList.value.splice(index, 1)
-      // If deleted dialog was active, set first dialog as active or null
+      console.log('[useMessageDialog] Deleted dialog round:', dialogId)
+
+      // If deleted dialog was active, set first dialog with same conversationId as active or null
       if (activeDialogId.value === dialogId) {
-        activeDialogId.value = dialogList.value.length > 0 ? dialogList.value[0].id : null
+        const sameConversationDialogs = dialogList.value.filter(
+          d => d.conversationId === deletedDialog.conversationId
+        )
+        activeDialogId.value =
+          sameConversationDialogs.length > 0 ? sameConversationDialogs[0].id : null
         if (activeDialogId.value) {
           setActiveDialog(activeDialogId.value)
         }
       }
+    }
+  }
+
+  /**
+   * Delete a conversation round by rootPlanId
+   * Deletes all dialogs associated with a specific rootPlanId
+   * @param planId - The rootPlanId to delete
+   */
+  const deleteConversationRoundByPlanId = (planId: string): void => {
+    const dialogsToDelete = dialogList.value.filter(d => d.planId === planId)
+    dialogsToDelete.forEach(dialog => {
+      deleteDialog(dialog.id)
+    })
+    console.log(
+      `[useMessageDialog] Deleted ${dialogsToDelete.length} dialog round(s) for plan:`,
+      planId
+    )
+  }
+
+  /**
+   * Delete all dialogs in a conversation
+   * @param convId - The conversationId to delete
+   */
+  const deleteConversation = (convId: string): void => {
+    const dialogsToDelete = dialogList.value.filter(d => d.conversationId === convId)
+    dialogsToDelete.forEach(dialog => {
+      deleteDialog(dialog.id)
+    })
+    console.log(
+      `[useMessageDialog] Deleted ${dialogsToDelete.length} dialog round(s) for conversation:`,
+      convId
+    )
+    // Clear conversationId if it was the active one
+    if (conversationId.value === convId) {
+      conversationId.value = null
     }
   }
 
@@ -178,40 +253,29 @@ export function useMessageDialog() {
    * This method handles sending messages and updating the dialog list
    */
   const sendMessage = async (
-    query: InputMessage,
-    dialogId?: string
+    query: InputMessage
   ): Promise<{ success: boolean; planId?: string; conversationId?: string; error?: string }> => {
     let targetDialog: MessageDialog | null = null
     let assistantMessage: ChatMessage | null = null
 
     try {
-      // Check if there's an active running task
-      if (activeRootPlanId.value) {
-        const activeRecord = planExecution.planExecutionRecords.get(activeRootPlanId.value)
-        if (activeRecord && !activeRecord.completed) {
-          const errorMsg = 'Please wait for the current task to complete before starting a new one'
-          error.value = errorMsg
-          return {
-            success: false,
-            error: errorMsg,
-          }
+      // Check if there's an active running task based on our own state
+      // Disable new requests if we're currently loading
+      if (isLoading.value) {
+        const errorMsg = 'Please wait for the current task to complete before starting a new one'
+        error.value = errorMsg
+        return {
+          success: false,
+          error: errorMsg,
         }
       }
 
       isLoading.value = true
       error.value = null
 
-      // Get or create active dialog
-      if (dialogId) {
-        const existingDialog = getDialog(dialogId)
-        if (existingDialog) {
-          targetDialog = existingDialog
-        } else {
-          targetDialog = createDialog()
-        }
-      } else {
-        targetDialog = activeDialog.value || createDialog()
-      }
+      // Always create a new dialog for each conversation round
+      // Each round (user message + assistant response) gets a new dialogId
+      targetDialog = createDialog()
 
       // Add user message to dialog
       const userMessage: ChatMessage = {
@@ -265,31 +329,38 @@ export function useMessageDialog() {
         )) as typeof response
       }
 
-      // Update conversationId if present
+      // Update conversationId if present (persisted)
       if (response.conversationId) {
+        // Maintain conversationId independently (persisted)
+        conversationId.value = response.conversationId
+        // Also set on dialog for reference
         targetDialog.conversationId = response.conversationId
         memoryStore.setConversationId(response.conversationId)
+        console.log('[useMessageDialog] Conversation ID set:', response.conversationId)
       }
 
       // Update assistant message with response
       if (response.planId) {
         // Plan execution mode
-        const rootPlanId = response.planId
-        targetDialog.planId = rootPlanId
+        const newRootPlanId = response.planId
+        // Maintain rootPlanId independently (not persisted)
+        rootPlanId.value = newRootPlanId
+        // Also set on dialog for reference
+        targetDialog.planId = newRootPlanId
 
         updateMessageInDialog(targetDialog.id, assistantMessage.id, {
           thinking: 'Planning execution...',
           planExecution: {
-            currentPlanId: rootPlanId,
-            rootPlanId: rootPlanId,
+            currentPlanId: newRootPlanId,
+            rootPlanId: newRootPlanId,
             status: 'running',
           },
           isStreaming: false,
         })
 
-        // Track the plan for polling
-        planExecution.handlePlanExecutionRequested(rootPlanId)
-        console.log('[useMessageDialog] Started tracking plan:', rootPlanId)
+        // Actively notify usePlanExecution to track this plan
+        planExecution.handlePlanExecutionRequested(newRootPlanId)
+        console.log('[useMessageDialog] Root plan ID set and tracking started:', newRootPlanId)
       } else {
         // Direct response mode
         const updates: Partial<ChatMessage> = {
@@ -333,40 +404,29 @@ export function useMessageDialog() {
    * This method handles executing plans and updating the dialog list
    */
   const executePlan = async (
-    payload: PlanExecutionRequestPayload,
-    dialogId?: string
+    payload: PlanExecutionRequestPayload
   ): Promise<{ success: boolean; planId?: string; error?: string }> => {
     let targetDialog: MessageDialog | null = null
     let assistantMessage: ChatMessage | null = null
 
     try {
-      // Check if there's an active running task
-      if (activeRootPlanId.value) {
-        const activeRecord = planExecution.planExecutionRecords.get(activeRootPlanId.value)
-        if (activeRecord && !activeRecord.completed) {
-          const errorMsg = 'Please wait for the current task to complete before starting a new one'
-          error.value = errorMsg
-          return {
-            success: false,
-            error: errorMsg,
-          }
+      // Check if there's an active running task based on our own state
+      // Disable new requests if we're currently loading
+      if (isLoading.value) {
+        const errorMsg = 'Please wait for the current task to complete before starting a new one'
+        error.value = errorMsg
+        return {
+          success: false,
+          error: errorMsg,
         }
       }
 
       isLoading.value = true
       error.value = null
 
-      // Get or create active dialog
-      if (dialogId) {
-        const existingDialog = getDialog(dialogId)
-        if (existingDialog) {
-          targetDialog = existingDialog
-        } else {
-          targetDialog = createDialog(payload.title)
-        }
-      } else {
-        targetDialog = activeDialog.value || createDialog(payload.title)
-      }
+      // Always create a new dialog for each conversation round
+      // Each round (user message + assistant response) gets a new dialogId
+      targetDialog = createDialog(payload.title)
 
       // Update dialog title if provided
       if (payload.title) {
@@ -415,30 +475,37 @@ export function useMessageDialog() {
         'VUE_SIDEBAR'
       )) as { planId?: string; conversationId?: string }
 
-      // Update conversationId if present
+      // Update conversationId if present (persisted)
       if (response.conversationId) {
+        // Maintain conversationId independently (persisted)
+        conversationId.value = response.conversationId
+        // Also set on dialog for reference
         targetDialog.conversationId = response.conversationId
         memoryStore.setConversationId(response.conversationId)
+        console.log('[useMessageDialog] Conversation ID set:', response.conversationId)
       }
 
       // Update assistant message with plan execution info
       if (response.planId) {
-        const rootPlanId = response.planId
-        targetDialog.planId = rootPlanId
+        const newRootPlanId = response.planId
+        // Maintain rootPlanId independently (not persisted)
+        rootPlanId.value = newRootPlanId
+        // Also set on dialog for reference
+        targetDialog.planId = newRootPlanId
 
         updateMessageInDialog(targetDialog.id, assistantMessage.id, {
           thinking: 'Planning execution...',
           planExecution: {
-            currentPlanId: rootPlanId,
-            rootPlanId: rootPlanId,
+            currentPlanId: newRootPlanId,
+            rootPlanId: newRootPlanId,
             status: 'running',
           },
           isStreaming: false,
         })
 
-        // Track the plan for polling
-        planExecution.handlePlanExecutionRequested(rootPlanId)
-        console.log('[useMessageDialog] Started tracking plan:', rootPlanId)
+        // Actively notify usePlanExecution to track this plan
+        planExecution.handlePlanExecutionRequested(newRootPlanId)
+        console.log('[useMessageDialog] Root plan ID set and tracking started:', newRootPlanId)
       } else {
         const updates: Partial<ChatMessage> = {
           content: 'Plan execution started',
@@ -655,6 +722,8 @@ export function useMessageDialog() {
   const reset = () => {
     dialogList.value = []
     activeDialogId.value = null
+    rootPlanId.value = null
+    conversationId.value = null
     isLoading.value = false
     error.value = null
     inputPlaceholder.value = null
@@ -668,13 +737,13 @@ export function useMessageDialog() {
     message: ChatMessage,
     record: PlanExecutionRecord
   ): void => {
-      const updates: Partial<ChatMessage> = {
+    const updates: Partial<ChatMessage> = {
       planExecution: convertPlanExecutionRecord(record),
-        isStreaming: !record.completed,
-      }
+      isStreaming: !record.completed,
+    }
 
-      if (!record.completed) {
-        updates.thinking = 'Processing...'
+    if (!record.completed) {
+      updates.thinking = 'Processing...'
     } else {
       // When plan is completed, handle summary content
       // Only update content if there's no agent execution sequence (simple response)
@@ -710,12 +779,31 @@ export function useMessageDialog() {
   watchEffect(() => {
     const records = planExecution.planExecutionRecords
 
+    // Iterate over all records in the Map to ensure watchEffect tracks all changes
+    // This is important for first-time execution when records are added to the Map
+    const recordsArray = Array.from(records.entries())
+
     // Process all dialogs that have associated planIds
     for (const dialog of dialogList.value) {
       if (!dialog.planId) continue
 
-      const readonlyRecord = records.get(dialog.planId)
-      if (!readonlyRecord) continue
+      // Find the record for this dialog's planId
+      const recordEntry = recordsArray.find(([planId]) => planId === dialog.planId)
+      if (!recordEntry) {
+        // Debug: log when record is not found (only when Map is empty to avoid spam)
+        if (recordsArray.length === 0) {
+          console.log(
+            '[useMessageDialog] watchEffect: No records in Map yet for planId:',
+            dialog.planId,
+            {
+              dialogId: dialog.id,
+            }
+          )
+        }
+        continue
+      }
+
+      const [, readonlyRecord] = recordEntry
 
       // Convert readonly record to mutable for processing
       // Use type assertion to handle deeply readonly types from reactive Map
@@ -726,17 +814,28 @@ export function useMessageDialog() {
 
       // Find the assistant message with this planId
       const message = dialog.messages.find(m => m.planExecution?.rootPlanId === dialog.planId)
-      if (!message) continue
+      if (!message) {
+        console.log('[useMessageDialog] watchEffect: No message found for planId:', dialog.planId, {
+          dialogMessages: dialog.messages.map(m => ({
+            id: m.id,
+            type: m.type,
+            planExecutionRootPlanId: m.planExecution?.rootPlanId,
+          })),
+        })
+        continue
+      }
 
       // Update message with latest plan execution record
       updateMessageWithPlanRecord(dialog, message, record)
-      }
+    }
   })
 
   return {
     // State
     dialogList: readonly(dialogList),
     activeDialogId: readonly(activeDialogId),
+    rootPlanId: readonly(rootPlanId),
+    conversationId: readonly(conversationId),
     isLoading,
     error,
     streamingMessageId: readonly(streamingMessageId),
@@ -744,6 +843,7 @@ export function useMessageDialog() {
 
     // Computed
     activeDialog,
+    activeRootPlanId,
     hasDialogs,
     dialogCount,
     messages,
@@ -755,6 +855,8 @@ export function useMessageDialog() {
     addMessageToDialog,
     updateMessageInDialog,
     deleteDialog,
+    deleteConversationRoundByPlanId,
+    deleteConversation,
     clearAllDialogs,
     sendMessage,
     executePlan,

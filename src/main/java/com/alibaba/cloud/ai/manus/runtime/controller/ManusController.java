@@ -169,14 +169,15 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				.body(Map.of("error", "No plan template ID associated with tool: " + toolName));
 		}
 
+		// Execute synchronously and return result directly
+		RequestSource requestSource = RequestSource.HTTP_REQUEST; // GET requests default to HTTP_REQUEST
+		
 		// Extract conversationId from query params if present
 		String conversationId = allParams != null ? allParams.get("conversationId") : null;
-		conversationId = validateOrGenerateConversationId(conversationId);
+		conversationId = validateOrGenerateConversationId(conversationId, requestSource);
 
 		logger.info("Execute tool '{}' synchronously with plan template ID '{}', parameters: {}, conversationId: {}",
 				toolName, planTemplateId, allParams, conversationId);
-		// Execute synchronously and return result directly
-		RequestSource requestSource = RequestSource.HTTP_REQUEST; // GET requests default to HTTP_REQUEST
 		return executePlanSync(planTemplateId, null, null, requestSource, null, conversationId);
 	}
 
@@ -216,7 +217,9 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		}
 
 		try {
-			String conversationId = validateOrGenerateConversationId((String) request.get("conversationId"));
+			// Validate or generate conversationId for VUE_DIALOG and VUE_SIDEBAR requests
+			// Both should use the same conversation memory
+			String conversationId = validateOrGenerateConversationId((String) request.get("conversationId"), requestSource);
 
 			// Handle uploaded files if present
 			@SuppressWarnings("unchecked")
@@ -323,8 +326,8 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		@SuppressWarnings("unchecked")
 		Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
 
-		// Validate or generate conversation ID
-		String conversationId = validateOrGenerateConversationId((String) request.get("conversationId"));
+		// Validate or generate conversation ID for VUE_DIALOG and VUE_SIDEBAR requests
+		String conversationId = validateOrGenerateConversationId((String) request.get("conversationId"), requestSource);
 
 		logger.info(
 				"Executing tool '{}' synchronously with plan template ID '{}', uploadedFiles: {}, replacementParams: {}, uploadKey: {}, conversationId: {}",
@@ -860,21 +863,24 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	}
 
 	/**
-	 * Validate or generate conversation ID
-	 * This method should ONLY be called for user-initiated requests (Vue requests).
-	 * Internal calls should not generate conversationId.
+	 * Validate or generate conversation ID. Generates for VUE_DIALOG and VUE_SIDEBAR requests.
+	 * Internal calls (HTTP_REQUEST, subplans, cron tasks) should not generate conversationId.
 	 * @param conversationId The conversation ID to validate (can be null)
-	 * @return Valid conversation ID (existing or newly generated)
+	 * @param requestSource The request source to determine if conversationId should be generated
+	 * @return Valid conversation ID (existing or newly generated for Vue requests)
 	 */
-	private String validateOrGenerateConversationId(String conversationId) {
+	private String validateOrGenerateConversationId(String conversationId, RequestSource requestSource) {
 		if (!StringUtils.hasText(conversationId)) {
-			// Generate conversation ID ONLY when user sends message in chat box
-			// This ensures conversationId is not generated for internal calls
+			// Generate conversation ID for VUE_DIALOG and VUE_SIDEBAR requests
+			// Both should use the same conversation memory
+			if (requestSource == RequestSource.VUE_DIALOG || requestSource == RequestSource.VUE_SIDEBAR) {
 			conversationId = memoryService.generateConversationId();
-			logger.info("Generated new conversation ID for user request: {}", conversationId);
+				logger.info("Generated new conversation ID for {} request: {}", requestSource, conversationId);
+			}
+			// For HTTP_REQUEST and internal calls, do not generate conversationId (return null)
 		}
 		else {
-			logger.debug("Using provided conversation ID: {}", conversationId);
+			logger.debug("Using provided conversation ID: {} (source: {})", conversationId, requestSource);
 		}
 		return conversationId;
 	}

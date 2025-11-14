@@ -267,8 +267,12 @@
 
           <!-- Empty State -->
           <div v-if="displayData.steps.length === 0" class="empty-steps">
-            <Icon icon="carbon:add-alt" width="32" class="empty-icon" />
-            <p>{{ $t('sidebar.noSteps') }}</p>
+            <Icon icon="carbon:add-alt" width="48" class="empty-icon" />
+            <p class="empty-text">{{ $t('sidebar.noSteps') }}</p>
+            <button class="btn btn-primary btn-add-step" @click="handleAddStep">
+              <Icon icon="carbon:add" width="16" />
+              {{ $t('sidebar.addFirstStep') }}
+            </button>
           </div>
         </div>
       </div>
@@ -574,6 +578,21 @@ const handleSave = async () => {
 
 // Error state
 const titleError = ref<string>('')
+
+// Add step handler
+const handleAddStep = () => {
+  const newStep: StepConfigWithTools = {
+    stepRequirement: '',
+    agentName: '',
+    modelName: '',
+    terminateColumns: '',
+    selectedToolKeys: [],
+  }
+  displayData.steps.push(newStep)
+  // Sync to templateConfig
+  templateConfig.setSteps(displayData.steps)
+  console.log('[JsonEditorV2] Added new step, total steps:', displayData.steps.length)
+}
 
 // Model selection state
 const availableModels = ref<ModelOption[]>([])
@@ -1348,15 +1367,46 @@ const formatTableHeader = (terminateColumns: string): string => {
 
 /* Empty State */
 .empty-steps {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 40px 20px;
-  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  gap: 16px;
+  min-height: 200px;
 }
 
-.empty-icon {
-  color: rgba(255, 255, 255, 0.3);
-  margin-bottom: 12px;
+.empty-steps .empty-icon {
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 8px;
 }
+
+.empty-steps .empty-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  margin: 0;
+}
+
+.empty-steps .btn-add-step {
+  margin-top: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.empty-steps .btn-add-step:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
 
 /* JSON Preview */
 .json-preview {

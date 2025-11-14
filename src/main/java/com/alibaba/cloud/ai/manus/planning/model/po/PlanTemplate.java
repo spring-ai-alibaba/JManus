@@ -23,13 +23,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 /**
  * The entity class for the plan template, used to store the basic information of the plan
  * template
  */
 @Entity
-@Table(name = "plan_template")
+@Table(name = "plan_template", uniqueConstraints = @UniqueConstraint(columnNames = { "service_group", "title" }))
 public class PlanTemplate {
 
 	@Id
