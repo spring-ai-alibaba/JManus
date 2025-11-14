@@ -214,7 +214,6 @@
 
 <script setup lang="ts">
 import { FileInfo } from '@/api/file-upload-api-service'
-import { PlanActApiService } from '@/api/plan-act-api-service'
 import {
   PlanParameterApiService,
   type ParameterRequirements,
@@ -596,37 +595,15 @@ const handleSaveAndExecute = async () => {
       return
     }
 
-    // Save using templateConfig
+    // Save using templateConfig (this already calls PlanTemplateApiService.createOrUpdatePlanTemplateWithTool)
     const success = await templateConfig.save()
     if (!success) {
       toast.error('Failed to save plan template')
       return
     }
 
-    // For backward compatibility, also save using the old API if needed
-    const content = templateConfig.generateJsonString().trim()
-    const saveResult = await PlanActApiService.savePlanTemplate(planTemplateId, content)
-
-    // Update the selected template ID with the real planId returned from backend
-    if (
-      (saveResult as { planId?: string })?.planId &&
-      templateConfig.selectedTemplate.value?.planTemplateId?.startsWith('new-')
-    ) {
-      const newPlanId = (saveResult as { planId: string }).planId
-      console.log(
-        '[ExecutionController] Updating template ID from',
-        templateConfig.selectedTemplate.value.planTemplateId,
-        'to',
-        newPlanId
-      )
-      if (templateConfig.selectedTemplate.value) {
-        templateConfig.selectedTemplate.value.planTemplateId = newPlanId
-      }
-      templateConfig.currentPlanTemplateId.value = newPlanId
-      templateConfig.setPlanTemplateId(newPlanId)
-    }
-
     // Update versions after save
+    const content = templateConfig.generateJsonString().trim()
     templateConfig.updateVersionsAfterSave(content)
 
     // Reset modification flag after successful save
@@ -635,29 +612,8 @@ const handleSaveAndExecute = async () => {
     // Refresh parameter requirements after successful save
     await refreshParameterRequirements()
 
-    const result = saveResult as {
-      duplicate?: boolean
-      saved?: boolean
-      message?: string
-      versionCount?: number
-    }
-    if (result?.duplicate) {
-      toast.success(
-        t('sidebar.saveCompleted', {
-          message: result.message,
-          versionCount: result.versionCount,
-        })
-      )
-    } else if (result?.saved) {
-      toast.success(
-        t('sidebar.saveSuccess', {
-          message: result.message,
-          versionCount: result.versionCount,
-        })
-      )
-    } else if (result?.message) {
-      toast.success(t('sidebar.saveStatus', { message: result.message }))
-    }
+    // Note: templateConfig.save() already handles the save, so we just show success
+    toast.success(t('sidebar.saveSuccess', { message: 'Plan saved successfully', versionCount: 0 }))
 
     // Wait a bit for save to complete
     await new Promise(resolve => setTimeout(resolve, 500))

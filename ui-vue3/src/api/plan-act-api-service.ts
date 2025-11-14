@@ -61,17 +61,6 @@ export class PlanActApiService {
     })
   }
 
-  // Save plan to server
-  public static async savePlanTemplate(planId: string, planJson: string): Promise<unknown> {
-    const response = await fetch(`${this.PLAN_TEMPLATE_URL}/save`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId, planJson }),
-    })
-    if (!response.ok) throw new Error(`Failed to save plan: ${response.status}`)
-    return await response.json()
-  }
-
   // Get all versions of plan
   public static async getPlanVersions(planId: string): Promise<unknown> {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/versions`, {
@@ -87,17 +76,6 @@ export class PlanActApiService {
   public static async getAllPlanTemplates(): Promise<unknown> {
     const response = await fetch(`${this.PLAN_TEMPLATE_URL}/list`)
     if (!response.ok) throw new Error(`Failed to get plan template list: ${response.status}`)
-    return await response.json()
-  }
-
-  // Delete plan template
-  public static async deletePlanTemplate(planId: string): Promise<unknown> {
-    const response = await fetch(`${this.PLAN_TEMPLATE_URL}/delete`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId }),
-    })
-    if (!response.ok) throw new Error(`Failed to delete plan template: ${response.status}`)
     return await response.json()
   }
 }

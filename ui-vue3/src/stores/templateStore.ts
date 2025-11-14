@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { PlanActApiService } from '@/api/plan-act-api-service'
 import { PlanTemplateApiService } from '@/api/plan-template-with-tool-api-service'
 import { i18n } from '@/base/i18n'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
@@ -200,7 +199,7 @@ export class TemplateStore {
       return
     }
     try {
-      await PlanActApiService.deletePlanTemplate(planTemplateId)
+      await PlanTemplateApiService.deletePlanTemplate(planTemplateId)
       if (this.templateConfig.currentPlanTemplateId.value === planTemplateId) {
         this.clearSelection()
       }

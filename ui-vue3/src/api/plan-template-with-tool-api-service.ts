@@ -15,8 +15,8 @@
  */
 
 import type {
-  PlanTemplateConfigVO,
   CreateOrUpdatePlanTemplateWithToolResponse,
+  PlanTemplateConfigVO,
 } from '../types/plan-template'
 
 /**
@@ -87,6 +87,26 @@ export class PlanTemplateApiService {
       return await result.json()
     } catch (error) {
       console.error('Failed to get all plan template config VOs:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Delete plan template
+   */
+  static async deletePlanTemplate(planTemplateId: string): Promise<unknown> {
+    try {
+      const response = await fetch('/api/plan-template/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ planId: planTemplateId }),
+      })
+      const result = await this.handleResponse(response)
+      return await result.json()
+    } catch (error) {
+      console.error('Failed to delete plan template:', error)
       throw error
     }
   }

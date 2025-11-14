@@ -384,22 +384,22 @@
 
 <script setup lang="ts">
 import { ConfigApiService, type ModelOption } from '@/api/config-api-service'
-import { PlanActApiService } from '@/api/plan-act-api-service'
+import { PlanTemplateApiService } from '@/api/plan-template-with-tool-api-service'
 import { ToolApiService } from '@/api/tool-api-service'
 import AssignedTools from '@/components/shared/AssignedTools.vue'
 import ToolSelectionModal from '@/components/tool-selection-modal/ToolSelectionModal.vue'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
-import { templateStore } from '@/stores/templateStore'
 import { useToast } from '@/plugins/useToast'
-import type { StepConfig } from '@/types/plan-template'
+import { templateStore } from '@/stores/templateStore'
+import type { PlanTemplateConfigVO, StepConfig } from '@/types/plan-template'
+import { Icon } from '@iconify/vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 // Extended StepConfig with selectedToolKeys for UI state
 interface StepConfigWithTools extends StepConfig {
   selectedToolKeys?: string[]
 }
-import { Icon } from '@iconify/vue'
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const toast = useToast()
@@ -509,65 +509,20 @@ const handleSave = async () => {
       return
     }
 
-    // Save using templateConfig
+    // Save using templateConfig (this already calls PlanTemplateApiService.createOrUpdatePlanTemplateWithTool)
     const success = await templateConfig.save()
     if (!success) {
       toast.error('Failed to save plan template')
       return
     }
 
-    // For backward compatibility, also save using the old API if needed
-    const content = templateConfig.generateJsonString().trim()
-    const saveResult = await PlanActApiService.savePlanTemplate(planTemplateId, content)
-
-    // Update the selected template ID with the real planId returned from backend
-    if (
-      (saveResult as { planId?: string })?.planId &&
-      templateConfig.selectedTemplate.value?.planTemplateId?.startsWith('new-')
-    ) {
-      const newPlanId = (saveResult as { planId: string }).planId
-      console.log(
-        '[JsonEditorV2] Updating template ID from',
-        templateConfig.selectedTemplate.value.planTemplateId,
-        'to',
-        newPlanId
-      )
-      if (templateConfig.selectedTemplate.value) {
-        templateConfig.selectedTemplate.value.planTemplateId = newPlanId
-      }
-      templateConfig.currentPlanTemplateId.value = newPlanId
-      templateConfig.setPlanTemplateId(newPlanId)
-    }
-
     // Update versions after save
+    const content = templateConfig.generateJsonString().trim()
     templateConfig.updateVersionsAfterSave(content)
 
-    const result = saveResult as {
-      duplicate?: boolean
-      saved?: boolean
-      message?: string
-      versionCount?: number
-    }
-    if (result?.duplicate) {
-      toast.success(
-        t('sidebar.saveCompleted', {
-          message: result.message,
-          versionCount: result.versionCount,
-        })
-      )
-    } else if (result?.saved) {
-      toast.success(
-        t('sidebar.saveSuccess', {
-          message: result.message,
-          versionCount: result.versionCount,
-        })
-      )
-      // Reset modification flag after successful save
-      templateStore.hasTaskRequirementModified = false
-      // Note: Parameter requirements refresh will be handled by parent component via watch
-    } else if (result?.message) {
-      toast.success(t('sidebar.saveStatus', { message: result.message }))
-    }
+    // Reset modification flag after successful save
+    templateStore.hasTaskRequirementModified = false
+    toast.success(t('sidebar.saveSuccess', { message: 'Plan saved successfully', versionCount: 0 }))
   } catch (error: unknown) {
     console.error('Failed to save plan modifications:', error)
     const message = error instanceof Error ? error.message : t('sidebar.saveFailed')
@@ -862,22 +817,27 @@ const confirmCopyPlan = async () => {
   isCopyingPlan.value = true
 
   try {
-    const currentPlan = JSON.parse(templateConfig.generateJsonString())
-    const newPlan = {
-      ...currentPlan,
+    // Get the current plan config
+    const currentConfig = templateConfig.getConfig()
+
+    // Generate a new planTemplateId in the format: planTemplate-{timestamp}
+    const newPlanTemplateId = `planTemplate-${Date.now()}`
+
+    // Create a new plan config with all fields copied, only changing the title and using new ID
+    const newPlanConfig: PlanTemplateConfigVO = {
+      ...currentConfig,
       title: newPlanTitle.value.trim(),
-      planTemplateId: '', // New plan should not have the same template ID
+      planTemplateId: newPlanTemplateId,
     }
 
-    const result = await PlanActApiService.savePlanTemplate('', JSON.stringify(newPlan))
+    const result = await PlanTemplateApiService.createOrUpdatePlanTemplateWithTool(newPlanConfig)
 
-    const typedResult = result as { saved?: boolean; message?: string }
-    if (typedResult.saved) {
+    if (result.success) {
       toast.success(t('sidebar.copyPlanSuccess', { title: newPlanTitle.value.trim() }))
       await templateStore.loadPlanTemplateList()
       closeCopyPlanModal()
     } else {
-      toast.error(t('sidebar.copyPlanFailed', { message: typedResult.message || 'Unknown error' }))
+      toast.error(t('sidebar.copyPlanFailed', { message: 'Failed to copy plan' }))
     }
   } catch (error: unknown) {
     console.error('[JsonEditorV2] Error copying plan:', error)
@@ -1007,10 +967,10 @@ const selectServiceGroup = (group: string) => {
 onMounted(() => {
   // Sync displayData from templateConfig
   syncDisplayDataFromConfig()
-  
+
   // Load service group
   loadServiceGroup()
-  
+
   // Load available service groups
   loadAvailableServiceGroups()
 
@@ -1406,7 +1366,6 @@ const formatTableHeader = (terminateColumns: string): string => {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
 }
-
 
 /* JSON Preview */
 .json-preview {
