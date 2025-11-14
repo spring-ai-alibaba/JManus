@@ -54,20 +54,24 @@
           <div class="agent-info" v-if="selectedStep.agentExecution">
             <div class="info-item">
               <span class="label">{{ t('rightPanel.executingAgent') }}:</span>
-              <span class="value">{{ selectedStep.agentExecution.agentName }}</span>
+              <span
+                class="value"
+                :title="
+                  selectedStep.agentExecution.agentName === 'ConfigurableDynaAgent'
+                    ? t('chat.clickToViewExecutionDetails')
+                    : ''
+                "
+              >
+                {{
+                  selectedStep.agentExecution.agentName === 'ConfigurableDynaAgent'
+                    ? t('chat.funcAgentExecutionDetails')
+                    : selectedStep.agentExecution.agentName
+                }}
+              </span>
             </div>
             <div class="info-item">
               <span class="label">{{ t('rightPanel.callingModel') }}:</span>
               <span class="value">{{ selectedStep.agentExecution.modelName }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">{{ t('rightPanel.executionResult') }}:</span>
-              <span
-                class="value"
-                :class="{ success: selectedStep.agentExecution.status === 'FINISHED' }"
-              >
-                {{ selectedStep.agentExecution.status || t('rightPanel.executing') }}
-              </span>
             </div>
           </div>
 

@@ -313,6 +313,17 @@ const navigateHistory = (direction: number) => {
 }
 
 // Load inner tools on mount
+// Watch for planTemplateList changes to reload tools
+watch(
+  () => templateConfig.planTemplateList.value,
+  () => {
+    // Reload tools when planTemplateList changes
+    console.log('[InputArea] planTemplateList changed, reloading inner tools')
+    loadInnerTools()
+  },
+  { deep: true }
+)
+
 onMounted(() => {
   loadInnerTools()
   loadHistory()

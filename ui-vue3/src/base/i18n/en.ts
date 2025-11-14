@@ -750,6 +750,8 @@ const words: I18nType = {
     triggeredByTool: 'Triggered by Tool',
     planExecution: 'Plan Execution',
     userInputRequired: 'User Input Required',
+    funcAgentExecutionDetails: 'Func-Agent Execution Details',
+    clickToViewExecutionDetails: 'Click to view execution details',
   },
 
   // Input component

@@ -68,7 +68,20 @@
         >
           <div class="agent-step-header">
             <Icon :icon="getAgentPreviewStatusIcon(agent.status)" class="agent-icon" />
-            <span class="agent-name">{{ agent.agentName || $t('chat.unknownAgent') }}</span>
+            <span
+              class="agent-name"
+              :title="
+                agent.agentName === 'ConfigurableDynaAgent'
+                  ? $t('chat.clickToViewExecutionDetails')
+                  : ''
+              "
+            >
+              {{
+                agent.agentName === 'ConfigurableDynaAgent'
+                  ? $t('chat.funcAgentExecutionDetails')
+                  : agent.agentName || $t('chat.unknownAgent')
+              }}
+            </span>
             <div class="agent-status-badge" :class="getAgentPreviewStatusClass(agent.status)">
               {{ getAgentStatusText(agent.status) }}
             </div>

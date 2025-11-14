@@ -51,8 +51,19 @@
           <div class="agent-info">
             <Icon :icon="getAgentStatusIcon(agentExecution.status)" class="agent-status-icon" />
             <div class="agent-details">
-              <div class="agent-name">
-                {{ agentExecution.agentName || $t('chat.unknownAgent') }}
+              <div
+                class="agent-name"
+                :title="
+                  agentExecution.agentName === 'ConfigurableDynaAgent'
+                    ? $t('chat.clickToViewExecutionDetails')
+                    : ''
+                "
+              >
+                {{
+                  agentExecution.agentName === 'ConfigurableDynaAgent'
+                    ? $t('chat.funcAgentExecutionDetails')
+                    : agentExecution.agentName || $t('chat.unknownAgent')
+                }}
               </div>
               <pre class="request-content">{{ agentExecution.agentRequest }}</pre>
             </div>
@@ -117,15 +128,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
+import type { CompatiblePlanExecutionRecord } from '@/types/message-dialog'
 import type {
-  PlanExecutionRecord,
   AgentExecutionRecord,
   ExecutionStatus,
+  PlanExecutionRecord,
 } from '@/types/plan-execution-record'
-import type { CompatiblePlanExecutionRecord } from '@/types/message-dialog'
+import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
 import RecursiveSubPlan from './RecursiveSubPlan.vue'
 
 interface Props {
@@ -148,9 +158,6 @@ const emit = defineEmits<Emits>()
 // Initialize i18n
 const { t } = useI18n()
 
-// Computed properties
-const agentExecutionSequence = computed(() => props.planExecution.agentExecutionSequence ?? [])
-
 // Agent click handler
 const handleAgentClick = (agentExecution: AgentExecutionRecord) => {
   if (agentExecution.stepId) {
@@ -159,7 +166,6 @@ const handleAgentClick = (agentExecution: AgentExecutionRecord) => {
     console.warn('[ExecutionDetails] Agent execution has no stepId:', agentExecution)
   }
 }
-
 
 // Agent status methods
 const getAgentStatusClass = (status?: ExecutionStatus): string => {

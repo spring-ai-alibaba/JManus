@@ -59,13 +59,6 @@
 
         <!-- Assistant message -->
         <div v-else-if="message.type === 'assistant'" class="assistant-message">
-          <!-- Thinking section (when available) -->
-          <ThinkingSection
-            v-if="message.thinkingDetails"
-            :thinking-details="message.thinkingDetails"
-            @step-selected="handleStepSelected"
-          />
-
           <!-- Plan execution section (when available) -->
           <ExecutionDetails
             v-if="message.planExecution"
@@ -137,7 +130,6 @@ import { useI18n } from 'vue-i18n'
 // Import new modular components
 import ExecutionDetails from './ExecutionDetails.vue'
 import ResponseSection from './ResponseSection.vue'
-import ThinkingSection from './ThinkingSection.vue'
 
 // Import composables
 import { useMessageDialogSingleton } from '@/composables/useMessageDialog'

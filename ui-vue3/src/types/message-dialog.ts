@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { PlanExecutionRecord, AgentExecutionRecord } from '@/types/plan-execution-record'
+import type { AgentExecutionRecord, PlanExecutionRecord } from '@/types/plan-execution-record'
 
 /**
  * Local interface to handle readonly compatibility issues
@@ -33,7 +33,6 @@ export interface ChatMessage {
   content: string
   timestamp: Date
   thinking?: string
-  thinkingDetails?: CompatiblePlanExecutionRecord
   planExecution?: CompatiblePlanExecutionRecord
   stepActions?: unknown[]
   genericInput?: string

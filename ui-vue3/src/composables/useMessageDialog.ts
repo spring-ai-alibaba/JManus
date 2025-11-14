@@ -593,7 +593,7 @@ export function useMessageDialog() {
 
   /**
    * Add message to active dialog (convenience method for ChatContainer)
-   * Automatically converts readonly planExecution and thinkingDetails to mutable versions
+   * Automatically converts readonly planExecution to mutable version
    */
   const addMessage = (
     type: 'user' | 'assistant',
@@ -607,13 +607,10 @@ export function useMessageDialog() {
 
     const dialog = activeDialog.value!
 
-    // Convert planExecution and thinkingDetails if they exist
+    // Convert planExecution if it exists
     const processedOptions: Partial<ChatMessage> = { ...options }
     if (options?.planExecution) {
       processedOptions.planExecution = convertPlanExecutionRecord(options.planExecution)
-    }
-    if (options?.thinkingDetails) {
-      processedOptions.thinkingDetails = convertPlanExecutionRecord(options.thinkingDetails)
     }
 
     const message: ChatMessage = {
@@ -632,20 +629,17 @@ export function useMessageDialog() {
 
   /**
    * Update message in active dialog (convenience method for ChatContainer)
-   * Automatically converts readonly planExecution and thinkingDetails to mutable versions
+   * Automatically converts readonly planExecution to mutable version
    */
   const updateMessage = (messageId: string, updates: Partial<ChatMessage>) => {
     if (!activeDialog.value) {
       return
     }
 
-    // Convert planExecution and thinkingDetails if they exist
+    // Convert planExecution if it exists
     const processedUpdates: Partial<ChatMessage> = { ...updates }
     if (updates.planExecution) {
       processedUpdates.planExecution = convertPlanExecutionRecord(updates.planExecution)
-    }
-    if (updates.thinkingDetails) {
-      processedUpdates.thinkingDetails = convertPlanExecutionRecord(updates.thinkingDetails)
     }
 
     const messageIndex = activeDialog.value.messages.findIndex(m => m.id === messageId)

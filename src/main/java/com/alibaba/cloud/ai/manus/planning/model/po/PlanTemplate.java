@@ -30,7 +30,7 @@ import jakarta.persistence.UniqueConstraint;
  * template
  */
 @Entity
-@Table(name = "plan_template", uniqueConstraints = @UniqueConstraint(columnNames = { "service_group", "title" }))
+@Table(name = "plan_template", uniqueConstraints = @UniqueConstraint(columnNames = { "title" }))
 public class PlanTemplate {
 
 	@Id

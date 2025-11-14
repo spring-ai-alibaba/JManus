@@ -704,6 +704,8 @@ const words: I18nType = {
     triggeredByTool: '由工具触发',
     planExecution: '计划执行',
     userInputRequired: '需要用户输入',
+    funcAgentExecutionDetails: 'Func-Agent 执行详情',
+    clickToViewExecutionDetails: '点击查看执行详情',
   },
 
   // 输入组件
