@@ -140,15 +140,15 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 // Import new modular components
-import ThinkingSection from './ThinkingSection.vue'
-import ResponseSection from './ResponseSection.vue'
 import ExecutionDetails from './ExecutionDetails.vue'
+import ResponseSection from './ResponseSection.vue'
+import ThinkingSection from './ThinkingSection.vue'
 
 // Import composables
-import type { ChatMessage as ChatMessageType } from '@/types/message-dialog'
-import { useScrollBehavior } from './composables/useScrollBehavior'
 import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
+import type { ChatMessage as ChatMessageType } from '@/types/message-dialog'
 import { useMessageFormatting } from './composables/useMessageFormatting'
+import { useScrollBehavior } from './composables/useScrollBehavior'
 
 // Import plan execution manager
 import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
@@ -170,15 +170,8 @@ const { t } = useI18n()
 
 // Message dialog state
 const messageDialog = useMessageDialogSingleton()
-const {
-  messages,
-  isLoading,
-  streamingMessageId,
-  addMessage,
-  updateMessage,
-  startStreaming,
-  findMessage,
-} = messageDialog
+const { messages, isLoading, streamingMessageId, updateMessage, startStreaming, findMessage } =
+  messageDialog
 
 // Plan execution manager
 const planExecution = usePlanExecutionSingleton()
@@ -276,98 +269,54 @@ const handleUserInputSubmit = (message: ChatMessageType, inputData: Record<strin
 
 // Message handling methods removed - ChatContainer is now a pure display component
 
-// Plan execution handlers
-const handlePlanUpdate = (rootPlanId: string) => {
-  console.log('[ChatContainer] Plan update received:', rootPlanId)
+// Watch for plan execution record changes (reactive approach)
+watch(
+  () => planExecution.planExecutionRecords,
+  records => {
+    // Process all records in the map
+    for (const [planId, planDetails] of records.entries()) {
+      // Find the corresponding message
+      const messageIndex = messages.value.findIndex(
+        m => m.planExecution?.rootPlanId === planId && m.type === 'assistant'
+      )
 
-  // Get the PlanExecutionRecord from the cache
-  const planDetails = planExecution.getCachedPlanRecord(rootPlanId)
-
-  if (!planDetails) {
-    console.warn('[ChatContainer] No cached plan data found for rootPlanId:', rootPlanId)
-    return
-  }
-
-  console.log('[ChatContainer] Retrieved plan details from cache:', planDetails)
-
-  // Find the corresponding message
-  const messageIndex = messages.value.findIndex(
-    m => m.planExecution?.currentPlanId === planDetails.currentPlanId && m.type === 'assistant'
-  )
-
-  if (messageIndex !== -1) {
-    const message = messages.value[messageIndex]
-
-    // Update planExecution data using updateMessage
-    const updates: Partial<ChatMessageType> = {
-      planExecution: JSON.parse(JSON.stringify(planDetails)),
-    }
-
-    // Handle simple responses (cases without agent execution sequence)
-    if (!planDetails.agentExecutionSequence || planDetails.agentExecutionSequence.length === 0) {
-      console.log('[ChatContainer] Handling simple response without agent execution sequence')
-
-      if (planDetails.completed) {
-        // Clear thinking state and set final response
-        updates.thinking = ''
-        const finalResponse =
-          planDetails.summary ?? planDetails.result ?? planDetails.message ?? 'Execution completed'
-        updates.content = finalResponse
-        console.log('[ChatContainer] Set simple response content:', finalResponse)
+      if (messageIndex === -1) {
+        continue
       }
-    } else {
-      console.log('[ChatContainer] Handling detailed plan with agent execution sequence')
-      // This is a detailed plan with execution steps, keep the plan execution display
-    }
 
-    // Update the message
-    updateMessage(message.id, updates)
-  }
-}
-
-const handlePlanCompleted = (planDetails: unknown) => {
-  console.log('[ChatContainer] Plan completed:', planDetails)
-
-  if (
-    planDetails &&
-    typeof planDetails === 'object' &&
-    'rootPlanId' in planDetails &&
-    planDetails.rootPlanId
-  ) {
-    const planDetailsObj = planDetails as Record<string, unknown>
-    const rootPlanId = planDetailsObj.rootPlanId as string
-    const messageIndex = messages.value.findIndex(
-      m => m.planExecution?.currentPlanId === rootPlanId
-    )
-
-    if (messageIndex !== -1) {
       const message = messages.value[messageIndex]
 
-      const summary =
-        (planDetailsObj.summary as string) ??
-        (planDetailsObj.result as string) ??
-        'Execution completed'
-      updateMessage(message.id, {
-        thinking: '',
-        content: summary,
-      })
-      console.log('[ChatContainer] Updated completed message:', summary)
+      // Update planExecution data using updateMessage
+      const updates: Partial<ChatMessageType> = {
+        planExecution: JSON.parse(JSON.stringify(planDetails)),
+      }
+
+      // Handle simple responses (cases without agent execution sequence)
+      if (!planDetails.agentExecutionSequence || planDetails.agentExecutionSequence.length === 0) {
+        if (planDetails.completed) {
+          // Clear thinking state and set final response
+          updates.thinking = ''
+          const finalResponse =
+            planDetails.summary ??
+            planDetails.result ??
+            planDetails.message ??
+            'Execution completed'
+          updates.content = finalResponse
+        }
+      }
+
+      // Handle errors
+      if (planDetails.status === 'failed' && planDetails.message) {
+        updates.content = `Error: ${planDetails.message}`
+        updates.thinking = ''
+      }
+
+      // Update the message
+      updateMessage(message.id, updates)
     }
-  }
-}
-
-const handleDialogRoundStart = (planId: string) => {
-  console.log('[ChatContainer] Dialog round start:', planId)
-  // This method can be used to initialize plan execution state
-}
-
-const handlePlanError = (message: string) => {
-  console.log('[ChatContainer] Plan error:', message)
-
-  // Show error message
-  addMessage('assistant', `Error: ${message}`)
-  console.error('[ChatContainer] Plan execution error:', message)
-}
+  },
+  { deep: true, immediate: true }
+)
 
 // Scroll handlers (remove unused function)
 
@@ -385,14 +334,6 @@ onMounted(() => {
     },
     { deep: true }
   )
-
-  // Register plan execution callbacks
-  planExecution.setEventCallbacks({
-    onPlanUpdate: handlePlanUpdate,
-    onPlanCompleted: handlePlanCompleted,
-    onDialogRoundStart: handleDialogRoundStart,
-    onPlanError: handlePlanError,
-  })
 })
 
 onUnmounted(() => {

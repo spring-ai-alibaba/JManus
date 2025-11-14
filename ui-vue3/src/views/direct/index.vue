@@ -92,14 +92,14 @@ import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vu
 import Memory from '@/components/memory/Memory.vue'
 import RightPanel from '@/components/right-panel/RightPanel.vue'
 import Sidebar from '@/components/sidebar/Sidebar.vue'
+import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
+import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { useToast } from '@/composables/useToast'
 import { memoryStore } from '@/stores/memory'
-import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { sidebarStore } from '@/stores/sidebar'
-import { templateStore } from '@/stores/templateStore'
 import { useTaskStore } from '@/stores/task'
+import { templateStore } from '@/stores/templateStore'
 import type { PlanExecutionRecord } from '@/types/plan-execution-record'
-import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -158,82 +158,48 @@ onMounted(() => {
   console.log('[Direct] taskStore.currentTask:', taskStore.currentTask)
   console.log('[Direct] taskStore.hasUnprocessedTask():', taskStore.hasUnprocessedTask())
 
-  // Register event callbacks to planExecution
-  // Note: Plan execution handlers (onPlanUpdate, onPlanCompleted, onDialogRoundStart, onPlanError)
-  // are already registered in ChatContainer.vue, so we only need to handle right panel updates here
-  planExecution.setEventCallbacks({
-    onPlanUpdate: (rootPlanId: string) => {
-      console.log('[Direct] Plan update event received for rootPlanId:', rootPlanId)
+  // Watch for plan execution record changes (reactive approach)
+  watch(
+    () => planExecution.planExecutionRecords,
+    records => {
+      // Process all records in the map
+      for (const [planId, planDetails] of records.entries()) {
+        // Only process if this is the current root plan
+        if (!shouldProcessEventForCurrentPlan(planId)) {
+          continue
+        }
 
-      if (!shouldProcessEventForCurrentPlan(rootPlanId)) {
-        return
-      }
+        // Update right panel progress
+        if (
+          rightPanelRef.value &&
+          typeof rightPanelRef.value.updateDisplayedPlanProgress === 'function'
+        ) {
+          rightPanelRef.value.updateDisplayedPlanProgress(planId)
+        }
 
-      console.log('[Direct] Processing plan update for current rootPlanId:', rootPlanId)
-
-      // Call right panel component's updateDisplayedPlanProgress method
-      if (
-        rightPanelRef.value &&
-        typeof rightPanelRef.value.updateDisplayedPlanProgress === 'function'
-      ) {
-        console.log(
-          '[Direct] Calling rightPanelRef.updateDisplayedPlanProgress with rootPlanId:',
-          rootPlanId
-        )
-        rightPanelRef.value.updateDisplayedPlanProgress(rootPlanId)
-      } else {
-        console.warn('[Direct] rightPanelRef.updateDisplayedPlanProgress method not available')
-      }
-    },
-
-    onPlanCompleted: (rootPlanId: string) => {
-      console.log('[Direct] Plan completed event received for rootPlanId:', rootPlanId)
-
-      if (!shouldProcessEventForCurrentPlan(rootPlanId)) {
-        return
-      }
-
-      console.log('[Direct] Processing plan completion for current rootPlanId:', rootPlanId)
-
-      // Clear current root plan ID when plan is completed
-      currentRootPlanId.value = null
-      console.log('[Direct] 🧹 Cleared currentRootPlanId after plan completion')
-      // Note: InputArea automatically resets session on plan completion
-    },
-
-    onDialogRoundStart: (rootPlanId: string) => {
-      console.log('[Direct] Dialog round start event received for rootPlanId:', rootPlanId)
-
-      // Set current root plan ID when dialog starts
-      currentRootPlanId.value = rootPlanId
-      console.log('[Direct] Set currentRootPlanId to:', rootPlanId)
-    },
-
-    onChatInputClear: () => {
-      console.log('[Direct] Chat input clear event received')
-      // InputArea handles clearing internally, no action needed
-    },
-
-    onChatInputUpdateState: (rootPlanId: string) => {
-      console.log('[Direct] Chat input update state event received for rootPlanId:', rootPlanId)
-
-      if (!shouldProcessEventForCurrentPlan(rootPlanId, true)) {
-        return
-      }
-
-      const uiState = planExecution.getCachedUIState(rootPlanId)
-      if (uiState) {
-        messageDialog.updateInputState(uiState.enabled, uiState.placeholder)
+        // Handle completion - clear currentRootPlanId
+        if (planDetails.completed) {
+          console.log('[Direct] Plan completed, clearing currentRootPlanId')
+          currentRootPlanId.value = null
+        }
       }
     },
+    { deep: true }
+  )
 
-    onPlanError: (message: string) => {
-      // Plan error is already handled in ChatContainer.vue
-      console.log('[Direct] Plan error event received:', message)
+  // Watch for new tracked plans to set currentRootPlanId
+  watch(
+    () => planExecution.trackedPlanIds,
+    trackedIds => {
+      // When a new plan is tracked, set it as currentRootPlanId if we don't have one
+      if (!currentRootPlanId.value && trackedIds.value.size > 0) {
+        const firstTrackedId = Array.from(trackedIds.value)[0]
+        currentRootPlanId.value = firstTrackedId
+        console.log('[Direct] Set currentRootPlanId to:', firstTrackedId)
+      }
     },
-  })
-
-  console.log('[Direct] Event callbacks registered to planExecution')
+    { deep: true }
+  )
 
   // Restore conversation history if conversationId exists in localStorage
   const savedConversationId = memoryStore.getConversationId()
@@ -284,13 +250,8 @@ onMounted(() => {
               planExecution: planExecutionRecord as PlanExecutionRecord,
             })
 
-            // Store the plan record in the plan execution manager cache for future reference
-            if (record.rootPlanId) {
-              planExecution.setCachedPlanRecord(
-                record.rootPlanId,
-                planExecutionRecord as PlanExecutionRecord
-              )
-            }
+            // Plan records are automatically stored in planExecutionRecords reactive map
+            // No need to manually cache them
           }
         }
 

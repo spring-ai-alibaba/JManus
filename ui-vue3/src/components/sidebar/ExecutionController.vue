@@ -207,24 +207,28 @@
     @save="handleSaveAndExecute"
     @continue="handleContinueExecution"
   />
+
+  <!-- Publish Service Modal -->
+  <PublishServiceModal v-model="showPublishMcpModal" />
 </template>
 
 <script setup lang="ts">
 import { FileInfo } from '@/api/file-upload-api-service'
+import { PlanActApiService } from '@/api/plan-act-api-service'
 import {
   PlanParameterApiService,
   type ParameterRequirements,
 } from '@/api/plan-parameter-api-service'
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
+import PublishServiceModal from '@/components/publish-service-modal/PublishServiceModal.vue'
 import SaveConfirmationDialog from '@/components/sidebar/SaveConfirmationDialog.vue'
-import { PlanActApiService } from '@/api/plan-act-api-service'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import { useToast } from '@/plugins/useToast'
 import { templateStore } from '@/stores/templateStore'
 import type { PlanData, PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useToast } from '@/plugins/useToast'
 
 const { t } = useI18n()
 const toast = useToast()
@@ -246,11 +250,11 @@ const props = withDefaults(defineProps<Props>(), {
 // Emits
 const emit = defineEmits<{
   planExecutionRequested: [payload: PlanExecutionRequestPayload]
-  openPublishModal: []
 }>()
 
 // Local state
 const executionParams = ref('')
+const showPublishMcpModal = ref(false)
 const parameterRequirements = ref<ParameterRequirements>({
   parameters: [],
   hasParameters: false,
@@ -680,8 +684,7 @@ const handlePublishMcpService = () => {
     return
   }
 
-  console.log('[ExecutionController] Emitting openPublishModal event')
-  emit('openPublishModal')
+  showPublishMcpModal.value = true
 }
 
 const clearExecutionParams = () => {

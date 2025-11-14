@@ -73,10 +73,7 @@
           <JsonEditorV2 />
 
           <!-- Section 3: Execution Controller -->
-          <ExecutionController
-            @plan-execution-requested="handlePlanExecutionRequested"
-            @open-publish-modal="handleOpenPublishModal"
-          />
+          <ExecutionController />
         </div>
       </div>
     </div>
@@ -91,9 +88,6 @@
       <div class="resizer-line"></div>
     </div>
   </div>
-
-  <!-- Publish Service Modal -->
-  <PublishServiceModal v-model="showPublishMcpModal" />
 </template>
 
 <script setup lang="ts">
@@ -102,13 +96,10 @@ defineOptions({
   name: 'SidebarPanel',
 })
 
-import PublishServiceModal from '@/components/publish-service-modal/PublishServiceModal.vue'
-import { sidebarStore } from '@/stores/sidebar'
-import { templateStore } from '@/stores/templateStore'
 import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
-import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
-import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
+import { sidebarStore } from '@/stores/sidebar'
+import { templateStore } from '@/stores/templateStore'
 import { Icon } from '@iconify/vue'
 import { onMounted, onUnmounted, ref } from 'vue'
 import ExecutionController from './ExecutionController.vue'
@@ -121,36 +112,11 @@ const availableToolsStore = useAvailableToolsSingleton()
 // Template config management
 const templateConfig = usePlanTemplateConfigSingleton()
 
-// Message dialog management (singleton)
-const messageDialog = useMessageDialogSingleton()
-
 // Sidebar width management
 const sidebarWidth = ref(80) // Default width percentage
 const isResizing = ref(false)
 const startX = ref(0)
 const startWidth = ref(0)
-
-const handlePlanExecutionRequested = async (payload: PlanExecutionRequestPayload) => {
-  console.log(
-    '[Sidebar] 🎯 handlePlanExecutionRequested called with payload:',
-    JSON.stringify(payload, null, 2)
-  )
-  // Use messageDialog to execute plan directly
-  try {
-    await messageDialog.executePlan(payload)
-    console.log('[Sidebar] Plan execution started successfully')
-  } catch (error) {
-    console.error('[Sidebar] Failed to execute plan:', error)
-  }
-}
-
-// MCP service publishing related state
-const showPublishMcpModal = ref(false)
-
-const handleOpenPublishModal = () => {
-  console.log('[Sidebar] Opening publish MCP service modal')
-  showPublishMcpModal.value = true
-}
 
 // Sidebar resize methods
 const startResize = (e: MouseEvent) => {

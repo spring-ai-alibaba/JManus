@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
-import { ref, computed, readonly } from 'vue'
-import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { DirectApiService } from '@/api/direct-api-service'
 import { PlanActApiService } from '@/api/plan-act-api-service'
-import { memoryStore } from '@/stores/memory'
-import type { ChatMessage, MessageDialog, InputMessage, CompatiblePlanExecutionRecord } from '@/types/message-dialog'
-import type { PlanExecutionRecord, AgentExecutionRecord } from '@/types/plan-execution-record'
 import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
+import { memoryStore } from '@/stores/memory'
+import type {
+  ChatMessage,
+  CompatiblePlanExecutionRecord,
+  InputMessage,
+  MessageDialog,
+} from '@/types/message-dialog'
+import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
+import type { AgentExecutionRecord, PlanExecutionRecord } from '@/types/plan-execution-record'
+import { computed, readonly, ref, watch } from 'vue'
 
 /**
  * Composable for managing message dialogs
@@ -34,6 +39,9 @@ export function useMessageDialog() {
   // Dialog list state
   const dialogList = ref<MessageDialog[]>([])
   const activeDialogId = ref<string | null>(null)
+
+  // Track active rootPlanId for current running task
+  const activeRootPlanId = ref<string | null>(null)
 
   // Loading state
   const isLoading = ref(false)
@@ -174,6 +182,19 @@ export function useMessageDialog() {
     let assistantMessage: ChatMessage | null = null
 
     try {
+      // Check if there's an active running task
+      if (activeRootPlanId.value) {
+        const activeRecord = planExecution.planExecutionRecords.get(activeRootPlanId.value)
+        if (activeRecord && !activeRecord.completed) {
+          const errorMsg = 'Please wait for the current task to complete before starting a new one'
+          error.value = errorMsg
+          return {
+            success: false,
+            error: errorMsg,
+          }
+        }
+      }
+
       isLoading.value = true
       error.value = null
 
@@ -250,20 +271,23 @@ export function useMessageDialog() {
       // Update assistant message with response
       if (response.planId) {
         // Plan execution mode
+        const rootPlanId = response.planId
+        activeRootPlanId.value = rootPlanId
+        targetDialog.planId = rootPlanId
+
         updateMessageInDialog(targetDialog.id, assistantMessage.id, {
           thinking: 'Planning execution...',
           planExecution: {
-            currentPlanId: response.planId,
-            rootPlanId: response.planId,
+            currentPlanId: rootPlanId,
+            rootPlanId: rootPlanId,
             status: 'running',
           },
           isStreaming: false,
         })
-        targetDialog.planId = response.planId
 
-        // Start polling for plan updates
-        planExecution.handlePlanExecutionRequested(response.planId, query.input)
-        console.log('[useMessageDialog] Started polling for plan execution updates')
+        // Track the plan for polling
+        planExecution.handlePlanExecutionRequested(rootPlanId)
+        console.log('[useMessageDialog] Started tracking plan:', rootPlanId)
       } else {
         // Direct response mode
         const updates: Partial<ChatMessage> = {
@@ -314,6 +338,19 @@ export function useMessageDialog() {
     let assistantMessage: ChatMessage | null = null
 
     try {
+      // Check if there's an active running task
+      if (activeRootPlanId.value) {
+        const activeRecord = planExecution.planExecutionRecords.get(activeRootPlanId.value)
+        if (activeRecord && !activeRecord.completed) {
+          const errorMsg = 'Please wait for the current task to complete before starting a new one'
+          error.value = errorMsg
+          return {
+            success: false,
+            error: errorMsg,
+          }
+        }
+      }
+
       isLoading.value = true
       error.value = null
 
@@ -384,20 +421,23 @@ export function useMessageDialog() {
 
       // Update assistant message with plan execution info
       if (response.planId) {
+        const rootPlanId = response.planId
+        activeRootPlanId.value = rootPlanId
+        targetDialog.planId = rootPlanId
+
         updateMessageInDialog(targetDialog.id, assistantMessage.id, {
           thinking: 'Planning execution...',
           planExecution: {
-            currentPlanId: response.planId,
-            rootPlanId: response.planId,
+            currentPlanId: rootPlanId,
+            rootPlanId: rootPlanId,
             status: 'running',
           },
           isStreaming: false,
         })
-        targetDialog.planId = response.planId
 
-        // Start polling for plan updates
-        planExecution.handlePlanExecutionRequested(response.planId, payload.title)
-        console.log('[useMessageDialog] Started polling for plan execution updates')
+        // Track the plan for polling
+        planExecution.handlePlanExecutionRequested(rootPlanId)
+        console.log('[useMessageDialog] Started tracking plan:', rootPlanId)
       } else {
         const updates: Partial<ChatMessage> = {
           content: 'Plan execution started',
@@ -496,7 +536,7 @@ export function useMessageDialog() {
     }
 
     const dialog = activeDialog.value!
-    
+
     // Convert planExecution and thinkingDetails if they exist
     const processedOptions: Partial<ChatMessage> = { ...options }
     if (options?.planExecution) {
@@ -505,7 +545,7 @@ export function useMessageDialog() {
     if (options?.thinkingDetails) {
       processedOptions.thinkingDetails = convertPlanExecutionRecord(options.thinkingDetails)
     }
-    
+
     const message: ChatMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,
@@ -612,10 +652,66 @@ export function useMessageDialog() {
   const reset = () => {
     dialogList.value = []
     activeDialogId.value = null
+    activeRootPlanId.value = null
     isLoading.value = false
     error.value = null
     inputPlaceholder.value = null
   }
+
+  /**
+   * Watch for PlanExecutionRecord changes and update dialog messages
+   * This is the reactive way to handle plan execution updates
+   */
+  watch(
+    () => planExecution.planExecutionRecords,
+    records => {
+      // Only process if we have an active rootPlanId
+      if (!activeRootPlanId.value) {
+        return
+      }
+
+      const record = records.get(activeRootPlanId.value)
+      if (!record) {
+        return
+      }
+
+      // Find the dialog and message that matches this rootPlanId
+      const dialog = dialogList.value.find(d => d.planId === activeRootPlanId.value)
+      if (!dialog) {
+        return
+      }
+
+      // Find the assistant message with this planId
+      const message = dialog.messages.find(
+        m => m.planExecution?.rootPlanId === activeRootPlanId.value
+      )
+      if (!message) {
+        return
+      }
+
+      // Prepare updates - only include thinking if not completed
+      // Convert readonly record to mutable version
+      const mutableRecord = { ...record } as PlanExecutionRecord
+      const updates: Partial<ChatMessage> = {
+        planExecution: convertPlanExecutionRecord(mutableRecord),
+        isStreaming: !record.completed,
+      }
+
+      if (!record.completed) {
+        updates.thinking = 'Processing...'
+      }
+
+      // Update message with latest plan execution record
+      updateMessageInDialog(dialog.id, message.id, updates)
+
+      // If completed, clear activeRootPlanId to allow next task
+      if (record.completed) {
+        console.log('[useMessageDialog] Plan completed, clearing activeRootPlanId')
+        activeRootPlanId.value = null
+      }
+    },
+    { deep: true }
+  )
 
   return {
     // State

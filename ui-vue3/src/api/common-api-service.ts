@@ -52,6 +52,23 @@ export class CommonApiService {
     }
   }
 
+  // Delete execution details
+  public static async deleteExecutionDetails(planId: string): Promise<Record<string, string>> {
+    try {
+      const response = await fetch(`${this.BASE_URL}/details/${planId}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Failed to delete execution details: ${response.status} - ${errorText}`)
+      }
+      return await response.json()
+    } catch (error: unknown) {
+      console.error('[CommonApiService] Failed to delete execution details:', error)
+      throw error
+    }
+  }
+
   // Submit user form input
   public static async submitFormInput(
     planId: string,

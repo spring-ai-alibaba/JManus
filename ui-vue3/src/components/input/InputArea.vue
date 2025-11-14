@@ -85,16 +85,16 @@
 <script setup lang="ts">
 import { FileInfo } from '@/api/file-upload-api-service'
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
-import type { InputMessage } from '@/types/message-dialog'
+import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
+import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { memoryStore } from '@/stores/memory'
-import { useTaskStore } from '@/stores/task'
 import { sidebarStore } from '@/stores/sidebar'
+import { useTaskStore } from '@/stores/task'
+import type { InputMessage } from '@/types/message-dialog'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
-import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
-import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 
 const { t } = useI18n()
 const taskStore = useTaskStore()
@@ -317,13 +317,22 @@ onMounted(() => {
   loadInnerTools()
   loadHistory()
 
-  // Register plan execution callbacks to auto-reset session on plan completion
-  planExecution.setEventCallbacks({
-    onPlanCompleted: () => {
-      console.log('[InputArea] Plan completed, resetting session')
-      resetSession()
+  // Watch for plan completion to reset session (reactive approach)
+  watch(
+    () => planExecution.planExecutionRecords,
+    records => {
+      // Check if any tracked plan is completed
+      for (const planDetails of records.values()) {
+        if (planDetails.completed) {
+          console.log('[InputArea] Plan completed, resetting session')
+          resetSession()
+          // Only reset once per completion
+          break
+        }
+      }
     },
-  })
+    { deep: true }
+  )
 
   // Watch for taskToInput changes and set input value automatically
   watch(
