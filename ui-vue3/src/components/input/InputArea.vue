@@ -635,10 +635,15 @@ defineExpose({
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
 
 .selection-input {
-  flex-shrink: 0;
+  flex-shrink: 1;
+  flex-basis: auto;
+  min-width: 0;
+  max-width: calc(100% - 200px);
   padding: 6px 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
@@ -652,6 +657,7 @@ defineExpose({
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  box-sizing: border-box;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
