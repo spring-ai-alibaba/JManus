@@ -85,13 +85,13 @@
 </template>
 
 <script setup lang="ts">
-import { MemoryApiService } from '@/api/memory-api-service'
 import ChatContainer from '@/components/chat/ChatContainer.vue'
 import InputArea from '@/components/input/InputArea.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
 import Memory from '@/components/memory/Memory.vue'
 import RightPanel from '@/components/right-panel/RightPanel.vue'
 import Sidebar from '@/components/sidebar/Sidebar.vue'
+import { useConversationHistorySingleton } from '@/composables/useConversationHistory'
 import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { useToast } from '@/composables/useToast'
@@ -99,10 +99,8 @@ import { memoryStore } from '@/stores/memory'
 import { sidebarStore } from '@/stores/sidebar'
 import { useTaskStore } from '@/stores/task'
 import { templateStore } from '@/stores/templateStore'
-import type { PlanExecutionRecord } from '@/types/plan-execution-record'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 // Define component name for Vue linting rules
@@ -113,10 +111,10 @@ defineOptions({
 const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()
-const { t } = useI18n()
-const { toast, showToast } = useToast()
+const { toast } = useToast()
 const messageDialog = useMessageDialogSingleton()
 const planExecution = usePlanExecutionSingleton()
+const conversationHistory = useConversationHistorySingleton()
 
 const prompt = ref<string>('')
 const rightPanelRef = ref()
@@ -207,59 +205,7 @@ onMounted(() => {
     console.log('[Direct] Found saved conversationId, restoring conversation:', savedConversationId)
     nextTick(async () => {
       try {
-        // Fetch conversation history from backend
-        const historyRecords = await MemoryApiService.getConversationHistory(savedConversationId)
-        console.log('[DirectView] Restored conversation history on page load:', historyRecords)
-
-        // Convert each PlanExecutionRecord to chat messages and display them
-        for (const record of historyRecords) {
-          if (!record) continue
-
-          // Add user message (the original query)
-          if (record.userRequest && record.startTime) {
-            messageDialog.addMessage('user', record.userRequest, {
-              timestamp: new Date(record.startTime),
-            })
-          }
-
-          // Add assistant message (the result/summary)
-          if (record.currentPlanId) {
-            const assistantContent =
-              record.summary || record.result || record.message || 'Execution completed'
-
-            // Convert API record to plan execution record format
-            const planExecutionRecord: Partial<PlanExecutionRecord> = {
-              currentPlanId: record.currentPlanId,
-              status: record.completed ? 'completed' : 'running',
-            }
-
-            // Add optional fields if they exist
-            if (record.rootPlanId) planExecutionRecord.rootPlanId = record.rootPlanId
-            if (record.summary) planExecutionRecord.summary = record.summary
-            if (record.completed !== undefined) planExecutionRecord.completed = record.completed
-            if (record.agentExecutionSequence)
-              planExecutionRecord.agentExecutionSequence = record.agentExecutionSequence
-
-            messageDialog.addMessage('assistant', assistantContent, {
-              timestamp:
-                record.endTime && record.endTime
-                  ? new Date(record.endTime)
-                  : record.startTime
-                    ? new Date(record.startTime)
-                    : new Date(),
-              planExecution: planExecutionRecord as PlanExecutionRecord,
-            })
-
-            // Plan records are automatically stored in planExecutionRecords reactive map
-            // No need to manually cache them
-          }
-        }
-
-        console.log(
-          '[DirectView] Successfully restored conversation with',
-          historyRecords.length,
-          'dialog rounds'
-        )
+        await conversationHistory.restoreConversationHistory(savedConversationId)
       } catch (error) {
         console.error('[DirectView] Failed to restore conversation history:', error)
         // Don't show error message to user on page load, just log it
@@ -476,86 +422,11 @@ const memorySelected = async () => {
   // Load conversation history if a memory is selected
   if (memoryStore.selectMemoryId) {
     console.log('[DirectView] Memory selected:', memoryStore.selectMemoryId)
-
     try {
-      // Clear current chat first
-      messageDialog.clearMessages()
-
-      // Set the conversation ID in memory store
-      memoryStore.setConversationId(memoryStore.selectMemoryId)
-
-      // Fetch conversation history from backend
-      const historyRecords = await MemoryApiService.getConversationHistory(
-        memoryStore.selectMemoryId
-      )
-      console.log('[DirectView] Loaded conversation history:', historyRecords)
-
-      // Convert each PlanExecutionRecord to chat messages and display them
-      for (const record of historyRecords) {
-        if (!record) continue
-
-        // Add user message (the original query)
-        if (record.userRequest && record.startTime) {
-          const userMessage = messageDialog.addMessage('user', record.userRequest, {
-            timestamp: new Date(record.startTime),
-          })
-          console.log('[DirectView] Added user message:', userMessage)
-        }
-
-        // Add assistant message (the result/summary)
-        if (record.currentPlanId) {
-          const assistantContent =
-            record.summary || record.result || record.message || 'Execution completed'
-
-          // Convert API record to plan execution record format
-          const planExecutionRecord: Partial<PlanExecutionRecord> = {
-            currentPlanId: record.currentPlanId,
-            status: record.completed ? 'completed' : 'running',
-          }
-
-          // Add optional fields if they exist
-          if (record.rootPlanId) {
-            planExecutionRecord.rootPlanId = record.rootPlanId
-          }
-          if (record.summary) {
-            planExecutionRecord.summary = record.summary
-          }
-          if (record.completed !== undefined) {
-            planExecutionRecord.completed = record.completed
-          }
-          if (record.agentExecutionSequence) {
-            planExecutionRecord.agentExecutionSequence = record.agentExecutionSequence
-          }
-
-          const assistantMessage = messageDialog.addMessage('assistant', assistantContent, {
-            timestamp:
-              record.endTime && record.endTime
-                ? new Date(record.endTime)
-                : record.startTime
-                  ? new Date(record.startTime)
-                  : new Date(),
-            planExecution: planExecutionRecord as PlanExecutionRecord,
-          })
-          console.log('[DirectView] Added assistant message:', assistantMessage)
-
-          // Store the plan record in the plan execution manager cache for future reference
-          if (record.rootPlanId) {
-            planExecution.setCachedPlanRecord(
-              record.rootPlanId,
-              planExecutionRecord as PlanExecutionRecord
-            )
-          }
-        }
-      }
-
-      console.log(
-        '[DirectView] Successfully loaded conversation history with',
-        historyRecords.length,
-        'dialog rounds'
-      )
+      await conversationHistory.loadConversationHistory(memoryStore.selectMemoryId, true, true)
     } catch (error) {
       console.error('[DirectView] Failed to load conversation history:', error)
-      showToast(t('memory.loadHistoryFailed'), 'error')
+      // Error toast is already shown by loadConversationHistory
     }
   }
 }

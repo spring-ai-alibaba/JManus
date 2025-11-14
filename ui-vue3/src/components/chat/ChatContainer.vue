@@ -150,8 +150,8 @@ import type { ChatMessage as ChatMessageType } from '@/types/message-dialog'
 import { useMessageFormatting } from './composables/useMessageFormatting'
 import { useScrollBehavior } from './composables/useScrollBehavior'
 
-// Import plan execution manager
-import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
+// Plan execution updates are handled by useMessageDialog's watchEffect
+// No need to import usePlanExecutionSingleton here
 
 interface Emits {
   (e: 'step-selected', stepId: string): void
@@ -173,8 +173,8 @@ const messageDialog = useMessageDialogSingleton()
 const { messages, isLoading, streamingMessageId, updateMessage, startStreaming, findMessage } =
   messageDialog
 
-// Plan execution manager
-const planExecution = usePlanExecutionSingleton()
+// Plan execution updates are handled by useMessageDialog's watchEffect
+// No need to access planExecution directly here
 
 // Scroll behavior
 const messagesRef = ref<HTMLElement | null>(null)
@@ -268,55 +268,8 @@ const handleUserInputSubmit = (message: ChatMessageType, inputData: Record<strin
 }
 
 // Message handling methods removed - ChatContainer is now a pure display component
-
-// Watch for plan execution record changes (reactive approach)
-watch(
-  () => planExecution.planExecutionRecords,
-  records => {
-    // Process all records in the map
-    for (const [planId, planDetails] of records.entries()) {
-      // Find the corresponding message
-      const messageIndex = messages.value.findIndex(
-        m => m.planExecution?.rootPlanId === planId && m.type === 'assistant'
-      )
-
-      if (messageIndex === -1) {
-        continue
-      }
-
-      const message = messages.value[messageIndex]
-
-      // Update planExecution data using updateMessage
-      const updates: Partial<ChatMessageType> = {
-        planExecution: JSON.parse(JSON.stringify(planDetails)),
-      }
-
-      // Handle simple responses (cases without agent execution sequence)
-      if (!planDetails.agentExecutionSequence || planDetails.agentExecutionSequence.length === 0) {
-        if (planDetails.completed) {
-          // Clear thinking state and set final response
-          updates.thinking = ''
-          const finalResponse =
-            planDetails.summary ??
-            planDetails.result ??
-            planDetails.message ??
-            'Execution completed'
-          updates.content = finalResponse
-        }
-      }
-
-      // Handle errors
-      if (planDetails.status === 'failed' && planDetails.message) {
-        updates.content = `Error: ${planDetails.message}`
-        updates.thinking = ''
-      }
-
-      // Update the message
-      updateMessage(message.id, updates)
-    }
-  },
-  { deep: true, immediate: true }
-)
+// Plan execution record updates are handled by useMessageDialog's watchEffect
+// No need for duplicate watch here - useMessageDialog.updateMessageWithPlanRecord handles summary content
 
 // Scroll handlers (remove unused function)
 

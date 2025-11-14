@@ -26,7 +26,7 @@ import type {
 } from '@/types/message-dialog'
 import type { PlanExecutionRequestPayload } from '@/types/plan-execution'
 import type { AgentExecutionRecord, PlanExecutionRecord } from '@/types/plan-execution-record'
-import { computed, readonly, ref, watch } from 'vue'
+import { computed, readonly, ref, watchEffect } from 'vue'
 
 /**
  * Composable for managing message dialogs
@@ -40,8 +40,11 @@ export function useMessageDialog() {
   const dialogList = ref<MessageDialog[]>([])
   const activeDialogId = ref<string | null>(null)
 
-  // Track active rootPlanId for current running task
-  const activeRootPlanId = ref<string | null>(null)
+  // Computed active rootPlanId derived from active dialog
+  // This is more reactive and eliminates duplicate state
+  const activeRootPlanId = computed(() => {
+    return activeDialog.value?.planId || null
+  })
 
   // Loading state
   const isLoading = ref(false)
@@ -272,7 +275,6 @@ export function useMessageDialog() {
       if (response.planId) {
         // Plan execution mode
         const rootPlanId = response.planId
-        activeRootPlanId.value = rootPlanId
         targetDialog.planId = rootPlanId
 
         updateMessageInDialog(targetDialog.id, assistantMessage.id, {
@@ -422,7 +424,6 @@ export function useMessageDialog() {
       // Update assistant message with plan execution info
       if (response.planId) {
         const rootPlanId = response.planId
-        activeRootPlanId.value = rootPlanId
         targetDialog.planId = rootPlanId
 
         updateMessageInDialog(targetDialog.id, assistantMessage.id, {
@@ -493,11 +494,13 @@ export function useMessageDialog() {
    * Convert readonly PlanExecutionRecord to mutable CompatiblePlanExecutionRecord
    */
   const convertPlanExecutionRecord = (
-    record: PlanExecutionRecord | CompatiblePlanExecutionRecord
+    record: PlanExecutionRecord | CompatiblePlanExecutionRecord | Readonly<PlanExecutionRecord>
   ): CompatiblePlanExecutionRecord => {
+    // Create a mutable copy of the record
     const converted = { ...record } as CompatiblePlanExecutionRecord
 
     if ('agentExecutionSequence' in record && Array.isArray(record.agentExecutionSequence)) {
+      // Convert readonly array to mutable array
       converted.agentExecutionSequence = record.agentExecutionSequence.map((agent: unknown) =>
         convertAgentExecutionRecord(agent as AgentExecutionRecord)
       )
@@ -652,66 +655,83 @@ export function useMessageDialog() {
   const reset = () => {
     dialogList.value = []
     activeDialogId.value = null
-    activeRootPlanId.value = null
     isLoading.value = false
     error.value = null
     inputPlaceholder.value = null
   }
 
   /**
-   * Watch for PlanExecutionRecord changes and update dialog messages
-   * This is the reactive way to handle plan execution updates
+   * Helper: Update message with plan execution record
    */
-  watch(
-    () => planExecution.planExecutionRecords,
-    records => {
-      // Only process if we have an active rootPlanId
-      if (!activeRootPlanId.value) {
-        return
+  const updateMessageWithPlanRecord = (
+    dialog: MessageDialog,
+    message: ChatMessage,
+    record: PlanExecutionRecord
+  ): void => {
+    const updates: Partial<ChatMessage> = {
+      planExecution: convertPlanExecutionRecord(record),
+      isStreaming: !record.completed,
+    }
+
+    if (!record.completed) {
+      updates.thinking = 'Processing...'
+    } else {
+      // When plan is completed, handle summary content
+      // Only update content if there's no agent execution sequence (simple response)
+      // or if we have a summary/result to display
+      if (!record.agentExecutionSequence || record.agentExecutionSequence.length === 0) {
+        const finalResponse =
+          record.summary ?? record.result ?? record.message ?? 'Execution completed'
+        if (finalResponse) {
+          updates.content = finalResponse
+          updates.thinking = ''
+        }
+      } else if (record.summary) {
+        // Even with agent execution sequence, show summary if available
+        updates.content = record.summary
+        updates.thinking = ''
       }
 
-      const record = records.get(activeRootPlanId.value)
-      if (!record) {
-        return
+      // Handle errors
+      if (record.status === 'failed' && record.message) {
+        updates.content = `Error: ${record.message}`
+        updates.thinking = ''
       }
+    }
 
-      // Find the dialog and message that matches this rootPlanId
-      const dialog = dialogList.value.find(d => d.planId === activeRootPlanId.value)
-      if (!dialog) {
-        return
-      }
+    updateMessageInDialog(dialog.id, message.id, updates)
+  }
+
+  /**
+   * Watch for PlanExecutionRecord changes and update dialog messages
+   * Uses watchEffect for automatic dependency tracking (more Vue 3 idiomatic)
+   * Processes all dialogs with planIds, not just active one
+   */
+  watchEffect(() => {
+    const records = planExecution.planExecutionRecords
+
+    // Process all dialogs that have associated planIds
+    for (const dialog of dialogList.value) {
+      if (!dialog.planId) continue
+
+      const readonlyRecord = records.get(dialog.planId)
+      if (!readonlyRecord) continue
+
+      // Convert readonly record to mutable for processing
+      // Use type assertion to handle deeply readonly types from reactive Map
+      // The convertPlanExecutionRecord function will properly convert nested readonly arrays
+      const record = convertPlanExecutionRecord(
+        readonlyRecord as unknown as PlanExecutionRecord
+      ) as PlanExecutionRecord
 
       // Find the assistant message with this planId
-      const message = dialog.messages.find(
-        m => m.planExecution?.rootPlanId === activeRootPlanId.value
-      )
-      if (!message) {
-        return
-      }
-
-      // Prepare updates - only include thinking if not completed
-      // Convert readonly record to mutable version
-      const mutableRecord = { ...record } as PlanExecutionRecord
-      const updates: Partial<ChatMessage> = {
-        planExecution: convertPlanExecutionRecord(mutableRecord),
-        isStreaming: !record.completed,
-      }
-
-      if (!record.completed) {
-        updates.thinking = 'Processing...'
-      }
+      const message = dialog.messages.find(m => m.planExecution?.rootPlanId === dialog.planId)
+      if (!message) continue
 
       // Update message with latest plan execution record
-      updateMessageInDialog(dialog.id, message.id, updates)
-
-      // If completed, clear activeRootPlanId to allow next task
-      if (record.completed) {
-        console.log('[useMessageDialog] Plan completed, clearing activeRootPlanId')
-        activeRootPlanId.value = null
+      updateMessageWithPlanRecord(dialog, message, record)
       }
-    },
-    { deep: true }
-  )
+  })
 
   return {
     // State

@@ -232,13 +232,80 @@ User clicks "Send Query"
 
 ---
 
+## Conversation History Restoration Flow
+
+### 10. Page Load History Restoration
+```
+index.vue (onMounted)
+└── Checks for saved conversationId in localStorage
+    └── If found:
+        └── Calls: conversationHistory.restoreConversationHistory(conversationId)
+            │
+            ▼
+useConversationHistory.ts
+└── restoreConversationHistory(conversationId) [Line 154]
+    ├── Calls: loadConversationHistory(conversationId, false, false)
+    │   ├── Sets conversationId in memoryStore
+    │   ├── Calls: MemoryApiService.getConversationHistory(conversationId)
+    │   │   └── GET /api/memories/{conversationId}/history
+    │   │       └── Returns: PlanExecutionRecord[]
+    │   ├── For each record:
+    │   │   ├── processHistoryRecord(record)
+    │   │   │   ├── Adds user message: messageDialog.addMessage('user', ...)
+    │   │   │   ├── Converts API record to PlanExecutionRecord format
+    │   │   │   ├── Adds assistant message: messageDialog.addMessage('assistant', ...)
+    │   │   │   └── Caches plan record: planExecution.setCachedPlanRecord(...)
+    │   └── (Silent mode - no error toast on failure)
+```
+
+### 11. Memory Selection History Loading
+```
+index.vue
+└── memorySelected() [Line 422]
+    └── If memoryStore.selectMemoryId exists:
+        └── Calls: conversationHistory.loadConversationHistory(selectMemoryId, true, true)
+            │
+            ▼
+useConversationHistory.ts
+└── loadConversationHistory(conversationId, clearMessages, showErrorToast) [Line 108]
+    ├── Clears current messages if clearMessages = true
+    ├── Sets conversationId in memoryStore
+    ├── Calls: MemoryApiService.getConversationHistory(conversationId)
+    │   └── GET /api/memories/{conversationId}/history
+    ├── Processes each record (same as restoreConversationHistory)
+    └── Shows error toast if showErrorToast = true and error occurs
+```
+
+### 12. History Record Processing
+```
+useConversationHistory.ts
+└── processHistoryRecord(record: PlanExecutionRecord) [Line 70]
+    ├── Converts API record format:
+    │   ├── convertApiRecordToPlanExecutionRecord(record)
+    │   │   ├── Maps: currentPlanId, status, rootPlanId
+    │   │   ├── Maps: summary, completed, agentExecutionSequence
+    │   │   └── Returns: Partial<PlanExecutionRecord>
+    ├── Adds user message (if userRequest exists):
+    │   └── messageDialog.addMessage('user', record.userRequest, { timestamp })
+    ├── Adds assistant message (if currentPlanId exists):
+    │   ├── Content: record.summary || record.result || record.message
+    │   ├── Attaches planExecution record
+    │   └── messageDialog.addMessage('assistant', content, { planExecution, timestamp })
+    └── Caches plan record (if rootPlanId exists):
+        └── planExecution.setCachedPlanRecord(rootPlanId, planExecutionRecord)
+```
+
+---
+
 ## Key Components Summary
 
 ### Frontend Components
 - **InputArea.vue**: User input UI component
 - **useMessageDialog.ts**: Message dialog management composable
+- **useConversationHistory.ts**: Conversation history loading and restoration composable
 - **direct-api-service.ts**: API service for backend communication
 - **usePlanExecution.ts**: Plan execution polling and state management
+- **memory-api-service.ts**: API service for conversation history retrieval
 
 ### Backend Components
 - **ManusController.java**: REST API controller
@@ -268,4 +335,7 @@ User clicks "Send Query"
 - Plan execution may trigger **subplans** (nested plan execution)
 - User input may be required during execution (wait states)
 - Execution results are recorded in the database for later retrieval
+- Conversation history is restored on page load if a conversationId exists in localStorage
+- History restoration uses `useConversationHistory` singleton composable to centralize logic
+- Plan execution records from history are cached in `planExecution` for future reference
 

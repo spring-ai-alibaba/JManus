@@ -222,6 +222,7 @@ import {
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
 import PublishServiceModal from '@/components/publish-service-modal/PublishServiceModal.vue'
 import SaveConfirmationDialog from '@/components/sidebar/SaveConfirmationDialog.vue'
+import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { useToast } from '@/plugins/useToast'
 import { templateStore } from '@/stores/templateStore'
@@ -236,6 +237,9 @@ const toast = useToast()
 // Template config singleton
 const templateConfig = usePlanTemplateConfigSingleton()
 
+// Message dialog singleton for executing plans
+const messageDialog = useMessageDialogSingleton()
+
 // Props
 interface Props {
   isExecuting?: boolean
@@ -247,10 +251,7 @@ const props = withDefaults(defineProps<Props>(), {
   isGenerating: false,
 })
 
-// Emits
-const emit = defineEmits<{
-  planExecutionRequested: [payload: PlanExecutionRequestPayload]
-}>()
+// No emits needed - we handle execution directly
 
 // Local state
 const executionParams = ref('')
@@ -388,7 +389,15 @@ const buttonText = computed(() => {
     : t('sidebar.publishMcpService')
 })
 
+// Computed property for disabled state - same as InputArea.vue
+const isDisabled = computed(() => messageDialog.isLoading.value)
+
 const canExecute = computed(() => {
+  // Disable if messageDialog is loading (same validation as InputArea)
+  if (isDisabled.value) {
+    return false
+  }
+
   if (props.isExecuting || props.isGenerating) {
     return false
   }
@@ -434,7 +443,7 @@ const handleUploadError = (error: unknown) => {
 }
 
 // Methods
-const handleExecutePlan = () => {
+const handleExecutePlan = async () => {
   console.log('[ExecutionController] 🚀 Execute button clicked')
 
   // Check if task requirements have been modified
@@ -471,10 +480,10 @@ const handleExecutePlan = () => {
   }
 
   // Continue with normal execution if no modifications
-  proceedWithExecution()
+  await proceedWithExecution()
 }
 
-const proceedWithExecution = () => {
+const proceedWithExecution = async () => {
   // Set execution flag to prevent parameter reload
   isExecutingPlan.value = true
   console.log('[ExecutionController] 🔒 Set isExecutingPlan to true')
@@ -537,15 +546,19 @@ const proceedWithExecution = () => {
     }
 
     console.log(
-      '[ExecutionController] 📤 Emitting planExecutionRequested with final payload:',
+      '[ExecutionController] 📤 Executing plan with payload:',
       JSON.stringify(finalPayload, null, 2)
     )
-    // Emit to parent component via Vue event
-    emit('planExecutionRequested', finalPayload)
-    // Also dispatch window event for global listeners (like direct/index.vue)
-    window.dispatchEvent(new CustomEvent('plan-execution-requested', { detail: finalPayload }))
 
-    console.log('[ExecutionController] ✅ Event emitted successfully')
+    // Execute plan directly via messageDialog
+    const result = await messageDialog.executePlan(finalPayload)
+
+    if (result.success) {
+      console.log('[ExecutionController] ✅ Plan execution started successfully:', result.planId)
+    } else {
+      console.error('[ExecutionController] ❌ Plan execution failed:', result.error)
+      toast.error(result.error || t('sidebar.executeFailed'))
+    }
   } catch (error: unknown) {
     console.error('[ExecutionController] ❌ Error executing plan:', error)
     const message = error instanceof Error ? error.message : 'Unknown error'
@@ -651,7 +664,7 @@ const handleSaveAndExecute = async () => {
     // Now proceed with execution - rebuild payload with current template config
     if (pendingExecutionPayload.value) {
       // Rebuild payload with current template config
-      proceedWithExecution()
+      await proceedWithExecution()
       pendingExecutionPayload.value = null
     }
   } catch (error: unknown) {
@@ -662,11 +675,11 @@ const handleSaveAndExecute = async () => {
   }
 }
 
-const handleContinueExecution = () => {
+const handleContinueExecution = async () => {
   console.log('[ExecutionController] ⏩ Continue without save requested')
   if (pendingExecutionPayload.value) {
     // Rebuild payload with current template config
-    proceedWithExecution()
+    await proceedWithExecution()
     pendingExecutionPayload.value = null
   }
 }
