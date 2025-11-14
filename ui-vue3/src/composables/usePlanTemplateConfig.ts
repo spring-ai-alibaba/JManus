@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import { reactive, ref, computed } from 'vue'
+import { PlanActApiService } from '@/api/plan-act-api-service'
+import { PlanTemplateApiService } from '@/api/plan-template-with-tool-api-service'
 import type {
+  InputSchemaParam,
   PlanTemplateConfigVO,
   StepConfig,
   ToolConfigVO,
-  InputSchemaParam,
 } from '@/types/plan-template'
-import { PlanTemplateApiService } from '@/api/plan-template-with-tool-api-service'
-import { PlanActApiService } from '@/api/plan-act-api-service'
+import { computed, reactive, ref } from 'vue'
 
 /**
  * Composable for managing PlanTemplateConfigVO
@@ -127,7 +127,12 @@ export function usePlanTemplateConfig() {
   const setConfig = (newConfig: PlanTemplateConfigVO) => {
     const updatedConfig: PlanTemplateConfigVO = {
       title: newConfig.title || '',
-      steps: newConfig.steps || [],
+      // Deep copy steps to preserve all properties including selectedToolKeys
+      // Convert null selectedToolKeys to empty array for consistency
+      steps: (newConfig.steps || []).map(step => ({
+        ...step,
+        selectedToolKeys: step.selectedToolKeys ?? [],
+      })),
       directResponse: newConfig.directResponse || false,
       planType: newConfig.planType || 'dynamic_agent',
       planTemplateId: newConfig.planTemplateId || '',
@@ -163,9 +168,14 @@ export function usePlanTemplateConfig() {
   // Dynamically generate JSON from current config state (not cached, regenerated each time)
   const generateJsonString = (): string => {
     // Generate fresh JSON from current config state
+    // Ensure selectedToolKeys is always an array (not null) in the output
     const jsonConfig: PlanTemplateConfigVO = {
       title: config.title || '',
-      steps: config.steps || [],
+      steps: (config.steps || []).map(step => ({
+        ...step,
+        // Ensure selectedToolKeys is always an array, not null
+        selectedToolKeys: step.selectedToolKeys ?? [],
+      })),
       directResponse: config.directResponse || false,
       planType: config.planType || 'dynamic_agent',
       planTemplateId: config.planTemplateId || '',

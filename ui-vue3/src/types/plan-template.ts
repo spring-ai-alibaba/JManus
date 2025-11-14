@@ -72,6 +72,7 @@ export interface StepConfig {
   agentName?: string
   modelName?: string
   terminateColumns?: string
+  selectedToolKeys?: string[]
 }
 
 export interface PlanTemplateConfigVO {

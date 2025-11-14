@@ -155,6 +155,8 @@ public class PlanTemplateConfigVO {
 
 		private String terminateColumns;
 
+		private List<String> selectedToolKeys;
+
 		/**
 		 * Default constructor
 		 */
@@ -195,10 +197,19 @@ public class PlanTemplateConfigVO {
 			this.terminateColumns = terminateColumns;
 		}
 
+		public List<String> getSelectedToolKeys() {
+			return selectedToolKeys;
+		}
+
+		public void setSelectedToolKeys(List<String> selectedToolKeys) {
+			this.selectedToolKeys = selectedToolKeys;
+		}
+
 		@Override
 		public String toString() {
 			return "StepConfig{" + "stepRequirement='" + stepRequirement + '\'' + ", agentName='" + agentName + '\''
-					+ ", modelName='" + modelName + '\'' + ", terminateColumns='" + terminateColumns + '\'' + '}';
+					+ ", modelName='" + modelName + '\'' + ", terminateColumns='" + terminateColumns + '\''
+					+ ", selectedToolKeys=" + selectedToolKeys + '}';
 		}
 
 	}

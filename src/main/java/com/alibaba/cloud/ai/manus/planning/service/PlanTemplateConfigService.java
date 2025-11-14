@@ -255,18 +255,8 @@ public class PlanTemplateConfigService {
 			String planTemplateId = configVO.getPlanTemplateId();
 			String title = configVO.getTitle() != null ? configVO.getTitle() : "Untitled Plan";
 
-			// Convert PlanTemplateConfigVO to JSON string (excluding toolConfig)
-			// Create a copy without toolConfig for the plan JSON
-			PlanTemplateConfigVO planJsonConfig = new PlanTemplateConfigVO();
-			planJsonConfig.setTitle(configVO.getTitle());
-			planJsonConfig.setSteps(configVO.getSteps());
-			planJsonConfig.setDirectResponse(configVO.getDirectResponse());
-			planJsonConfig.setPlanType(configVO.getPlanType());
-			planJsonConfig.setPlanTemplateId(configVO.getPlanTemplateId());
-			planJsonConfig.setReadOnly(configVO.getReadOnly());
-			// Explicitly do not set toolConfig
 
-			String planJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(planJsonConfig);
+			String planJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(configVO);
 
 			// Check if PlanTemplate already exists
 			Optional<PlanTemplate> existingTemplateOpt = planTemplateRepository.findByPlanTemplateId(planTemplateId);
@@ -359,6 +349,11 @@ public class PlanTemplateConfigService {
 		log.info("Creating or updating coordinator tool from PlanTemplateConfigVO for planTemplateId: {}",
 				planTemplateId);
 		try {
+			// Update or create PlanTemplate with the latest config (including steps with selectedToolKeys)
+			// This ensures the plan JSON in the database is updated with the latest configuration
+			createPlanTemplateFromConfig(configVO);
+			log.info("Updated PlanTemplate and plan JSON for planTemplateId: {}", planTemplateId);
+
 			// Prepare PlanTemplateConfigVO with toolConfig
 			PlanTemplateConfigVO preparedConfig = preparePlanTemplateConfigWithToolConfig(configVO);
 

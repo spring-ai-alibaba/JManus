@@ -502,6 +502,7 @@ public class PlanTemplateController {
 							stepConfig.setAgentName(step.getAgentName());
 							stepConfig.setModelName(step.getModelName());
 							stepConfig.setTerminateColumns(step.getTerminateColumns());
+							stepConfig.setSelectedToolKeys(step.getSelectedToolKeys());
 							stepConfigs.add(stepConfig);
 						}
 						configVO.setSteps(stepConfigs);
@@ -593,6 +594,7 @@ public class PlanTemplateController {
 					stepConfig.setAgentName(step.getAgentName());
 					stepConfig.setModelName(step.getModelName());
 					stepConfig.setTerminateColumns(step.getTerminateColumns());
+					stepConfig.setSelectedToolKeys(step.getSelectedToolKeys());
 					stepConfigs.add(stepConfig);
 				}
 				configVO.setSteps(stepConfigs);

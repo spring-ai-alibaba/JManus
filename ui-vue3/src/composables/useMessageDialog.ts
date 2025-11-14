@@ -668,13 +668,13 @@ export function useMessageDialog() {
     message: ChatMessage,
     record: PlanExecutionRecord
   ): void => {
-    const updates: Partial<ChatMessage> = {
+      const updates: Partial<ChatMessage> = {
       planExecution: convertPlanExecutionRecord(record),
-      isStreaming: !record.completed,
-    }
+        isStreaming: !record.completed,
+      }
 
-    if (!record.completed) {
-      updates.thinking = 'Processing...'
+      if (!record.completed) {
+        updates.thinking = 'Processing...'
     } else {
       // When plan is completed, handle summary content
       // Only update content if there's no agent execution sequence (simple response)
