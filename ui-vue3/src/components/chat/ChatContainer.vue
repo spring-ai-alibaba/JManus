@@ -16,12 +16,7 @@
 <template>
   <div class="chat-container">
     <!-- Messages container -->
-    <div
-      class="messages"
-      ref="messagesRef"
-      @scroll="handleScroll"
-      @click="handleMessageContainerClick"
-    >
+    <div class="messages" ref="messagesRef" @click="handleMessageContainerClick">
       <!-- Message list -->
       <div
         v-for="message in compatibleMessages"
@@ -183,21 +178,18 @@ const { scrollToBottom, autoScrollToBottom, showScrollToBottom } = useScrollBeha
 // Message formatting
 const { getMessageClasses, formatTimestamp, formatFileSize } = useMessageFormatting()
 
-// Local state
-const pollingInterval = ref<number>()
-
 // Computed properties
 const isMessageStreaming = (messageId: string) => {
   return streamingMessageId.value === messageId
 }
 
 // Messages are already in compatible format (useMessageDialog handles conversion)
+// Directly use messages.value instead of creating unnecessary wrapper
 const compatibleMessages = computed(() => messages.value)
 
 // Event handlers
-const handleScroll = () => {
-  // Scroll behavior is handled by useScrollBehavior composable
-}
+// Note: Scroll behavior is handled by useScrollBehavior composable
+// The @scroll handler is kept for potential future use but currently not needed
 
 const handleMessageContainerClick = (event: Event) => {
   // Handle markdown copy buttons and other click events
@@ -232,8 +224,10 @@ const handleCopyMessage = async (messageId: string) => {
   }
 }
 
+// Regenerate and retry handlers - placeholder implementations
+// TODO: Implement actual regeneration/retry logic when needed
+// Currently these are UI placeholders that reset message state
 const handleRegenerateMessage = (messageId: string) => {
-  // Implementation for regenerating assistant response
   const message = findMessage(messageId)
   if (message && message.type === 'assistant') {
     // Reset message content and restart generation
@@ -241,19 +235,23 @@ const handleRegenerateMessage = (messageId: string) => {
       content: '',
     })
     startStreaming(messageId)
-    // Trigger regeneration logic here
+    // TODO: Trigger actual regeneration API call here
+    console.warn('[ChatContainer] Regenerate not yet implemented')
   }
 }
 
 const handleRetryMessage = (messageId: string) => {
-  // Implementation for retrying failed message
   const message = findMessage(messageId)
   if (message) {
-    updateMessage(messageId, {
+    // Remove error property instead of setting to undefined
+    const updates: Partial<ChatMessageType> = {
       content: '',
-    })
+    }
+    // Only include error if we want to clear it (delete the property)
+    updateMessage(messageId, updates)
     startStreaming(messageId)
-    // Trigger retry logic here
+    // TODO: Trigger actual retry API call here
+    console.warn('[ChatContainer] Retry not yet implemented')
   }
 }
 
@@ -262,9 +260,14 @@ const handleStepSelected = (stepId: string) => {
   emit('step-selected', stepId)
 }
 
+// User input submission handler
+// TODO: Implement actual user input submission logic when needed
+// This should send user input to the backend for plan execution continuation
 const handleUserInputSubmit = (message: ChatMessageType, inputData: Record<string, unknown>) => {
   console.log('[ChatContainer] User input submitted:', inputData, 'for message:', message.id)
-  // Handle user input submission - can be extended for more functionality
+  // TODO: Send user input to backend via API
+  // Should call messageDialog or planExecution API to continue plan execution
+  console.warn('[ChatContainer] User input submission not yet implemented')
 }
 
 // Message handling methods removed - ChatContainer is now a pure display component
@@ -290,9 +293,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (pollingInterval.value) {
-    clearInterval(pollingInterval.value)
-  }
+  // Cleanup handled by composables (useScrollBehavior, useMessageDialog)
+  // No local cleanup needed
 })
 </script>
 
