@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import { ref } from 'vue'
-import type { Tool } from '@/types/tool'
 import { ToolApiService } from '@/api/tool-api-service'
+import type { Tool } from '@/types/tool'
+import { ref } from 'vue'
 
 export interface AvailableTool {
   key: string
@@ -51,14 +51,17 @@ export function useAvailableTools() {
       const tools = await ToolApiService.getAvailableTools()
       console.log('[useAvailableTools] Loaded available tools:', tools)
       // Transform tools to ensure they have all required fields
-      availableTools.value = tools.map((tool: Tool) => ({
-        key: tool.key || '',
-        name: tool.name || '',
-        description: tool.description || '',
-        enabled: tool.enabled || false,
-        serviceGroup: tool.serviceGroup || 'default',
-        selectable: tool.selectable,
-      }))
+      // Filter out tools that are not selectable (enableInternalToolcall = false)
+      availableTools.value = tools
+        .filter((tool: Tool) => tool.selectable !== false)
+        .map((tool: Tool) => ({
+          key: tool.key || '',
+          name: tool.name || '',
+          description: tool.description || '',
+          enabled: tool.enabled || false,
+          serviceGroup: tool.serviceGroup || 'default',
+          selectable: tool.selectable,
+        }))
     } catch (err) {
       console.error('[useAvailableTools] Error loading tools:', err)
       error.value = err instanceof Error ? err.message : 'Unknown error'

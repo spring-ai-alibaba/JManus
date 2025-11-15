@@ -237,7 +237,7 @@ public class PlanTemplateConfigVO {
 		 * Default constructor
 		 */
 		public ToolConfigVO() {
-			this.enableInternalToolcall = true;
+			this.enableInternalToolcall = false;
 			this.enableHttpService = false;
 			this.enableMcpService = false;
 			this.publishStatus = "PUBLISHED";

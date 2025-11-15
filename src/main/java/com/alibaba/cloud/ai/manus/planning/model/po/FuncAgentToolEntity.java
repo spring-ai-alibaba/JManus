@@ -50,7 +50,7 @@ public class FuncAgentToolEntity {
 	private String planTemplateId;
 
 	@Column(nullable = false)
-	private Boolean enableInternalToolcall = true;
+	private Boolean enableInternalToolcall = false;
 
 	@Column(nullable = false)
 	private Boolean enableHttpService = false;
@@ -67,7 +67,7 @@ public class FuncAgentToolEntity {
 	public FuncAgentToolEntity() {
 		this.createTime = LocalDateTime.now();
 		this.updateTime = LocalDateTime.now();
-		this.enableInternalToolcall = true;
+		this.enableInternalToolcall = false;
 		this.enableHttpService = false;
 		this.enableMcpService = false;
 	}

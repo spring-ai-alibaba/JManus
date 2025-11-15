@@ -124,10 +124,10 @@
 </template>
 
 <script setup lang="ts">
+import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import type { Tool } from '@/types/tool'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import Modal from '../modal/index.vue'
 
 interface Props {

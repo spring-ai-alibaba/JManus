@@ -414,7 +414,7 @@ public class PlanTemplateConfigService {
 						toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
 				existingEntity.setInputSchema(convertInputSchemaListToJson(toolConfig.getInputSchema()));
 				existingEntity.setEnableInternalToolcall(
-						toolConfig.getEnableInternalToolcall() != null ? toolConfig.getEnableInternalToolcall() : true);
+						toolConfig.getEnableInternalToolcall() != null ? toolConfig.getEnableInternalToolcall() : false);
 				existingEntity.setEnableHttpService(
 						toolConfig.getEnableHttpService() != null ? toolConfig.getEnableHttpService() : false);
 				existingEntity.setEnableMcpService(
@@ -494,7 +494,7 @@ public class PlanTemplateConfigService {
 			entity.setInputSchema(convertInputSchemaListToJson(toolConfig.getInputSchema()));
 			entity.setPlanTemplateId(configVO.getPlanTemplateId());
 			entity.setEnableInternalToolcall(
-					toolConfig.getEnableInternalToolcall() != null ? toolConfig.getEnableInternalToolcall() : true);
+					toolConfig.getEnableInternalToolcall() != null ? toolConfig.getEnableInternalToolcall() : false);
 			entity.setEnableHttpService(
 					toolConfig.getEnableHttpService() != null ? toolConfig.getEnableHttpService() : false);
 			entity.setEnableMcpService(

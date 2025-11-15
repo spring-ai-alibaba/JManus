@@ -361,7 +361,9 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 
 	@Override
 	public boolean isSelectable() {
-		return true;
+		// Only selectable if enableInternalToolcall is true
+		return funcAgentToolEntity.getEnableInternalToolcall() != null
+				&& funcAgentToolEntity.getEnableInternalToolcall();
 	}
 
 }
