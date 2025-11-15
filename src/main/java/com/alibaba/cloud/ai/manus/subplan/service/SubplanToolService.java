@@ -15,17 +15,11 @@
  */
 package com.alibaba.cloud.ai.manus.subplan.service;
 
-import com.alibaba.cloud.ai.manus.config.ManusProperties;
-import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
-import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
-import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
-import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
-import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
-import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
-import com.alibaba.cloud.ai.manus.subplan.model.vo.SubplanToolWrapper;
-import com.alibaba.cloud.ai.manus.subplan.repository.SubplanToolDefRepository;
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.function.FunctionToolCallback;
@@ -34,11 +28,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
+import com.alibaba.cloud.ai.manus.planning.model.po.FuncAgentToolEntity;
+import com.alibaba.cloud.ai.manus.planning.repository.FuncAgentToolRepository;
+import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
+import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
+import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
+import com.alibaba.cloud.ai.manus.subplan.model.vo.SubplanToolWrapper;
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Service implementation for managing subplan tools
@@ -52,7 +52,7 @@ public class SubplanToolService {
 	private static final Logger logger = LoggerFactory.getLogger(SubplanToolService.class);
 
 	@Autowired
-	private SubplanToolDefRepository subplanToolDefRepository;
+	private FuncAgentToolRepository funcAgentToolRepository;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -72,19 +72,15 @@ public class SubplanToolService {
 	@Autowired
 	private IPlanParameterMappingService parameterMappingService;
 
-	public List<SubplanToolDef> getAllSubplanTools() {
-		logger.debug("Fetching all subplan tools from database");
-		return subplanToolDefRepository.findAll();
+	public List<FuncAgentToolEntity> getAllSubplanTools() {
+		logger.debug("Fetching all coordinator tools from database");
+		return funcAgentToolRepository.findAll();
 	}
 
-	public Optional<SubplanToolDef> getSubplanToolByTemplate(String planTemplateId) {
-		logger.debug("Fetching subplan tool for template: {}", planTemplateId);
-		return subplanToolDefRepository.findOneByPlanTemplateId(planTemplateId);
-	}
-
-	public List<SubplanToolDef> getSubplanToolsByEndpoint(String endpoint) {
-		logger.debug("Fetching subplan tools for endpoint: {}", endpoint);
-		return subplanToolDefRepository.findByEndpoint(endpoint);
+	public Optional<FuncAgentToolEntity> getSubplanToolByTemplate(String planTemplateId) {
+		logger.debug("Fetching coordinator tool for template: {}", planTemplateId);
+		List<FuncAgentToolEntity> tools = funcAgentToolRepository.findByPlanTemplateId(planTemplateId);
+		return tools.isEmpty() ? Optional.empty() : Optional.of(tools.get(0));
 	}
 
 	public Map<String, PlanningFactory.ToolCallBackContext> createSubplanToolCallbacks(String planId, String rootPlanId,
@@ -95,38 +91,54 @@ public class SubplanToolService {
 		Map<String, PlanningFactory.ToolCallBackContext> toolCallbackMap = new HashMap<>();
 
 		try {
-			// Get all subplan tools from database
-			List<SubplanToolDef> subplanTools = subplanToolDefRepository.findAllWithParameters();
+			// Get all coordinator tools from database, filter by enableInternalToolcall = true
+			List<FuncAgentToolEntity> coordinatorTools = funcAgentToolRepository.findAll().stream()
+					.filter(tool -> tool.getEnableInternalToolcall() != null && tool.getEnableInternalToolcall())
+					.collect(java.util.stream.Collectors.toList());
 
-			if (subplanTools.isEmpty()) {
-				logger.info("No subplan tools found in database");
+			if (coordinatorTools.isEmpty()) {
+				logger.info("No coordinator tools with enableInternalToolcall=true found in database");
 				return toolCallbackMap;
 			}
 
 			Boolean infiniteContextEnabled = manusProperties.getInfiniteContextEnabled();
-			logger.info("Found {} subplan tools to register", subplanTools.size());
+			logger.info("Found {} coordinator tools to register", coordinatorTools.size());
 
-			for (SubplanToolDef subplanTool : subplanTools) {
+			for (FuncAgentToolEntity coordinatorTool : coordinatorTools) {
+
+				// Get PlanTemplate for this coordinator tool
+				com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate planTemplate = planTemplateService
+						.getPlanTemplate(coordinatorTool.getPlanTemplateId());
+				if (planTemplate == null) {
+					logger.warn("PlanTemplate not found for planTemplateId: {}, skipping tool registration",
+							coordinatorTool.getPlanTemplateId());
+					continue;
+				}
 
 				// special case : for extract_relevant_content , we don't want to let llm
 				// use
 				// it when infinite context is disabled
-				if (!infiniteContextEnabled && "extract_relevant_content".equals(subplanTool.getToolName())) {
+				String toolName = planTemplate.getTitle() != null ? planTemplate.getTitle()
+						: coordinatorTool.getPlanTemplateId();
+				if (!infiniteContextEnabled && "extract_relevant_content".equals(toolName)) {
 					logger.info("Infinite context is disabled, skipping extract_relevant_content");
 					continue;
 				}
 				try {
 					// Create a SubplanToolWrapper that extends AbstractBaseTool
-					SubplanToolWrapper toolWrapper = new SubplanToolWrapper(subplanTool, planId, rootPlanId,
-							planTemplateService, planningCoordinator, planIdDispatcher, objectMapper,
+					SubplanToolWrapper toolWrapper = new SubplanToolWrapper(coordinatorTool, planTemplate, planId,
+							rootPlanId, planTemplateService, planningCoordinator, planIdDispatcher, objectMapper,
 							parameterMappingService);
+
+					// Get tool name from wrapper (uses PlanTemplate title)
+					toolName = toolWrapper.getName();
 
 					// Create FunctionToolCallback
 					FunctionToolCallback<Map<String, Object>, ToolExecuteResult> functionToolCallback = FunctionToolCallback
-						.builder(subplanTool.getToolName(), toolWrapper)
-						.description(subplanTool.getToolDescription())
-						.inputSchema(convertParametersToSchema(subplanTool))
-						.inputType(Map.class) // Map input type for subplan tools
+						.builder(toolName, toolWrapper)
+						.description(coordinatorTool.getToolDescription())
+						.inputSchema(toolWrapper.getParameters())
+						.inputType(Map.class) // Map input type for coordinator tools
 						.toolMetadata(ToolMetadata.builder().returnDirect(false).build())
 						.build();
 
@@ -134,116 +146,25 @@ public class SubplanToolService {
 					PlanningFactory.ToolCallBackContext context = new PlanningFactory.ToolCallBackContext(
 							functionToolCallback, toolWrapper);
 
-					toolCallbackMap.put(subplanTool.getToolName(), context);
+					toolCallbackMap.put(toolName, context);
 
-					logger.info("Successfully registered subplan tool: {} -> {}", subplanTool.getToolName(),
-							subplanTool.getPlanTemplateId());
+					logger.info("Successfully registered coordinator tool: {} -> {}", toolName,
+							coordinatorTool.getPlanTemplateId());
 
 				}
 				catch (Exception e) {
-					logger.error("Failed to register subplan tool: {}", subplanTool.getToolName(), e);
+					logger.error("Failed to register coordinator tool for planTemplateId: {}",
+							coordinatorTool.getPlanTemplateId(), e);
 				}
 			}
 
 		}
 		catch (Exception e) {
-			logger.error("Error creating subplan tool callbacks", e);
+			logger.error("Error creating coordinator tool callbacks", e);
 		}
 
-		logger.info("Created {} subplan tool callbacks", toolCallbackMap.size());
+		logger.info("Created {} coordinator tool callbacks", toolCallbackMap.size());
 		return toolCallbackMap;
-	}
-
-	public SubplanToolDef registerSubplanTool(SubplanToolDef toolDef) {
-		logger.info("Registering new subplan tool: {}", toolDef.getToolName());
-
-		if (subplanToolDefRepository.existsByToolName(toolDef.getToolName())) {
-			throw new IllegalArgumentException("Subplan tool with name '" + toolDef.getToolName() + "' already exists");
-		}
-
-		SubplanToolDef savedTool = subplanToolDefRepository.save(toolDef);
-		logger.info("Successfully registered subplan tool: {} with ID: {}", savedTool.getToolName(), savedTool.getId());
-
-		return savedTool;
-	}
-
-	public SubplanToolDef updateSubplanTool(SubplanToolDef toolDef) {
-		logger.info("Updating subplan tool: {} with ID: {}", toolDef.getToolName(), toolDef.getId());
-
-		if (toolDef.getId() == null) {
-			throw new IllegalArgumentException("Tool ID cannot be null for update operation");
-		}
-
-		if (!subplanToolDefRepository.existsById(toolDef.getId())) {
-			throw new IllegalArgumentException("Subplan tool with ID " + toolDef.getId() + " not found");
-		}
-
-		SubplanToolDef updatedTool = subplanToolDefRepository.save(toolDef);
-		logger.info("Successfully updated subplan tool: {} with ID: {}", updatedTool.getToolName(),
-				updatedTool.getId());
-
-		return updatedTool;
-	}
-
-	public void deleteSubplanTool(Long id) {
-		logger.info("Deleting subplan tool with ID: {}", id);
-
-		if (!subplanToolDefRepository.existsById(id)) {
-			throw new IllegalArgumentException("Subplan tool with ID " + id + " not found");
-		}
-
-		subplanToolDefRepository.deleteById(id);
-		logger.info("Successfully deleted subplan tool with ID: {}", id);
-	}
-
-	public boolean existsByToolName(String toolName) {
-		return subplanToolDefRepository.existsByToolName(toolName);
-	}
-
-	public SubplanToolDef getByToolName(String toolName) {
-		return subplanToolDefRepository.findByToolName(toolName).orElse(null);
-	}
-
-	/**
-	 * Convert SubplanParamDef parameters to JSON schema format
-	 */
-	private String convertParametersToSchema(SubplanToolDef subplanTool) {
-		try {
-			if (subplanTool.getInputSchema() == null || subplanTool.getInputSchema().isEmpty()) {
-				return "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}";
-			}
-
-			// Convert List<SubplanParamDef> to JSON schema format
-			Map<String, Object> schema = new HashMap<>();
-			schema.put("type", "object");
-
-			Map<String, Object> properties = new HashMap<>();
-			List<String> required = new ArrayList<>();
-
-			for (com.alibaba.cloud.ai.manus.subplan.model.po.SubplanParamDef param : subplanTool.getInputSchema()) {
-				Map<String, Object> paramSchema = new HashMap<>();
-				paramSchema.put("type", param.getType().toLowerCase());
-				paramSchema.put("description", param.getDescription());
-
-				properties.put(param.getName(), paramSchema);
-
-				if (param.isRequired()) {
-					required.add(param.getName());
-				}
-			}
-
-			schema.put("properties", properties);
-			if (!required.isEmpty()) {
-				schema.put("required", required);
-			}
-
-			return objectMapper.writeValueAsString(schema);
-
-		}
-		catch (Exception e) {
-			logger.error("Error converting parameters to schema for tool: {}", subplanTool.getToolName(), e);
-			return "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}";
-		}
 	}
 
 }

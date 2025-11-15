@@ -510,19 +510,27 @@ const handleSave = async () => {
     }
 
     // Save using templateConfig (this already calls PlanTemplateApiService.createOrUpdatePlanTemplateWithTool)
+    // The save() method already calls load() which reloads versions from backend
     const success = await templateConfig.save()
     if (!success) {
       toast.error('Failed to save plan template')
       return
     }
 
-    // Update versions after save
+    // Update versions after save (adds current content to local version history)
     const content = templateConfig.generateJsonString().trim()
     templateConfig.updateVersionsAfterSave(content)
 
+    // Get actual version count after update (save() already reloaded versions from backend, then updateVersionsAfterSave adds one more)
+    const versionCount = templateConfig.planVersions.value.length
+
     // Reset modification flag after successful save
     templateStore.hasTaskRequirementModified = false
-    toast.success(t('sidebar.saveSuccess', { message: 'Plan saved successfully', versionCount: 0 }))
+
+    // Refresh sidebar template list to reflect the saved changes
+    await templateStore.loadPlanTemplateList()
+
+    toast.success(t('sidebar.saveSuccess', { message: 'Plan saved successfully', versionCount }))
   } catch (error: unknown) {
     console.error('Failed to save plan modifications:', error)
     const message = error instanceof Error ? error.message : t('sidebar.saveFailed')

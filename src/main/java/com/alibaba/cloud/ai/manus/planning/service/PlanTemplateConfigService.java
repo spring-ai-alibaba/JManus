@@ -273,7 +273,6 @@ public class PlanTemplateConfigService {
 				// Update existing plan template
 				PlanTemplate template = existingTemplateOpt.get();
 				template.setTitle(title);
-				template.setInternalToolcall(false);
 				template.setUpdateTime(java.time.LocalDateTime.now());
 				planTemplateRepository.save(template);
 				log.debug("Updated existing plan template: {}", planTemplateId);
@@ -405,13 +404,15 @@ public class PlanTemplateConfigService {
 							"Coordinator tool not found with ID: " + id));
 
 			// Update entity from configVO
+			// Always update toolName from title to ensure consistency
+			existingEntity.setToolName(configVO.getTitle() != null ? configVO.getTitle() : "");
+			existingEntity.setPlanTemplateId(configVO.getPlanTemplateId());
+
 			PlanTemplateConfigVO.ToolConfigVO toolConfig = configVO.getToolConfig();
 			if (toolConfig != null) {
-				existingEntity.setToolName(configVO.getTitle() != null ? configVO.getTitle() : "");
 				existingEntity.setToolDescription(
 						toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
 				existingEntity.setInputSchema(convertInputSchemaListToJson(toolConfig.getInputSchema()));
-				existingEntity.setPlanTemplateId(configVO.getPlanTemplateId());
 				existingEntity.setEnableInternalToolcall(
 						toolConfig.getEnableInternalToolcall() != null ? toolConfig.getEnableInternalToolcall() : true);
 				existingEntity.setEnableHttpService(
@@ -421,7 +422,7 @@ public class PlanTemplateConfigService {
 			}
 
 			FuncAgentToolEntity savedEntity = funcAgentToolRepository.save(existingEntity);
-			log.info("Successfully updated FuncAgentToolEntity: {} with ID: {}", savedEntity.getToolName(),
+			log.info("Successfully updated FuncAgentToolEntity: {} with ID: {}", savedEntity.getToolDescription(),
 					savedEntity.getId());
 
 			// Convert back to PlanTemplateConfigVO
@@ -486,6 +487,7 @@ public class PlanTemplateConfigService {
 
 			// Convert PlanTemplateConfigVO to Entity and save
 			FuncAgentToolEntity entity = new FuncAgentToolEntity();
+			// Use title as toolName
 			entity.setToolName(configVO.getTitle() != null ? configVO.getTitle() : "");
 			entity.setToolDescription(
 					toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
@@ -499,7 +501,7 @@ public class PlanTemplateConfigService {
 					toolConfig.getEnableMcpService() != null ? toolConfig.getEnableMcpService() : false);
 
 			FuncAgentToolEntity savedEntity = funcAgentToolRepository.save(entity);
-			log.info("Successfully saved FuncAgentToolEntity: {} with ID: {}", savedEntity.getToolName(),
+			log.info("Successfully saved FuncAgentToolEntity: {} with ID: {}", savedEntity.getToolDescription(),
 					savedEntity.getId());
 
 			// Convert back to PlanTemplateConfigVO
@@ -535,21 +537,34 @@ public class PlanTemplateConfigService {
 	/**
 	 * Get plan template ID from tool name
 	 * Only returns plan template ID if HTTP service is enabled for the tool
-	 * @param toolName Tool name
+	 * Tool name is matched against PlanTemplate.title
+	 * @param toolName Tool name (PlanTemplate.title)
 	 * @return Plan template ID if found and HTTP service is enabled, null otherwise
 	 */
 	public String getPlanTemplateIdFromToolName(String toolName) {
 		try {
-			FuncAgentToolEntity toolEntity = funcAgentToolRepository.findByToolName(toolName);
-			if (toolEntity == null) {
+			// Find PlanTemplate by title (tool name)
+			Optional<PlanTemplate> planTemplateOpt = planTemplateRepository.findByTitle(toolName);
+			if (planTemplateOpt.isEmpty()) {
 				return null;
 			}
+
+			PlanTemplate planTemplate = planTemplateOpt.get();
+			String planTemplateId = planTemplate.getPlanTemplateId();
+
+			// Find FuncAgentToolEntity by planTemplateId
+			List<FuncAgentToolEntity> toolEntities = funcAgentToolRepository.findByPlanTemplateId(planTemplateId);
+			if (toolEntities.isEmpty()) {
+				return null;
+			}
+
+			FuncAgentToolEntity toolEntity = toolEntities.get(0);
 			// Only return plan template ID if HTTP service is enabled
 			Boolean isHttpEnabled = toolEntity.getEnableHttpService();
 			if (isHttpEnabled == null || !isHttpEnabled) {
 				return null;
 			}
-			return toolEntity.getPlanTemplateId();
+			return planTemplateId;
 		}
 		catch (Exception e) {
 			log.error("Error getting plan template ID from tool name: {}", e.getMessage(), e);
@@ -580,7 +595,6 @@ public class PlanTemplateConfigService {
 	private PlanTemplateConfigVO convertEntityToPlanTemplateConfigVO(FuncAgentToolEntity entity) {
 		PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
 		configVO.setPlanTemplateId(entity.getPlanTemplateId());
-		configVO.setTitle(entity.getToolName());
 
 		// Get PlanTemplate for additional info
 		PlanTemplate planTemplate = planTemplateRepository.findByPlanTemplateId(entity.getPlanTemplateId())

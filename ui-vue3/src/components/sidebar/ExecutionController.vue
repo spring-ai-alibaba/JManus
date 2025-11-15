@@ -606,14 +606,20 @@ const handleSaveAndExecute = async () => {
     const content = templateConfig.generateJsonString().trim()
     templateConfig.updateVersionsAfterSave(content)
 
+    // Get actual version count after update
+    const versionCount = templateConfig.planVersions.value.length
+
     // Reset modification flag after successful save
     templateStore.hasTaskRequirementModified = false
 
     // Refresh parameter requirements after successful save
     await refreshParameterRequirements()
 
+    // Refresh sidebar template list to reflect the saved changes
+    await templateStore.loadPlanTemplateList()
+
     // Note: templateConfig.save() already handles the save, so we just show success
-    toast.success(t('sidebar.saveSuccess', { message: 'Plan saved successfully', versionCount: 0 }))
+    toast.success(t('sidebar.saveSuccess', { message: 'Plan saved successfully', versionCount }))
 
     // Wait a bit for save to complete
     await new Promise(resolve => setTimeout(resolve, 500))
@@ -845,6 +851,64 @@ watch(
         console.log('[ExecutionController] 🚀 Immediate reload of parameters')
         loadParameterRequirements()
       }
+    }
+  }
+)
+
+// Watch for changes in selectedTemplate steps to auto-refresh parameters when saved
+// This watches for parameter changes (<<paramName>>) in stepRequirement fields
+watch(
+  () => {
+    // Create a string representation of all step requirements to detect parameter changes
+    const selectedTemplate = templateConfig.selectedTemplate.value
+    if (!selectedTemplate || !selectedTemplate.steps) {
+      return ''
+    }
+    // Extract all stepRequirement fields and join them to detect any changes
+    return selectedTemplate.steps.map(step => step.stepRequirement || '').join('|||')
+  },
+  (newStepsContent, oldStepsContent) => {
+    // Skip if currently executing
+    if (isExecutingPlan.value) {
+      console.log('[ExecutionController] ⏸️ Skipping parameter reload - plan is executing')
+      return
+    }
+
+    // Only react if steps content actually changed and we have a valid template ID
+    if (newStepsContent !== oldStepsContent && templateConfig.currentPlanTemplateId.value) {
+      console.log(
+        '[ExecutionController] 🔄 Steps content changed, will refresh parameter requirements'
+      )
+      // Add a small delay to ensure backend has processed the save
+      setTimeout(() => {
+        console.log('[ExecutionController] ⏰ Refreshing parameters after steps change')
+        refreshParameterRequirements()
+      }, 1500)
+    }
+  },
+  { deep: false }
+)
+
+// Watch for hasTaskRequirementModified flag change from true to false (indicates save completed)
+watch(
+  () => templateStore.hasTaskRequirementModified,
+  (newValue, oldValue) => {
+    // When modification flag changes from true to false, it means save was completed
+    if (oldValue === true && newValue === false && templateConfig.currentPlanTemplateId.value) {
+      // Skip if currently executing
+      if (isExecutingPlan.value) {
+        console.log('[ExecutionController] ⏸️ Skipping parameter reload - plan is executing')
+        return
+      }
+
+      console.log(
+        '[ExecutionController] 💾 Save completed (hasTaskRequirementModified: true -> false), refreshing parameters'
+      )
+      // Add a delay to ensure backend has processed the save and parameters are updated
+      setTimeout(() => {
+        console.log('[ExecutionController] ⏰ Refreshing parameters after save')
+        refreshParameterRequirements()
+      }, 1500)
     }
   }
 )

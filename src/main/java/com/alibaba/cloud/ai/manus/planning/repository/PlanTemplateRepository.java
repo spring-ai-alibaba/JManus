@@ -36,6 +36,13 @@ public interface PlanTemplateRepository extends JpaRepository<PlanTemplate, Long
 	Optional<PlanTemplate> findByPlanTemplateId(String planTemplateId);
 
 	/**
+	 * Find the plan template by title
+	 * @param title the plan template title
+	 * @return the plan template entity
+	 */
+	Optional<PlanTemplate> findByTitle(String title);
+
+	/**
 	 * Delete the plan template by the plan template ID
 	 * @param planTemplateId the plan template ID
 	 */

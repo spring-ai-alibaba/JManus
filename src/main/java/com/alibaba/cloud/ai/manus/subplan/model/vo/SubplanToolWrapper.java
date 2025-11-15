@@ -15,7 +15,9 @@
  */
 package com.alibaba.cloud.ai.manus.subplan.model.vo;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -24,6 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ToolContext;
 
+import com.alibaba.cloud.ai.manus.planning.model.po.FuncAgentToolEntity;
+import com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate;
 import com.alibaba.cloud.ai.manus.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.manus.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
@@ -31,13 +35,13 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.RequestSource;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
-import com.alibaba.cloud.ai.manus.subplan.model.po.SubplanToolDef;
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Wrapper class that extends AbstractBaseTool for SubplanToolDef
+ * Wrapper class that extends AbstractBaseTool for FuncAgentToolEntity
  *
  * This allows integration with the existing tool registry system
  */
@@ -47,7 +51,13 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 
 	private static final Logger logger = LoggerFactory.getLogger(SubplanToolWrapper.class);
 
-	private final SubplanToolDef subplanTool;
+	private final FuncAgentToolEntity funcAgentToolEntity;
+
+	private final PlanTemplate planTemplate;
+
+	private final String currentPlanId;
+
+	private final String rootPlanId;
 
 	private final PlanTemplateService planTemplateService;
 
@@ -59,11 +69,12 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 
 	private final IPlanParameterMappingService parameterMappingService;
 
-	public SubplanToolWrapper(SubplanToolDef subplanTool, String currentPlanId, String rootPlanId,
-			PlanTemplateService planTemplateService, PlanningCoordinator planningCoordinator,
+	public SubplanToolWrapper(FuncAgentToolEntity funcAgentToolEntity, PlanTemplate planTemplate, String currentPlanId,
+			String rootPlanId, PlanTemplateService planTemplateService, PlanningCoordinator planningCoordinator,
 			PlanIdDispatcher planIdDispatcher, ObjectMapper objectMapper,
 			IPlanParameterMappingService parameterMappingService) {
-		this.subplanTool = subplanTool;
+		this.funcAgentToolEntity = funcAgentToolEntity;
+		this.planTemplate = planTemplate;
 		this.currentPlanId = currentPlanId;
 		this.rootPlanId = rootPlanId;
 		this.planTemplateService = planTemplateService;
@@ -75,23 +86,90 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 
 	@Override
 	public String getServiceGroup() {
-		return subplanTool.getServiceGroup();
+		// Get serviceGroup from PlanTemplate
+		if (planTemplate != null && planTemplate.getServiceGroup() != null
+				&& !planTemplate.getServiceGroup().trim().isEmpty()) {
+			return planTemplate.getServiceGroup();
+		}
+		// Fallback to default value if serviceGroup is null/empty
+		return "coordinator-tools";
 	}
 
 	@Override
 	public String getName() {
-		return subplanTool.getToolName();
+		// Use PlanTemplate title as tool name
+		if (planTemplate != null && planTemplate.getTitle() != null && !planTemplate.getTitle().trim().isEmpty()) {
+			return planTemplate.getTitle();
+		}
+		// Fallback to planTemplateId if title is not available
+		return funcAgentToolEntity.getPlanTemplateId();
 	}
 
 	@Override
 	public String getDescription() {
-		return subplanTool.getToolDescription();
+		return funcAgentToolEntity.getToolDescription();
 	}
 
 	@Override
 	public String getParameters() {
-		// This will be handled by the service layer
-		return "{}";
+		// Convert FuncAgentToolEntity inputSchema (JSON array) to JSON schema format
+		try {
+			String inputSchemaJson = funcAgentToolEntity.getInputSchema();
+			if (inputSchemaJson == null || inputSchemaJson.trim().isEmpty()) {
+				return "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}";
+			}
+
+			// Parse the inputSchema JSON string
+			JsonNode inputSchemaNode = objectMapper.readTree(inputSchemaJson);
+			if (!inputSchemaNode.isArray()) {
+				logger.warn("InputSchema for tool {} is not an array, using empty schema", getName());
+				return "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}";
+			}
+
+			// Convert array of parameters to JSON schema format
+			Map<String, Object> schema = new HashMap<>();
+			schema.put("type", "object");
+
+			Map<String, Object> properties = new HashMap<>();
+			List<String> required = new ArrayList<>();
+
+			for (JsonNode paramNode : inputSchemaNode) {
+				if (!paramNode.isObject()) {
+					continue;
+				}
+
+				String paramName = paramNode.has("name") ? paramNode.get("name").asText() : null;
+				if (paramName == null || paramName.trim().isEmpty()) {
+					continue;
+				}
+
+				Map<String, Object> paramSchema = new HashMap<>();
+				String paramType = paramNode.has("type") ? paramNode.get("type").asText().toLowerCase() : "string";
+				paramSchema.put("type", paramType);
+
+				if (paramNode.has("description")) {
+					paramSchema.put("description", paramNode.get("description").asText());
+				}
+
+				properties.put(paramName, paramSchema);
+
+				if (paramNode.has("required") && paramNode.get("required").asBoolean()) {
+					required.add(paramName);
+				}
+			}
+
+			schema.put("properties", properties);
+			if (!required.isEmpty()) {
+				schema.put("required", required);
+			}
+
+			return objectMapper.writeValueAsString(schema);
+
+		}
+		catch (Exception e) {
+			logger.error("Error converting inputSchema to parameters for tool: {}", getName(), e);
+			return "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}";
+		}
 	}
 
 	@Override
@@ -106,8 +184,7 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 		// Extract toolCallId from ToolContext
 		String toolCallId = extractToolCallIdFromContext(toolContext);
 		if (toolCallId != null) {
-			logger.info("Using provided toolCallId from context: {} for tool: {}", toolCallId,
-					subplanTool.getToolName());
+			logger.info("Using provided toolCallId from context: {} for tool: {}", toolCallId, getName());
 
 			// Extract planDepth from ToolContext and increment by 1 for subplan
 			int parentPlanDepth = extractPlanDepthFromContext(toolContext);
@@ -117,19 +194,19 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 			return executeSubplanWithToolCallId(input, toolCallId, subplanDepth);
 		}
 		else {
-			throw new IllegalArgumentException("ToolCallId is required for subplan tool: " + subplanTool.getToolName());
+			throw new IllegalArgumentException("ToolCallId is required for coordinator tool: " + getName());
 		}
 	}
 
 	@Override
 	public ToolExecuteResult run(Map<String, Object> input) {
-		throw new IllegalArgumentException("ToolCallId is required for subplan tool: " + subplanTool.getToolName());
+		throw new IllegalArgumentException("ToolCallId is required for coordinator tool: " + getName());
 	}
 
 	@Override
 	public void cleanup(String planId) {
-		// Cleanup logic for the subplan tool
-		logger.debug("Cleaning up subplan tool: {} for planId: {}", subplanTool.getToolName(), planId);
+		// Cleanup logic for the coordinator tool
+		logger.debug("Cleaning up coordinator tool: {} for planId: {}", getName(), planId);
 	}
 
 	@Override
@@ -137,9 +214,9 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 		return "Ready";
 	}
 
-	// Getter for the wrapped subplan tool
-	public SubplanToolDef getSubplanTool() {
-		return subplanTool;
+	// Getter for the wrapped coordinator tool
+	public FuncAgentToolEntity getFuncAgentToolEntity() {
+		return funcAgentToolEntity;
 	}
 
 	/**
@@ -193,13 +270,13 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 	private ToolExecuteResult executeSubplanWithToolCallId(Map<String, Object> input, String toolCallId,
 			int planDepth) {
 		try {
-			logger.info("Executing subplan tool: {} with template: {} and toolCallId: {}", subplanTool.getToolName(),
-					subplanTool.getPlanTemplateId(), toolCallId);
+			logger.info("Executing coordinator tool: {} with template: {} and toolCallId: {}", getName(),
+					funcAgentToolEntity.getPlanTemplateId(), toolCallId);
 
 			// Get the plan template from PlanTemplateService
-			String planJson = planTemplateService.getLatestPlanVersion(subplanTool.getPlanTemplateId());
+			String planJson = planTemplateService.getLatestPlanVersion(funcAgentToolEntity.getPlanTemplateId());
 			if (planJson == null) {
-				String errorMsg = "Plan template not found: " + subplanTool.getPlanTemplateId();
+				String errorMsg = "Plan template not found: " + funcAgentToolEntity.getPlanTemplateId();
 				logger.error(errorMsg);
 				return new ToolExecuteResult(errorMsg);
 			}
@@ -265,19 +342,19 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 
 		}
 		catch (InterruptedException e) {
-			String errorMsg = "Subplan execution was interrupted";
-			logger.error("{} for tool: {}", errorMsg, subplanTool.getToolName(), e);
+			String errorMsg = "Coordinator tool execution was interrupted";
+			logger.error("{} for tool: {}", errorMsg, getName(), e);
 			Thread.currentThread().interrupt(); // Restore interrupt status
 			return new ToolExecuteResult(errorMsg);
 		}
 		catch (ExecutionException e) {
-			String errorMsg = "Subplan execution failed with exception: " + e.getCause().getMessage();
-			logger.error("{} for tool: {}", errorMsg, subplanTool.getToolName(), e);
+			String errorMsg = "Coordinator tool execution failed with exception: " + e.getCause().getMessage();
+			logger.error("{} for tool: {}", errorMsg, getName(), e);
 			return new ToolExecuteResult(errorMsg);
 		}
 		catch (Exception e) {
-			String errorMsg = "Unexpected error during subplan execution: " + e.getMessage();
-			logger.error("{} for tool: {}", errorMsg, subplanTool.getToolName(), e);
+			String errorMsg = "Unexpected error during coordinator tool execution: " + e.getMessage();
+			logger.error("{} for tool: {}", errorMsg, getName(), e);
 			return new ToolExecuteResult(errorMsg);
 		}
 	}

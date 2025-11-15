@@ -290,9 +290,7 @@ public class PlanTemplateController {
 			List<Map<String, Object>> templateList = new ArrayList<>();
 			for (PlanTemplate template : templates) {
 				Map<String, Object> templateData = new HashMap<>();
-				if (template.isInternalToolcall()) {
-					continue;
-				}
+			
 				templateData.put("id", template.getPlanTemplateId());
 				templateData.put("title", template.getTitle());
 				templateData.put("description", template.getTitle());
@@ -459,10 +457,7 @@ public class PlanTemplateController {
 			List<PlanTemplateConfigVO> configVOs = new ArrayList<>();
 
 			for (PlanTemplate planTemplate : templates) {
-				// Skip internal toolcall templates
-				if (planTemplate.isInternalToolcall()) {
-					continue;
-				}
+				
 
 				String planTemplateId = planTemplate.getPlanTemplateId();
 

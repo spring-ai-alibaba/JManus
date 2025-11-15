@@ -33,10 +33,4 @@ public interface FuncAgentToolRepository extends JpaRepository<FuncAgentToolEnti
 	 */
 	List<FuncAgentToolEntity> findByPlanTemplateId(String planTemplateId);
 
-
-	/**
-	 * Find by tool name
-	 */
-	FuncAgentToolEntity findByToolName(String toolName);
-
 }

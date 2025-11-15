@@ -80,7 +80,6 @@ public class PlanTemplateService implements IPlanTemplateService {
 			// Update existing template
 			template = existingTemplateOpt.get();
 			template.setTitle(title);
-			template.setInternalToolcall(isInternalToolcall);
 			template.setUpdateTime(LocalDateTime.now());
 			planTemplateRepository.save(template);
 			logger.debug("Updated existing plan template: {}", planTemplateId);
@@ -114,7 +113,6 @@ public class PlanTemplateService implements IPlanTemplateService {
 			if (title != null && !title.isEmpty()) {
 				template.setTitle(title);
 			}
-			template.setInternalToolcall(isInternalToolcall);
 			template.setUpdateTime(LocalDateTime.now());
 			planTemplateRepository.save(template);
 
