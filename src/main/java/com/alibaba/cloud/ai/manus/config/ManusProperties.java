@@ -95,13 +95,13 @@ public class ManusProperties implements IManusProperties {
 	// Browser Settings
 	// End---------------------------------------------------------------------------------------------
 
-	// Interaction Settings
+	// General Settings
 	// Begin---------------------------------------------------------------------------------------
-	@ConfigProperty(group = "manus", subGroup = "interaction", key = "openBrowser", path = "manus.openBrowserAuto",
-			description = "manus.interaction.openBrowser.description", defaultValue = "true",
+	@ConfigProperty(group = "manus", subGroup = "general", key = "openBrowser", path = "manus.openBrowserAuto",
+			description = "manus.general.openBrowser.description", defaultValue = "true",
 			inputType = ConfigInputType.CHECKBOX,
-			options = { @ConfigOption(value = "true", label = "manus.interaction.openBrowser.option.true"),
-					@ConfigOption(value = "false", label = "manus.interaction.openBrowser.option.false") })
+			options = { @ConfigOption(value = "true", label = "manus.general.openBrowser.option.true"),
+					@ConfigOption(value = "false", label = "manus.general.openBrowser.option.false") })
 	private volatile Boolean openBrowserAuto;
 
 	public Boolean getOpenBrowserAuto() {
@@ -117,7 +117,7 @@ public class ManusProperties implements IManusProperties {
 		this.openBrowserAuto = openBrowserAuto;
 	}
 
-	// Interaction Settings
+	// General Settings
 	// End-----------------------------------------------------------------------------------------
 
 	// Agent Settings
@@ -184,6 +184,28 @@ public class ManusProperties implements IManusProperties {
 
 	public void setMaxMemory(Integer maxMemory) {
 		this.maxMemory = maxMemory;
+	}
+
+	@ConfigProperty(group = "manus", subGroup = "agent", key = "conversationMemoryMaxChars",
+			path = "manus.agent.conversationMemoryMaxChars",
+			description = "manus.agent.conversationMemoryMaxChars.description", defaultValue = "30000",
+			inputType = ConfigInputType.NUMBER)
+	private volatile Integer conversationMemoryMaxChars;
+
+	public Integer getConversationMemoryMaxChars() {
+		String configPath = "manus.agent.conversationMemoryMaxChars";
+		String value = configService.getConfigValue(configPath);
+		if (value != null) {
+			conversationMemoryMaxChars = Integer.valueOf(value);
+		}
+		if (conversationMemoryMaxChars == null) {
+			conversationMemoryMaxChars = 30000;
+		}
+		return conversationMemoryMaxChars;
+	}
+
+	public void setConversationMemoryMaxChars(Integer conversationMemoryMaxChars) {
+		this.conversationMemoryMaxChars = conversationMemoryMaxChars;
 	}
 
 	@ConfigProperty(group = "manus", subGroup = "agent", key = "parallelToolCalls",

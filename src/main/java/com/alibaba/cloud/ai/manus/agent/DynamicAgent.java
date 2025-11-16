@@ -246,7 +246,7 @@ public class DynamicAgent extends ReActAgent {
 				if (memoryService != null && getConversationId() != null && !getConversationId().trim().isEmpty()) {
 					try {
 						ChatMemory conversationMemory = llmService
-							.getConversationMemory(manusProperties.getMaxMemory());
+							.getConversationMemoryWithLimit(manusProperties.getMaxMemory(), getConversationId());
 						List<Message> conversationHistory = conversationMemory.get(getConversationId());
 						if (conversationHistory != null && !conversationHistory.isEmpty()) {
 							log.debug("Adding {} conversation history messages for conversationId: {}",
@@ -1262,9 +1262,9 @@ public class DynamicAgent extends ReActAgent {
 		}
 
 		try {
-			ChatMemory conversationMemory = llmService.getConversationMemory(manusProperties.getMaxMemory());
 			UserMessage userMessage = new UserMessage(stepText);
-			conversationMemory.add(getConversationId(), userMessage);
+			llmService.addToConversationMemoryWithLimit(manusProperties.getMaxMemory(), getConversationId(),
+					userMessage);
 			log.info("Saved user request to conversation memory for conversationId: {}, request length: {}",
 					getConversationId(), stepText.length());
 		}

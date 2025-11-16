@@ -23,7 +23,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -378,9 +377,9 @@ public class PlanFinalizer {
 		}
 
 		try {
-			ChatMemory conversationMemory = llmService.getConversationMemory(manusProperties.getMaxMemory());
 			AssistantMessage assistantMessage = new AssistantMessage(result);
-			conversationMemory.add(context.getConversationId(), assistantMessage);
+			llmService.addToConversationMemoryWithLimit(manusProperties.getMaxMemory(), context.getConversationId(),
+					assistantMessage);
 			log.info("Saved agent execution result to conversation memory for conversationId: {}, result length: {}",
 					context.getConversationId(), result.length());
 		}
