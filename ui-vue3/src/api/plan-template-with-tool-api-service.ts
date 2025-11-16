@@ -31,8 +31,21 @@ export class PlanTemplateApiService {
     if (!response.ok) {
       try {
         const errorData = await response.json()
-        throw new Error(errorData.message || `API request failed: ${response.status}`)
-      } catch {
+        // Create error with errorCode if available
+        // Backend returns "error" field, but we use "message" for consistency
+        const errorMessage =
+          errorData.error || errorData.message || `API request failed: ${response.status}`
+        const error = new Error(errorMessage) as Error & {
+          errorCode?: string
+        }
+        if (errorData.errorCode) {
+          error.errorCode = errorData.errorCode
+        }
+        throw error
+      } catch (err) {
+        if (err instanceof Error) {
+          throw err
+        }
         throw new Error(`API request failed: ${response.status} ${response.statusText}`)
       }
     }

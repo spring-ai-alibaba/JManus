@@ -209,6 +209,11 @@ public class LevelBasedExecutorPool {
 	private void checkAndAdjustPoolSizes() {
 		try {
 			int configuredSize = getConfiguredPoolSize();
+			// Validate configured size before using it
+			if (configuredSize <= 0) {
+				log.warn("Invalid pool size configuration: {}. Using default value: 5", configuredSize);
+				configuredSize = 5;
+			}
 			if (configuredSize != currentPoolSize) {
 				log.info("Pool size configuration changed from {} to {}. Adjusting all level pools...",
 						currentPoolSize, configuredSize);
@@ -243,6 +248,18 @@ public class LevelBasedExecutorPool {
 	 */
 	private void adjustPoolSize(int depthLevel, ThreadPoolExecutor executor, int newPoolSize) {
 		try {
+			// Validate newPoolSize before using it
+			if (newPoolSize <= 0) {
+				log.error("Invalid pool size {} for level {}. Pool size must be greater than 0. Skipping adjustment.",
+						newPoolSize, depthLevel);
+				return;
+			}
+
+			if (executor == null) {
+				log.error("Executor is null for level {}. Skipping adjustment.", depthLevel);
+				return;
+			}
+
 			int oldCoreSize = executor.getCorePoolSize();
 			int oldMaxSize = executor.getMaximumPoolSize();
 
@@ -252,6 +269,10 @@ public class LevelBasedExecutorPool {
 
 			log.info("Adjusted pool size for level {}: core {} -> {}, max {} -> {}", depthLevel, oldCoreSize,
 					newPoolSize, oldMaxSize, newPoolSize);
+		}
+		catch (IllegalArgumentException e) {
+			log.error("Failed to adjust pool size for level {}: Invalid pool size value. Error: {}", depthLevel,
+					e.getMessage());
 		}
 		catch (Exception e) {
 			log.error("Failed to adjust pool size for level {}: {}", depthLevel, e.getMessage(), e);
@@ -295,8 +316,17 @@ public class LevelBasedExecutorPool {
 	 * configured
 	 */
 	private int getConfiguredPoolSize() {
-		if (manusProperties != null && manusProperties.getExecutorPoolSize() != null) {
-			return manusProperties.getExecutorPoolSize();
+		try {
+			if (manusProperties != null) {
+				Integer poolSize = manusProperties.getExecutorPoolSize();
+				if (poolSize != null && poolSize > 0) {
+					return poolSize;
+				}
+			}
+		}
+		catch (Exception e) {
+			log.warn("Error getting executor pool size from ManusProperties: {}. Using default value: 5",
+					e.getMessage());
 		}
 		return 5; // Default value
 	}

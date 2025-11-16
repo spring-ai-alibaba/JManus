@@ -154,11 +154,12 @@ onMounted(() => {
   }
 })
 
-// Also load when modal opens
+// Also load when modal opens - always refresh to get latest tools
 watch(
   () => props.modelValue,
   isVisible => {
-    if (isVisible && tools.value.length === 0 && !availableToolsStore.isLoading.value) {
+    if (isVisible && !availableToolsStore.isLoading.value) {
+      // Always refresh tools when modal opens to get newly published tools
       availableToolsStore.loadAvailableTools()
     }
   }

@@ -15,19 +15,20 @@
  */
 package com.alibaba.cloud.ai.manus.tool.convertToMarkdown;
 
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 
 /**
  * PDF to Markdown Processor
@@ -124,8 +125,10 @@ public class PdfToMarkdownProcessor {
 			}
 
 			// Step 5: Return success result
+			// Normalize filename to remove any ./ prefix for consistent output
+			String normalizedFilename = normalizeFilename(markdownFilename);
 			String result = String.format("Successfully converted PDF file to Markdown\n\n" + "**Output File**: %s\n\n"
-					+ "**Processing Method**: Traditional Text Extraction\n\n", markdownFilename);
+					+ "**Processing Method**: Traditional Text Extraction\n\n", normalizedFilename);
 
 			// Add content if less than 1000 characters
 			if (markdownContent.length() < 1000) {
@@ -332,6 +335,20 @@ public class PdfToMarkdownProcessor {
 			return originalFilename.substring(0, lastDotIndex) + ".md";
 		}
 		return originalFilename + ".md";
+	}
+
+	/**
+	 * Normalize filename to add ./ prefix for consistent output format
+	 */
+	private String normalizeFilename(String filename) {
+		if (filename == null) {
+			return "";
+		}
+		// Add ./ prefix if not present
+		if (!filename.startsWith("./")) {
+			return "./" + filename;
+		}
+		return filename;
 	}
 
 	/**

@@ -849,8 +849,16 @@ const confirmCopyPlan = async () => {
     }
   } catch (error: unknown) {
     console.error('[JsonEditorV2] Error copying plan:', error)
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    toast.error(t('sidebar.copyPlanFailed', { message: message }))
+    // Check if it's a duplicate title error
+    if (
+      error instanceof Error &&
+      (error as Error & { errorCode?: string }).errorCode === 'DUPLICATE_TITLE'
+    ) {
+      toast.error(t('sidebar.duplicatePlanTitle'))
+    } else {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      toast.error(t('sidebar.copyPlanFailed', { message: message }))
+    }
   } finally {
     isCopyingPlan.value = false
   }

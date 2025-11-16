@@ -54,12 +54,7 @@
 
         <!-- Validation status message -->
         <div
-          v-if="
-            parameterRequirements.hasParameters &&
-            !canExecute &&
-            !props.isExecuting &&
-            !props.isGenerating
-          "
+          v-if="parameterRequirements.hasParameters && !canExecute && !props.isExecuting"
           class="validation-message"
         >
           <Icon icon="carbon:warning" width="14" />
@@ -70,7 +65,7 @@
       <!-- File Upload Component -->
       <FileUploadComponent
         ref="fileUploadRef"
-        :disabled="props.isExecuting || props.isGenerating"
+        :disabled="props.isExecuting"
         @files-uploaded="handleFilesUploaded"
         @files-removed="handleFilesRemoved"
         @upload-key-changed="handleUploadKeyChanged"
@@ -222,12 +217,13 @@ import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vu
 import PublishServiceModal from '@/components/publish-service-modal/PublishServiceModal.vue'
 import SaveConfirmationDialog from '@/components/sidebar/SaveConfirmationDialog.vue'
 import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
+import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { useToast } from '@/plugins/useToast'
 import { templateStore } from '@/stores/templateStore'
 import type { PlanData, PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -239,15 +235,16 @@ const templateConfig = usePlanTemplateConfigSingleton()
 // Message dialog singleton for executing plans
 const messageDialog = useMessageDialogSingleton()
 
+// Plan execution singleton to track execution state
+const planExecution = usePlanExecutionSingleton()
+
 // Props
 interface Props {
   isExecuting?: boolean
-  isGenerating?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isExecuting: false,
-  isGenerating: false,
 })
 
 // No emits needed - we handle execution directly
@@ -397,7 +394,7 @@ const canExecute = computed(() => {
     return false
   }
 
-  if (props.isExecuting || props.isGenerating) {
+  if (props.isExecuting) {
     return false
   }
 
@@ -445,6 +442,18 @@ const handleUploadError = (error: unknown) => {
 const handleExecutePlan = async () => {
   console.log('[ExecutionController] 🚀 Execute button clicked')
 
+  // Check if there's already an execution in progress
+  if (props.isExecuting || messageDialog.isLoading.value || isExecutingPlan.value) {
+    console.log(
+      '[ExecutionController] ⏸️ Execution already in progress. isExecuting: {}, messageDialog.isLoading: {}, isExecutingPlan: {}',
+      props.isExecuting,
+      messageDialog.isLoading.value,
+      isExecutingPlan.value
+    )
+    toast.error(t('sidebar.executionInProgress'))
+    return
+  }
+
   // Check if task requirements have been modified
   if (templateStore.hasTaskRequirementModified) {
     console.log(
@@ -483,7 +492,15 @@ const handleExecutePlan = async () => {
 }
 
 const proceedWithExecution = async () => {
-  // Set execution flag to prevent parameter reload
+  // Double-check execution state before proceeding (defense in depth)
+  if (props.isExecuting || messageDialog.isLoading.value || isExecutingPlan.value) {
+    console.log(
+      '[ExecutionController] ⏸️ Execution already in progress in proceedWithExecution. Skipping.'
+    )
+    return
+  }
+
+  // Set execution flag to prevent parameter reload and concurrent execution
   isExecutingPlan.value = true
   console.log('[ExecutionController] 🔒 Set isExecutingPlan to true')
 
@@ -612,7 +629,12 @@ const handleSaveAndExecute = async () => {
     // Reset modification flag after successful save
     templateStore.hasTaskRequirementModified = false
 
+    // Wait for templateConfig.save() to complete and selectedTemplate to be updated
+    // The save() method already calls load() internally, so we need to wait a bit more
+    await new Promise(resolve => setTimeout(resolve, 500))
+
     // Refresh parameter requirements after successful save
+    // Increase delay to ensure backend has processed the save and parameters are updated
     await refreshParameterRequirements()
 
     // Refresh sidebar template list to reflect the saved changes
@@ -668,9 +690,8 @@ const clearExecutionParams = () => {
   // Clear parameter values as well
   parameterValues.value = {}
 
-  // Reset execution flag after clearing
-  isExecutingPlan.value = false
-  console.log('[ExecutionController] 🔓 Reset isExecutingPlan to false')
+  // Note: isExecutingPlan is NOT reset here - it will be reset when the plan execution completes
+  // This prevents concurrent executions while a plan is still running
 
   console.log('[ExecutionController] ✅ After clear - parameterValues cleared')
   // Execution params are now managed internally, no need to emit
@@ -679,15 +700,20 @@ const clearExecutionParams = () => {
 // Refresh parameter requirements (called after save)
 const refreshParameterRequirements = async () => {
   // Add a delay to ensure the backend has processed the new template and committed the transaction
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  // Also ensure selectedTemplate has been updated by templateConfig.save()
+  await new Promise(resolve => setTimeout(resolve, 1500))
 
   console.log(
     '[ExecutionController] 🔄 Refreshing parameter requirements for templateId:',
     templateConfig.currentPlanTemplateId.value
   )
+  console.log(
+    '[ExecutionController] 📋 Current selectedTemplate steps:',
+    templateConfig.selectedTemplate.value?.steps?.map(s => s.stepRequirement).join(' ||| ')
+  )
 
   // Use nextTick to ensure all reactive updates are complete
-  await new Promise(resolve => setTimeout(resolve, 100))
+  await new Promise(resolve => setTimeout(resolve, 200))
 
   // Reload parameter requirements
   await loadParameterRequirements()
@@ -867,7 +893,7 @@ watch(
     // Extract all stepRequirement fields and join them to detect any changes
     return selectedTemplate.steps.map(step => step.stepRequirement || '').join('|||')
   },
-  (newStepsContent, oldStepsContent) => {
+  async (newStepsContent, oldStepsContent) => {
     // Skip if currently executing
     if (isExecutingPlan.value) {
       console.log('[ExecutionController] ⏸️ Skipping parameter reload - plan is executing')
@@ -879,11 +905,19 @@ watch(
       console.log(
         '[ExecutionController] 🔄 Steps content changed, will refresh parameter requirements'
       )
-      // Add a small delay to ensure backend has processed the save
-      setTimeout(() => {
-        console.log('[ExecutionController] ⏰ Refreshing parameters after steps change')
-        refreshParameterRequirements()
-      }, 1500)
+      console.log(
+        '[ExecutionController] 📋 Old content:',
+        oldStepsContent?.substring(0, 100) || 'empty'
+      )
+      console.log(
+        '[ExecutionController] 📋 New content:',
+        newStepsContent?.substring(0, 100) || 'empty'
+      )
+      // Add a delay to ensure backend has processed the save and parameters are updated
+      // Use await to ensure the refresh completes
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      console.log('[ExecutionController] ⏰ Refreshing parameters after steps change')
+      await refreshParameterRequirements()
     }
   },
   { deep: false }
@@ -892,7 +926,7 @@ watch(
 // Watch for hasTaskRequirementModified flag change from true to false (indicates save completed)
 watch(
   () => templateStore.hasTaskRequirementModified,
-  (newValue, oldValue) => {
+  async (newValue, oldValue) => {
     // When modification flag changes from true to false, it means save was completed
     if (oldValue === true && newValue === false && templateConfig.currentPlanTemplateId.value) {
       // Skip if currently executing
@@ -905,13 +939,30 @@ watch(
         '[ExecutionController] 💾 Save completed (hasTaskRequirementModified: true -> false), refreshing parameters'
       )
       // Add a delay to ensure backend has processed the save and parameters are updated
-      setTimeout(() => {
-        console.log('[ExecutionController] ⏰ Refreshing parameters after save')
-        refreshParameterRequirements()
-      }, 1500)
+      // Also ensure selectedTemplate has been updated by templateConfig.save()
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      console.log('[ExecutionController] ⏰ Refreshing parameters after save')
+      await refreshParameterRequirements()
     }
   }
 )
+
+// Watch for plan execution completion to reset isExecutingPlan
+watchEffect(() => {
+  const records = planExecution.planExecutionRecords
+  const recordsArray = Array.from(records.entries())
+
+  // Check if there are any running plans
+  const hasRunningPlans = recordsArray.some(
+    ([, record]) => record && !record.completed && record.status !== 'failed'
+  )
+
+  // Reset isExecutingPlan when all plans are completed
+  if (!hasRunningPlans && isExecutingPlan.value) {
+    console.log('[ExecutionController] All plans completed, resetting isExecutingPlan')
+    isExecutingPlan.value = false
+  }
+})
 
 // Execution params are now managed internally, no need to emit updates
 

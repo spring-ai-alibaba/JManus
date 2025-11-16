@@ -771,6 +771,7 @@ const words: I18nType = {
     statusApiUrl: '状态查询 API',
     executing: '执行中...',
     executePlan: '执行计划',
+    executionInProgress: '当前有任务正在执行中，请等待完成后再发起新任务',
     publishMcpService: '发布为工具服务',
     updateServiceStatus: '更新服务状态',
 
@@ -822,6 +823,7 @@ const words: I18nType = {
     noPlanToCopy: '没有可复制的计划',
     copyPlanSuccess: '计划复制成功: {title}',
     copyPlanFailed: '计划复制失败: {message}',
+    duplicatePlanTitle: '有重复计划标题',
 
     newTemplate: '新建模板',
     templateName: '模板名称',

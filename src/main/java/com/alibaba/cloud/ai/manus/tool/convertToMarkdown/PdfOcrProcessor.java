@@ -15,22 +15,6 @@
  */
 package com.alibaba.cloud.ai.manus.tool.convertToMarkdown;
 
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
-import com.alibaba.cloud.ai.manus.llm.LlmService;
-import com.alibaba.cloud.ai.manus.config.ManusProperties;
-import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.rendering.ImageType;
-import org.apache.pdfbox.rendering.PDFRenderer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.prompt.ChatOptions;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.util.MimeTypeUtils;
-
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -42,6 +26,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+
+import javax.imageio.ImageIO;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.util.MimeTypeUtils;
+
+import com.alibaba.cloud.ai.manus.config.ManusProperties;
+import com.alibaba.cloud.ai.manus.llm.LlmService;
+import com.alibaba.cloud.ai.manus.runtime.executor.ImageRecognitionExecutorPool;
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 
 /**
  * PDF OCR Processor using OpenAI Image Model
@@ -177,15 +179,17 @@ public class PdfOcrProcessor {
 			}
 
 			// Step 5: Return success result
+			// Normalize filename to remove any ./ prefix for consistent output
+			String normalizedFilename = normalizeFilename(ocrFilename);
 			String result;
 			if (targetFilename != null && targetFilename.endsWith(".md")) {
 				result = String.format("Successfully converted PDF file to Markdown using OCR\n\n"
 						+ "**Output File**: %s\n\n" + "**Processing Method**: OCR with OpenAI Image Model\n\n",
-						ocrFilename);
+						normalizedFilename);
 			}
 			else {
 				result = String.format("Successfully processed PDF with OCR\n\n" + "**Output File**: %s\n\n"
-						+ "**Pages Processed**: %d of %d\n\n", ocrFilename, processedPages, pageImages.size());
+						+ "**Pages Processed**: %d of %d\n\n", normalizedFilename, processedPages, pageImages.size());
 			}
 
 			// Add content preview if less than 1000 characters
@@ -493,6 +497,20 @@ public class PdfOcrProcessor {
 			return originalFilename.substring(0, lastDotIndex) + "_ocr.txt";
 		}
 		return originalFilename + "_ocr.txt";
+	}
+
+	/**
+	 * Normalize filename to add ./ prefix for consistent output format
+	 */
+	private String normalizeFilename(String filename) {
+		if (filename == null) {
+			return "";
+		}
+		// Add ./ prefix if not present
+		if (!filename.startsWith("./")) {
+			return "./" + filename;
+		}
+		return filename;
 	}
 
 	/**

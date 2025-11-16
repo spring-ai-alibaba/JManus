@@ -399,7 +399,6 @@ public class PlanTemplateController {
 	 * information
 	 */
 	@PostMapping("/create-or-update-with-tool")
-	@Transactional
 	public ResponseEntity<Map<String, Object>> createOrUpdatePlanTemplateWithTool(
 			@RequestBody PlanTemplateConfigVO configVO) {
 		try {

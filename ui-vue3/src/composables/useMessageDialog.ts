@@ -519,6 +519,8 @@ export function useMessageDialog() {
         success: true,
         ...(response.planId && { planId: response.planId }),
       }
+      // Note: isLoading is NOT reset here - it will be reset when the plan execution completes
+      // This prevents concurrent executions while a plan is still running
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to execute plan'
       error.value = errorMessage
@@ -533,12 +535,13 @@ export function useMessageDialog() {
         })
       }
 
+      // Reset isLoading on error since execution failed
+      isLoading.value = false
+
       return {
         success: false,
         error: errorMessage,
       }
-    } finally {
-      isLoading.value = false
     }
   }
 
@@ -821,6 +824,16 @@ export function useMessageDialog() {
 
       // Update message with latest plan execution record
       updateMessageWithPlanRecord(dialog, message, record)
+
+      // Reset isLoading when all plans are completed
+      // Check if this is the last running plan
+      const hasRunningPlans = recordsArray.some(
+        ([, record]) => record && !record.completed && record.status !== 'failed'
+      )
+      if (!hasRunningPlans && isLoading.value) {
+        console.log('[useMessageDialog] All plans completed, resetting isLoading')
+        isLoading.value = false
+      }
     }
   })
 

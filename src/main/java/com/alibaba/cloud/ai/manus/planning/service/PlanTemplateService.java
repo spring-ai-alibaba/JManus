@@ -49,6 +49,9 @@ public class PlanTemplateService implements IPlanTemplateService {
 	@Autowired
 	private PlanTemplateVersionRepository versionRepository;
 
+	@Autowired(required = false)
+	private PlanTemplateConfigService planTemplateConfigService;
+
 	@SuppressWarnings("unused")
 	@Autowired
 	private PlanExecutorFactory planExecutorFactory;
@@ -330,10 +333,15 @@ public class PlanTemplateService implements IPlanTemplateService {
 			// First delete all related versions
 			versionRepository.deleteByPlanTemplateId(planTemplateId);
 
+			// Delete related coordinator tools if PlanTemplateConfigService is available
+			if (planTemplateConfigService != null) {
+				planTemplateConfigService.deleteCoordinatorToolByPlanTemplateId(planTemplateId);
+			}
+
 			// Then delete the template itself
 			planTemplateRepository.deleteByPlanTemplateId(planTemplateId);
 
-			logger.info("Deleted plan template {} and all its versions", planTemplateId);
+			logger.info("Deleted plan template {} and all its versions and coordinator tools", planTemplateId);
 			return true;
 		}
 		catch (Exception e) {

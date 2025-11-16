@@ -429,8 +429,11 @@ public class DynamicAgent extends ReActAgent {
 							getName());
 					return handleLlmTimeoutWithSystemErrorReport();
 				}
-				// Normal case: thinking complete, no action needed
-				return new AgentExecResult("Thinking complete - no action needed", AgentState.IN_PROGRESS);
+				// No tools selected after all retries - require LLM to output tool calls
+				log.warn("Agent {} did not select any tools after all retries. Requiring tool call.", getName());
+				return new AgentExecResult(
+						"No tools were selected. You must select and call at least one tool to proceed. Please retry with tool calls.",
+						AgentState.IN_PROGRESS);
 			}
 			return act();
 		}

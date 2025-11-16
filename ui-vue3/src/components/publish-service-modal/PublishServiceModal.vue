@@ -142,8 +142,9 @@ import {
   PlanParameterApiService,
   type ParameterRequirements,
 } from '@/api/plan-parameter-api-service'
-import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import Modal from '@/components/modal/index.vue'
+import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -152,6 +153,9 @@ const { t } = useI18n()
 
 // Get template config singleton
 const templateConfig = usePlanTemplateConfigSingleton()
+
+// Get available tools singleton to refresh tool list after publishing
+const availableToolsStore = useAvailableToolsSingleton()
 
 // Props
 interface Props {
@@ -261,10 +265,20 @@ const loadParameterRequirements = async () => {
     parameterRequirements.value = requirements
 
     // Initialize form parameters with extracted parameters
+    // Preserve existing descriptions if parameters already exist (from toolConfig)
     if (requirements.hasParameters) {
+      // Create a map of existing parameters by name to preserve descriptions
+      const existingParamsMap = new Map<string, string>()
+      formData.parameters.forEach(param => {
+        if (param.name) {
+          existingParamsMap.set(param.name, param.description || '')
+        }
+      })
+
+      // Merge: use existing description if available, otherwise use empty string
       formData.parameters = requirements.parameters.map(param => ({
         name: param,
-        description: '',
+        description: existingParamsMap.get(param) || '',
       }))
     }
   } catch (error) {
@@ -393,10 +407,14 @@ const handlePublish = async () => {
         enabledServices.join(', ')
       )
       showMessage(t('mcpService.publishSuccess'), 'success')
+      // Refresh available tools list to include the newly published tool
+      await availableToolsStore.loadAvailableTools()
       emit('published', null) // Emit null since state is managed in templateConfig
     } else {
       console.log('[PublishModal] Only saving tool, not publishing as any service')
       showMessage(t('mcpService.saveSuccess'), 'success')
+      // Refresh available tools list even when only saving (tool might have been updated)
+      await availableToolsStore.loadAvailableTools()
       emit('published', null)
     }
   } catch (err: unknown) {

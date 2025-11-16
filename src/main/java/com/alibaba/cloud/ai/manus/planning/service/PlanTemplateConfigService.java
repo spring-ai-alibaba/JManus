@@ -319,6 +319,39 @@ public class PlanTemplateConfigService {
 		catch (PlanTemplateConfigException e) {
 			throw e;
 		}
+		catch (org.hibernate.exception.ConstraintViolationException e) {
+			// Check if it's a unique constraint violation on title
+			if (e.getSQLException() != null && e.getSQLException().getSQLState() != null
+					&& e.getSQLException().getSQLState().equals("23505")) {
+				String errorMessage = e.getSQLException().getMessage();
+				if (errorMessage != null && errorMessage.contains("title")) {
+					log.warn("Duplicate plan title detected: {}", configVO.getTitle());
+					throw new PlanTemplateConfigException("DUPLICATE_TITLE",
+							"Plan title already exists: " + configVO.getTitle());
+				}
+			}
+			log.error("Constraint violation while creating PlanTemplate: {}", e.getMessage(), e);
+			throw new PlanTemplateConfigException("INTERNAL_ERROR",
+					"Failed to create PlanTemplate: " + e.getMessage());
+		}
+		catch (org.springframework.dao.DataIntegrityViolationException e) {
+			// Check if it's a unique constraint violation on title
+			Throwable rootCause = e.getRootCause();
+			if (rootCause instanceof java.sql.SQLException) {
+				java.sql.SQLException sqlException = (java.sql.SQLException) rootCause;
+				if (sqlException.getSQLState() != null && sqlException.getSQLState().equals("23505")) {
+					String errorMessage = sqlException.getMessage();
+					if (errorMessage != null && errorMessage.contains("title")) {
+						log.warn("Duplicate plan title detected: {}", configVO.getTitle());
+						throw new PlanTemplateConfigException("DUPLICATE_TITLE",
+								"Plan title already exists: " + configVO.getTitle());
+					}
+				}
+			}
+			log.error("Data integrity violation while creating PlanTemplate: {}", e.getMessage(), e);
+			throw new PlanTemplateConfigException("INTERNAL_ERROR",
+					"Failed to create PlanTemplate: " + e.getMessage());
+		}
 		catch (Exception e) {
 			log.error("Failed to create PlanTemplate from PlanTemplateConfigVO: {}", e.getMessage(), e);
 			throw new PlanTemplateConfigException("INTERNAL_ERROR", "Failed to create PlanTemplate: " + e.getMessage());
@@ -470,6 +503,23 @@ public class PlanTemplateConfigService {
 	}
 
 	/**
+	 * Delete coordinator tool by plan template ID
+	 * @param planTemplateId Plan template ID
+	 */
+	@Transactional
+	public void deleteCoordinatorToolByPlanTemplateId(String planTemplateId) {
+		try {
+			log.info("Deleting coordinator tools for plan template ID: {}", planTemplateId);
+			funcAgentToolRepository.deleteByPlanTemplateId(planTemplateId);
+			log.info("Successfully deleted coordinator tools for plan template ID: {}", planTemplateId);
+		}
+		catch (Exception e) {
+			log.warn("Error deleting coordinator tools for plan template ID {}: {}", planTemplateId, e.getMessage());
+			// Don't throw exception - this is a cleanup operation
+		}
+	}
+
+	/**
 	 * Create coordinator tool
 	 * @param configVO Plan template configuration VO
 	 * @return Created PlanTemplateConfigVO
@@ -485,10 +535,34 @@ public class PlanTemplateConfigService {
 				throw new PlanTemplateConfigException("VALIDATION_ERROR", "toolConfig is required");
 			}
 
+			// Use title as toolName
+			String toolName = configVO.getTitle() != null ? configVO.getTitle() : "";
+
+			// Check if a tool with the same toolName already exists
+			// If it exists but with different planTemplateId or null planTemplateId, delete it first
+			List<FuncAgentToolEntity> existingToolsWithSameName = funcAgentToolRepository.findByToolName(toolName);
+			if (!existingToolsWithSameName.isEmpty()) {
+				for (FuncAgentToolEntity existingTool : existingToolsWithSameName) {
+					// If the existing tool has a different planTemplateId or null planTemplateId, delete it
+					if (existingTool.getPlanTemplateId() == null
+							|| !existingTool.getPlanTemplateId().equals(configVO.getPlanTemplateId())) {
+						log.warn(
+								"Found existing coordinator tool with same toolName '{}' but different planTemplateId (existing: {}, new: {}). Deleting old tool.",
+								toolName, existingTool.getPlanTemplateId(), configVO.getPlanTemplateId());
+						funcAgentToolRepository.deleteById(existingTool.getId());
+					}
+					else {
+						// Same toolName and same planTemplateId - this should not happen as we check by planTemplateId first
+						log.warn(
+								"Found existing coordinator tool with same toolName '{}' and planTemplateId '{}'. This should have been handled by update logic.",
+								toolName, configVO.getPlanTemplateId());
+					}
+				}
+			}
+
 			// Convert PlanTemplateConfigVO to Entity and save
 			FuncAgentToolEntity entity = new FuncAgentToolEntity();
-			// Use title as toolName
-			entity.setToolName(configVO.getTitle() != null ? configVO.getTitle() : "");
+			entity.setToolName(toolName);
 			entity.setToolDescription(
 					toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
 			entity.setInputSchema(convertInputSchemaListToJson(toolConfig.getInputSchema()));
