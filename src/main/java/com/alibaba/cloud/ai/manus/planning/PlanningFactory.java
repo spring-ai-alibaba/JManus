@@ -219,7 +219,6 @@ public class PlanningFactory {
 	public Map<String, ToolCallBackContext> toolCallbackMap(String planId, String rootPlanId,
 			String expectedReturnInfo) {
 
-		Boolean infiniteContextEnabled = manusProperties.getInfiniteContextEnabled();
 		Map<String, ToolCallBackContext> toolCallbackMap = new HashMap<>();
 		List<ToolCallBiFunctionDef<?>> toolDefinitions = new ArrayList<>();
 		if (chromeDriverService == null) {
@@ -257,9 +256,6 @@ public class PlanningFactory {
 			toolDefinitions.add(new FormInputTool(objectMapper));
 			toolDefinitions.add(new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher,
 					levelBasedExecutorPool));
-			if (infiniteContextEnabled) {
-
-			}
 			toolDefinitions.add(new CronTool(cronService, objectMapper));
 			toolDefinitions.add(new MarkdownConverterTool(unifiedDirectoryManager,
 					new PdfOcrProcessor(unifiedDirectoryManager, llmService, manusProperties,

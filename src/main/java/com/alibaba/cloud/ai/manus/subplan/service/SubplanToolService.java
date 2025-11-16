@@ -101,7 +101,6 @@ public class SubplanToolService {
 				return toolCallbackMap;
 			}
 
-			Boolean infiniteContextEnabled = manusProperties.getInfiniteContextEnabled();
 			logger.info("Found {} coordinator tools to register", coordinatorTools.size());
 
 			for (FuncAgentToolEntity coordinatorTool : coordinatorTools) {
@@ -115,15 +114,8 @@ public class SubplanToolService {
 					continue;
 				}
 
-				// special case : for extract_relevant_content , we don't want to let llm
-				// use
-				// it when infinite context is disabled
 				String toolName = planTemplate.getTitle() != null ? planTemplate.getTitle()
 						: coordinatorTool.getPlanTemplateId();
-				if (!infiniteContextEnabled && "extract_relevant_content".equals(toolName)) {
-					logger.info("Infinite context is disabled, skipping extract_relevant_content");
-					continue;
-				}
 				try {
 					// Create a SubplanToolWrapper that extends AbstractBaseTool
 					SubplanToolWrapper toolWrapper = new SubplanToolWrapper(coordinatorTool, planTemplate, planId,
