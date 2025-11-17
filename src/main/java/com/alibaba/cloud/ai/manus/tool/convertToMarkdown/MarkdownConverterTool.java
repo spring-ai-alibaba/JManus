@@ -63,6 +63,9 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 		@JsonProperty("additionalRequirement")
 		private String additionalRequirement;
 
+		@JsonProperty("forceLlmForPdf")
+		private Boolean forceLlmForPdf;
+
 		// Getters and setters
 		public String getFilename() {
 			return filename;
@@ -80,15 +83,24 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 			this.additionalRequirement = additionalRequirement;
 		}
 
+		public Boolean getForceLlmForPdf() {
+			return forceLlmForPdf;
+		}
+
+		public void setForceLlmForPdf(Boolean forceLlmForPdf) {
+			this.forceLlmForPdf = forceLlmForPdf;
+		}
+
 	}
 
 	@Override
 	public ToolExecuteResult run(MarkdownConverterInput input) {
 		String filename = input.getFilename();
 		String additionalRequirement = input.getAdditionalRequirement();
+		Boolean forceLlmForPdf = input.getForceLlmForPdf();
 
-		log.info("MarkdownConverterTool processing file: {} with additional requirement: {}", filename,
-				additionalRequirement);
+		log.info("MarkdownConverterTool processing file: {} with additional requirement: {}, forceLlmForPdf: {}",
+				filename, additionalRequirement, forceLlmForPdf);
 
 		try {
 			// Step 1: Validate input
@@ -114,7 +126,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 			return switch (ext) {
 				case "doc", "docx" -> processWordToMarkdown(sourceFile, additionalRequirement);
 				case "xlsx", "xls" -> processExcelToMarkdown(sourceFile, additionalRequirement);
-				case "pdf" -> processPdfToMarkdown(sourceFile, additionalRequirement);
+				case "pdf" -> processPdfToMarkdown(sourceFile, additionalRequirement, forceLlmForPdf);
 				case "jpg", "jpeg", "png", "gif" -> processImageToMarkdown(sourceFile, additionalRequirement);
 				case "txt", "md", "json", "xml", "yaml", "yml", "log", "java", "py", "js", "html", "css" ->
 					processTextToMarkdown(sourceFile, additionalRequirement);
@@ -160,10 +172,12 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	/**
 	 * Process PDF files to Markdown
 	 */
-	private ToolExecuteResult processPdfToMarkdown(Path sourceFile, String additionalRequirement) {
+	private ToolExecuteResult processPdfToMarkdown(Path sourceFile, String additionalRequirement,
+			Boolean forceLlmForPdf) {
 		try {
 			PdfToMarkdownProcessor processor = new PdfToMarkdownProcessor(directoryManager, ocrProcessor);
-			return processor.convertToMarkdown(sourceFile, additionalRequirement, rootPlanId);
+			boolean forceLlm = forceLlmForPdf != null && forceLlmForPdf;
+			return processor.convertToMarkdown(sourceFile, additionalRequirement, rootPlanId, forceLlm);
 		}
 		catch (Exception e) {
 			log.error("PDF to Markdown conversion failed: {}", sourceFile.getFileName(), e);
@@ -287,7 +301,10 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 		return "{\"type\":\"object\"," + "\"properties\":{" + "\"filename\":{\"type\":\"string\","
 				+ "\"description\":\"Name of the file to convert to Markdown (must exist in root plan shared directory, rootPlanId/shared/)\"},"
 				+ "\"additionalRequirement\":{\"type\":\"string\","
-				+ "\"description\":\"Optional additional requirements for conversion (e.g., specific formatting, structure)\"}"
+				+ "\"description\":\"Optional additional requirements for conversion (e.g., specific formatting, structure)\"},"
+				+ "\"forceLlmForPdf\":{\"type\":\"boolean\","
+				+ "\"description\":\"Optional flag to force using LLM/OCR for PDF processing instead of auto-detection. Only applies to PDF files.\","
+				+ "\"default\":false}"
 				+ "}," + "\"required\":[\"filename\"]}";
 	}
 

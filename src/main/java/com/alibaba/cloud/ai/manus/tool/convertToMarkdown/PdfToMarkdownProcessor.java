@@ -94,8 +94,21 @@ public class PdfToMarkdownProcessor {
 	 * @return ToolExecuteResult with conversion status
 	 */
 	public ToolExecuteResult convertToMarkdown(Path sourceFile, String additionalRequirement, String currentPlanId) {
+		return convertToMarkdown(sourceFile, additionalRequirement, currentPlanId, false);
+	}
+
+	/**
+	 * Convert PDF file to Markdown using traditional text extraction or OCR
+	 * @param sourceFile The source PDF file
+	 * @param additionalRequirement Optional additional requirements for conversion
+	 * @param currentPlanId Current plan ID for file operations
+	 * @param forceLlm If true, force using LLM/OCR processing instead of auto-detection
+	 * @return ToolExecuteResult with conversion status
+	 */
+	public ToolExecuteResult convertToMarkdown(Path sourceFile, String additionalRequirement, String currentPlanId,
+			boolean forceLlm) {
 		try {
-			log.info("Converting PDF file to Markdown: {}", sourceFile.getFileName());
+			log.info("Converting PDF file to Markdown: {}, forceLlm: {}", sourceFile.getFileName(), forceLlm);
 
 			// Step 0: Check if content.md already exists
 			String originalFilename = sourceFile.getFileName().toString();
@@ -106,25 +119,31 @@ public class PdfToMarkdownProcessor {
 						"Skipped conversion - content.md file already exists: " + markdownFilename);
 			}
 
-			// Step 1: Try traditional text extraction first
+			// Step 1: If forceLlm is true, directly use OCR processing
+			if (forceLlm) {
+				log.info("Force LLM/OCR processing requested for PDF: {}", sourceFile.getFileName());
+				return convertToMarkdownWithOcr(sourceFile, additionalRequirement, currentPlanId);
+			}
+
+			// Step 2: Try traditional text extraction first
 			String content = extractPdfContent(sourceFile);
 
-			// Step 2: Check if OCR processing is needed
+			// Step 3: Check if OCR processing is needed
 			if (needsOcrProcessing(sourceFile, content)) {
 				log.info("OCR processing needed for PDF: {}", sourceFile.getFileName());
 				return convertToMarkdownWithOcr(sourceFile, additionalRequirement, currentPlanId);
 			}
 
-			// Step 3: Convert content to Markdown format
+			// Step 4: Convert content to Markdown format
 			String markdownContent = convertToMarkdownFormat(content, additionalRequirement);
 
-			// Step 4: Save Markdown file
+			// Step 5: Save Markdown file
 			Path outputFile = saveMarkdownFile(markdownContent, markdownFilename, currentPlanId);
 			if (outputFile == null) {
 				return new ToolExecuteResult("Error: Failed to save Markdown file");
 			}
 
-			// Step 5: Return success result
+			// Step 6: Return success result
 			// Normalize filename to remove any ./ prefix for consistent output
 			String normalizedFilename = normalizeFilename(markdownFilename);
 			String result = String.format("Successfully converted PDF file to Markdown\n\n" + "**Output File**: %s\n\n"

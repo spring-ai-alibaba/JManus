@@ -714,9 +714,10 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				}
 			}
 
-			// Ensure directory exists, create if it doesn't
+			// Check if directory exists - don't create it for list operation
 			if (!Files.exists(targetDirectory)) {
-				Files.createDirectories(targetDirectory);
+				String displayPath = directoryPath == null || directoryPath.isEmpty() ? "root" : directoryPath;
+				return new ToolExecuteResult("Error: Directory does not exist: " + displayPath);
 			}
 
 			if (!Files.isDirectory(targetDirectory)) {

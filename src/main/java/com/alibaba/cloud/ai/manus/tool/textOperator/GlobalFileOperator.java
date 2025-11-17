@@ -487,9 +487,9 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				}
 			}
 
-			// Ensure directory exists, create if it doesn't
+			// Check if directory exists - don't create it for list operation
 			if (!Files.exists(targetDirectory)) {
-				Files.createDirectories(targetDirectory);
+				return new ToolExecuteResult("Error: Directory does not exist: " + (normalizedPath != null && !normalizedPath.isEmpty() ? normalizedPath : "root"));
 			}
 
 			if (!Files.isDirectory(targetDirectory)) {
