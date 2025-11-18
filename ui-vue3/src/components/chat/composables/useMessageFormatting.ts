@@ -66,12 +66,12 @@ export function useMessageFormatting() {
 
     // More than 1 day
     try {
-    return timestamp.toLocaleDateString('zh-CN', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+      return timestamp.toLocaleDateString('zh-CN', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
     } catch (error) {
       console.warn('[useMessageFormatting] Error formatting timestamp:', timestamp, error)
       return ''

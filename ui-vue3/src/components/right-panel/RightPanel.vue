@@ -163,7 +163,10 @@
                           <pre>{{ formatJson(actToolInfo?.result) }}</pre>
                         </div>
                       </div>
-                      <div v-if="!tas.actToolInfoList || tas.actToolInfoList.length === 0" class="no-tools">
+                      <div
+                        v-if="!tas.actToolInfoList || tas.actToolInfoList.length === 0"
+                        class="no-tools"
+                      >
                         <p>{{ t('rightPanel.noToolsExecuted') }}</p>
                       </div>
                     </div>
