@@ -276,11 +276,11 @@ export function useRightPanel() {
 
     // If it's already an object, stringify it directly
     if (typeof jsonData === 'object' && jsonData !== null) {
-      try {
+    try {
         return JSON.stringify(jsonData, null, 2)
-      } catch {
-        return String(jsonData)
-      }
+    } catch {
+      return String(jsonData)
+    }
     }
 
     // If it's a string, try to parse it as JSON

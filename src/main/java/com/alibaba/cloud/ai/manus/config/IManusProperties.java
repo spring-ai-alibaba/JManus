@@ -91,6 +91,16 @@ public interface IManusProperties {
 	void setMaxMemory(Integer maxMemory);
 
 	/**
+	 * Get enable conversation memory setting
+	 */
+	Boolean getEnableConversationMemory();
+
+	/**
+	 * Set enable conversation memory setting
+	 */
+	void setEnableConversationMemory(Boolean enableConversationMemory);
+
+	/**
 	 * Get conversation memory max characters
 	 */
 	Integer getConversationMemoryMaxChars();
@@ -119,5 +129,15 @@ public interface IManusProperties {
 	 * Set base directory
 	 */
 	void setBaseDir(String baseDir);
+
+	/**
+	 * Get enable short URL setting
+	 */
+	Boolean getEnableShortUrl();
+
+	/**
+	 * Set enable short URL setting
+	 */
+	void setEnableShortUrl(Boolean enableShortUrl);
 
 }

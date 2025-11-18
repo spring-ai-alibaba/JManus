@@ -64,6 +64,7 @@ import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
 import com.alibaba.cloud.ai.manus.runtime.service.RootTaskManagerService;
 import com.alibaba.cloud.ai.manus.runtime.service.TaskInterruptionManager;
 import com.alibaba.cloud.ai.manus.runtime.service.UserInputService;
+import com.alibaba.cloud.ai.manus.config.IManusProperties;
 import com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo.Memory;
 import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -115,6 +116,10 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 
 	@Autowired
 	private TaskInterruptionManager taskInterruptionManager;
+
+	@Autowired
+	@Lazy
+	private IManusProperties manusProperties;
 
 	public ManusController(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
@@ -867,6 +872,7 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	/**
 	 * Validate or generate conversation ID. Generates for VUE_DIALOG and VUE_SIDEBAR
 	 * requests. Internal calls (HTTP_REQUEST, subplans, cron tasks) should not generate
+	 * conversationId. If enableConversationMemory is false, always generate a new
 	 * conversationId.
 	 * @param conversationId The conversation ID to validate (can be null)
 	 * @param requestSource The request source to determine if conversationId should be
@@ -874,6 +880,19 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	 * @return Valid conversation ID (existing or newly generated for Vue requests)
 	 */
 	private String validateOrGenerateConversationId(String conversationId, RequestSource requestSource) {
+		// If conversation memory is disabled, always generate a new conversationId
+		if (manusProperties != null && !manusProperties.getEnableConversationMemory()) {
+			if (requestSource == RequestSource.VUE_DIALOG || requestSource == RequestSource.VUE_SIDEBAR) {
+				conversationId = memoryService.generateConversationId();
+				logger.info("Conversation memory disabled, generated new conversation ID for {} request: {}",
+						requestSource, conversationId);
+				return conversationId;
+			}
+			// For HTTP_REQUEST and internal calls, do not generate conversationId (return
+			// null)
+			return null;
+		}
+
 		if (!StringUtils.hasText(conversationId)) {
 			// Generate conversation ID for VUE_DIALOG and VUE_SIDEBAR requests
 			// Both should use the same conversation memory

@@ -237,12 +237,14 @@ public class PlanningFactory {
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(UuidGenerateTool.getInstance(objectMapper));
-			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper));
+			toolDefinitions
+				.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService, manusProperties));
 			toolDefinitions.add(new DebugTool());
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
 
-			toolDefinitions.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper));
+			toolDefinitions
+				.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper, shortUrlService));
 			toolDefinitions.add(new FileImportOperator(textFileService, null));
 			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager,
@@ -265,7 +267,8 @@ public class PlanningFactory {
 			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
 		}
 		else {
-			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper));
+			toolDefinitions
+				.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService, manusProperties));
 		}
 
 		List<McpServiceEntity> functionCallbacks = mcpService.getFunctionCallbacks(planId);

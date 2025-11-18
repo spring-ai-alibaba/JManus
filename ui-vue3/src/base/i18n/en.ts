@@ -457,11 +457,14 @@ const words: I18nType = {
       browserSettings: {
         headless: 'Whether to use headless browser mode',
         requestTimeout: 'Browser request timeout (seconds)',
+        enableShortUrl:
+          'Enable short URLs: Short URLs can reduce browser context consumption by 40%, recommended to enable',
       },
       general: {
         debugDetail:
           'Debug mode: The model will output more content to facilitate problem - finding, but it will be slower',
         baseDir: 'Manus root directory',
+        enableConversationMemory: 'Enable Conversation Memory',
       },
       interactionSettings: {
         openBrowser: 'Automatically open the browser on startup',

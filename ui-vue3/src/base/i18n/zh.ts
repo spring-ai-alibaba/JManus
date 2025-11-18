@@ -445,10 +445,12 @@ const words: I18nType = {
       browserSettings: {
         headless: '是否使用无头浏览器模式',
         requestTimeout: '浏览器请求超时时间(秒)',
+        enableShortUrl: '开启短连接：短连接可以降低40%的浏览器上下文消耗 推荐打开',
       },
       general: {
         debugDetail: 'debug模式 ：会要求模型输出更多内容，方便查找问题，但速度更慢',
         baseDir: 'manus根目录',
+        enableConversationMemory: '开启对话记忆',
       },
       interactionSettings: {
         openBrowser: '启动时自动打开浏览器',

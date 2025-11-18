@@ -881,49 +881,8 @@ watch(
   }
 )
 
-// Watch for changes in selectedTemplate steps to auto-refresh parameters when saved
-// This watches for parameter changes (<<paramName>>) in stepRequirement fields
-watch(
-  () => {
-    // Create a string representation of all step requirements to detect parameter changes
-    const selectedTemplate = templateConfig.selectedTemplate.value
-    if (!selectedTemplate || !selectedTemplate.steps) {
-      return ''
-    }
-    // Extract all stepRequirement fields and join them to detect any changes
-    return selectedTemplate.steps.map(step => step.stepRequirement || '').join('|||')
-  },
-  async (newStepsContent, oldStepsContent) => {
-    // Skip if currently executing
-    if (isExecutingPlan.value) {
-      console.log('[ExecutionController] ⏸️ Skipping parameter reload - plan is executing')
-      return
-    }
-
-    // Only react if steps content actually changed and we have a valid template ID
-    if (newStepsContent !== oldStepsContent && templateConfig.currentPlanTemplateId.value) {
-      console.log(
-        '[ExecutionController] 🔄 Steps content changed, will refresh parameter requirements'
-      )
-      console.log(
-        '[ExecutionController] 📋 Old content:',
-        oldStepsContent?.substring(0, 100) || 'empty'
-      )
-      console.log(
-        '[ExecutionController] 📋 New content:',
-        newStepsContent?.substring(0, 100) || 'empty'
-      )
-      // Add a delay to ensure backend has processed the save and parameters are updated
-      // Use await to ensure the refresh completes
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      console.log('[ExecutionController] ⏰ Refreshing parameters after steps change')
-      await refreshParameterRequirements()
-    }
-  },
-  { deep: false }
-)
-
 // Watch for hasTaskRequirementModified flag change from true to false (indicates save completed)
+// This is the only watch that triggers parameter refresh - only on save, not on input
 watch(
   () => templateStore.hasTaskRequirementModified,
   async (newValue, oldValue) => {

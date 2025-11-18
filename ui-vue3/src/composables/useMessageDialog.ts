@@ -506,9 +506,9 @@ export function useMessageDialog() {
             '->',
             newConversationId
           )
-          // Maintain conversationId independently (persisted)
+        // Maintain conversationId independently (persisted)
           conversationId.value = newConversationId
-          // Also set on dialog for reference
+        // Also set on dialog for reference
           targetDialog.conversationId = newConversationId
           memoryStore.setConversationId(newConversationId)
         } else {

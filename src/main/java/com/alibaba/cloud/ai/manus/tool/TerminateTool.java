@@ -15,12 +15,18 @@
  */
 package com.alibaba.cloud.ai.manus.tool;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.cloud.ai.manus.config.IManusProperties;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -39,6 +45,10 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 	private String terminationTimestamp = "";
 
 	private final ObjectMapper objectMapper;
+
+	private final ShortUrlService shortUrlService;
+
+	private final IManusProperties manusProperties;
 
 	private static String getDescriptions(String expectedReturnInfo) {
 		// Simple description to avoid generating overly long content
@@ -148,6 +158,8 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 		this.expectedReturnInfo = expectedReturnInfo;
 		this.objectMapper = new ObjectMapper();
 		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		this.shortUrlService = null;
+		this.manusProperties = null;
 	}
 
 	public TerminateTool(String planId, String expectedReturnInfo, ObjectMapper objectMapper) {
@@ -160,19 +172,158 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 			this.objectMapper = new ObjectMapper();
 			this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		}
+		this.shortUrlService = null;
+		this.manusProperties = null;
+	}
+
+	public TerminateTool(String planId, String expectedReturnInfo, ObjectMapper objectMapper,
+			ShortUrlService shortUrlService) {
+		this.currentPlanId = planId;
+		this.expectedReturnInfo = expectedReturnInfo;
+		if (objectMapper != null) {
+			this.objectMapper = objectMapper;
+		}
+		else {
+			this.objectMapper = new ObjectMapper();
+			this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		}
+		this.shortUrlService = shortUrlService;
+		this.manusProperties = null;
+	}
+
+	public TerminateTool(String planId, String expectedReturnInfo, ObjectMapper objectMapper,
+			ShortUrlService shortUrlService, IManusProperties manusProperties) {
+		this.currentPlanId = planId;
+		this.expectedReturnInfo = expectedReturnInfo;
+		if (objectMapper != null) {
+			this.objectMapper = objectMapper;
+		}
+		else {
+			this.objectMapper = new ObjectMapper();
+			this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		}
+		this.shortUrlService = shortUrlService;
+		this.manusProperties = manusProperties;
 	}
 
 	@Override
 	public ToolExecuteResult run(Map<String, Object> input) {
 		log.info("Terminate with input: {}", input);
 
+		// Replace short URLs in input before processing
+		Map<String, Object> processedInput = replaceShortUrlsInMap(input);
+
 		// Extract message from the structured data
-		String message = formatStructuredData(input);
+		String message = formatStructuredData(processedInput);
 		this.lastTerminationMessage = message;
 		this.isTerminated = true;
 		this.terminationTimestamp = java.time.LocalDateTime.now().toString();
 
 		return new ToolExecuteResult(message);
+	}
+
+	/**
+	 * Replace short URLs in a string with real URLs
+	 * @param text The text that may contain short URLs
+	 * @return The text with short URLs replaced by real URLs
+	 */
+	private String replaceShortUrls(String text) {
+		if (text == null || text.isEmpty() || this.rootPlanId == null || this.rootPlanId.isEmpty()
+				|| this.shortUrlService == null) {
+			return text;
+		}
+
+		// Check if short URL feature is enabled
+		if (manusProperties != null) {
+			Boolean enableShortUrl = manusProperties.getEnableShortUrl();
+			if (enableShortUrl == null || !enableShortUrl) {
+				return text; // Skip replacement if disabled
+			}
+		}
+
+		// Pattern to match short URLs: http://s@Url.a/ followed by digits
+		Pattern shortUrlPattern = Pattern.compile(Pattern.quote(ShortUrlService.SHORT_URL_PREFIX) + "\\d+");
+		Matcher matcher = shortUrlPattern.matcher(text);
+		StringBuffer result = new StringBuffer();
+
+		while (matcher.find()) {
+			String shortUrl = matcher.group();
+			String realUrl = shortUrlService.getRealUrl(this.rootPlanId, shortUrl);
+			if (realUrl != null) {
+				matcher.appendReplacement(result, Matcher.quoteReplacement(realUrl));
+				log.debug("Replaced short URL {} with real URL {}", shortUrl, realUrl);
+			}
+			else {
+				log.warn("Short URL not found in mapping: {}", shortUrl);
+				// Keep the short URL if mapping not found
+				matcher.appendReplacement(result, Matcher.quoteReplacement(shortUrl));
+			}
+		}
+		matcher.appendTail(result);
+
+		return result.toString();
+	}
+
+	/**
+	 * Recursively replace short URLs in a Map structure
+	 * @param input The input map that may contain short URLs
+	 * @return A new map with short URLs replaced by real URLs
+	 */
+	private Map<String, Object> replaceShortUrlsInMap(Map<String, Object> input) {
+		if (input == null || this.shortUrlService == null) {
+			return input;
+		}
+
+		// Check if short URL feature is enabled
+		if (manusProperties != null) {
+			Boolean enableShortUrl = manusProperties.getEnableShortUrl();
+			if (enableShortUrl == null || !enableShortUrl) {
+				return input; // Skip replacement if disabled
+			}
+		}
+
+		Map<String, Object> result = new java.util.HashMap<>();
+		for (Map.Entry<String, Object> entry : input.entrySet()) {
+			Object value = entry.getValue();
+			Object processedValue = replaceShortUrlsInValue(value);
+			result.put(entry.getKey(), processedValue);
+		}
+		return result;
+	}
+
+	/**
+	 * Recursively replace short URLs in a value (handles String, Map, List)
+	 * @param value The value that may contain short URLs
+	 * @return The processed value with short URLs replaced
+	 */
+	@SuppressWarnings("unchecked")
+	private Object replaceShortUrlsInValue(Object value) {
+		if (value == null) {
+			return null;
+		}
+
+		if (value instanceof String) {
+			return replaceShortUrls((String) value);
+		}
+		else if (value instanceof Map) {
+			return replaceShortUrlsInMap((Map<String, Object>) value);
+		}
+		else if (value instanceof List) {
+			List<Object> list = (List<Object>) value;
+			List<Object> result = new ArrayList<>();
+			for (Object item : list) {
+				result.add(replaceShortUrlsInValue(item));
+			}
+			return result;
+		}
+		else {
+			// For other types, try to convert to string and replace
+			String stringValue = value.toString();
+			if (stringValue.contains(ShortUrlService.SHORT_URL_PREFIX)) {
+				return replaceShortUrls(stringValue);
+			}
+			return value;
+		}
 	}
 
 	private String formatStructuredData(Map<String, Object> input) {

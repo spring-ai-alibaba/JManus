@@ -85,14 +85,8 @@
                     e => {
                       step.stepRequirement = (e.target as HTMLTextAreaElement).value
                       autoResizeTextarea(e)
-                      // Sync to templateConfig and mark as modified
-                      templateConfig.setSteps(displayData.steps)
-                      if (templateConfig.currentPlanTemplateId.value) {
-                        templateStore.hasTaskRequirementModified = true
-                        console.log(
-                          '[JsonEditorV2] Step requirement modified, hasTaskRequirementModified set to true'
-                        )
-                      }
+                      // Only update displayData, don't sync to templateConfig or trigger any watchers
+                      // Sync will happen on save via syncDisplayDataToTemplateConfig()
                     }
                   "
                   class="form-textarea auto-resize"
@@ -111,14 +105,8 @@
                     e => {
                       step.terminateColumns = (e.target as HTMLTextAreaElement).value
                       autoResizeTextarea(e)
-                      // Sync to templateConfig and mark as modified
-                      templateConfig.setSteps(displayData.steps)
-                      if (templateConfig.currentPlanTemplateId.value) {
-                        templateStore.hasTaskRequirementModified = true
-                        console.log(
-                          '[JsonEditorV2] Terminate columns modified, hasTaskRequirementModified set to true'
-                        )
-                      }
+                      // Only update displayData, don't sync to templateConfig or trigger any watchers
+                      // Sync will happen on save via syncDisplayDataToTemplateConfig()
                     }
                   "
                   class="form-textarea auto-resize"
@@ -476,29 +464,39 @@ const syncDisplayDataFromConfig = () => {
 }
 
 // Sync displayData changes back to templateConfig
-watch(
-  () => displayData,
-  () => {
-    // Skip if we're syncing from config (initial load)
-    if (isSyncingFromConfig.value) {
-      return
-    }
+// DISABLED: Only sync on save to prevent flickering during input
+// watch(
+//   () => displayData,
+//   () => {
+//     // Skip if we're syncing from config (initial load)
+//     if (isSyncingFromConfig.value) {
+//       return
+//     }
 
-    // Update templateConfig when displayData changes
-    templateConfig.setTitle(displayData.title)
-    templateConfig.setSteps(displayData.steps)
+//     // Update templateConfig when displayData changes
+//     templateConfig.setTitle(displayData.title)
+//     templateConfig.setSteps(displayData.steps)
 
-    // Mark task requirements as modified if there's a selected template
-    // Note: This is a fallback - the @input handlers should handle most cases
-    if (templateConfig.currentPlanTemplateId.value) {
-      templateStore.hasTaskRequirementModified = true
-      console.log(
-        '[JsonEditorV2] Task requirements modified (via watch), hasTaskRequirementModified set to true'
-      )
-    }
-  },
-  { deep: true }
-)
+//     // Mark task requirements as modified if there's a selected template
+//     // Note: This is a fallback - the @input handlers should handle most cases
+//     if (templateConfig.currentPlanTemplateId.value) {
+//       templateStore.hasTaskRequirementModified = true
+//       console.log(
+//         '[JsonEditorV2] Task requirements modified (via watch), hasTaskRequirementModified set to true'
+//       )
+//     }
+//   },
+//   { deep: true }
+// )
+
+// Manual sync function to be called on save
+const syncDisplayDataToTemplateConfig = () => {
+  templateConfig.setTitle(displayData.title)
+  templateConfig.setSteps(displayData.steps)
+  if (templateConfig.currentPlanTemplateId.value) {
+    templateStore.hasTaskRequirementModified = true
+  }
+}
 
 // JSON preview functions
 const toggleJsonPreview = () => {
@@ -534,6 +532,10 @@ const handleSave = async () => {
       toast.error(t('sidebar.selectPlanFirst'))
       return
     }
+
+    // Sync displayData to templateConfig before validation and save
+    // This ensures all user input is synchronized before saving
+    syncDisplayDataToTemplateConfig()
 
     // Validate config
     const validation = templateConfig.validate()

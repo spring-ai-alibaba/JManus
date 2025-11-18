@@ -23,6 +23,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
+import com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -190,11 +193,14 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 	private final ObjectMapper objectMapper;
 
+	private final ShortUrlService shortUrlService;
+
 	public GlobalFileOperator(TextFileService textFileService, SmartContentSavingService innerStorageService,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper, ShortUrlService shortUrlService) {
 		this.textFileService = textFileService;
 		this.innerStorageService = innerStorageService;
 		this.objectMapper = objectMapper;
+		this.shortUrlService = shortUrlService;
 	}
 
 	public ToolExecuteResult run(String toolInput) {
@@ -226,6 +232,10 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 								"Error: replace operation requires source_text and target_text parameters");
 					}
 
+					// Replace short URLs in sourceText and targetText
+					sourceText = replaceShortUrls(sourceText);
+					targetText = replaceShortUrls(targetText);
+
 					yield replaceText(filePath, sourceText, targetText);
 				}
 				case "get_text" -> {
@@ -247,6 +257,9 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 						yield new ToolExecuteResult("Error: append operation requires content parameter");
 					}
 
+					// Replace short URLs in appendContent
+					appendContent = replaceShortUrls(appendContent);
+
 					yield appendToFile(filePath, appendContent);
 				}
 				case "delete" -> deleteFile(filePath);
@@ -260,6 +273,9 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 					if (pattern == null) {
 						yield new ToolExecuteResult("Error: grep operation requires pattern parameter");
 					}
+
+					// Replace short URLs in pattern
+					pattern = replaceShortUrls(pattern);
 
 					yield grepText(filePath, pattern, caseSensitive != null ? caseSensitive : false,
 							wholeWord != null ? wholeWord : false);
@@ -290,6 +306,9 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				return new ToolExecuteResult("Error: file_path parameter is required");
 			}
 
+			// Replace short URLs in filePath
+			filePath = replaceShortUrls(filePath);
+
 			return switch (action) {
 				case "replace" -> {
 					String sourceText = input.getSourceText();
@@ -299,6 +318,10 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 						yield new ToolExecuteResult(
 								"Error: replace operation requires source_text and target_text parameters");
 					}
+
+					// Replace short URLs in sourceText and targetText
+					sourceText = replaceShortUrls(sourceText);
+					targetText = replaceShortUrls(targetText);
 
 					yield replaceText(filePath, sourceText, targetText);
 				}
@@ -321,6 +344,9 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 						yield new ToolExecuteResult("Error: append operation requires content parameter");
 					}
 
+					// Replace short URLs in appendContent
+					appendContent = replaceShortUrls(appendContent);
+
 					yield appendToFile(filePath, appendContent);
 				}
 				case "delete" -> deleteFile(filePath);
@@ -335,6 +361,9 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 						yield new ToolExecuteResult("Error: grep operation requires pattern parameter");
 					}
 
+					// Replace short URLs in pattern
+					pattern = replaceShortUrls(pattern);
+
 					yield grepText(filePath, pattern, caseSensitive != null ? caseSensitive : false,
 							wholeWord != null ? wholeWord : false);
 				}
@@ -346,6 +375,46 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			log.error("GlobalFileOperator execution failed", e);
 			return new ToolExecuteResult("Tool execution failed: " + e.getMessage());
 		}
+	}
+
+	/**
+	 * Replace short URLs in a string with real URLs
+	 * @param text The text that may contain short URLs
+	 * @return The text with short URLs replaced by real URLs
+	 */
+	private String replaceShortUrls(String text) {
+		if (text == null || text.isEmpty() || this.rootPlanId == null || this.rootPlanId.isEmpty()
+				|| this.shortUrlService == null) {
+			return text;
+		}
+
+		// Check if short URL feature is enabled
+		Boolean enableShortUrl = textFileService.getManusProperties().getEnableShortUrl();
+		if (enableShortUrl == null || !enableShortUrl) {
+			return text; // Skip replacement if disabled
+		}
+
+		// Pattern to match short URLs: http://s@Url.a/ followed by digits
+		Pattern shortUrlPattern = Pattern.compile(Pattern.quote(ShortUrlService.SHORT_URL_PREFIX) + "\\d+");
+		Matcher matcher = shortUrlPattern.matcher(text);
+		StringBuffer result = new StringBuffer();
+
+		while (matcher.find()) {
+			String shortUrl = matcher.group();
+			String realUrl = shortUrlService.getRealUrl(this.rootPlanId, shortUrl);
+			if (realUrl != null) {
+				matcher.appendReplacement(result, Matcher.quoteReplacement(realUrl));
+				log.debug("Replaced short URL {} with real URL {}", shortUrl, realUrl);
+			}
+			else {
+				log.warn("Short URL not found in mapping: {}", shortUrl);
+				// Keep the short URL if mapping not found
+				matcher.appendReplacement(result, Matcher.quoteReplacement(shortUrl));
+			}
+		}
+		matcher.appendTail(result);
+
+		return result.toString();
 	}
 
 	/**

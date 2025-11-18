@@ -241,10 +241,11 @@ public class DynamicAgent extends ReActAgent {
 				ChatMemory chatMemory = llmService.getAgentMemory(manusProperties.getMaxMemory());
 				List<Message> historyMem = chatMemory.get(getCurrentPlanId());
 				// List<Message> subAgentMem = chatMemory.get(getCurrentPlanId());
-
+				
 				// Add conversation history from MemoryService if conversationId is
-				// available
-				if (memoryService != null && getConversationId() != null && !getConversationId().trim().isEmpty()) {
+				// available and conversation memory is enabled
+				if (manusProperties.getEnableConversationMemory() && memoryService != null
+						&& getConversationId() != null && !getConversationId().trim().isEmpty()) {
 					try {
 						ChatMemory conversationMemory = llmService
 							.getConversationMemoryWithLimit(manusProperties.getMaxMemory(), getConversationId());
@@ -262,6 +263,9 @@ public class DynamicAgent extends ReActAgent {
 								"Failed to retrieve conversation history for conversationId: {}. Continuing without it.",
 								getConversationId(), e);
 					}
+				}
+				else if (!manusProperties.getEnableConversationMemory()) {
+					log.debug("Conversation memory is disabled, skipping conversation history retrieval");
 				}
 				messages.addAll(Collections.singletonList(systemMessage));
 				messages.addAll(historyMem);
@@ -294,11 +298,11 @@ public class DynamicAgent extends ReActAgent {
 				}
 				// Calculate and log word count for userPrompt
 				int wordCount = messages.stream().mapToInt(message -> {
-					String text = message.getText();
-					if (text == null || text.trim().isEmpty()) {
-						return 0;
-					}
-					return text.length();
+						String text = message.getText();
+						if (text == null || text.trim().isEmpty()) {
+							return 0;
+						}
+						return text.length();
 				}).sum();
 				log.info("User prompt word count: {}", wordCount);
 
@@ -1246,6 +1250,12 @@ public class DynamicAgent extends ReActAgent {
 	 * Save user request (stepText) to conversation memory
 	 */
 	private void saveUserRequestToConversationMemory() {
+		// Skip if conversation memory is disabled
+		if (!manusProperties.getEnableConversationMemory()) {
+			log.debug("Conversation memory is disabled, skipping user request save");
+			return;
+		}
+
 		if (getConversationId() == null || getConversationId().trim().isEmpty()) {
 			log.debug("No conversationId available, skipping user request save");
 			return;
