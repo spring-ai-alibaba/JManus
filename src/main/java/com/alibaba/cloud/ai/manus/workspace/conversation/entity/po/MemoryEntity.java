@@ -37,8 +37,7 @@ import jakarta.persistence.Table;
  * @desc memory entity - Stores conversation metadata and references to plan executions
  */
 @Entity
-@Table(name = "dynamic_memories", indexes = {
-		@Index(name = "idx_create_time", columnList = "createTime") })
+@Table(name = "dynamic_memories", indexes = { @Index(name = "idx_create_time", columnList = "createTime") })
 public class MemoryEntity {
 
 	@Id
@@ -55,9 +54,9 @@ public class MemoryEntity {
 	private Date createTime;
 
 	/**
-	 * List of root plan IDs associated with this conversation Each rootPlanId
-	 * corresponds to a complete dialog round (user query + assistant response) The plan
-	 * execution records contain all the actual message content and execution details
+	 * List of root plan IDs associated with this conversation Each rootPlanId corresponds
+	 * to a complete dialog round (user query + assistant response) The plan execution
+	 * records contain all the actual message content and execution details
 	 */
 	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(name = "memory_plan_mappings", joinColumns = @JoinColumn(name = "memory_id"))
@@ -65,10 +64,10 @@ public class MemoryEntity {
 	private List<String> rootPlanIds = new ArrayList<>();
 
 	/**
-	 * Note: The @OneToMany relationship to ConversationMessage has been removed.
-	 * This entity now only maintains references to root plan IDs. The actual conversation
-	 * content is retrieved through PlanExecutionRecords using the rootPlanIds list.
-	 * This design is more maintainable and avoids data duplication.
+	 * Note: The @OneToMany relationship to ConversationMessage has been removed. This
+	 * entity now only maintains references to root plan IDs. The actual conversation
+	 * content is retrieved through PlanExecutionRecords using the rootPlanIds list. This
+	 * design is more maintainable and avoids data duplication.
 	 */
 
 	public MemoryEntity() {

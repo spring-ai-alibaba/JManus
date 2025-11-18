@@ -52,24 +52,21 @@ public class ClickByElementAction extends BrowserAction {
 				int elementTimeout = getElementTimeoutMs();
 				log.debug("Using element timeout: {}ms for click operations", elementTimeout);
 
+				// For other elements, use standard waiting strategy
+				// Wait for element to be visible and enabled before clicking
+				locator.waitFor(new Locator.WaitForOptions().setTimeout(elementTimeout));
 
-					// For other elements, use standard waiting strategy
-					// Wait for element to be visible and enabled before clicking
-					locator.waitFor(new Locator.WaitForOptions().setTimeout(elementTimeout));
+				// Check if element is visible and enabled
+				if (!locator.isVisible()) {
+					throw new RuntimeException("Element is not visible");
+				}
 
-					// Check if element is visible and enabled
-					if (!locator.isVisible()) {
-						throw new RuntimeException("Element is not visible");
-					}
-
-					// Click with explicit timeout
-					locator.click(new Locator.ClickOptions().setTimeout(elementTimeout));
-				
+				// Click with explicit timeout
+				locator.click(new Locator.ClickOptions().setTimeout(elementTimeout));
 
 				// Add small delay to ensure the action is processed
 				Thread.sleep(500);
 
-				
 			}
 			catch (com.microsoft.playwright.TimeoutError e) {
 				log.error("Timeout waiting for element with idx {} to be ready for click: {}", index, e.getMessage());

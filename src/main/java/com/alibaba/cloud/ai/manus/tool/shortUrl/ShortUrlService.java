@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * Short URL service implementation for managing URL mappings
- * Provides planId-level isolation with in-memory storage only
+ * Short URL service implementation for managing URL mappings Provides planId-level
+ * isolation with in-memory storage only
  */
 @Service
 public class ShortUrlService {
@@ -35,8 +35,8 @@ public class ShortUrlService {
 	private static final Logger log = LoggerFactory.getLogger(ShortUrlService.class);
 
 	/**
-	 * Short URL prefix constant
-	 * Public so other classes can use it to check if a URL is a short URL
+	 * Short URL prefix constant Public so other classes can use it to check if a URL is a
+	 * short URL
 	 */
 	public static final String SHORT_URL_PREFIX = "http://s@Url.a/";
 
@@ -245,8 +245,8 @@ public class ShortUrlService {
 	}
 
 	/**
-	 * Get the real URL from short URL (compatibility method for DriverWrapper)
-	 * Always uses rootPlanId for short URL lifetime management
+	 * Get the real URL from short URL (compatibility method for DriverWrapper) Always
+	 * uses rootPlanId for short URL lifetime management
 	 * @param rootPlanId Root plan ID (required)
 	 * @param shortUrl The short URL (e.g., http://s@Url.a/1)
 	 * @return The real URL, or null if not found
@@ -274,8 +274,8 @@ public class ShortUrlService {
 	}
 
 	/**
-	 * Clear all URL mappings (compatibility method for DriverWrapper)
-	 * Always uses rootPlanId for short URL lifetime management
+	 * Clear all URL mappings (compatibility method for DriverWrapper) Always uses
+	 * rootPlanId for short URL lifetime management
 	 * @param rootPlanId Root plan ID (required)
 	 */
 	public void clearUrlMappings(String rootPlanId) {
@@ -285,4 +285,3 @@ public class ShortUrlService {
 	}
 
 }
-

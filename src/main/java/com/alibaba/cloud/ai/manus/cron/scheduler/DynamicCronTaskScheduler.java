@@ -277,7 +277,8 @@ public class DynamicCronTaskScheduler {
 
 			// Execute using the PlanningCoordinator's common execution logic (cron plans
 			// start at depth 0)
-			// Cron tasks don't have conversation context, use HTTP_REQUEST as they are internal calls
+			// Cron tasks don't have conversation context, use HTTP_REQUEST as they are
+			// internal calls
 			return planningCoordinator.executeByPlan(plan, rootPlanId, parentPlanId, currentPlanId, null,
 					RequestSource.HTTP_REQUEST, null, 0, null);
 

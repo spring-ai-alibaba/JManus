@@ -16,8 +16,7 @@
 package com.alibaba.cloud.ai.manus.runtime.entity.vo;
 
 /**
- * Request source enumeration
- * Indicates where the request originates from
+ * Request source enumeration Indicates where the request originates from
  */
 public enum RequestSource {
 
@@ -37,7 +36,8 @@ public enum RequestSource {
 	VUE_DIALOG;
 
 	/**
-	 * Parse request source from string, default to HTTP_REQUEST if not provided or invalid
+	 * Parse request source from string, default to HTTP_REQUEST if not provided or
+	 * invalid
 	 * @param source Request source string (can be null)
 	 * @return RequestSource enum, defaults to HTTP_REQUEST
 	 */
@@ -63,4 +63,3 @@ public enum RequestSource {
 	}
 
 }
-

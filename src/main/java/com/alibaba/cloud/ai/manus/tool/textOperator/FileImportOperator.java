@@ -35,9 +35,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * File import operator that imports all files and subdirectories from a specified
- * real path to the current directory. This tool recursively copies all
- * files and folders from the source path to the current directory.
+ * File import operator that imports all files and subdirectories from a specified real
+ * path to the current directory. This tool recursively copies all files and folders from
+ * the source path to the current directory.
  */
 public class FileImportOperator extends AbstractBaseTool<FileImportOperator.FileImportInput> {
 
@@ -268,4 +268,3 @@ public class FileImportOperator extends AbstractBaseTool<FileImportOperator.File
 	}
 
 }
-

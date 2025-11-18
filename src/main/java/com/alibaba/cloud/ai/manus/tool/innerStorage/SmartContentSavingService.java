@@ -94,5 +94,4 @@ public class SmartContentSavingService implements ISmartContentSavingService {
 		return new SmartProcessResult(null, content != null && !content.trim().isEmpty() ? content : "");
 	}
 
-
 }

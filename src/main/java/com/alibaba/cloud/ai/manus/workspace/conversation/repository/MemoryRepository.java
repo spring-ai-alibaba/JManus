@@ -38,11 +38,12 @@ public interface MemoryRepository extends JpaRepository<MemoryEntity, Long> {
 	MemoryEntity findByConversationId(String conversationId);
 
 	/**
-	 * Find top 15 memories ordered by create time descending (newest first)
-	 * Uses native query for better performance with LIMIT clause
+	 * Find top 15 memories ordered by create time descending (newest first) Uses native
+	 * query for better performance with LIMIT clause
 	 * @return List of top 15 most recent MemoryEntity records
 	 */
-	@Query(value = "SELECT * FROM dynamic_memories WHERE create_time IS NOT NULL ORDER BY create_time DESC LIMIT 15", nativeQuery = true)
+	@Query(value = "SELECT * FROM dynamic_memories WHERE create_time IS NOT NULL ORDER BY create_time DESC LIMIT 15",
+			nativeQuery = true)
 	List<MemoryEntity> findTop15Memories();
 
 }

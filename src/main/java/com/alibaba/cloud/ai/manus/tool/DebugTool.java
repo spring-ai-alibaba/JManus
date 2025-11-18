@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 
 /**
- * A simple debug tool that allows LLM to output a message and return it directly.
- * This tool is useful for debugging and logging purposes.
+ * A simple debug tool that allows LLM to output a message and return it directly. This
+ * tool is useful for debugging and logging purposes.
  */
 public class DebugTool extends AbstractBaseTool<Map<String, Object>> {
 
@@ -120,4 +120,3 @@ public class DebugTool extends AbstractBaseTool<Map<String, Object>> {
 	}
 
 }
-

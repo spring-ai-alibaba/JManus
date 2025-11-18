@@ -290,7 +290,7 @@ public class PlanTemplateController {
 			List<Map<String, Object>> templateList = new ArrayList<>();
 			for (PlanTemplate template : templates) {
 				Map<String, Object> templateData = new HashMap<>();
-			
+
 				templateData.put("id", template.getPlanTemplateId());
 				templateData.put("title", template.getTitle());
 				templateData.put("description", template.getTitle());
@@ -387,12 +387,11 @@ public class PlanTemplateController {
 	}
 
 	/**
-	 * Create or update plan template and register as coordinator tool
-	 * This method combines the functionality of both "Save Plan Template" and
-	 * "Register Plan Templates as Toolcalls" by using PlanTemplateConfigVO.
-	 * It will:
-	 * 1. Create or update the PlanTemplate in the database
-	 * 2. Create or update the CoordinatorTool (if toolConfig is provided)
+	 * Create or update plan template and register as coordinator tool This method
+	 * combines the functionality of both "Save Plan Template" and "Register Plan
+	 * Templates as Toolcalls" by using PlanTemplateConfigVO. It will: 1. Create or update
+	 * the PlanTemplate in the database 2. Create or update the CoordinatorTool (if
+	 * toolConfig is provided)
 	 * @param configVO Plan template configuration VO containing plan template data and
 	 * optional toolConfig
 	 * @return Response containing created/updated plan template and coordinator tool
@@ -415,7 +414,8 @@ public class PlanTemplateController {
 			logger.info("Creating or updating plan template with tool registration for planTemplateId: {}",
 					planTemplateId);
 
-			// Use the unified service method that handles both plan template and coordinator
+			// Use the unified service method that handles both plan template and
+			// coordinator
 			// tool creation/update
 			PlanTemplateConfigVO resultConfigVO = planTemplateConfigService
 				.createOrUpdateCoordinatorToolFromPlanTemplateConfig(configVO);
@@ -430,10 +430,9 @@ public class PlanTemplateController {
 
 		}
 		catch (PlanTemplateConfigException e) {
-			logger.error("PlanTemplateConfigException while creating/updating plan template with tool: {}", e.getMessage(),
-					e);
-			return ResponseEntity.badRequest()
-				.body(Map.of("error", e.getMessage(), "errorCode", e.getErrorCode()));
+			logger.error("PlanTemplateConfigException while creating/updating plan template with tool: {}",
+					e.getMessage(), e);
+			return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "errorCode", e.getErrorCode()));
 		}
 		catch (Exception e) {
 			logger.error("Failed to create or update plan template with tool", e);
@@ -444,7 +443,8 @@ public class PlanTemplateController {
 
 	/**
 	 * Get all plan template configuration VOs
-	 * @return List of PlanTemplateConfigVO containing plan template and tool configuration
+	 * @return List of PlanTemplateConfigVO containing plan template and tool
+	 * configuration
 	 */
 	@GetMapping("/list-config")
 	public ResponseEntity<List<PlanTemplateConfigVO>> getAllPlanTemplateConfigVOs() {
@@ -456,7 +456,6 @@ public class PlanTemplateController {
 			List<PlanTemplateConfigVO> configVOs = new ArrayList<>();
 
 			for (PlanTemplate planTemplate : templates) {
-				
 
 				String planTemplateId = planTemplate.getPlanTemplateId();
 
@@ -478,7 +477,8 @@ public class PlanTemplateController {
 					configVO.setPlanType(planInterface.getPlanType());
 					configVO.setServiceGroup(planTemplate.getServiceGroup());
 					configVO.setDirectResponse(planInterface.isDirectResponse());
-					configVO.setReadOnly(false); // Default to false, can be set based on business logic
+					configVO.setReadOnly(false); // Default to false, can be set based on
+													// business logic
 					// Set createTime and updateTime from PlanTemplate entity
 					if (planTemplate.getCreateTime() != null) {
 						configVO.setCreateTime(planTemplate.getCreateTime().toString());
@@ -570,7 +570,8 @@ public class PlanTemplateController {
 			configVO.setPlanType(planInterface.getPlanType());
 			configVO.setServiceGroup(planTemplate.getServiceGroup());
 			configVO.setDirectResponse(planInterface.isDirectResponse());
-			configVO.setReadOnly(false); // Default to false, can be set based on business logic
+			configVO.setReadOnly(false); // Default to false, can be set based on business
+											// logic
 			// Set createTime and updateTime from PlanTemplate entity
 			if (planTemplate.getCreateTime() != null) {
 				configVO.setCreateTime(planTemplate.getCreateTime().toString());

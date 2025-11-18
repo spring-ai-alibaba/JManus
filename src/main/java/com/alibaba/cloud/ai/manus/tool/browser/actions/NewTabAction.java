@@ -41,7 +41,7 @@ public class NewTabAction extends BrowserAction {
 			}
 			url = realUrl;
 			org.slf4j.LoggerFactory.getLogger(NewTabAction.class)
-					.debug("Resolved short URL {} to real URL {}", request.getUrl(), url);
+				.debug("Resolved short URL {} to real URL {}", request.getUrl(), url);
 		}
 
 		// Auto-complete the URL prefix

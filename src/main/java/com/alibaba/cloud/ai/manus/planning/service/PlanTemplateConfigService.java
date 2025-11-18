@@ -38,8 +38,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Service for processing PlanTemplateConfigVO
- * Handles conversion, validation, and PlanTemplate creation/update from PlanTemplateConfigVO
+ * Service for processing PlanTemplateConfigVO Handles conversion, validation, and
+ * PlanTemplate creation/update from PlanTemplateConfigVO
  */
 @Service
 public class PlanTemplateConfigService {
@@ -62,8 +62,8 @@ public class PlanTemplateConfigService {
 	private ObjectMapper objectMapper;
 
 	/**
-	 * Prepare PlanTemplateConfigVO with toolConfig
-	 * This method ensures toolConfig is properly set with input schema
+	 * Prepare PlanTemplateConfigVO with toolConfig This method ensures toolConfig is
+	 * properly set with input schema
 	 * @param configVO Plan template configuration VO
 	 * @return PlanTemplateConfigVO with toolConfig and input schema set
 	 * @throws PlanTemplateConfigException if validation or operation fails
@@ -93,7 +93,8 @@ public class PlanTemplateConfigService {
 
 			PlanTemplateConfigVO.ToolConfigVO toolConfig = configVO.getToolConfig();
 
-			// Set input schema: use from toolConfig if provided, otherwise generate from plan template
+			// Set input schema: use from toolConfig if provided, otherwise generate from
+			// plan template
 			if (toolConfig.getInputSchema() == null || toolConfig.getInputSchema().isEmpty()) {
 				// Generate input schema from plan template parameters
 				String inputSchemaJson = generateInputSchemaFromPlanTemplate(planTemplateId);
@@ -137,7 +138,8 @@ public class PlanTemplateConfigService {
 			throw e;
 		}
 		catch (Exception e) {
-			log.error("Failed to prepare PlanTemplateConfigVO with toolConfig for planTemplateId: {}", planTemplateId, e);
+			log.error("Failed to prepare PlanTemplateConfigVO with toolConfig for planTemplateId: {}", planTemplateId,
+					e);
 			throw new PlanTemplateConfigException("INTERNAL_ERROR",
 					"An unexpected error occurred while preparing PlanTemplateConfigVO: " + e.getMessage());
 		}
@@ -173,8 +175,8 @@ public class PlanTemplateConfigService {
 	}
 
 	/**
-	 * Generate input schema JSON string from plan template parameters
-	 * InputSchema format: [{"name": "paramName", "type": "string", "description": "param description"}]
+	 * Generate input schema JSON string from plan template parameters InputSchema format:
+	 * [{"name": "paramName", "type": "string", "description": "param description"}]
 	 * @param planTemplateId Plan template ID
 	 * @return JSON string representation of input schema array
 	 */
@@ -255,7 +257,6 @@ public class PlanTemplateConfigService {
 			String planTemplateId = configVO.getPlanTemplateId();
 			String title = configVO.getTitle() != null ? configVO.getTitle() : "Untitled Plan";
 
-
 			String planJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(configVO);
 
 			// Check if PlanTemplate already exists
@@ -295,8 +296,8 @@ public class PlanTemplateConfigService {
 
 			// Retrieve the saved plan template
 			PlanTemplate savedTemplate = planTemplateRepository.findByPlanTemplateId(planTemplateId)
-					.orElseThrow(() -> new PlanTemplateConfigException("INTERNAL_ERROR",
-							"Failed to retrieve created PlanTemplate with ID: " + planTemplateId));
+				.orElseThrow(() -> new PlanTemplateConfigException("INTERNAL_ERROR",
+						"Failed to retrieve created PlanTemplate with ID: " + planTemplateId));
 
 			// Set serviceGroup on PlanTemplate from configVO
 			String serviceGroup = configVO.getServiceGroup();
@@ -331,8 +332,7 @@ public class PlanTemplateConfigService {
 				}
 			}
 			log.error("Constraint violation while creating PlanTemplate: {}", e.getMessage(), e);
-			throw new PlanTemplateConfigException("INTERNAL_ERROR",
-					"Failed to create PlanTemplate: " + e.getMessage());
+			throw new PlanTemplateConfigException("INTERNAL_ERROR", "Failed to create PlanTemplate: " + e.getMessage());
 		}
 		catch (org.springframework.dao.DataIntegrityViolationException e) {
 			// Check if it's a unique constraint violation on title
@@ -349,8 +349,7 @@ public class PlanTemplateConfigService {
 				}
 			}
 			log.error("Data integrity violation while creating PlanTemplate: {}", e.getMessage(), e);
-			throw new PlanTemplateConfigException("INTERNAL_ERROR",
-					"Failed to create PlanTemplate: " + e.getMessage());
+			throw new PlanTemplateConfigException("INTERNAL_ERROR", "Failed to create PlanTemplate: " + e.getMessage());
 		}
 		catch (Exception e) {
 			log.error("Failed to create PlanTemplate from PlanTemplateConfigVO: {}", e.getMessage(), e);
@@ -359,8 +358,8 @@ public class PlanTemplateConfigService {
 	}
 
 	/**
-	 * Create or update coordinator tool from PlanTemplateConfigVO
-	 * Uses planTemplateId as the key identity to determine if tool exists
+	 * Create or update coordinator tool from PlanTemplateConfigVO Uses planTemplateId as
+	 * the key identity to determine if tool exists
 	 * @param configVO Plan template configuration VO
 	 * @return Created or updated PlanTemplateConfigVO
 	 * @throws PlanTemplateConfigException if validation or operation fails
@@ -381,8 +380,10 @@ public class PlanTemplateConfigService {
 		log.info("Creating or updating coordinator tool from PlanTemplateConfigVO for planTemplateId: {}",
 				planTemplateId);
 		try {
-			// Update or create PlanTemplate with the latest config (including steps with selectedToolKeys)
-			// This ensures the plan JSON in the database is updated with the latest configuration
+			// Update or create PlanTemplate with the latest config (including steps with
+			// selectedToolKeys)
+			// This ensures the plan JSON in the database is updated with the latest
+			// configuration
 			createPlanTemplateFromConfig(configVO);
 			log.info("Updated PlanTemplate and plan JSON for planTemplateId: {}", planTemplateId);
 
@@ -433,8 +434,8 @@ public class PlanTemplateConfigService {
 
 			// Check if entity exists
 			FuncAgentToolEntity existingEntity = funcAgentToolRepository.findById(id)
-					.orElseThrow(() -> new PlanTemplateConfigException("NOT_FOUND",
-							"Coordinator tool not found with ID: " + id));
+				.orElseThrow(() -> new PlanTemplateConfigException("NOT_FOUND",
+						"Coordinator tool not found with ID: " + id));
 
 			// Update entity from configVO
 			// Always update toolName from title to ensure consistency
@@ -443,11 +444,11 @@ public class PlanTemplateConfigService {
 
 			PlanTemplateConfigVO.ToolConfigVO toolConfig = configVO.getToolConfig();
 			if (toolConfig != null) {
-				existingEntity.setToolDescription(
-						toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
+				existingEntity
+					.setToolDescription(toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
 				existingEntity.setInputSchema(convertInputSchemaListToJson(toolConfig.getInputSchema()));
-				existingEntity.setEnableInternalToolcall(
-						toolConfig.getEnableInternalToolcall() != null ? toolConfig.getEnableInternalToolcall() : false);
+				existingEntity.setEnableInternalToolcall(toolConfig.getEnableInternalToolcall() != null
+						? toolConfig.getEnableInternalToolcall() : false);
 				existingEntity.setEnableHttpService(
 						toolConfig.getEnableHttpService() != null ? toolConfig.getEnableHttpService() : false);
 				existingEntity.setEnableMcpService(
@@ -526,7 +527,8 @@ public class PlanTemplateConfigService {
 	 * @throws PlanTemplateConfigException if creation fails
 	 */
 	@Transactional
-	public PlanTemplateConfigVO createCoordinatorTool(PlanTemplateConfigVO configVO) throws PlanTemplateConfigException {
+	public PlanTemplateConfigVO createCoordinatorTool(PlanTemplateConfigVO configVO)
+			throws PlanTemplateConfigException {
 		try {
 			log.info("Creating coordinator tool for planTemplateId: {}", configVO.getPlanTemplateId());
 
@@ -539,11 +541,13 @@ public class PlanTemplateConfigService {
 			String toolName = configVO.getTitle() != null ? configVO.getTitle() : "";
 
 			// Check if a tool with the same toolName already exists
-			// If it exists but with different planTemplateId or null planTemplateId, delete it first
+			// If it exists but with different planTemplateId or null planTemplateId,
+			// delete it first
 			List<FuncAgentToolEntity> existingToolsWithSameName = funcAgentToolRepository.findByToolName(toolName);
 			if (!existingToolsWithSameName.isEmpty()) {
 				for (FuncAgentToolEntity existingTool : existingToolsWithSameName) {
-					// If the existing tool has a different planTemplateId or null planTemplateId, delete it
+					// If the existing tool has a different planTemplateId or null
+					// planTemplateId, delete it
 					if (existingTool.getPlanTemplateId() == null
 							|| !existingTool.getPlanTemplateId().equals(configVO.getPlanTemplateId())) {
 						log.warn(
@@ -552,7 +556,8 @@ public class PlanTemplateConfigService {
 						funcAgentToolRepository.deleteById(existingTool.getId());
 					}
 					else {
-						// Same toolName and same planTemplateId - this should not happen as we check by planTemplateId first
+						// Same toolName and same planTemplateId - this should not happen
+						// as we check by planTemplateId first
 						log.warn(
 								"Found existing coordinator tool with same toolName '{}' and planTemplateId '{}'. This should have been handled by update logic.",
 								toolName, configVO.getPlanTemplateId());
@@ -563,8 +568,7 @@ public class PlanTemplateConfigService {
 			// Convert PlanTemplateConfigVO to Entity and save
 			FuncAgentToolEntity entity = new FuncAgentToolEntity();
 			entity.setToolName(toolName);
-			entity.setToolDescription(
-					toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
+			entity.setToolDescription(toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
 			entity.setInputSchema(convertInputSchemaListToJson(toolConfig.getInputSchema()));
 			entity.setPlanTemplateId(configVO.getPlanTemplateId());
 			entity.setEnableInternalToolcall(
@@ -609,9 +613,8 @@ public class PlanTemplateConfigService {
 	}
 
 	/**
-	 * Get plan template ID from tool name
-	 * Only returns plan template ID if HTTP service is enabled for the tool
-	 * Tool name is matched against PlanTemplate.title
+	 * Get plan template ID from tool name Only returns plan template ID if HTTP service
+	 * is enabled for the tool Tool name is matched against PlanTemplate.title
 	 * @param toolName Tool name (PlanTemplate.title)
 	 * @return Plan template ID if found and HTTP service is enabled, null otherwise
 	 */
@@ -652,8 +655,10 @@ public class PlanTemplateConfigService {
 	 */
 	public List<PlanTemplateConfigVO> getAllCoordinatorTools() {
 		try {
-			return funcAgentToolRepository.findAll().stream().map(this::convertEntityToPlanTemplateConfigVO)
-					.collect(Collectors.toList());
+			return funcAgentToolRepository.findAll()
+				.stream()
+				.map(this::convertEntityToPlanTemplateConfigVO)
+				.collect(Collectors.toList());
 		}
 		catch (Exception e) {
 			log.error("Error getting all coordinator tools: {}", e.getMessage(), e);
@@ -672,7 +677,7 @@ public class PlanTemplateConfigService {
 
 		// Get PlanTemplate for additional info
 		PlanTemplate planTemplate = planTemplateRepository.findByPlanTemplateId(entity.getPlanTemplateId())
-				.orElse(null);
+			.orElse(null);
 		if (planTemplate != null) {
 			configVO.setServiceGroup(planTemplate.getServiceGroup());
 		}
@@ -723,4 +728,3 @@ public class PlanTemplateConfigService {
 	}
 
 }
-

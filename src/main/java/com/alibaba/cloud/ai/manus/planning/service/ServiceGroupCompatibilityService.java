@@ -54,7 +54,8 @@ public class ServiceGroupCompatibilityService {
 	private PlanTemplateRepository planTemplateRepository;
 
 	/**
-	 * Migrate service_group from coordinator_tools to plan_template on application startup
+	 * Migrate service_group from coordinator_tools to plan_template on application
+	 * startup
 	 */
 	@EventListener(ApplicationReadyEvent.class)
 	@Transactional
@@ -100,8 +101,9 @@ public class ServiceGroupCompatibilityService {
 	}
 
 	/**
-	 * Migrate service_group values from coordinator_tools to plan_template
-	 * Only updates plan_template if its service_group is empty/null and coordinator_tools has a non-empty value
+	 * Migrate service_group values from coordinator_tools to plan_template Only updates
+	 * plan_template if its service_group is empty/null and coordinator_tools has a
+	 * non-empty value
 	 * @return Number of plan templates updated
 	 */
 	private int migrateServiceGroupFromCoordinatorTools() {
@@ -127,22 +129,25 @@ public class ServiceGroupCompatibilityService {
 		for (ServiceGroupMigration migration : migrations) {
 			try {
 				Optional<PlanTemplate> planTemplateOpt = planTemplateRepository
-						.findByPlanTemplateId(migration.planTemplateId);
+					.findByPlanTemplateId(migration.planTemplateId);
 
 				if (planTemplateOpt.isPresent()) {
 					PlanTemplate planTemplate = planTemplateOpt.get();
 					String currentServiceGroup = planTemplate.getServiceGroup();
 
-					// Only update if plan_template.service_group is empty/null and coordinator_tools has a value
+					// Only update if plan_template.service_group is empty/null and
+					// coordinator_tools has a value
 					if (isNullOrEmpty(currentServiceGroup) && !isNullOrEmpty(migration.serviceGroup)) {
 						planTemplate.setServiceGroup(migration.serviceGroup.trim());
 						planTemplate.setUpdateTime(java.time.LocalDateTime.now());
 						planTemplateRepository.save(planTemplate);
 
-						// Clear service_group in coordinator_tools after successful migration
+						// Clear service_group in coordinator_tools after successful
+						// migration
 						clearServiceGroupInCoordinatorTools(migration.planTemplateId);
 						updatedCount++;
-						log.debug("Migrated service_group '{}' to plan_template '{}' and cleared from coordinator_tools",
+						log.debug(
+								"Migrated service_group '{}' to plan_template '{}' and cleared from coordinator_tools",
 								migration.serviceGroup, migration.planTemplateId);
 					}
 					else {
@@ -204,4 +209,3 @@ public class ServiceGroupCompatibilityService {
 	}
 
 }
-

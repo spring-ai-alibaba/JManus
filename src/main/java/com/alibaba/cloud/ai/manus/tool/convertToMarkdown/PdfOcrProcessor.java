@@ -188,8 +188,10 @@ public class PdfOcrProcessor {
 						normalizedFilename);
 			}
 			else {
-				result = String.format("Successfully processed PDF with OCR\n\n" + "**Output File**: %s\n\n"
-						+ "**Pages Processed**: %d of %d\n\n", normalizedFilename, processedPages, pageImages.size());
+				result = String.format(
+						"Successfully processed PDF with OCR\n\n" + "**Output File**: %s\n\n"
+								+ "**Pages Processed**: %d of %d\n\n",
+						normalizedFilename, processedPages, pageImages.size());
 			}
 
 			// Add content preview if less than 1000 characters

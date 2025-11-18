@@ -222,7 +222,6 @@ public class ChromeDriverService implements IChromeDriverService {
 		}
 	}
 
-
 	/**
 	 * Create new driver with retry mechanism 1
 	 */
@@ -504,7 +503,7 @@ public class ChromeDriverService implements IChromeDriverService {
 			try {
 				// browserContext is guaranteed to be non-null here due to previous
 				// validation
-				
+
 				// Close any pages restored from storage state before creating new page
 				// Storage state may restore previous tabs, which we don't want to keep
 				try {
@@ -527,7 +526,7 @@ public class ChromeDriverService implements IChromeDriverService {
 				catch (Exception e) {
 					log.warn("Failed to check/close existing pages from storage state: {}", e.getMessage());
 				}
-				
+
 				page = browserContext.newPage();
 				log.info("Successfully created new page from context");
 

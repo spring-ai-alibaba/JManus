@@ -29,13 +29,10 @@ public class AriaElementHelper {
 
 	private static final Logger log = LoggerFactory.getLogger(AriaElementHelper.class);
 
-
-
 	/**
-	 * Replace aria-id-num patterns with [idx=num] in ARIA snapshot text
-	 * This method processes the snapshot text and replaces patterns like:
-	 * - button "aria-id-1" -> button [idx=1]
-	 * - link "aria-id-5" [checked] -> link [idx=5] [checked]
+	 * Replace aria-id-num patterns with [idx=num] in ARIA snapshot text This method
+	 * processes the snapshot text and replaces patterns like: - button "aria-id-1" ->
+	 * button [idx=1] - link "aria-id-5" [checked] -> link [idx=5] [checked]
 	 * @param snapshot The original ARIA snapshot text
 	 * @return The snapshot text with aria-id-num replaced by [idx=num]
 	 */
@@ -68,14 +65,16 @@ public class AriaElementHelper {
 	}
 
 	/**
-	 * Parse page, replace aria-id-num with [idx=num], and return processed snapshot
-	 * This method encapsulates the common pattern of parsing a page and preparing it for use
+	 * Parse page, replace aria-id-num with [idx=num], and return processed snapshot This
+	 * method encapsulates the common pattern of parsing a page and preparing it for use
 	 * @param page The page to parse
 	 * @param options Snapshot options (if null, default options will be used)
 	 * @param compressUrl If true, compress URLs in the snapshot (replace with short URLs)
-	 * @param shortUrlService ShortUrlService instance to store URL mappings (required if compressUrl is true)
+	 * @param shortUrlService ShortUrlService instance to store URL mappings (required if
+	 * compressUrl is true)
 	 * @param rootPlanId Root plan ID for URL lifetime management
-	 * @return Processed YAML snapshot string with aria-id-num replaced by [idx=num], or null if parsing failed
+	 * @return Processed YAML snapshot string with aria-id-num replaced by [idx=num], or
+	 * null if parsing failed
 	 */
 	public static String parsePageAndAssignRefs(Page page, AriaSnapshotOptions options, boolean compressUrl,
 			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService, String rootPlanId) {

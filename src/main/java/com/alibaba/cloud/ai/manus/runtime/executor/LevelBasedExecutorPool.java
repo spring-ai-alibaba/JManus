@@ -215,8 +215,8 @@ public class LevelBasedExecutorPool {
 				configuredSize = 5;
 			}
 			if (configuredSize != currentPoolSize) {
-				log.info("Pool size configuration changed from {} to {}. Adjusting all level pools...",
-						currentPoolSize, configuredSize);
+				log.info("Pool size configuration changed from {} to {}. Adjusting all level pools...", currentPoolSize,
+						configuredSize);
 				adjustAllPoolSizes(configuredSize);
 				currentPoolSize = configuredSize;
 			}

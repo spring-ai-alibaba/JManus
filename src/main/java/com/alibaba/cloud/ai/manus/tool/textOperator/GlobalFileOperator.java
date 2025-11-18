@@ -34,12 +34,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Global file operator that performs operations on files. This operator provides
- * access to files that can be accessed across all sub-plans within the same
- * execution context.
+ * Global file operator that performs operations on files. This operator provides access
+ * to files that can be accessed across all sub-plans within the same execution context.
  *
- * Keywords: global files, root directory, root folder, root plan directory,
- * global file operations, root file access, cross-plan files.
+ * Keywords: global files, root directory, root folder, root plan directory, global file
+ * operations, root file access, cross-plan files.
  *
  * Use this tool for operations on global files, root directory files, or root folder
  * files.
@@ -469,7 +468,8 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				return new ToolExecuteResult("Error: rootPlanId is required for global file operations");
 			}
 
-			// Normalize the directory path to remove plan ID and shared directory prefixes
+			// Normalize the directory path to remove plan ID and shared directory
+			// prefixes
 			String normalizedPath = normalizeFilePath(directoryPath != null ? directoryPath : "");
 
 			// Get the shared directory
@@ -489,7 +489,8 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 			// Check if directory exists - don't create it for list operation
 			if (!Files.exists(targetDirectory)) {
-				return new ToolExecuteResult("Error: Directory does not exist: " + (normalizedPath != null && !normalizedPath.isEmpty() ? normalizedPath : "root"));
+				return new ToolExecuteResult("Error: Directory does not exist: "
+						+ (normalizedPath != null && !normalizedPath.isEmpty() ? normalizedPath : "root"));
 			}
 
 			if (!Files.isDirectory(targetDirectory)) {
@@ -626,8 +627,8 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			int actualEndLine = Math.min(endLine, lines.size());
 
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("File: %s (Lines %d-%d, Total %d lines)\n", filePath, startLine,
-					actualEndLine, lines.size()));
+			result.append(String.format("File: %s (Lines %d-%d, Total %d lines)\n", filePath, startLine, actualEndLine,
+					lines.size()));
 			result.append("=".repeat(50)).append("\n");
 
 			for (int i = startLine - 1; i < actualEndLine; i++) {

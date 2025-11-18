@@ -48,7 +48,6 @@ public class PlanTemplateInitializationService {
 
 	private static final List<String> SUPPORTED_LANGUAGES = Arrays.asList("en", "zh");
 
-
 	@Autowired
 	private PlanTemplateConfigService planTemplateConfigService;
 
@@ -68,8 +67,8 @@ public class PlanTemplateInitializationService {
 	}
 
 	/**
-	 * Initialize plan templates for namespace with specific language
-	 * Only processes templates with toolConfig, throws error if toolConfig is missing
+	 * Initialize plan templates for namespace with specific language Only processes
+	 * templates with toolConfig, throws error if toolConfig is missing
 	 * @param namespace Namespace
 	 * @param language Language code
 	 */
@@ -100,19 +99,21 @@ public class PlanTemplateInitializationService {
 
 					// Only process templates with toolConfig, throw error if missing
 					if (configVO.getToolConfig() == null) {
-						throw new RuntimeException(
-								"Plan template " + planName + " (planTemplateId: " + planTemplateId
-										+ ") does not have toolConfig. toolConfig is required for startup initialization.");
+						throw new RuntimeException("Plan template " + planName + " (planTemplateId: " + planTemplateId
+								+ ") does not have toolConfig. toolConfig is required for startup initialization.");
 					}
 
-					// Create or update coordinator tool (this will also create PlanTemplate if it doesn't exist)
+					// Create or update coordinator tool (this will also create
+					// PlanTemplate if it doesn't exist)
 					try {
 						planTemplateConfigService.createOrUpdateCoordinatorToolFromPlanTemplateConfig(configVO);
-						log.info("Successfully initialized plan template and coordinator tool: {} -> planTemplateId: {}",
+						log.info(
+								"Successfully initialized plan template and coordinator tool: {} -> planTemplateId: {}",
 								planName, planTemplateId);
 					}
 					catch (PlanTemplateConfigException e) {
-						log.error("Failed to create or update coordinator tool for plan template: {} (planTemplateId: {})",
+						log.error(
+								"Failed to create or update coordinator tool for plan template: {} (planTemplateId: {})",
 								planName, planTemplateId, e);
 						throw new RuntimeException("Failed to create or update coordinator tool: " + e.getMessage(), e);
 					}
@@ -183,7 +184,6 @@ public class PlanTemplateInitializationService {
 		}
 	}
 
-
 	/**
 	 * Build configuration file path
 	 * @param planName Plan name
@@ -202,7 +202,6 @@ public class PlanTemplateInitializationService {
 		return new ArrayList<>(SUPPORTED_LANGUAGES);
 	}
 
-	
 	/**
 	 * Scan available plan template configuration files for a specific language
 	 * @param language Language code
@@ -236,16 +235,15 @@ public class PlanTemplateInitializationService {
 				}
 			}
 
-		log.info("Scanned {} plan template configurations for language {}: {}", planList.size(), language,
-				planList);
-		return planList;
+			log.info("Scanned {} plan template configurations for language {}: {}", planList.size(), language,
+					planList);
+			return planList;
+		}
+		catch (Exception e) {
+			log.error("Failed to scan plan template configuration directory for language: {}", language, e);
+			return List.of();
+		}
 	}
-	catch (Exception e) {
-		log.error("Failed to scan plan template configuration directory for language: {}", language, e);
-		return List.of();
-	}
-}
-
 
 	/**
 	 * Load PlanTemplateConfigVO from JSON configuration file
@@ -290,6 +288,5 @@ public class PlanTemplateInitializationService {
 			return null;
 		}
 	}
-
 
 }

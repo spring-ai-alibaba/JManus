@@ -32,8 +32,8 @@ import org.springframework.stereotype.Service;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 
 /**
- * Service to automatically limit conversation memory size based on character count.
- * Uses LLM to summarize older dialog rounds while maintaining recent 5000 characters.
+ * Service to automatically limit conversation memory size based on character count. Uses
+ * LLM to summarize older dialog rounds while maintaining recent 5000 characters.
  *
  * @author jmanus
  */
@@ -55,10 +55,9 @@ public class ConversationMemoryLimitService {
 	private LlmService llmService;
 
 	/**
-	 * Check and limit conversation memory size for a given conversation ID.
-	 * Maintains recent 5000 chars (at least one complete dialog round) and summarizes
-	 * older rounds into a 3000-4000 char UserMessage.
-	 *
+	 * Check and limit conversation memory size for a given conversation ID. Maintains
+	 * recent 5000 chars (at least one complete dialog round) and summarizes older rounds
+	 * into a 3000-4000 char UserMessage.
 	 * @param chatMemory The chat memory instance
 	 * @param conversationId The conversation ID to check and limit
 	 */
@@ -96,7 +95,6 @@ public class ConversationMemoryLimitService {
 
 	/**
 	 * Calculate total character count of all messages.
-	 *
 	 * @param messages List of messages
 	 * @return Total character count
 	 */
@@ -113,7 +111,6 @@ public class ConversationMemoryLimitService {
 
 	/**
 	 * Extract text content from a message.
-	 *
 	 * @param message The message
 	 * @return Text content, or empty string if content cannot be extracted
 	 */
@@ -135,7 +132,6 @@ public class ConversationMemoryLimitService {
 	/**
 	 * Summarize and trim messages: keep recent 5000 chars (at least one complete round),
 	 * summarize older rounds into a 3000-4000 char UserMessage.
-	 *
 	 * @param chatMemory The chat memory instance
 	 * @param conversationId The conversation ID
 	 * @param messages Current list of messages
@@ -150,7 +146,8 @@ public class ConversationMemoryLimitService {
 		}
 
 		// Find which rounds to keep and which to summarize
-		// Strategy: Keep recent rounds up to 5000 chars, ensuring at least one complete round
+		// Strategy: Keep recent rounds up to 5000 chars, ensuring at least one complete
+		// round
 		List<DialogRound> roundsToKeep = new ArrayList<>();
 		List<DialogRound> roundsToSummarize = new ArrayList<>();
 
@@ -169,7 +166,8 @@ public class ConversationMemoryLimitService {
 					UserMessage summarizedRound = summarizeRounds(List.of(round));
 					DialogRound summarizedRoundObj = new DialogRound();
 					summarizedRoundObj.addMessage(summarizedRound);
-					roundsToKeep.add(0, summarizedRoundObj); // Add at beginning to maintain order
+					roundsToKeep.add(0, summarizedRoundObj); // Add at beginning to
+																// maintain order
 					accumulatedChars += summarizedRound.getText().length();
 				}
 				else {
@@ -181,12 +179,14 @@ public class ConversationMemoryLimitService {
 			else {
 				// For other rounds, check if we can add them within 5000 char limit
 				if (accumulatedChars + roundChars <= RECENT_CHARS_TO_KEEP) {
-					roundsToKeep.add(0, round); // Add at beginning to maintain chronological order
+					roundsToKeep.add(0, round); // Add at beginning to maintain
+												// chronological order
 					accumulatedChars += roundChars;
 					hasKeptAtLeastOneRound = true;
 				}
 				else {
-					// Can't add this round, all remaining are older and should be summarized
+					// Can't add this round, all remaining are older and should be
+					// summarized
 					for (int j = i; j >= 0; j--) {
 						roundsToSummarize.add(0, dialogRounds.get(j));
 					}
@@ -236,9 +236,8 @@ public class ConversationMemoryLimitService {
 			}
 		}
 
-		int keptChars = calculateTotalCharacters(roundsToKeep.stream()
-			.flatMap(round -> round.getMessages().stream())
-			.toList());
+		int keptChars = calculateTotalCharacters(
+				roundsToKeep.stream().flatMap(round -> round.getMessages().stream()).toList());
 		log.info(
 				"Summarized conversation memory for conversationId: {}. Kept {} recent rounds ({} chars), summarized {} older rounds into {} chars",
 				conversationId, roundsToKeep.size(), keptChars, roundsToSummarize.size(),
@@ -247,7 +246,6 @@ public class ConversationMemoryLimitService {
 
 	/**
 	 * Group messages into dialog rounds (UserMessage + AssistantMessage pairs).
-	 *
 	 * @param messages List of messages
 	 * @return List of dialog rounds
 	 */
@@ -293,7 +291,6 @@ public class ConversationMemoryLimitService {
 
 	/**
 	 * Summarize multiple dialog rounds into a single UserMessage of 3000-4000 chars.
-	 *
 	 * @param rounds Dialog rounds to summarize
 	 * @return Summarized UserMessage
 	 */
@@ -375,19 +372,16 @@ public class ConversationMemoryLimitService {
 		}
 
 		public int getTotalChars() {
-			return messages.stream()
-				.mapToInt(msg -> {
-					String text = msg.getText();
-					return text != null ? text.length() : 0;
-				})
-				.sum();
+			return messages.stream().mapToInt(msg -> {
+				String text = msg.getText();
+				return text != null ? text.length() : 0;
+			}).sum();
 		}
 
 	}
 
 	/**
 	 * Get the configured maximum character count from ManusProperties.
-	 *
 	 * @return Maximum character count
 	 */
 	public int getMaxCharacterCount() {
@@ -395,4 +389,3 @@ public class ConversationMemoryLimitService {
 	}
 
 }
-

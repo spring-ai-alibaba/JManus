@@ -352,9 +352,7 @@ public class PlanFinalizer {
 		String title = context.getTitle();
 		StringBuilder message = new StringBuilder();
 		message.append("❌ **Task Interrupted**\n\n");
-		message.append("Your request \"")
-			.append(title)
-			.append("\" was interrupted and could not be completed.\n\n");
+		message.append("Your request \"").append(title).append("\" was interrupted and could not be completed.\n\n");
 		message.append("**Status:** Task stopped by user request\n");
 
 		return message.toString();

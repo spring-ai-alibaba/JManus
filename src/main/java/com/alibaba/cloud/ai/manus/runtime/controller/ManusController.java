@@ -170,8 +170,9 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		}
 
 		// Execute synchronously and return result directly
-		RequestSource requestSource = RequestSource.HTTP_REQUEST; // GET requests default to HTTP_REQUEST
-		
+		RequestSource requestSource = RequestSource.HTTP_REQUEST; // GET requests default
+																	// to HTTP_REQUEST
+
 		// Extract conversationId from query params if present
 		String conversationId = allParams != null ? allParams.get("conversationId") : null;
 		conversationId = validateOrGenerateConversationId(conversationId, requestSource);
@@ -219,7 +220,8 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 		try {
 			// Validate or generate conversationId for VUE_DIALOG and VUE_SIDEBAR requests
 			// Both should use the same conversation memory
-			String conversationId = validateOrGenerateConversationId((String) request.get("conversationId"), requestSource);
+			String conversationId = validateOrGenerateConversationId((String) request.get("conversationId"),
+					requestSource);
 
 			// Handle uploaded files if present
 			@SuppressWarnings("unchecked")
@@ -233,17 +235,17 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			logger.info("🔍 [DEBUG] uploadedFiles is null: {}", uploadedFiles == null);
 			if (uploadedFiles != null) {
 				logger.info("🔍 [DEBUG] uploadedFiles size: {}", uploadedFiles.size());
-			logger.info("🔍 [DEBUG] uploadedFiles names: {}", uploadedFiles);
-		}
+				logger.info("🔍 [DEBUG] uploadedFiles names: {}", uploadedFiles);
+			}
 
-		// Get replacement parameters for <<>> replacement
-		@SuppressWarnings("unchecked")
-		Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
+			// Get replacement parameters for <<>> replacement
+			@SuppressWarnings("unchecked")
+			Map<String, Object> replacementParams = (Map<String, Object>) request.get("replacementParams");
 
-		// Execute the plan template using the new unified method
-		PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, conversationId,
-				replacementParams, requestSource, uploadKey);
-			
+			// Execute the plan template using the new unified method
+			PlanExecutionWrapper wrapper = executePlanTemplate(planTemplateId, uploadedFiles, conversationId,
+					replacementParams, requestSource, uploadKey);
+
 			// Create or update task manager entity for database-driven interruption
 			if (wrapper.getRootPlanId() != null) {
 				rootTaskManagerService.createOrUpdateTask(wrapper.getRootPlanId(),
@@ -607,22 +609,22 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 				}
 			}
 
-		// Log uploadKey if provided
-		if (uploadKey != null) {
-			logger.info("Executing plan with upload key: {}", uploadKey);
-		}
+			// Log uploadKey if provided
+			if (uploadKey != null) {
+				logger.info("Executing plan with upload key: {}", uploadKey);
+			}
 
-		// Create Memory with step requirements as the name
-		if (conversationId != null && !conversationId.trim().isEmpty()) {
-			String memoryName = buildMemoryNameFromPlan(plan);
-			Memory memory = new Memory(conversationId, memoryName);
-			memoryService.saveMemory(memory);
-			logger.info("Created/updated memory with name: {}", memoryName);
-		}
+			// Create Memory with step requirements as the name
+			if (conversationId != null && !conversationId.trim().isEmpty()) {
+				String memoryName = buildMemoryNameFromPlan(plan);
+				Memory memory = new Memory(conversationId, memoryName);
+				memoryService.saveMemory(memory);
+				logger.info("Created/updated memory with name: {}", memoryName);
+			}
 
-		// Execute using the PlanningCoordinator (root plan has depth = 0)
-		CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId, null,
-				currentPlanId, null, requestSource, uploadKey, 0, conversationId);
+			// Execute using the PlanningCoordinator (root plan has depth = 0)
+			CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId, null,
+					currentPlanId, null, requestSource, uploadKey, 0, conversationId);
 
 			// Return the wrapper containing both the future and rootPlanId
 			return new PlanExecutionWrapper(future, rootPlanId);
@@ -749,8 +751,8 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	}
 
 	/**
-	 * Get plan template ID from coordinator tool by tool name
-	 * Only returns plan template ID if HTTP service is enabled for the tool
+	 * Get plan template ID from coordinator tool by tool name Only returns plan template
+	 * ID if HTTP service is enabled for the tool
 	 * @param toolName The tool name to look up
 	 * @return Plan template ID if found and HTTP service is enabled, null otherwise
 	 */
@@ -863,10 +865,12 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	}
 
 	/**
-	 * Validate or generate conversation ID. Generates for VUE_DIALOG and VUE_SIDEBAR requests.
-	 * Internal calls (HTTP_REQUEST, subplans, cron tasks) should not generate conversationId.
+	 * Validate or generate conversation ID. Generates for VUE_DIALOG and VUE_SIDEBAR
+	 * requests. Internal calls (HTTP_REQUEST, subplans, cron tasks) should not generate
+	 * conversationId.
 	 * @param conversationId The conversation ID to validate (can be null)
-	 * @param requestSource The request source to determine if conversationId should be generated
+	 * @param requestSource The request source to determine if conversationId should be
+	 * generated
 	 * @return Valid conversation ID (existing or newly generated for Vue requests)
 	 */
 	private String validateOrGenerateConversationId(String conversationId, RequestSource requestSource) {
@@ -874,10 +878,11 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 			// Generate conversation ID for VUE_DIALOG and VUE_SIDEBAR requests
 			// Both should use the same conversation memory
 			if (requestSource == RequestSource.VUE_DIALOG || requestSource == RequestSource.VUE_SIDEBAR) {
-			conversationId = memoryService.generateConversationId();
+				conversationId = memoryService.generateConversationId();
 				logger.info("Generated new conversation ID for {} request: {}", requestSource, conversationId);
 			}
-			// For HTTP_REQUEST and internal calls, do not generate conversationId (return null)
+			// For HTTP_REQUEST and internal calls, do not generate conversationId (return
+			// null)
 		}
 		else {
 			logger.debug("Using provided conversation ID: {} (source: {})", conversationId, requestSource);
@@ -886,8 +891,8 @@ public class ManusController implements JmanusListener<PlanExceptionEvent> {
 	}
 
 	/**
-	 * Build memory name from plan's step requirements
-	 * Extracts step requirements and joins them with newlines
+	 * Build memory name from plan's step requirements Extracts step requirements and
+	 * joins them with newlines
 	 * @param plan The plan interface
 	 * @return Formatted memory name from step requirements
 	 */

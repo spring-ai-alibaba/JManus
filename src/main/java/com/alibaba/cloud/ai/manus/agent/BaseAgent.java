@@ -212,7 +212,7 @@ public abstract class BaseAgent {
 				{detailOutput}
 				3. Do only and exactly what is required in the current step requirements
 				4. If the current step requirements have been completed, call the terminate tool to finish the current step.
-		
+
 				{parallelToolCallsResponse}
 
 				""";

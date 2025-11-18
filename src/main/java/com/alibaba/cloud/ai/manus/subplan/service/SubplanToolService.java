@@ -91,10 +91,12 @@ public class SubplanToolService {
 		Map<String, PlanningFactory.ToolCallBackContext> toolCallbackMap = new HashMap<>();
 
 		try {
-			// Get all coordinator tools from database, filter by enableInternalToolcall = true
-			List<FuncAgentToolEntity> coordinatorTools = funcAgentToolRepository.findAll().stream()
-					.filter(tool -> tool.getEnableInternalToolcall() != null && tool.getEnableInternalToolcall())
-					.collect(java.util.stream.Collectors.toList());
+			// Get all coordinator tools from database, filter by enableInternalToolcall =
+			// true
+			List<FuncAgentToolEntity> coordinatorTools = funcAgentToolRepository.findAll()
+				.stream()
+				.filter(tool -> tool.getEnableInternalToolcall() != null && tool.getEnableInternalToolcall())
+				.collect(java.util.stream.Collectors.toList());
 
 			if (coordinatorTools.isEmpty()) {
 				logger.info("No coordinator tools with enableInternalToolcall=true found in database");
@@ -107,7 +109,7 @@ public class SubplanToolService {
 
 				// Get PlanTemplate for this coordinator tool
 				com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate planTemplate = planTemplateService
-						.getPlanTemplate(coordinatorTool.getPlanTemplateId());
+					.getPlanTemplate(coordinatorTool.getPlanTemplateId());
 				if (planTemplate == null) {
 					logger.warn("PlanTemplate not found for planTemplateId: {}, skipping tool registration",
 							coordinatorTool.getPlanTemplateId());

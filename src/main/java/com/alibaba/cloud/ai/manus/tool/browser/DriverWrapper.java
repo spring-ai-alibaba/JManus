@@ -84,7 +84,7 @@ public class DriverWrapper {
 		this.playwright = playwright;
 		this.currentPage = currentPage;
 		this.browser = browser;
-	
+
 		this.objectMapper = objectMapper;
 		// Configure ObjectMapper
 		this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -203,8 +203,8 @@ public class DriverWrapper {
 	}
 
 	/**
-	 * Public method to save cookies (can be called after operations)
-	 * Also saves storage state for better persistence (includes cookies, localStorage, etc.)
+	 * Public method to save cookies (can be called after operations) Also saves storage
+	 * state for better persistence (includes cookies, localStorage, etc.)
 	 */
 	public void persistCookies() {
 		saveCookies();
@@ -240,8 +240,6 @@ public class DriverWrapper {
 			log.debug("Failed to save storage state: {}", e.getMessage());
 		}
 	}
-
-	
 
 	public Playwright getPlaywright() {
 		return playwright;

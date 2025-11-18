@@ -160,7 +160,6 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 	// Store all function registries in a list (allows duplicates)
 	private final List<FunctionRegistry> functionRegistries = new ArrayList<>();
 
-
 	public ParallelExecutionTool(ObjectMapper objectMapper, Map<String, ToolCallBackContext> toolCallbackMap,
 			PlanIdDispatcher planIdDispatcher, LevelBasedExecutorPool levelBasedExecutorPool) {
 		this.objectMapper = objectMapper;
@@ -450,7 +449,8 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 				// Determine the depth level for executor pool selection (default to 0)
 				final int depthLevel = (propagatedPlanDepth != null) ? propagatedPlanDepth : 0;
 
-				// Execute the function asynchronously using level-based executor if available
+				// Execute the function asynchronously using level-based executor if
+				// available
 				CompletableFuture<Void> future;
 				if (levelBasedExecutorPool != null) {
 					// Use level-based executor pool
@@ -474,12 +474,13 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 
 							// Call the function using apply method with toolCallId in
 							// ToolContext
-							// Use unchecked cast since we've converted to the correct type
+							// Use unchecked cast since we've converted to the correct
+							// type
 							@SuppressWarnings("unchecked")
-							ToolExecuteResult result = ((ToolCallBiFunctionDef<Object>) functionInstance)
-								.apply(convertedInput,
-										new ToolContext(propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
-												: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth)));
+							ToolExecuteResult result = ((ToolCallBiFunctionDef<Object>) functionInstance).apply(
+									convertedInput,
+									new ToolContext(propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
+											: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth)));
 
 							function.setResult(result);
 							logger.debug("Completed execution for function: {} at depth level: {}", toolName,
@@ -493,7 +494,8 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 					});
 				}
 				else {
-					// Fallback to default ForkJoinPool if level-based executor is not available
+					// Fallback to default ForkJoinPool if level-based executor is not
+					// available
 					future = CompletableFuture.runAsync(() -> {
 						try {
 							logger.debug("Executing function: {} (using default executor)", toolName);
@@ -514,12 +516,13 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput> 
 
 							// Call the function using apply method with toolCallId in
 							// ToolContext
-							// Use unchecked cast since we've converted to the correct type
+							// Use unchecked cast since we've converted to the correct
+							// type
 							@SuppressWarnings("unchecked")
-							ToolExecuteResult result = ((ToolCallBiFunctionDef<Object>) functionInstance)
-								.apply(convertedInput,
-										new ToolContext(propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
-												: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth)));
+							ToolExecuteResult result = ((ToolCallBiFunctionDef<Object>) functionInstance).apply(
+									convertedInput,
+									new ToolContext(propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
+											: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth)));
 
 							function.setResult(result);
 							logger.debug("Completed execution for function: {}", toolName);

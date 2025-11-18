@@ -72,25 +72,27 @@ public class WriteCurrentWebContentAction extends BrowserAction {
 			String sanitizedTitle = sanitizeFileName(title);
 			String fileName = sanitizedTitle + ".yaml";
 
-			// Get directory path - use rootPlanId if available, otherwise use currentPlanId
+			// Get directory path - use rootPlanId if available, otherwise use
+			// currentPlanId
 			BrowserUseTool browserUseTool = getBrowserUseTool();
 			String rootPlanId = browserUseTool.getRootPlanId();
-			
+
 			if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
 				return new ToolExecuteResult("Error: Root Plan ID is not available");
 			}
 
-			// Use TextFileService to get the root plan directory and resolve to shared subdirectory
+			// Use TextFileService to get the root plan directory and resolve to shared
+			// subdirectory
 			// Similar to GlobalFileOperator, files are stored in rootPlanId/shared/
 			Path rootPlanDirectory = textFileService.getRootPlanDirectory(rootPlanId);
 			Path sharedDirectory = rootPlanDirectory.resolve("shared");
-			
+
 			// Ensure shared directory exists
 			Files.createDirectories(sharedDirectory);
-			
+
 			// Create file path within shared directory
 			Path filePath = sharedDirectory.resolve(fileName).normalize();
-			
+
 			// Verify the path stays within the shared directory (security check)
 			if (!filePath.startsWith(sharedDirectory)) {
 				return new ToolExecuteResult("Error: File path is outside the shared directory");
@@ -110,8 +112,13 @@ public class WriteCurrentWebContentAction extends BrowserAction {
 				content.append("# Available Tabs:\n");
 				for (int i = 0; i < tabs.size(); i++) {
 					Map<String, Object> tab = tabs.get(i);
-					content.append("#   [").append(i).append("] ").append(tab.get("title")).append(": ")
-						.append(tab.get("url")).append("\n");
+					content.append("#   [")
+						.append(i)
+						.append("] ")
+						.append(tab.get("title"))
+						.append(": ")
+						.append(tab.get("url"))
+						.append("\n");
 				}
 				content.append("\n");
 			}
@@ -153,9 +160,11 @@ public class WriteCurrentWebContentAction extends BrowserAction {
 
 		// Remove or replace invalid characters for filenames
 		String sanitized = fileName.trim()
-			.replaceAll("[<>:\"/\\|?*]", "_") // Replace invalid characters with underscore
+			.replaceAll("[<>:\"/\\|?*]", "_") // Replace invalid characters with
+												// underscore
 			.replaceAll("\\s+", "_") // Replace whitespace with underscore
-			.replaceAll("_{2,}", "_") // Replace multiple underscores with single underscore
+			.replaceAll("_{2,}", "_") // Replace multiple underscores with single
+										// underscore
 			.replaceAll("^_+|_+$", ""); // Remove leading/trailing underscores
 
 		// Limit length to avoid filesystem issues
@@ -172,4 +181,3 @@ public class WriteCurrentWebContentAction extends BrowserAction {
 	}
 
 }
-

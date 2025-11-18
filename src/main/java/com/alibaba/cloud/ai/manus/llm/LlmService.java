@@ -252,9 +252,9 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 	}
 
 	/**
-	 * Get conversation memory and automatically check/limit size if limit service is available.
-	 * This method should be used when you need to ensure memory is within character limits.
-	 *
+	 * Get conversation memory and automatically check/limit size if limit service is
+	 * available. This method should be used when you need to ensure memory is within
+	 * character limits.
 	 * @param maxMessages Maximum number of messages
 	 * @param conversationId Conversation ID to check and limit (optional, can be null)
 	 * @return ChatMemory instance
@@ -268,9 +268,8 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 	}
 
 	/**
-	 * Add message to conversation memory and automatically check/limit size if limit service is
-	 * available.
-	 *
+	 * Add message to conversation memory and automatically check/limit size if limit
+	 * service is available.
 	 * @param maxMessages Maximum number of messages for memory initialization
 	 * @param conversationId Conversation ID
 	 * @param message Message to add

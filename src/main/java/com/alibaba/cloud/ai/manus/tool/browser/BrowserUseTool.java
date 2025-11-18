@@ -64,8 +64,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 	private final TextFileService textFileService;
 
 	public BrowserUseTool(ChromeDriverService chromeDriverService, SmartContentSavingService innerStorageService,
-			ObjectMapper objectMapper,
-			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService,
+			ObjectMapper objectMapper, com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService,
 			TextFileService textFileService) {
 		this.chromeDriverService = chromeDriverService;
 		this.innerStorageService = innerStorageService;
@@ -104,8 +103,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	public static synchronized BrowserUseTool getInstance(ChromeDriverService chromeDriverService,
 			SmartContentSavingService innerStorageService, ObjectMapper objectMapper,
-			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService,
-			TextFileService textFileService) {
+			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService, TextFileService textFileService) {
 		BrowserUseTool instance = new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper,
 				shortUrlService, textFileService);
 		return instance;
@@ -409,14 +407,22 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				// First wait for DOM content loaded
 				page.waitForLoadState(com.microsoft.playwright.options.LoadState.DOMCONTENTLOADED,
 						new Page.WaitForLoadStateOptions().setTimeout(timeout * 1000));
-				// Then wait for network idle to ensure all AJAX requests and dynamic content updates are complete
-				// This is especially important after actions like key_enter that trigger searches
+				// Then wait for network idle to ensure all AJAX requests and dynamic
+				// content updates are complete
+				// This is especially important after actions like key_enter that trigger
+				// searches
 				try {
 					page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE,
-							new Page.WaitForLoadStateOptions().setTimeout(3000)); // 3 second timeout for network idle
+							new Page.WaitForLoadStateOptions().setTimeout(3000)); // 3
+																					// second
+																					// timeout
+																					// for
+																					// network
+																					// idle
 				}
 				catch (TimeoutError e) {
-					// If network idle timeout, wait a bit more for dynamic content to update
+					// If network idle timeout, wait a bit more for dynamic content to
+					// update
 					log.debug("Network idle timeout, waiting for content updates: {}", e.getMessage());
 					Thread.sleep(1000); // Wait 1 second for content to update
 				}
@@ -467,7 +473,8 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				state.put("tabs", List.of(Map.of("error", "Failed to get tabs: " + e.getMessage())));
 			}
 
-			// Wait a bit more before generating ARIA snapshot to ensure all dynamic content
+			// Wait a bit more before generating ARIA snapshot to ensure all dynamic
+			// content
 			// (like search results) is fully rendered
 			try {
 				Thread.sleep(500); // Additional wait for content rendering
@@ -482,16 +489,16 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 			try {
 				AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
 					.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
-			
+
 				// Use compressUrl = true to enable URL compression
-				String snapshot = AriaElementHelper.parsePageAndAssignRefs(page, snapshotOptions, true,
-						shortUrlService, rootPlanId);
-					if (snapshot != null && !snapshot.trim().isEmpty()) {
-						state.put("interactive_elements", snapshot);
-					}
-					else {
-						state.put("interactive_elements", "No interactive elements found or snapshot is empty");
-					}
+				String snapshot = AriaElementHelper.parsePageAndAssignRefs(page, snapshotOptions, true, shortUrlService,
+						rootPlanId);
+				if (snapshot != null && !snapshot.trim().isEmpty()) {
+					state.put("interactive_elements", snapshot);
+				}
+				else {
+					state.put("interactive_elements", "No interactive elements found or snapshot is empty");
+				}
 			}
 			catch (PlaywrightException e) {
 				log.warn("Playwright error getting ARIA snapshot: {}", e.getMessage());

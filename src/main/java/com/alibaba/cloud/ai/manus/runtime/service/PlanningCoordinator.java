@@ -70,8 +70,8 @@ public class PlanningCoordinator {
 	 * @return A CompletableFuture that completes with the execution result
 	 */
 	public CompletableFuture<PlanExecutionResult> executeByPlan(PlanInterface plan, String rootPlanId,
-			String parentPlanId, String currentPlanId, String toolcallId, RequestSource requestSource,
-			String uploadKey, int planDepth, String conversationId) {
+			String parentPlanId, String currentPlanId, String toolcallId, RequestSource requestSource, String uploadKey,
+			int planDepth, String conversationId) {
 		try {
 			log.info("Starting direct plan execution for plan: {} at depth: {}", plan.getCurrentPlanId(), planDepth);
 
@@ -95,7 +95,8 @@ public class PlanningCoordinator {
 				log.debug("Setting needSummary=false for planId: {}, toolcallId: {}, requestSource: {}", currentPlanId,
 						toolcallId, requestSource);
 			}
-			// Set conversation ID (use provided or generate for VUE_DIALOG and VUE_SIDEBAR requests)
+			// Set conversation ID (use provided or generate for VUE_DIALOG and
+			// VUE_SIDEBAR requests)
 			// Both VUE_DIALOG and VUE_SIDEBAR should use the same conversation memory
 			if (conversationId != null && !conversationId.trim().isEmpty()) {
 				context.setConversationId(conversationId);
@@ -105,11 +106,12 @@ public class PlanningCoordinator {
 				// Both should use the same conversation memory
 				String generatedConversationId = memoryService.generateConversationId();
 				context.setConversationId(generatedConversationId);
-				log.info("Generated conversation ID for {} request plan execution: {} (source: {})",
-						requestSource, generatedConversationId, requestSource);
+				log.info("Generated conversation ID for {} request plan execution: {} (source: {})", requestSource,
+						generatedConversationId, requestSource);
 			}
 			else {
-				// For non-Vue requests (HTTP_REQUEST, internal calls), do not set conversationId
+				// For non-Vue requests (HTTP_REQUEST, internal calls), do not set
+				// conversationId
 				log.debug("No conversationId provided for non-Vue request, skipping conversationId (source: {})",
 						requestSource);
 			}

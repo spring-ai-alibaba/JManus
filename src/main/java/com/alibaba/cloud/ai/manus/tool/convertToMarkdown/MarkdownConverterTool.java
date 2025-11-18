@@ -229,7 +229,8 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 				return null;
 			}
 
-			// Get the root plan directory and resolve to shared subdirectory (same as GlobalFileOperator)
+			// Get the root plan directory and resolve to shared subdirectory (same as
+			// GlobalFileOperator)
 			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
 			Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
@@ -304,8 +305,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 				+ "\"description\":\"Optional additional requirements for conversion (e.g., specific formatting, structure)\"},"
 				+ "\"forceLlmForPdf\":{\"type\":\"boolean\","
 				+ "\"description\":\"Optional flag to force using LLM/OCR for PDF processing instead of auto-detection. Only applies to PDF files.\","
-				+ "\"default\":false}"
-				+ "}," + "\"required\":[\"filename\"]}";
+				+ "\"default\":false}" + "}," + "\"required\":[\"filename\"]}";
 	}
 
 	@Override

@@ -232,7 +232,7 @@ public class PlanningFactory {
 		if (agentInit) {
 			// Add all tool definitions
 			toolDefinitions.add(BrowserUseTool.getInstance(chromeDriverService, innerStorageService, objectMapper,
-				shortUrlService, textFileService));
+					shortUrlService, textFileService));
 			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
@@ -254,8 +254,8 @@ public class PlanningFactory {
 			// toolDefinitions.add(new GoogleSearch());
 			// toolDefinitions.add(new PythonExecute());
 			toolDefinitions.add(new FormInputTool(objectMapper));
-			toolDefinitions.add(new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher,
-					levelBasedExecutorPool));
+			toolDefinitions.add(
+					new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher, levelBasedExecutorPool));
 			toolDefinitions.add(new CronTool(cronService, objectMapper));
 			toolDefinitions.add(new MarkdownConverterTool(unifiedDirectoryManager,
 					new PdfOcrProcessor(unifiedDirectoryManager, llmService, manusProperties,

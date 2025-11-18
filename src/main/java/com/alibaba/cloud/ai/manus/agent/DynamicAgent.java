@@ -241,8 +241,9 @@ public class DynamicAgent extends ReActAgent {
 				ChatMemory chatMemory = llmService.getAgentMemory(manusProperties.getMaxMemory());
 				List<Message> historyMem = chatMemory.get(getCurrentPlanId());
 				// List<Message> subAgentMem = chatMemory.get(getCurrentPlanId());
-				
-				// Add conversation history from MemoryService if conversationId is available
+
+				// Add conversation history from MemoryService if conversationId is
+				// available
 				if (memoryService != null && getConversationId() != null && !getConversationId().trim().isEmpty()) {
 					try {
 						ChatMemory conversationMemory = llmService
@@ -257,7 +258,8 @@ public class DynamicAgent extends ReActAgent {
 						}
 					}
 					catch (Exception e) {
-						log.warn("Failed to retrieve conversation history for conversationId: {}. Continuing without it.",
+						log.warn(
+								"Failed to retrieve conversation history for conversationId: {}. Continuing without it.",
 								getConversationId(), e);
 					}
 				}
@@ -265,7 +267,8 @@ public class DynamicAgent extends ReActAgent {
 				messages.addAll(historyMem);
 				messages.add(currentStepEnvMessage);
 
-				// Save user request (stepText) to conversation memory after building messages
+				// Save user request (stepText) to conversation memory after building
+				// messages
 				// This prevents duplicate messages in the conversation history
 				saveUserRequestToConversationMemory();
 
@@ -290,15 +293,13 @@ public class DynamicAgent extends ReActAgent {
 					chatClient = llmService.getDynamicAgentChatClient(modelName);
 				}
 				// Calculate and log word count for userPrompt
-				int wordCount = messages.stream()
-					.mapToInt(message -> {
-						String text = message.getText();
-						if (text == null || text.trim().isEmpty()) {
-							return 0;
-						}
-						return text.length();
-					})
-					.sum();
+				int wordCount = messages.stream().mapToInt(message -> {
+					String text = message.getText();
+					if (text == null || text.trim().isEmpty()) {
+						return 0;
+					}
+					return text.length();
+				}).sum();
 				log.info("User prompt word count: {}", wordCount);
 
 				// Use streaming response handler for better user experience and content
@@ -632,7 +633,8 @@ public class DynamicAgent extends ReActAgent {
 			executePostToolFlow(toolInstance, toolCallResponse, result, List.of(param));
 
 			// Return result with appropriate state
-			// Note: Final result will be saved to conversation memory in handleCompletedExecution()
+			// Note: Final result will be saved to conversation memory in
+			// handleCompletedExecution()
 			return new AgentExecResult(result, shouldTerminate ? AgentState.COMPLETED : AgentState.IN_PROGRESS);
 		}
 		catch (Exception e) {
@@ -1091,7 +1093,8 @@ public class DynamicAgent extends ReActAgent {
 	@Override
 	protected void handleCompletedExecution(List<AgentExecResult> results) {
 		super.handleCompletedExecution(results);
-		// Note: Final result will be saved to conversation memory in PlanFinalizer.handlePostExecution()
+		// Note: Final result will be saved to conversation memory in
+		// PlanFinalizer.handlePostExecution()
 	}
 
 	@Override
@@ -1269,8 +1272,8 @@ public class DynamicAgent extends ReActAgent {
 					getConversationId(), stepText.length());
 		}
 		catch (Exception e) {
-			log.warn("Failed to save user request to conversation memory for conversationId: {}",
-					getConversationId(), e);
+			log.warn("Failed to save user request to conversation memory for conversationId: {}", getConversationId(),
+					e);
 		}
 	}
 

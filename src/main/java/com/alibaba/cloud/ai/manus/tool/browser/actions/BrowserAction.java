@@ -134,8 +134,8 @@ public abstract class BrowserAction {
 	}
 
 	/**
-	 * Get locator for element by idx (from ARIA snapshot)
-	 * Converts idx to aria-id-num format and uses data-aria-id attribute to locate the element
+	 * Get locator for element by idx (from ARIA snapshot) Converts idx to aria-id-num
+	 * format and uses data-aria-id attribute to locate the element
 	 * @param idx Element idx (from ARIA snapshot)
 	 * @return Locator for the element, or null if not found
 	 */
@@ -148,13 +148,13 @@ public abstract class BrowserAction {
 		try {
 			// Convert idx to aria-id-num format
 			String dataAriaId = "aria-id-" + idx;
-			
+
 			// Escape single quotes in the value for CSS selector safety
 			String escapedDataAriaId = dataAriaId.replace("'", "\\'");
-			
+
 			// Use data-aria-id attribute to locate the element
 			Locator dataAriaIdLocator = page.locator("[aria-label='" + escapedDataAriaId + "']");
-			
+
 			return dataAriaIdLocator;
 		}
 		catch (Exception e) {
@@ -162,7 +162,6 @@ public abstract class BrowserAction {
 			return null;
 		}
 	}
-
 
 	/**
 	 * Check if element exists by idx

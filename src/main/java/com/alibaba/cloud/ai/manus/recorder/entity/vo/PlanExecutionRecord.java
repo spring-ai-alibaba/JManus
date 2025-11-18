@@ -62,6 +62,7 @@ public class PlanExecutionRecord {
 
 	// Plan title
 	private String title;
+
 	// User's original request
 	private String userRequest;
 

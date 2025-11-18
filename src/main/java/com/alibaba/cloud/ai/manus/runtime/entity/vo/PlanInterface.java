@@ -119,7 +119,6 @@ public interface PlanInterface {
 	 */
 	int getTotalStepCount();
 
-
 	/**
 	 * Add an execution step.
 	 * @param step The execution step

@@ -229,8 +229,6 @@ public class SimpleHierarchicalFileAccessTest {
 			this.allowExternalAccess = allowExternalAccess;
 		}
 
-		
-
 	}
 
 }

@@ -100,13 +100,12 @@ public class MemoryServiceImpl implements MemoryService {
 
 	@Override
 	public List<Memory> getMemories() {
-		// Query top 15 memories directly from database (sorted by createTime DESC, filtered for non-null)
+		// Query top 15 memories directly from database (sorted by createTime DESC,
+		// filtered for non-null)
 		List<MemoryEntity> memoryEntities = memoryRepository.findTop15Memories();
 
 		// Convert to Memory VO
-		return memoryEntities.stream()
-			.map(this::convertToMemory)
-			.collect(Collectors.toList());
+		return memoryEntities.stream().map(this::convertToMemory).collect(Collectors.toList());
 	}
 
 	@Override

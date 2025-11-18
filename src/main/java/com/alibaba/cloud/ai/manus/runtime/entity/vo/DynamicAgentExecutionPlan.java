@@ -112,10 +112,10 @@ public class DynamicAgentExecutionPlan extends AbstractExecutionPlan {
 
 		// state.append("- User Original Request :\n");
 		// if (getTitle() != null && !getTitle().isEmpty()) {
-		// 	state.append(getTitle()).append("\n\n");
+		// state.append(getTitle()).append("\n\n");
 		// }
 		// else {
-		// 	state.append("\n");
+		// state.append("\n");
 		// }
 
 		state.append("- Execution Parameters: ").append("\n");

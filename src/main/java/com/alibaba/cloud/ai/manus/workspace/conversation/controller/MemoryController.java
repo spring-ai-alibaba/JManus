@@ -177,7 +177,8 @@ public class MemoryController {
 					logger.error("Error retrieving plan record for rootPlanId: {}", rootPlanId, e);
 					return null;
 				}
-			}).filter(record -> record != null) // Filter out null records
+			})
+				.filter(record -> record != null) // Filter out null records
 				.collect(Collectors.toList());
 
 			logger.info("Successfully retrieved {} plan execution records for conversationId: {}", planRecords.size(),
@@ -191,8 +192,7 @@ public class MemoryController {
 		}
 		catch (Exception e) {
 			logger.error("Error retrieving conversation history for conversationId: {}", conversationId, e);
-			return ResponseEntity.status(500)
-				.body("Failed to retrieve conversation history: " + e.getMessage());
+			return ResponseEntity.status(500).body("Failed to retrieve conversation history: " + e.getMessage());
 		}
 	}
 
