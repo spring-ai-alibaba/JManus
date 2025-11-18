@@ -26,9 +26,13 @@ import { reactive, readonly, ref } from 'vue'
  */
 export function usePlanExecution() {
   const POLL_INTERVAL = 5000
+  const POST_COMPLETION_POLL_COUNT = 10 // Continue polling 3 times after completion to ensure summary is fetched
 
   // Tracked plan IDs (plans being polled)
   const trackedPlanIds = ref<Set<string>>(new Set())
+
+  // Track completed plans that still need polling for summary
+  const completedPlansPollCount = reactive(new Map<string, number>())
 
   // Reactive map of PlanExecutionRecord by planId (rootPlanId or currentPlanId)
   // This is the main reactive state that components watch
@@ -145,9 +149,9 @@ export function usePlanExecution() {
         status: details.status,
       })
 
-      // Handle completion - delete execution details and untrack
+      // Handle completion - continue polling to ensure summary is fetched
       if (details.completed) {
-        console.log(`[usePlanExecution] Plan ${recordKey} completed, cleaning up...`)
+        console.log(`[usePlanExecution] Plan ${recordKey} completed, checking for summary...`)
 
         // Mark task as no longer running
         const taskStore = useTaskStore()
@@ -155,22 +159,44 @@ export function usePlanExecution() {
           taskStore.currentTask.isRunning = false
         }
 
-        // Delete execution details from backend
-        try {
-          await CommonApiService.deleteExecutionDetails(recordKey)
-          console.log(`[usePlanExecution] Deleted execution details for plan: ${recordKey}`)
-        } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : 'Unknown error'
-          console.error(`[usePlanExecution] Failed to delete execution details: ${message}`)
+        // Check if we have summary or if we need to continue polling
+        const hasSummary = details.summary || details.result || details.message
+        const currentPollCount = completedPlansPollCount.get(recordKey) || 0
+
+        if (!hasSummary && currentPollCount < POST_COMPLETION_POLL_COUNT) {
+          // Continue polling to fetch summary
+          completedPlansPollCount.set(recordKey, currentPollCount + 1)
+          console.log(
+            `[usePlanExecution] Plan ${recordKey} completed but no summary yet, continuing to poll (${currentPollCount + 1}/${POST_COMPLETION_POLL_COUNT})`
+          )
+          // Don't untrack yet - keep polling
+        } else {
+          // We have summary or reached max poll count, proceed with cleanup
+          console.log(`[usePlanExecution] Plan ${recordKey} completed, cleaning up...`, {
+            hasSummary: !!hasSummary,
+            pollCount: currentPollCount,
+          })
+
+          // Delete execution details from backend
+          try {
+            await CommonApiService.deleteExecutionDetails(recordKey)
+            console.log(`[usePlanExecution] Deleted execution details for plan: ${recordKey}`)
+          } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error'
+            console.error(`[usePlanExecution] Failed to delete execution details: ${message}`)
+          }
+
+          // Remove from tracking
+          untrackPlan(planId)
+
+          // Clean up poll count tracking
+          completedPlansPollCount.delete(recordKey)
+
+          // Remove from reactive map after a delay
+          setTimeout(() => {
+            planExecutionRecords.delete(recordKey)
+          }, 5000)
         }
-
-        // Remove from tracking
-        untrackPlan(planId)
-
-        // Remove from reactive map after a delay
-        setTimeout(() => {
-          planExecutionRecords.delete(recordKey)
-        }, 5000)
       }
 
       // Handle errors
@@ -196,15 +222,21 @@ export function usePlanExecution() {
       return
     }
 
-    if (trackedPlanIds.value.size === 0) {
+    // Poll both tracked plans and completed plans that still need polling
+    const plansToPoll = new Set(trackedPlanIds.value)
+    for (const [planId] of completedPlansPollCount.entries()) {
+      plansToPoll.add(planId)
+    }
+
+    if (plansToPoll.size === 0) {
       return
     }
 
     try {
       isPolling.value = true
 
-      // Poll all tracked plans in parallel
-      const pollPromises = Array.from(trackedPlanIds.value).map(planId => pollPlanStatus(planId))
+      // Poll all plans in parallel (both tracked and completed ones waiting for summary)
+      const pollPromises = Array.from(plansToPoll).map(planId => pollPlanStatus(planId))
       await Promise.all(pollPromises)
     } catch (error: unknown) {
       console.error('[usePlanExecution] Failed to poll tracked plans:', error)
@@ -230,8 +262,17 @@ export function usePlanExecution() {
 
   /**
    * Stop polling
+   * Only stops if there are no tracked plans AND no completed plans waiting for summary
    */
   const stopPolling = (): void => {
+    // Check if there are any completed plans still being polled
+    if (completedPlansPollCount.size > 0) {
+      console.log(
+        `[usePlanExecution] Not stopping polling - ${completedPlansPollCount.size} completed plans still waiting for summary`
+      )
+      return
+    }
+
     if (pollTimer.value) {
       clearInterval(pollTimer.value)
       pollTimer.value = null
@@ -274,6 +315,7 @@ export function usePlanExecution() {
   const cleanup = (): void => {
     stopPolling()
     trackedPlanIds.value.clear()
+    completedPlansPollCount.clear()
     planExecutionRecords.clear()
     isPolling.value = false
   }
