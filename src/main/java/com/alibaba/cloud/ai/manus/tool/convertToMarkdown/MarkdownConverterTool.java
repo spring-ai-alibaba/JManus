@@ -320,9 +320,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 
 	@Override
 	public String getCurrentToolStateString() {
-		return String.format(
-				"MarkdownConverterTool State:\n- Root Plan ID: %s\n- Supported File Types: .doc, .docx, .xlsx, .xls, .pdf, .jpg, .jpeg, .png, .gif, .txt, .md, .json, .xml, .yaml, .yml, .log, .java, .py, .js, .html, .css",
-				rootPlanId);
+		return "";
 	}
 
 	@Override

@@ -212,8 +212,7 @@ public abstract class BaseAgent {
 				{detailOutput}
 				3. Do only and exactly what is required in the current step requirements
 				4. If the current step requirements have been completed, call the terminate tool to finish the current step.
-				5. The user's original request is for having a global understanding, do not complete this user's original request in the current step.
-
+		
 				{parallelToolCallsResponse}
 
 				""";

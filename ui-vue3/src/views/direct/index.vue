@@ -434,7 +434,8 @@ const memorySelected = async () => {
 const newChat = () => {
   memoryStore.clearMemoryId()
   memoryStore.clearConversationId()
-  messageDialog.clearMessages()
+  // Reset all dialog state including conversationId to start a fresh conversation
+  messageDialog.reset()
 }
 </script>
 
