@@ -39,6 +39,11 @@ export function useMessageFormatting() {
    * Format timestamp for display
    */
   const formatTimestamp = (timestamp: Date): string => {
+    // Handle invalid dates
+    if (!timestamp || isNaN(timestamp.getTime())) {
+      return ''
+    }
+
     const now = new Date()
     const diff = now.getTime() - timestamp.getTime()
 
@@ -60,12 +65,17 @@ export function useMessageFormatting() {
     }
 
     // More than 1 day
-    return timestamp.toLocaleDateString('zh-CN', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    try {
+      return timestamp.toLocaleDateString('zh-CN', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    } catch (error) {
+      console.warn('[useMessageFormatting] Error formatting timestamp:', timestamp, error)
+      return ''
+    }
   }
 
   /**

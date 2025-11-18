@@ -61,15 +61,129 @@ export function useConversationHistory() {
   }
 
   /**
+   * Parse date from backend (handles LocalDateTime format from Java)
+   * Java LocalDateTimeSerializer can serialize as:
+   * - ISO-8601 string: "2025-01-17T10:30:00" or "2025-01-17T10:30:00.123"
+   * - Array format: [2025, 1, 17, 10, 30, 0] (if WRITE_DATES_AS_TIMESTAMPS is enabled)
+   * @param dateValue Date value from backend (string, array, or object)
+   * @returns Date object or current date if parsing fails
+   */
+  const parseBackendDate = (dateValue: string | number[] | any): Date => {
+    if (!dateValue) {
+      console.warn('[useConversationHistory] Date value is null/undefined, using current time')
+      return new Date()
+    }
+
+    try {
+      // Handle array format: [year, month, day, hour, minute, second, nanosecond]
+      if (Array.isArray(dateValue)) {
+        const [year, month, day, hour = 0, minute = 0, second = 0, nanosecond = 0] = dateValue
+        const date = new Date(
+          year,
+          month - 1, // Month is 0-indexed in JavaScript
+          day,
+          hour,
+          minute,
+          second,
+          Math.floor(nanosecond / 1000000) // Convert nanoseconds to milliseconds
+        )
+        if (!isNaN(date.getTime())) {
+          return date
+        }
+        console.warn('[useConversationHistory] Failed to parse date array:', dateValue)
+        return new Date()
+      }
+
+      // Handle string format
+      if (typeof dateValue === 'string') {
+        // First, try parsing as-is (works in most modern browsers for ISO format)
+        let date = new Date(dateValue)
+
+        // Check if date is valid
+        if (!isNaN(date.getTime())) {
+          return date
+        }
+
+        // If parsing failed, try manual parsing of ISO format
+        // Format: YYYY-MM-DDTHH:mm:ss or YYYY-MM-DDTHH:mm:ss.SSS
+        const isoMatch = dateValue.match(
+          /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?$/
+        )
+        if (isoMatch) {
+          const [, year, month, day, hour, minute, second, millis] = isoMatch
+          date = new Date(
+            parseInt(year),
+            parseInt(month) - 1, // Month is 0-indexed
+            parseInt(day),
+            parseInt(hour),
+            parseInt(minute),
+            parseInt(second),
+            millis ? parseInt(millis.substring(0, 3)) : 0 // Only use first 3 digits of milliseconds
+          )
+          if (!isNaN(date.getTime())) {
+            return date
+          }
+        }
+
+        // Try adding timezone if missing
+        if (!dateValue.includes('Z') && !dateValue.includes('+') && !dateValue.includes('-', 10)) {
+          date = new Date(dateValue + 'Z')
+          if (!isNaN(date.getTime())) {
+            return date
+          }
+        }
+
+        console.warn('[useConversationHistory] Failed to parse date string:', dateValue)
+        return new Date()
+      }
+
+      // Handle number (timestamp in milliseconds or seconds)
+      if (typeof dateValue === 'number') {
+        // If number is less than 13 digits, assume it's in seconds
+        const timestamp = dateValue.toString().length < 13 ? dateValue * 1000 : dateValue
+        const date = new Date(timestamp)
+        if (!isNaN(date.getTime())) {
+          return date
+        }
+        console.warn('[useConversationHistory] Failed to parse date number:', dateValue)
+        return new Date()
+      }
+
+      // Unknown format
+      console.warn('[useConversationHistory] Unknown date format:', dateValue, typeof dateValue)
+      return new Date()
+    } catch (error) {
+      console.warn('[useConversationHistory] Error parsing date:', dateValue, error)
+      return new Date()
+    }
+  }
+
+  /**
    * Process and add a single history record to the dialog
    */
   const processHistoryRecord = (record: PlanExecutionRecord): void => {
     if (!record) return
 
+    // Debug: Log the actual date values before parsing
+    console.log('[useConversationHistory] Processing record:', {
+      userRequest: record.userRequest,
+      startTime: record.startTime,
+      startTimeType: typeof record.startTime,
+      endTime: record.endTime,
+      endTimeType: typeof record.endTime,
+    })
+
     // Add user message (the original query)
     if (record.userRequest && record.startTime) {
+      const parsedDate = parseBackendDate(record.startTime)
+      console.log('[useConversationHistory] Parsed date:', {
+        original: record.startTime,
+        parsed: parsedDate,
+        parsedISO: parsedDate.toISOString(),
+        isValid: !isNaN(parsedDate.getTime()),
+      })
       messageDialog.addMessage('user', record.userRequest, {
-        timestamp: new Date(record.startTime),
+        timestamp: parsedDate,
       })
     }
 
@@ -84,9 +198,9 @@ export function useConversationHistory() {
       messageDialog.addMessage('assistant', assistantContent, {
         timestamp:
           record.endTime && record.endTime
-            ? new Date(record.endTime)
+            ? parseBackendDate(record.endTime)
             : record.startTime
-              ? new Date(record.startTime)
+              ? parseBackendDate(record.startTime)
               : new Date(),
         planExecution: planExecutionRecord as PlanExecutionRecord,
       })
@@ -130,6 +244,16 @@ export function useConversationHistory() {
       // Fetch conversation history from backend
       const historyRecords = await MemoryApiService.getConversationHistory(conversationId)
       console.log('[useConversationHistory] Loaded conversation history:', historyRecords)
+
+      // Debug: Log date formats to help diagnose parsing issues
+      if (historyRecords.length > 0) {
+        const firstRecord = historyRecords[0]
+        console.log('[useConversationHistory] Sample date formats:', {
+          startTime: firstRecord.startTime,
+          endTime: firstRecord.endTime,
+          startTimeType: typeof firstRecord.startTime,
+        })
+      }
 
       // Process each record
       for (const record of historyRecords) {
