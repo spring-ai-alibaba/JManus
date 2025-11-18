@@ -46,6 +46,14 @@ public class SwitchTabAction extends BrowserAction {
 			return new ToolExecuteResult("Tab ID " + tabId + " does not exist");
 		}
 
+		// Check if target page is closed
+		if (targetPage.isClosed()) {
+			return new ToolExecuteResult("Tab ID " + tabId + " is closed");
+		}
+
+		// Bring the target page to front to actually activate the tab
+		targetPage.bringToFront();
+
 		// Update the current page in DriverWrapper
 		getDriverWrapper().setCurrentPage(targetPage);
 

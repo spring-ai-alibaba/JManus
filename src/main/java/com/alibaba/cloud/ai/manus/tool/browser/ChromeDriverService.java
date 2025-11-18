@@ -222,9 +222,8 @@ public class ChromeDriverService implements IChromeDriverService {
 		}
 	}
 
-
 	/**
-	 * Create new driver with retry mechanism
+	 * Create new driver with retry mechanism 1
 	 */
 	private DriverWrapper createNewDriverWithRetry(String planId) {
 		int maxRetries = 3;
@@ -504,6 +503,30 @@ public class ChromeDriverService implements IChromeDriverService {
 			try {
 				// browserContext is guaranteed to be non-null here due to previous
 				// validation
+
+				// Close any pages restored from storage state before creating new page
+				// Storage state may restore previous tabs, which we don't want to keep
+				try {
+					List<Page> existingPages = browserContext.pages();
+					if (!existingPages.isEmpty()) {
+						log.info("Found {} existing page(s) from storage state, closing them", existingPages.size());
+						for (Page existingPage : existingPages) {
+							try {
+								if (!existingPage.isClosed()) {
+									existingPage.close();
+									log.debug("Closed existing page from storage state: {}", existingPage.url());
+								}
+							}
+							catch (Exception e) {
+								log.warn("Failed to close existing page: {}", e.getMessage());
+							}
+						}
+					}
+				}
+				catch (Exception e) {
+					log.warn("Failed to check/close existing pages from storage state: {}", e.getMessage());
+				}
+
 				page = browserContext.newPage();
 				log.info("Successfully created new page from context");
 

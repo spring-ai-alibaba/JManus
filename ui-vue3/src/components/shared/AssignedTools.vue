@@ -23,11 +23,24 @@
       </button>
     </div>
 
-    <div class="tools-grid" :class="{ 'grid-layout': useGridLayout }">
-      <div v-for="toolId in filteredSelectedToolIds" :key="toolId" class="tool-item assigned">
+    <div
+      class="tools-grid"
+      :class="{
+        'grid-layout': useGridLayout,
+        'has-more-items': useGridLayout && filteredSelectedToolIds.length > 2,
+      }"
+    >
+      <div
+        v-for="toolId in filteredSelectedToolIds"
+        :key="toolId"
+        class="tool-item assigned"
+        :title="getToolDescription(toolId)"
+      >
         <div class="tool-info">
           <span class="tool-name">{{ getToolDisplayNameWithGroup(toolId) }}</span>
-          <span class="tool-desc">{{ getToolDescription(toolId) }}</span>
+          <span class="tool-desc" :title="getToolDescription(toolId)">{{
+            getToolDescription(toolId)
+          }}</span>
         </div>
       </div>
 
@@ -40,21 +53,14 @@
 </template>
 
 <script setup lang="ts">
+import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import { Icon } from '@iconify/vue'
-import { computed, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 
 // Props
 interface Props {
   title: string
   selectedToolIds: string[]
-  availableTools: Array<{
-    key: string
-    name: string
-    description: string
-    enabled: boolean
-    serviceGroup: string
-    selectable: boolean
-  }>
   addButtonText?: string
   emptyText?: string
   showAddButton?: boolean
@@ -74,13 +80,24 @@ const emit = defineEmits<{
   'tools-filtered': [filteredToolIds: string[]]
 }>()
 
+// Get available tools from singleton
+const availableToolsStore = useAvailableToolsSingleton()
+const availableTools = computed(() => availableToolsStore.availableTools.value)
+
+// Load available tools on mount if not already loaded
+onMounted(() => {
+  if (availableTools.value.length === 0 && !availableToolsStore.isLoading.value) {
+    availableToolsStore.loadAvailableTools()
+  }
+})
+
 // Computed property to filter out tools that are not in availableTools
 const filteredSelectedToolIds = computed(() => {
   if (!Array.isArray(props.selectedToolIds)) {
     return []
   }
   return props.selectedToolIds.filter(toolId =>
-    props.availableTools.some(tool => tool.key === toolId)
+    availableTools.value.some(tool => tool.key === toolId)
   )
 })
 
@@ -89,6 +106,10 @@ watch(
   filteredSelectedToolIds,
   newFilteredTools => {
     // Only emit if there's a difference (some tools were filtered out)
+    // Check if selectedToolIds is defined and is an array
+    if (!Array.isArray(props.selectedToolIds)) {
+      return
+    }
     const selectedLength = props.selectedToolIds.length
     if (newFilteredTools.length !== selectedLength) {
       emit('tools-filtered', newFilteredTools)
@@ -99,7 +120,7 @@ watch(
 
 // Methods
 const getToolDisplayNameWithGroup = (toolId: string): string => {
-  const tool = props.availableTools.find(t => t.key === toolId)
+  const tool = availableTools.value.find(t => t.key === toolId)
   if (!tool) return toolId
 
   const group = tool.serviceGroup || 'Ungrouped'
@@ -107,7 +128,7 @@ const getToolDisplayNameWithGroup = (toolId: string): string => {
 }
 
 const getToolDescription = (toolId: string): string => {
-  const tool = props.availableTools.find(t => t.key === toolId)
+  const tool = availableTools.value.find(t => t.key === toolId)
   return tool ? tool.description : ''
 }
 </script>
@@ -170,8 +191,46 @@ const getToolDescription = (toolId: string): string => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
-  max-height: 200px;
+  max-height: calc(2 * (var(--tool-item-height, 80px) + 12px));
   overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(102, 126, 234, 0.5) transparent;
+}
+
+.tools-grid.grid-layout::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tools-grid.grid-layout::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tools-grid.grid-layout::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.5);
+  border-radius: 3px;
+}
+
+.tools-grid.grid-layout::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.7);
+}
+
+.tools-grid.grid-layout::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.3));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tools-grid.grid-layout.has-more-items::after {
+  opacity: 1;
 }
 
 .tool-item {
@@ -183,6 +242,7 @@ const getToolDescription = (toolId: string): string => {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   transition: all 0.3s ease;
+  --tool-item-height: 80px;
 }
 
 .tools-grid.grid-layout .tool-item {
@@ -219,6 +279,14 @@ const getToolDescription = (toolId: string): string => {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+  position: relative;
 }
 
 .no-tools {

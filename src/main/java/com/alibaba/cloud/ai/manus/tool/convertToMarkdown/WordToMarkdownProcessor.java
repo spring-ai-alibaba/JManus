@@ -15,15 +15,6 @@
  */
 package com.alibaba.cloud.ai.manus.tool.convertToMarkdown;
 
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.apache.poi.xwpf.usermodel.XWPFPicture;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -31,6 +22,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
+
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFPicture;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 
 /**
  * Word to Markdown Processor
@@ -140,8 +141,9 @@ public class WordToMarkdownProcessor {
 	 */
 	private boolean markdownFileExists(String currentPlanId, String markdownFilename) {
 		try {
-			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path markdownFile = currentPlanDir.resolve(markdownFilename);
+			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
+			Path sharedDir = rootPlanDir.resolve("shared");
+			Path markdownFile = sharedDir.resolve(markdownFilename);
 			return Files.exists(markdownFile);
 		}
 		catch (Exception e) {
@@ -167,8 +169,9 @@ public class WordToMarkdownProcessor {
 	 */
 	private Path createImageFolder(String currentPlanId, String imageFolderName) {
 		try {
-			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path imageFolder = currentPlanDir.resolve(imageFolderName);
+			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
+			Path sharedDir = rootPlanDir.resolve("shared");
+			Path imageFolder = sharedDir.resolve(imageFolderName);
 			Files.createDirectories(imageFolder);
 			return imageFolder;
 		}
@@ -369,8 +372,9 @@ public class WordToMarkdownProcessor {
 	 */
 	private Path saveMarkdownFile(String content, String filename, String currentPlanId) {
 		try {
-			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path outputFile = currentPlanDir.resolve(filename);
+			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
+			Path sharedDir = rootPlanDir.resolve("shared");
+			Path outputFile = sharedDir.resolve(filename);
 
 			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
 					StandardOpenOption.TRUNCATE_EXISTING);

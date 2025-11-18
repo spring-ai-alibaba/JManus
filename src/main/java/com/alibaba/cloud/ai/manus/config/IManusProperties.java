@@ -91,6 +91,16 @@ public interface IManusProperties {
 	void setMaxMemory(Integer maxMemory);
 
 	/**
+	 * Get conversation memory max characters
+	 */
+	Integer getConversationMemoryMaxChars();
+
+	/**
+	 * Set conversation memory max characters
+	 */
+	void setConversationMemoryMaxChars(Integer conversationMemoryMaxChars);
+
+	/**
 	 * Get parallel tool calls setting
 	 */
 	Boolean getParallelToolCalls();

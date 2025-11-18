@@ -68,7 +68,20 @@
         >
           <div class="agent-step-header">
             <Icon :icon="getAgentPreviewStatusIcon(agent.status)" class="agent-icon" />
-            <span class="agent-name">{{ agent.agentName || $t('chat.unknownAgent') }}</span>
+            <span
+              class="agent-name"
+              :title="
+                agent.agentName === 'ConfigurableDynaAgent'
+                  ? $t('chat.clickToViewExecutionDetails')
+                  : ''
+              "
+            >
+              {{
+                agent.agentName === 'ConfigurableDynaAgent'
+                  ? $t('chat.funcAgentExecutionDetails')
+                  : agent.agentName || $t('chat.unknownAgent')
+              }}
+            </span>
             <div class="agent-status-badge" :class="getAgentPreviewStatusClass(agent.status)">
               {{ getAgentStatusText(agent.status) }}
             </div>
@@ -176,15 +189,15 @@
 </template>
 
 <script setup lang="ts">
-import {} from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
 import type {
-  PlanExecutionRecord,
   AgentExecutionRecord,
   ExecutionStatus,
+  PlanExecutionRecord,
   ThinkActRecord,
 } from '@/types/plan-execution-record'
+import { Icon } from '@iconify/vue'
+import {} from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   subPlan: PlanExecutionRecord

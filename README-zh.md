@@ -45,7 +45,7 @@ JManus 也提供了 http 的服务调用能力，适合被集成到既有的项�
 ### 先决条件
 
 - 🌐 **DashScope API 密钥** (或替代的 AI 模型提供商)
-- ☕ **Java 17+** (用于运行 JAR 文件或源码运行)
+- ☕ **Java 17+** (用于运行 JAR 文件或源码运行) 或 🐳 **Docker** (用于容器化部署)
 
 ### 方式一：使用 GitHub Release (推荐)
 
@@ -74,7 +74,77 @@ java -jar jmanus.jar
 
 ---
 
-### 方式二：从源码运行 (次选方案)
+### 方式二：使用 Docker (生产环境推荐)
+
+#### 🐳 拉取并运行 Docker 镜像
+
+```bash
+# 拉取最新版本的 JManus Docker 镜像
+docker pull ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+
+# 运行容器
+docker run -d \
+  --name jmanus \
+  -p 18080:18080 \
+  ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+```
+
+#### 🔧 高级 Docker 配置
+
+**运行并持久化数据（生产环境推荐）：**
+
+```bash
+# 创建数据持久化目录
+mkdir -p ./jmanus-data
+
+# 运行并挂载数据卷
+docker run -d \
+  --name jmanus \
+  -p 18080:18080 \
+  -v $(pwd)/jmanus-data:/app/data \
+  ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+```
+
+**使用自定义环境变量运行：**
+
+```bash
+docker run -d \
+  --name jmanus \
+  -p 18080:18080 \
+  -e SPRING_PROFILES_ACTIVE=mysql \
+  -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/jmanus \
+  -e SPRING_DATASOURCE_USERNAME=your_username \
+  -e SPRING_DATASOURCE_PASSWORD=your_password \
+  ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+```
+
+#### 🌐 访问应用
+
+容器启动后，在浏览器中访问 `http://localhost:18080`。
+
+> 💡 **引导式设置**: 应用启动后会自动显示引导页面。在第一个页面选择中英文语言，然后在第二个页面输入您刚才申请的 DashScope API 密钥即可完成配置。
+
+#### 📋 常用 Docker 命令
+
+```bash
+# 查看容器日志
+docker logs -f jmanus
+
+# 停止容器
+docker stop jmanus
+
+# 启动容器
+docker start jmanus
+
+# 删除容器
+docker rm jmanus
+```
+
+🎉 **恭喜!** 您的多 Agent 系统现已通过 Docker 运行。 你可以访问https://github.com/talk-flow/public-usecase 去做一些我们认为比较有效的实践。
+
+---
+
+### 方式三：从源码运行 (次选方案)
 
 #### 1. 克隆并导航
 
@@ -118,7 +188,21 @@ JManus 支持 H2（默认）、MySQL 以及 PostgreSQL 数据库。
 
 > 💡 **注意**：应用程序将在首次启动时自动创建所需的表，使用 JPA 的 `ddl-auto: update` 配置。
 
-#### 3. 访问您的多 Agent 仪表盘
+#### 3. 启动应用
+
+**对于类 Unix 系统 (macOS, Linux):**
+
+```bash
+../mvnw spring-boot:run
+```
+
+**对于 Windows 系统:**
+
+```bash
+../mvnw.cmd spring-boot:run
+```
+
+#### 4. 访问您的多 Agent 仪表盘
 
 在您的浏览器中访问 `http://localhost:18080`。
 

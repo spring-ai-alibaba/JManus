@@ -239,7 +239,7 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 				List<ExecutionStep> steps = plan.getAllSteps();
 
 				recorder.recordPlanExecutionStart(context.getCurrentPlanId(), context.getPlan().getTitle(),
-						context.getUserRequest(), steps, context.getParentPlanId(), context.getRootPlanId(),
+						context.getTitle(), steps, context.getParentPlanId(), context.getRootPlanId(),
 						context.getToolCallId());
 
 				if (steps != null && !steps.isEmpty()) {

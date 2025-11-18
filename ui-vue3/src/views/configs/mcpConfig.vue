@@ -253,8 +253,8 @@
 
     <!-- Message Toast -->
     <transition name="message-fade">
-      <div v-if="message.show" :class="['message-toast', message.type]">
-        {{ message.text }}
+      <div v-if="toast.show" :class="['message-toast', toast.type]">
+        {{ toast.text }}
       </div>
     </transition>
   </ConfigPanel>
@@ -271,7 +271,7 @@ import { Icon } from '@iconify/vue'
 import McpConfigForm from './components/McpConfigForm.vue' // Import new form component
 import JsonImportPanel from './components/JsonImportPanel.vue'
 import { useMcpConfigForm } from '@/composables/useMcpConfigForm'
-import { useMessage } from '@/composables/useMessage'
+import { useToast } from '@/composables/useToast'
 import { useRequest } from '@/composables/useRequest'
 import type { McpServerSaveRequest, JsonValidationResult } from '@/types/mcp'
 
@@ -289,7 +289,7 @@ const { t } = useI18n()
 // Use composition functions
 const { configForm, resetForm, populateFormFromServer, validateForm, handleConnectionTypeChange } =
   useMcpConfigForm()
-const { message, showMessage } = useMessage()
+const { toast, showToast } = useToast()
 const { loading } = useRequest()
 
 // Reactive data
@@ -377,7 +377,7 @@ const selectServer = (server: McpServer) => {
 // Handle JSON save
 const handleJsonSave = () => {
   if (!jsonEditorContent.value.trim()) {
-    showMessage(t('config.mcpConfig.jsonConfigEmpty'), 'error')
+    showToast(t('config.mcpConfig.jsonConfigEmpty'), 'error')
     return
   }
 
@@ -393,9 +393,9 @@ const handleJsonSave = () => {
     }
 
     showJsonModal.value = false
-    showMessage(t('config.mcpConfig.jsonConfigSaved'), 'success')
+    showToast(t('config.mcpConfig.jsonConfigSaved'), 'success')
   } catch {
-    showMessage(t('config.mcpConfig.jsonFormatError'), 'error')
+    showToast(t('config.mcpConfig.jsonFormatError'), 'error')
   }
 }
 
@@ -406,14 +406,14 @@ const handleAddServerFromJson = async (serverData: Record<string, unknown>) => {
     const result = await McpApiService.importMcpServers(serverData)
 
     if (result.success) {
-      showMessage(t('config.mcpConfig.addSuccess'))
+      showToast(t('config.mcpConfig.addSuccess'))
       await loadMcpServers()
     } else {
-      showMessage(result.message, 'error')
+      showToast(result.message, 'error')
     }
   } catch (error) {
     console.error('Failed to add MCP server:', error)
-    showMessage(t('config.mcpConfig.addFailed'), 'error')
+    showToast(t('config.mcpConfig.addFailed'), 'error')
   } finally {
     loading.value = false
   }
@@ -422,7 +422,7 @@ const handleAddServerFromJson = async (serverData: Record<string, unknown>) => {
 // Handle delete server
 const handleDeleteServer = async () => {
   if (!selectedServer.value?.id) {
-    showMessage(t('config.mcpConfig.noServerSelected'), 'error')
+    showToast(t('config.mcpConfig.noServerSelected'), 'error')
     return
   }
 
@@ -430,16 +430,16 @@ const handleDeleteServer = async () => {
     loading.value = true
     const result = await McpApiService.removeMcpServer(selectedServer.value.id)
     if (result.success) {
-      showMessage(t('config.mcpConfig.deleteSuccess'))
+      showToast(t('config.mcpConfig.deleteSuccess'))
       selectedServer.value = null
       showDeleteModal.value = false
       await loadMcpServers()
     } else {
-      showMessage(result.message || t('config.mcpConfig.deleteFailed'), 'error')
+      showToast(result.message || t('config.mcpConfig.deleteFailed'), 'error')
     }
   } catch (error) {
     console.error('Failed to delete MCP server:', error)
-    showMessage(t('config.mcpConfig.deleteFailed'), 'error')
+    showToast(t('config.mcpConfig.deleteFailed'), 'error')
   } finally {
     loading.value = false
   }
@@ -450,7 +450,7 @@ const handleSave = async () => {
   // Use form validation
   const validation = validateForm()
   if (!validation.isValid) {
-    showMessage(validation.errors[0], 'error')
+    showToast(validation.errors[0], 'error')
     return
   }
 
@@ -470,12 +470,12 @@ const handleSave = async () => {
           const argsArray = configForm.args.split('\n').filter(arg => arg.trim())
           // Validate that each element is a string
           if (!argsArray.every(arg => typeof arg === 'string')) {
-            showMessage(t('config.mcpConfig.argsStringError'), 'error')
+            showToast(t('config.mcpConfig.argsStringError'), 'error')
             return
           }
           requestData.args = argsArray
         } catch {
-          showMessage(t('config.mcpConfig.argsFormatError'), 'error')
+          showToast(t('config.mcpConfig.argsFormatError'), 'error')
           return
         }
       }
@@ -498,13 +498,13 @@ const handleSave = async () => {
 
           // Validate that each value is a string
           if (!Object.values(envObj).every(value => typeof value === 'string')) {
-            showMessage(t('config.mcpConfig.envStringError'), 'error')
+            showToast(t('config.mcpConfig.envStringError'), 'error')
             return
           }
 
           requestData.env = envObj
         } catch {
-          showMessage(t('config.mcpConfig.envFormatError'), 'error')
+          showToast(t('config.mcpConfig.envFormatError'), 'error')
           return
         }
       }
@@ -521,7 +521,7 @@ const handleSave = async () => {
     const result = await McpApiService.saveMcpServer(requestData)
 
     if (result.success) {
-      showMessage(
+      showToast(
         selectedServer.value?.id
           ? t('config.mcpConfig.updateSuccess')
           : t('config.mcpConfig.addSuccess'),
@@ -534,11 +534,11 @@ const handleSave = async () => {
         showAddForm.value = false
       }
     } else {
-      showMessage(result.message || t('config.mcpConfig.operationFailed'), 'error')
+      showToast(result.message || t('config.mcpConfig.operationFailed'), 'error')
     }
   } catch (error) {
     console.error('Save failed:', error)
-    showMessage(t('config.mcpConfig.saveFailed'), 'error')
+    showToast(t('config.mcpConfig.saveFailed'), 'error')
   }
 }
 
@@ -571,7 +571,7 @@ const validateJson = () => {
       isJsonValid.value = false
       validationErrors.value = validationResult.errors ?? []
       if (validationResult.errors && validationResult.errors.length > 0) {
-        showMessage(validationResult.errors.join('\n'), 'error')
+        showToast(validationResult.errors.join('\n'), 'error')
       }
     }
   } catch (error) {
@@ -595,7 +595,7 @@ const validateJson = () => {
     }
 
     validationErrors.value = [errorMessage]
-    showMessage(errorMessage, 'error')
+    showToast(errorMessage, 'error')
   }
 }
 
@@ -706,7 +706,7 @@ const formatJson = () => {
     jsonEditorContent.value = formatted
     validateJson()
   } catch {
-    showMessage(t('config.mcpConfig.invalidJson'), 'error')
+    showToast(t('config.mcpConfig.invalidJson'), 'error')
   }
 }
 
@@ -779,7 +779,7 @@ const loadMcpServers = async () => {
     }
   } catch (error) {
     console.error('Failed to load MCP server list:', error)
-    showMessage(t('config.basicConfig.loadConfigFailed'), 'error')
+    showToast(t('config.basicConfig.loadConfigFailed'), 'error')
   } finally {
     loading.value = false
   }
@@ -813,13 +813,13 @@ const toggleServerStatus = async (server: McpServer) => {
     if (result.success) {
       // Update local status
       server.status = server.status === 'ENABLE' ? 'DISABLE' : 'ENABLE'
-      showMessage(result.message || t('config.mcpConfig.statusToggleSuccess'))
+      showToast(result.message || t('config.mcpConfig.statusToggleSuccess'))
     } else {
-      showMessage(result.message || t('config.mcpConfig.statusToggleFailed'), 'error')
+      showToast(result.message || t('config.mcpConfig.statusToggleFailed'), 'error')
     }
   } catch (error) {
     console.error('Status toggle failed:', error)
-    showMessage(t('config.mcpConfig.statusToggleFailed'), 'error')
+    showToast(t('config.mcpConfig.statusToggleFailed'), 'error')
   } finally {
     loading.value = false
   }
@@ -877,7 +877,7 @@ onMounted(() => {
 // Handle delete server
 const handleDelete = () => {
   if (!selectedServer.value) {
-    showMessage(t('config.mcpConfig.noServerSelected'), 'error')
+    showToast(t('config.mcpConfig.noServerSelected'), 'error')
     return
   }
   showDeleteModal.value = true
@@ -914,10 +914,10 @@ const exportAllConfigs = async () => {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
 
-    showMessage(t('config.mcpConfig.exportSuccess'))
+    showToast(t('config.mcpConfig.exportSuccess'))
   } catch (error) {
     console.error('Failed to export MCP servers:', error)
-    showMessage(t('config.mcpConfig.exportFailed'), 'error')
+    showToast(t('config.mcpConfig.exportFailed'), 'error')
   } finally {
     loading.value = false
   }
@@ -932,7 +932,7 @@ const handleJsonValidationChange = (result: JsonValidationResult) => {
 // Handle JSON import
 const handleJsonImport = async () => {
   if (!jsonEditorContent.value.trim()) {
-    showMessage(t('config.mcpConfig.jsonConfigEmpty'), 'error')
+    showToast(t('config.mcpConfig.jsonConfigEmpty'), 'error')
     return
   }
 
@@ -944,19 +944,19 @@ const handleJsonImport = async () => {
       loading.value = true
       const result = await McpApiService.importMcpServers(parsed)
       if (result.success) {
-        showMessage(t('config.mcpConfig.importSuccess'))
+        showToast(t('config.mcpConfig.importSuccess'))
         await loadMcpServers()
       } else {
-        showMessage(result.message || t('config.mcpConfig.importFailed'), 'error')
+        showToast(result.message || t('config.mcpConfig.importFailed'), 'error')
       }
     } else {
-      showMessage(
+      showToast(
         validationResult.errors?.join('\n') ?? t('config.mcpConfig.importInvalidJson'),
         'error'
       )
     }
   } catch {
-    showMessage(t('config.mcpConfig.importFailed'), 'error')
+    showToast(t('config.mcpConfig.importFailed'), 'error')
   } finally {
     loading.value = false
     showJsonImport.value = false

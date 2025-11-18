@@ -144,12 +144,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { Icon } from '@iconify/vue'
-import type { CronConfig } from '@/types/cron-task'
 import { PlanActApiService } from '@/api/plan-act-api-service'
+import type { CronConfig } from '@/types/cron-task'
 import type { PlanTemplate } from '@/types/plan-template'
 import { CronTaskUtils } from '@/utils/cron-task-utils'
+import { Icon } from '@iconify/vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   modelValue: boolean

@@ -244,10 +244,6 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 
 					yield appendToFile(filePath, appendContent);
 				}
-				case "create" -> {
-					String createContent = (String) toolInputMap.get("content");
-					yield createFile(filePath, createContent != null ? createContent : "");
-				}
 				case "delete" -> deleteFile(filePath);
 				case "count_words" -> countWords(filePath);
 				case "list_files" -> listFiles(filePath != null ? filePath : "");
@@ -264,7 +260,7 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 							wholeWord != null ? wholeWord : false);
 				}
 				default -> new ToolExecuteResult("Unknown operation: " + action
-						+ ". Supported operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep");
+						+ ". Supported operations: replace, get_text, get_all_text, append, delete, count_words, list_files, grep");
 			};
 		}
 		catch (Exception e) {
@@ -322,10 +318,6 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 
 					yield appendToFile(filePath, appendContent);
 				}
-				case "create" -> {
-					String createContent = input.getContent();
-					yield createFile(filePath, createContent != null ? createContent : "");
-				}
 				case "delete" -> deleteFile(filePath);
 				case "count_words" -> countWords(filePath);
 				case "list_files" -> listFiles(filePath != null ? filePath : "");
@@ -342,7 +334,7 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 							wholeWord != null ? wholeWord : false);
 				}
 				default -> new ToolExecuteResult("Unknown operation: " + action
-						+ ". Supported operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep");
+						+ ". Supported operations: replace, get_text, get_all_text, append, delete, count_words, list_files, grep");
 			};
 		}
 		catch (Exception e) {
@@ -405,33 +397,6 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 	}
 
 	/**
-	 * Create a new file with optional content
-	 */
-	private ToolExecuteResult createFile(String filePath, String content) {
-		try {
-			Path absolutePath = validateLocalPath(filePath);
-
-			// Check if file already exists
-			if (Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File already exists: " + filePath);
-			}
-
-			// Create parent directories if needed
-			Files.createDirectories(absolutePath.getParent());
-
-			// Create the file with content
-			Files.writeString(absolutePath, content != null ? content : "");
-
-			log.info("Created new file: {}", absolutePath);
-			return new ToolExecuteResult("File created successfully: " + filePath);
-		}
-		catch (IOException e) {
-			log.error("Error creating file: {}", filePath, e);
-			return new ToolExecuteResult("Error creating file: " + e.getMessage());
-		}
-	}
-
-	/**
 	 * Delete a file
 	 */
 	private ToolExecuteResult deleteFile(String filePath) {
@@ -460,8 +425,11 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 		try {
 			Path absolutePath = validateLocalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new file automatically: {}", absolutePath);
 			}
 
 			String content = Files.readString(absolutePath);
@@ -505,8 +473,11 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 
 			Path absolutePath = validateLocalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new file automatically: {}", absolutePath);
 			}
 
 			java.util.List<String> lines = Files.readAllLines(absolutePath);
@@ -557,8 +528,11 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 		try {
 			Path absolutePath = validateLocalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new file automatically: {}", absolutePath);
 			}
 
 			String content = Files.readString(absolutePath);
@@ -620,8 +594,11 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 		try {
 			Path absolutePath = validateLocalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new file automatically: {}", absolutePath);
 			}
 
 			String content = Files.readString(absolutePath);
@@ -642,8 +619,11 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 		try {
 			Path absolutePath = validateLocalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new file automatically: {}", absolutePath);
 			}
 
 			java.util.List<String> lines = Files.readAllLines(absolutePath);
@@ -734,9 +714,10 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				}
 			}
 
-			// Ensure directory exists, create if it doesn't
+			// Check if directory exists - don't create it for list operation
 			if (!Files.exists(targetDirectory)) {
-				Files.createDirectories(targetDirectory);
+				String displayPath = directoryPath == null || directoryPath.isEmpty() ? "root" : directoryPath;
+				return new ToolExecuteResult("Error: Directory does not exist: " + displayPath);
 			}
 
 			if (!Files.isDirectory(targetDirectory)) {
@@ -805,7 +786,7 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 						Current Local File Operation State:
 						- Scope: Current plan directory only (no hierarchical access)
 						- Operations are automatically handled (no manual file opening/closing required)
-						- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep
+						- Available operations: replace, get_text, get_all_text, append, delete, count_words, list_files, grep
 						""");
 		}
 		catch (Exception e) {
@@ -813,7 +794,7 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 					"""
 							Current Local File Operation State:
 							- Error getting working directory: %s
-							- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep
+							- Available operations: replace, get_text, get_all_text, append, delete, count_words, list_files, grep
 							""",
 					e.getMessage());
 		}
@@ -831,8 +812,8 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				This operator provides enhanced security by restricting all operations to the current plan's folder.
 
 				Supported operations:
-				- create: Create a new file with optional content, requires file_path and optional content parameter
 				- delete: Delete an existing file, requires file_path parameter
+				- list_files: List files and directories in the current plan directory, optional file_path parameter (defaults to current plan root)
 				- replace: Replace specific text in file, requires source_text and target_text parameters
 				- get_text: Get content from specified line range in file, requires start_line and end_line parameters
 				  Limitation: Maximum 500 lines per call, use multiple calls for more content
@@ -865,25 +846,6 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 				{
 				    "type": "object",
 				    "oneOf": [
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "create"
-				                },
-				                "file_path": {
-				                    "type": "string",
-				                    "description": "File path to create (relative to current plan directory)"
-				                },
-				                "content": {
-				                    "type": "string",
-				                    "description": "Initial content for the new file (optional)"
-				                }
-				            },
-				            "required": ["action", "file_path"],
-				            "additionalProperties": false
-				        },
 				        {
 				            "type": "object",
 				            "properties": {

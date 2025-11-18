@@ -17,8 +17,8 @@ package com.alibaba.cloud.ai.manus.tool.database.model.vo;
 
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
 /**
  * Datasource configuration value object for API responses
@@ -40,7 +40,7 @@ public class DatasourceConfigVO {
 
 	private String username;
 
-	@JsonIgnore
+	@JsonProperty(access = Access.WRITE_ONLY)
 	private String password;
 
 	@JsonProperty("password_set")

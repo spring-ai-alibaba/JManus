@@ -28,12 +28,10 @@ public interface IPlanTemplateService {
 	 * Save plan template
 	 * @param planTemplateId Template ID
 	 * @param title Title
-	 * @param userRequest User request
 	 * @param planJson Plan JSON
 	 * @param isInternalToolcall Whether is internal toolcall
 	 */
-	void savePlanTemplate(String planTemplateId, String title, String userRequest, String planJson,
-			boolean isInternalToolcall);
+	void savePlanTemplate(String planTemplateId, String title, String planJson, boolean isInternalToolcall);
 
 	/**
 	 * Update plan template

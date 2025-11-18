@@ -15,12 +15,12 @@
  */
 package com.alibaba.cloud.ai.manus.llm;
 
-import com.alibaba.cloud.ai.manus.event.JmanusListener;
-import com.alibaba.cloud.ai.manus.event.ModelChangeEvent;
-import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
-import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import io.micrometer.observation.ObservationRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -45,13 +45,14 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import com.alibaba.cloud.ai.manus.event.JmanusListener;
+import com.alibaba.cloud.ai.manus.event.ModelChangeEvent;
+import com.alibaba.cloud.ai.manus.model.entity.DynamicModelEntity;
+import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
+
+import io.micrometer.observation.ObservationRegistry;
+import reactor.core.publisher.Flux;
 
 @Service
 public class LlmService implements JmanusListener<ModelChangeEvent> {
@@ -98,6 +99,9 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 
 	@Autowired(required = false)
 	private WebClient webClientWithDnsCache;
+
+	@Autowired(required = false)
+	private ConversationMemoryLimitService conversationMemoryLimitService;
 
 	public LlmService() {
 	}
@@ -245,6 +249,39 @@ public class LlmService implements JmanusListener<ModelChangeEvent> {
 				.build();
 		}
 		return conversationMemory;
+	}
+
+	/**
+	 * Get conversation memory and automatically check/limit size if limit service is
+	 * available. This method should be used when you need to ensure memory is within
+	 * character limits.
+	 * @param maxMessages Maximum number of messages
+	 * @param conversationId Conversation ID to check and limit (optional, can be null)
+	 * @return ChatMemory instance
+	 */
+	public ChatMemory getConversationMemoryWithLimit(Integer maxMessages, String conversationId) {
+		ChatMemory memory = getConversationMemory(maxMessages);
+		if (conversationMemoryLimitService != null && conversationId != null && !conversationId.trim().isEmpty()) {
+			conversationMemoryLimitService.checkAndLimitMemory(memory, conversationId);
+		}
+		return memory;
+	}
+
+	/**
+	 * Add message to conversation memory and automatically check/limit size if limit
+	 * service is available.
+	 * @param maxMessages Maximum number of messages for memory initialization
+	 * @param conversationId Conversation ID
+	 * @param message Message to add
+	 */
+	public void addToConversationMemoryWithLimit(Integer maxMessages, String conversationId,
+			org.springframework.ai.chat.messages.Message message) {
+		ChatMemory memory = getConversationMemory(maxMessages);
+		memory.add(conversationId, message);
+		// Automatically check and limit after adding
+		if (conversationMemoryLimitService != null && conversationId != null && !conversationId.trim().isEmpty()) {
+			conversationMemoryLimitService.checkAndLimitMemory(memory, conversationId);
+		}
 	}
 
 	@Override

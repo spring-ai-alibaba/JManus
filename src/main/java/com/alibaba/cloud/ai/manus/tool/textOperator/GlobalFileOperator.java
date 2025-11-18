@@ -34,13 +34,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Global file operator that performs operations within the shared directory
- * (rootPlanId/shared/). This operator provides access to shared files that can be
- * accessed across all sub-plans within the same execution context. All files are stored
- * in the rootPlanId/shared/ directory.
+ * Global file operator that performs operations on files. This operator provides access
+ * to files that can be accessed across all sub-plans within the same execution context.
  *
- * Keywords: global files, root directory, root folder, shared files, root plan directory,
- * global file operations, root file access, shared storage, cross-plan files.
+ * Keywords: global files, root directory, root folder, root plan directory, global file
+ * operations, root file access, cross-plan files.
  *
  * Use this tool for operations on global files, root directory files, or root folder
  * files.
@@ -251,10 +249,6 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 					yield appendToFile(filePath, appendContent);
 				}
-				case "create" -> {
-					String createContent = (String) toolInputMap.get("content");
-					yield createFile(filePath, createContent != null ? createContent : "");
-				}
 				case "delete" -> deleteFile(filePath);
 				case "count_words" -> countWords(filePath);
 				case "list_files" -> listFiles(filePath != null ? filePath : "");
@@ -271,7 +265,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 							wholeWord != null ? wholeWord : false);
 				}
 				default -> new ToolExecuteResult("Unknown operation: " + action
-						+ ". Supported operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep");
+						+ ". Supported operations: replace, get_text, get_all_text, append, delete, count_words, list_files, grep");
 			};
 		}
 		catch (Exception e) {
@@ -329,10 +323,6 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 					yield appendToFile(filePath, appendContent);
 				}
-				case "create" -> {
-					String createContent = input.getContent();
-					yield createFile(filePath, createContent != null ? createContent : "");
-				}
 				case "delete" -> deleteFile(filePath);
 				case "count_words" -> countWords(filePath);
 				case "list_files" -> listFiles(filePath != null ? filePath : "");
@@ -349,7 +339,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 							wholeWord != null ? wholeWord : false);
 				}
 				default -> new ToolExecuteResult("Unknown operation: " + action
-						+ ". Supported operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep");
+						+ ". Supported operations: replace, get_text, get_all_text, append, delete, count_words, list_files, grep");
 			};
 		}
 		catch (Exception e) {
@@ -359,15 +349,48 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 	}
 
 	/**
-	 * Validate and get the absolute path within the shared directory (rootPlanId/shared/)
+	 * Normalize file path by removing plan ID and shared directory prefixes
+	 */
+	private String normalizeFilePath(String filePath) {
+		if (filePath == null || filePath.isEmpty()) {
+			return filePath;
+		}
+
+		// Remove leading slashes
+		String normalized = filePath.trim();
+		while (normalized.startsWith("/")) {
+			normalized = normalized.substring(1);
+		}
+
+		// Remove plan ID prefix (e.g., "plan-1763035234741/")
+		if (normalized.matches("^plan-[^/]+/.*")) {
+			normalized = normalized.replaceFirst("^plan-[^/]+/", "");
+		}
+
+		// Remove "shared/" prefix if present
+		if (normalized.startsWith("shared/")) {
+			normalized = normalized.substring("shared/".length());
+		}
+
+		// Remove any remaining "shared/" in the path
+		normalized = normalized.replaceAll("^shared/", "");
+
+		return normalized;
+	}
+
+	/**
+	 * Validate and get the absolute path within the shared directory
 	 */
 	private Path validateGlobalPath(String filePath) throws IOException {
 		if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
 			throw new IOException("Error: rootPlanId is required for global file operations but is null or empty");
 		}
 
+		// Normalize the file path to remove plan ID and shared directory prefixes
+		String normalizedPath = normalizeFilePath(filePath);
+
 		// Check file type for non-directory operations
-		if (!filePath.isEmpty() && !filePath.endsWith("/") && !isSupportedFileType(filePath)) {
+		if (!normalizedPath.isEmpty() && !normalizedPath.endsWith("/") && !isSupportedFileType(normalizedPath)) {
 			throw new IOException("Unsupported file type. Only text-based files are supported.");
 		}
 
@@ -376,11 +399,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
 		// Resolve file path within the shared directory
-		Path absolutePath = sharedDirectory.resolve(filePath).normalize();
+		Path absolutePath = sharedDirectory.resolve(normalizedPath).normalize();
 
 		// Ensure the path stays within the shared directory
 		if (!absolutePath.startsWith(sharedDirectory)) {
-			throw new IOException("Access denied: File path must be within the shared directory");
+			throw new IOException("Access denied: Invalid file path");
 		}
 
 		return absolutePath;
@@ -415,33 +438,6 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 	}
 
 	/**
-	 * Create a new file with optional content
-	 */
-	private ToolExecuteResult createFile(String filePath, String content) {
-		try {
-			Path absolutePath = validateGlobalPath(filePath);
-
-			// Check if file already exists
-			if (Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File already exists: " + filePath);
-			}
-
-			// Create parent directories if needed
-			Files.createDirectories(absolutePath.getParent());
-
-			// Create the file with content
-			Files.writeString(absolutePath, content != null ? content : "");
-
-			log.info("Created new shared file: {}", absolutePath);
-			return new ToolExecuteResult("Shared file created successfully: " + filePath);
-		}
-		catch (IOException e) {
-			log.error("Error creating shared file: {}", filePath, e);
-			return new ToolExecuteResult("Error creating shared file: " + e.getMessage());
-		}
-	}
-
-	/**
 	 * Delete a file
 	 */
 	private ToolExecuteResult deleteFile(String filePath) {
@@ -455,11 +451,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			Files.delete(absolutePath);
 
 			log.info("Deleted shared file: {}", absolutePath);
-			return new ToolExecuteResult("Shared file deleted successfully: " + filePath);
+			return new ToolExecuteResult("File deleted successfully: " + filePath);
 		}
 		catch (IOException e) {
 			log.error("Error deleting shared file: {}", filePath, e);
-			return new ToolExecuteResult("Error deleting shared file: " + e.getMessage());
+			return new ToolExecuteResult("Error deleting file: " + e.getMessage());
 		}
 	}
 
@@ -472,35 +468,40 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				return new ToolExecuteResult("Error: rootPlanId is required for global file operations");
 			}
 
+			// Normalize the directory path to remove plan ID and shared directory
+			// prefixes
+			String normalizedPath = normalizeFilePath(directoryPath != null ? directoryPath : "");
+
 			// Get the shared directory
 			Path rootPlanDirectory = textFileService.getRootPlanDirectory(this.rootPlanId);
 			Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
 			// If a subdirectory path is provided, resolve it within shared directory
 			Path targetDirectory = sharedDirectory;
-			if (directoryPath != null && !directoryPath.isEmpty()) {
-				targetDirectory = sharedDirectory.resolve(directoryPath).normalize();
+			if (normalizedPath != null && !normalizedPath.isEmpty()) {
+				targetDirectory = sharedDirectory.resolve(normalizedPath).normalize();
 
 				// Ensure the target directory stays within shared directory
 				if (!targetDirectory.startsWith(sharedDirectory)) {
-					return new ToolExecuteResult("Error: Directory path must be within the shared directory");
+					return new ToolExecuteResult("Error: Directory path is invalid");
 				}
 			}
 
-			// Ensure directory exists, create if it doesn't
+			// Check if directory exists - don't create it for list operation
 			if (!Files.exists(targetDirectory)) {
-				Files.createDirectories(targetDirectory);
+				return new ToolExecuteResult("Error: Directory does not exist: "
+						+ (normalizedPath != null && !normalizedPath.isEmpty() ? normalizedPath : "root"));
 			}
 
 			if (!Files.isDirectory(targetDirectory)) {
-				return new ToolExecuteResult("Error: Path is not a directory: " + directoryPath);
+				return new ToolExecuteResult("Error: Path is not a directory: " + normalizedPath);
 			}
 
 			StringBuilder result = new StringBuilder();
-			String displayPath = directoryPath == null || directoryPath.isEmpty() ? "shared/"
-					: "shared/" + directoryPath;
-			result.append(String.format("Files in shared directory: %s\n", displayPath));
-			result.append("=".repeat(50)).append("\n");
+			result.append("Files: \n");
+			if (normalizedPath != null && !normalizedPath.isEmpty()) {
+				result.append(normalizedPath).append("\n");
+			}
 
 			java.util.List<Path> files = Files.list(targetDirectory).sorted().toList();
 
@@ -529,8 +530,9 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			return new ToolExecuteResult(result.toString());
 		}
 		catch (IOException e) {
-			log.error("Error listing shared files: {}", directoryPath, e);
-			return new ToolExecuteResult("Error listing shared files: " + e.getMessage());
+			String pathToLog = normalizeFilePath(directoryPath != null ? directoryPath : "");
+			log.error("Error listing shared files: {}", pathToLog, e);
+			return new ToolExecuteResult("Error listing files: " + e.getMessage());
 		}
 	}
 
@@ -554,8 +556,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		try {
 			Path absolutePath = validateGlobalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new shared file automatically: {}", absolutePath);
 			}
 
 			String content = Files.readString(absolutePath);
@@ -568,11 +573,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			}
 
 			log.info("Text replaced in shared file: {}", absolutePath);
-			return new ToolExecuteResult("Text replaced successfully in shared file: " + filePath);
+			return new ToolExecuteResult("Text replaced successfully in file: " + filePath);
 		}
 		catch (IOException e) {
 			log.error("Error replacing text in shared file: {}", filePath, e);
-			return new ToolExecuteResult("Error replacing text in shared file: " + e.getMessage());
+			return new ToolExecuteResult("Error replacing text in file: " + e.getMessage());
 		}
 	}
 
@@ -599,8 +604,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 			Path absolutePath = validateGlobalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new shared file automatically: {}", absolutePath);
 			}
 
 			java.util.List<String> lines = Files.readAllLines(absolutePath);
@@ -619,8 +627,8 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			int actualEndLine = Math.min(endLine, lines.size());
 
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("Shared File: %s (Lines %d-%d, Total %d lines)\n", filePath, startLine,
-					actualEndLine, lines.size()));
+			result.append(String.format("File: %s (Lines %d-%d, Total %d lines)\n", filePath, startLine, actualEndLine,
+					lines.size()));
 			result.append("=".repeat(50)).append("\n");
 
 			for (int i = startLine - 1; i < actualEndLine; i++) {
@@ -640,7 +648,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		}
 		catch (IOException e) {
 			log.error("Error retrieving text lines from shared file: {}", filePath, e);
-			return new ToolExecuteResult("Error retrieving text lines from shared file: " + e.getMessage());
+			return new ToolExecuteResult("Error retrieving text lines from file: " + e.getMessage());
 		}
 	}
 
@@ -651,8 +659,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		try {
 			Path absolutePath = validateGlobalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new shared file automatically: {}", absolutePath);
 			}
 
 			String content = Files.readString(absolutePath);
@@ -670,7 +681,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		}
 		catch (IOException e) {
 			log.error("Error retrieving all text from shared file: {}", filePath, e);
-			return new ToolExecuteResult("Error retrieving all text from shared file: " + e.getMessage());
+			return new ToolExecuteResult("Error retrieving all text from file: " + e.getMessage());
 		}
 	}
 
@@ -699,11 +710,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			}
 
 			log.info("Content appended to shared file: {}", absolutePath);
-			return new ToolExecuteResult("Content appended successfully to shared file: " + filePath);
+			return new ToolExecuteResult("Content appended successfully to file: " + filePath);
 		}
 		catch (IOException e) {
 			log.error("Error appending to shared file: {}", filePath, e);
-			return new ToolExecuteResult("Error appending to shared file: " + e.getMessage());
+			return new ToolExecuteResult("Error appending to file: " + e.getMessage());
 		}
 	}
 
@@ -714,18 +725,21 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		try {
 			Path absolutePath = validateGlobalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new shared file automatically: {}", absolutePath);
 			}
 
 			String content = Files.readString(absolutePath);
 			int wordCount = content.isEmpty() ? 0 : content.split("\\s+").length;
 
-			return new ToolExecuteResult(String.format("Total word count in shared file: %d", wordCount));
+			return new ToolExecuteResult(String.format("Total word count in file: %d", wordCount));
 		}
 		catch (IOException e) {
 			log.error("Error counting words in shared file: {}", filePath, e);
-			return new ToolExecuteResult("Error counting words in shared file: " + e.getMessage());
+			return new ToolExecuteResult("Error counting words in file: " + e.getMessage());
 		}
 	}
 
@@ -736,8 +750,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		try {
 			Path absolutePath = validateGlobalPath(filePath);
 
+			// Create file if it doesn't exist
 			if (!Files.exists(absolutePath)) {
-				return new ToolExecuteResult("Error: File does not exist: " + filePath);
+				Files.createDirectories(absolutePath.getParent());
+				Files.createFile(absolutePath);
+				log.info("Created new shared file automatically: {}", absolutePath);
 			}
 
 			java.util.List<String> lines = Files.readAllLines(absolutePath);
@@ -768,7 +785,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			}
 
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("Grep results for pattern '%s' in shared file: %s\n", pattern, filePath));
+			result.append(String.format("Grep results for pattern '%s' in file: %s\n", pattern, filePath));
 			result.append("=".repeat(60)).append("\n");
 
 			int matchCount = 0;
@@ -801,39 +818,13 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		}
 		catch (IOException e) {
 			log.error("Error performing grep search in shared file: {}", filePath, e);
-			return new ToolExecuteResult("Error performing grep search in shared file: " + e.getMessage());
+			return new ToolExecuteResult("Error performing grep search in file: " + e.getMessage());
 		}
 	}
 
 	@Override
 	public String getCurrentToolStateString() {
-		try {
-			if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
-				return "Current Global File Operation State:\n- Error: No root plan ID available";
-			}
-
-			Path workingDir = textFileService.getRootPlanDirectory(this.rootPlanId);
-			Path sharedDir = workingDir.resolve("shared");
-			return String.format(
-					"""
-							Current Global File Operation State:
-							- Working Directory: %s
-							- Shared Directory: %s
-							- Scope: Shared directory only (all files stored in rootPlanId/shared/)
-							- Operations are automatically handled (no manual file opening/closing required)
-							- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep
-							""",
-					workingDir.toString(), sharedDir.toString());
-		}
-		catch (Exception e) {
-			return String.format(
-					"""
-							Current Global File Operation State:
-							- Error getting working directory: %s
-							- Available operations: replace, get_text, get_all_text, append, create, delete, count_words, list_files, grep
-							""",
-					e.getMessage());
-		}
+		return "";
 	}
 
 	@Override
@@ -844,29 +835,27 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 	@Override
 	public String getDescription() {
 		return """
-				Perform various operations on text files within the shared directory (rootPlanId/shared/).
-				This operator provides access to shared files that can be accessed across all sub-plans
-				within the same execution context. All files are stored in the rootPlanId/shared/ directory.
+				Perform various operations on text files. This operator provides access to files
+				that can be accessed across all sub-plans within the same execution context.
 
-				Keywords: global files, root directory, root folder, shared files, root plan directory,
-				global file operations, root file access, shared storage, cross-plan files.
+				Keywords: global files, root directory, root folder, root plan directory,
+				global file operations, root file access, cross-plan files.
 
 
 				Supported operations:
-				- create: Create a new shared file with optional content, requires file_path and optional content parameter
-				- delete: Delete an existing shared file, requires file_path parameter
-				- list_files: List files and directories in the shared directory, optional file_path parameter (defaults to shared root)
-				- replace: Replace specific text in shared file, requires source_text and target_text parameters
-				- get_text: Get content from specified line range in shared file, requires start_line and end_line parameters
+				- delete: Delete an existing file, requires file_path parameter
+				- list_files: List files and directories, optional file_path parameter (defaults to root)
+				- replace: Replace specific text in file, requires source_text and target_text parameters
+				- get_text: Get content from specified line range in file, requires start_line and end_line parameters
 				  Limitation: Maximum 500 lines per call, use multiple calls for more content
-				- get_all_text: Get all content from shared file
+				- get_all_text: Get all content from file
 				  Note: If file content is too long, it will be automatically stored in temporary file and return file path
-				- append: Append content to shared file, requires content parameter
-				- count_words: Count words in shared file
-				- grep: Search for text patterns in shared file, similar to Linux grep command
+				- append: Append content to file, requires content parameter
+				- count_words: Count words in file
+				- grep: Search for text patterns in file, similar to Linux grep command
 				  Parameters: pattern (required), case_sensitive (optional, default false), whole_word (optional, default false)
 
-				Shared Directory Features:
+				Features:
 				- Files created here are accessible by all sub-plans within the execution context
 
 				""";
@@ -883,30 +872,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				            "properties": {
 				                "action": {
 				                    "type": "string",
-				                    "const": "create"
-				                },
-				                "file_path": {
-				                    "type": "string",
-				                    "description": "File path to create (relative to shared directory, rootPlanId/shared/)"
-				                },
-				                "content": {
-				                    "type": "string",
-				                    "description": "Initial content for the new shared file (optional)"
-				                }
-				            },
-				            "required": ["action", "file_path"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
 				                    "const": "delete"
 				                },
 				                "file_path": {
 				                    "type": "string",
-				                    "description": "File path to delete (relative to shared directory, rootPlanId/shared/)"
+				                    "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
 				                }
 				            },
 				            "required": ["action", "file_path"],
@@ -921,7 +891,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				                },
 				                "file_path": {
 				                    "type": "string",
-				                    "description": "Directory path to list within shared directory (optional, defaults to shared root)"
+				                    "description": "Relative directory path to list (optional, defaults to root, e.g., 'subdir' or empty for root)"
 				                }
 				            },
 				            "required": ["action"],
@@ -936,7 +906,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				                },
 				                "file_path": {
 				                    "type": "string",
-				                    "description": "File path to operate on"
+				                    "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
 				                },
 				                "source_text": {
 				                    "type": "string",
@@ -959,7 +929,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				               },
 				               "file_path": {
 				                   "type": "string",
-				                   "description": "File path to read"
+				                   "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
 				               },
 				               "start_line": {
 				                   "type": "integer",
@@ -982,7 +952,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				               },
 				               "file_path": {
 				                   "type": "string",
-				                   "description": "File path to read all content"
+				                   "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
 				               }
 				           },
 				           "required": ["action", "file_path"],
@@ -997,11 +967,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				                },
 				                "file_path": {
 				                    "type": "string",
-				                    "description": "File path to operate on"
+				                    "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
 				                },
 				                "content": {
 				                    "type": "string",
-				                    "description": "Content to append to the shared file"
+				                    "description": "Content to append to the file"
 				                }
 				            },
 				            "required": ["action", "file_path", "content"],
@@ -1016,7 +986,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				                },
 				                "file_path": {
 				                    "type": "string",
-				                    "description": "File path to count words in"
+				                    "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
 				                }
 				            },
 				            "required": ["action", "file_path"],
@@ -1031,7 +1001,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 				                },
 				                "file_path": {
 				                    "type": "string",
-				                    "description": "File path to search in"
+				                    "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
 				                },
 				                "pattern": {
 				                    "type": "string",

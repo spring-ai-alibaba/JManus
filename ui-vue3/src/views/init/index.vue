@@ -290,11 +290,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  LOCAL_STORAGE_LOCALE,
-  changeLanguageWithAgentReset,
-  initializePlanTemplates,
-} from '@/base/i18n'
+import { LOCAL_STORAGE_LOCALE, changeLanguageWithAgentReset } from '@/base/i18n'
 import { LlmCheckService } from '@/utils/llm-check'
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, ref } from 'vue'
@@ -352,17 +348,6 @@ const goToNextStep = async () => {
 
       // Use changeLanguageWithAgentReset function to switch language and reset agents
       await changeLanguageWithAgentReset(selectedLanguage.value)
-
-      // Initialize plan templates with the selected language (automatically discovers all plan names)
-      try {
-        await initializePlanTemplates(selectedLanguage.value)
-        console.log('Plan templates initialized successfully')
-      } catch (planTemplateErr: unknown) {
-        const errorMessage =
-          planTemplateErr instanceof Error ? planTemplateErr.message : String(planTemplateErr)
-        console.warn('Failed to initialize plan templates:', errorMessage)
-        // Continue even if plan template initialization fails
-      }
 
       // Move to next step
       currentStep.value = 2

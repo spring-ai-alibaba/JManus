@@ -15,11 +15,13 @@
  */
 package com.alibaba.cloud.ai.manus.workspace.conversation.entity.vo;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.ai.chat.messages.Message;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Memory value object representing conversation memory information Simple structure for
@@ -38,6 +40,19 @@ public class Memory {
 	@JsonProperty("create_time")
 	private LocalDateTime createTime;
 
+	/**
+	 * List of root plan IDs associated with this conversation Used for retrieving
+	 * conversation history from plan execution records
+	 */
+	@JsonProperty("root_plan_ids")
+	private List<String> rootPlanIds = new ArrayList<>();
+
+	/**
+	 * @deprecated This field is kept for backward compatibility but is no longer used.
+	 * Use rootPlanIds to retrieve conversation history from plan execution records
+	 * instead.
+	 */
+	@Deprecated
 	private List<Message> messages;
 
 	// Constructors
@@ -90,10 +105,28 @@ public class Memory {
 		this.createTime = createTime;
 	}
 
+	public List<String> getRootPlanIds() {
+		return rootPlanIds;
+	}
+
+	public void setRootPlanIds(List<String> rootPlanIds) {
+		this.rootPlanIds = rootPlanIds;
+	}
+
+	/**
+	 * @deprecated This method is kept for backward compatibility. Use getRootPlanIds()
+	 * instead.
+	 */
+	@Deprecated
 	public List<Message> getMessages() {
 		return messages;
 	}
 
+	/**
+	 * @deprecated This method is kept for backward compatibility. Use setRootPlanIds()
+	 * instead.
+	 */
+	@Deprecated
 	public void setMessages(List<Message> messages) {
 		this.messages = messages;
 	}

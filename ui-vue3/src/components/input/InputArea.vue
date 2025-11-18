@@ -83,25 +83,29 @@
 </template>
 
 <script setup lang="ts">
-import { CoordinatorToolApiService } from '@/api/coordinator-tool-api-service'
 import { FileInfo } from '@/api/file-upload-api-service'
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
-import type { InputMessage } from '@/stores/memory'
+import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
+import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { memoryStore } from '@/stores/memory'
+import { sidebarStore } from '@/stores/sidebar'
 import { useTaskStore } from '@/stores/task'
+import type { InputMessage } from '@/types/message-dialog'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const taskStore = useTaskStore()
+const templateConfig = usePlanTemplateConfigSingleton()
+const messageDialog = useMessageDialogSingleton()
+const planExecution = usePlanExecutionSingleton()
 
 // Track if task is running
 const isTaskRunning = computed(() => taskStore.hasRunningTask())
 
 interface Props {
-  placeholder?: string
-  disabled?: boolean
   initialValue?: string
   selectionOptions?: Array<{ value: string; label: string }>
 }
@@ -115,16 +119,10 @@ interface InnerToolOption {
 }
 
 interface Emits {
-  (e: 'send', message: InputMessage): void
-  (e: 'clear'): void
-  (e: 'update-state', enabled: boolean, placeholder?: string): void
-  (e: 'plan-mode-clicked'): void
   (e: 'selection-changed', value: string): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: '',
-  disabled: false,
   initialValue: '',
   selectionOptions: () => [],
 })
@@ -134,20 +132,43 @@ const emit = defineEmits<Emits>()
 const inputRef = ref<HTMLTextAreaElement>()
 const fileUploadRef = ref<InstanceType<typeof FileUploadComponent>>()
 const currentInput = ref('')
-const defaultPlaceholder = computed(() => props.placeholder || t('input.placeholder'))
-const currentPlaceholder = ref(defaultPlaceholder.value)
+const defaultPlaceholder = computed(() => t('input.placeholder'))
+const fileUploadPlaceholder = ref<string | null>(null)
+const currentPlaceholder = computed(() => {
+  // Priority: messageDialog inputPlaceholder > fileUploadPlaceholder > default
+  if (messageDialog.inputPlaceholder.value) {
+    return messageDialog.inputPlaceholder.value
+  }
+  if (fileUploadPlaceholder.value) {
+    return fileUploadPlaceholder.value
+  }
+  return defaultPlaceholder.value
+})
 const uploadedFiles = ref<string[]>([])
 const uploadKey = ref<string | null>(null)
 const selectedOption = ref('')
 const innerToolOptions = ref<InnerToolOption[]>([])
 const isLoadingTools = ref(false)
 
+// History management
+const HISTORY_STORAGE_KEY = 'chatInputHistory'
+const MAX_HISTORY_SIZE = 20
+const inputHistory = ref<string[]>([])
+const historyIndex = ref(-1) // -1 means not browsing history
+const originalInputBeforeHistory = ref('') // Store original input when starting to browse history
+
+// Detect operating system for platform-specific shortcuts
+const isMac = computed(() => {
+  if (typeof window === 'undefined') return false
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform) || /Mac/.test(navigator.userAgent)
+})
+
 // Load inner tools with single parameter
 const loadInnerTools = async () => {
   isLoadingTools.value = true
   try {
-    console.log('[InputArea] Loading inner tools...')
-    const allTools = await CoordinatorToolApiService.getAllCoordinatorTools()
+    console.log('[InputArea] Loading inner tools from planTemplateList...')
+    const allTools = templateConfig.getAllCoordinatorToolsFromTemplates()
 
     // Filter tools: enableInternalToolcall=true and exactly one parameter
     const filteredTools: InnerToolOption[] = []
@@ -219,9 +240,125 @@ watch(selectedOption, newValue => {
   localStorage.setItem('inputAreaSelectedTool', newValue || '')
 })
 
+// History management functions
+const loadHistory = () => {
+  try {
+    const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
+    if (stored) {
+      inputHistory.value = JSON.parse(stored)
+    }
+  } catch (error) {
+    console.error('[InputArea] Failed to load history:', error)
+    inputHistory.value = []
+  }
+}
+
+const saveHistory = () => {
+  try {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(inputHistory.value))
+  } catch (error) {
+    console.error('[InputArea] Failed to save history:', error)
+  }
+}
+
+const saveToHistory = (input: string) => {
+  if (!input.trim()) return
+
+  // Remove duplicate if exists
+  const index = inputHistory.value.indexOf(input)
+  if (index !== -1) {
+    inputHistory.value.splice(index, 1)
+  }
+
+  // Add to the beginning
+  inputHistory.value.unshift(input)
+
+  // Keep only the last MAX_HISTORY_SIZE items
+  if (inputHistory.value.length > MAX_HISTORY_SIZE) {
+    inputHistory.value = inputHistory.value.slice(0, MAX_HISTORY_SIZE)
+  }
+
+  saveHistory()
+}
+
+const navigateHistory = (direction: number) => {
+  if (inputHistory.value.length === 0) return
+
+  // If starting to browse history, save current input
+  if (historyIndex.value === -1) {
+    originalInputBeforeHistory.value = currentInput.value
+  }
+
+  // Calculate new index
+  let newIndex = historyIndex.value + direction
+
+  if (newIndex < -1) {
+    newIndex = -1
+  } else if (newIndex >= inputHistory.value.length) {
+    newIndex = inputHistory.value.length - 1
+  }
+
+  historyIndex.value = newIndex
+
+  // Update input based on history index
+  if (historyIndex.value === -1) {
+    // Restore original input
+    currentInput.value = originalInputBeforeHistory.value
+    originalInputBeforeHistory.value = ''
+  } else {
+    currentInput.value = inputHistory.value[historyIndex.value]
+  }
+
+  adjustInputHeight()
+}
+
 // Load inner tools on mount
+// Watch for planTemplateList changes to reload tools
+watch(
+  () => templateConfig.planTemplateList.value,
+  () => {
+    // Reload tools when planTemplateList changes
+    console.log('[InputArea] planTemplateList changed, reloading inner tools')
+    loadInnerTools()
+  },
+  { deep: true }
+)
+
 onMounted(() => {
   loadInnerTools()
+  loadHistory()
+
+  // Watch for plan completion to reset session (reactive approach)
+  watch(
+    () => planExecution.planExecutionRecords,
+    records => {
+      // Check if any tracked plan is completed
+      for (const planDetails of records.values()) {
+        if (planDetails.completed) {
+          console.log('[InputArea] Plan completed, resetting session')
+          resetSession()
+          // Only reset once per completion
+          break
+        }
+      }
+    },
+    { deep: true }
+  )
+
+  // Watch for taskToInput changes and set input value automatically
+  watch(
+    () => taskStore.taskToInput,
+    newTaskToInput => {
+      if (newTaskToInput?.trim()) {
+        console.log('[InputArea] taskToInput changed, setting input value:', newTaskToInput)
+        nextTick(() => {
+          setInputValue(newTaskToInput.trim())
+          taskStore.getAndClearTaskToInput()
+        })
+      }
+    },
+    { immediate: false }
+  )
 })
 
 // Function to reset session when starting a new conversation session
@@ -242,7 +379,7 @@ const handleFilesUploaded = (files: FileInfo[], key: string | null) => {
 
   // Update placeholder to show files are attached
   if (uploadedFiles.value.length > 0) {
-    currentPlaceholder.value = t('input.filesAttached', { count: uploadedFiles.value.length })
+    fileUploadPlaceholder.value = t('input.filesAttached', { count: uploadedFiles.value.length })
   }
 }
 
@@ -252,9 +389,9 @@ const handleFilesRemoved = (files: FileInfo[]) => {
 
   // Update placeholder
   if (uploadedFiles.value.length === 0) {
-    currentPlaceholder.value = defaultPlaceholder.value
+    fileUploadPlaceholder.value = null
   } else {
-    currentPlaceholder.value = t('input.filesAttached', { count: uploadedFiles.value.length })
+    fileUploadPlaceholder.value = t('input.filesAttached', { count: uploadedFiles.value.length })
   }
 }
 
@@ -275,8 +412,8 @@ const handleUploadError = (error: unknown) => {
   console.error('[InputArea] Upload error:', error)
 }
 
-// Computed property to ensure 'disabled' is a boolean type
-const isDisabled = computed(() => Boolean(props.disabled))
+// Computed property for disabled state - use messageDialog isLoading
+const isDisabled = computed(() => messageDialog.isLoading.value)
 
 const adjustInputHeight = () => {
   nextTick(() => {
@@ -288,9 +425,42 @@ const adjustInputHeight = () => {
 }
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter' && !event.shiftKey) {
+  // Ctrl+Enter (Windows/Linux) or Cmd+Enter (Mac) to send
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault()
     handleSend()
+    return
+  }
+
+  // Platform-specific history navigation:
+  // Mac: Option+ArrowUp/Down
+  // Windows/Linux: Ctrl+ArrowUp/Down
+  // ArrowUp: go to newer (index 0, 1, 2...)
+  // ArrowDown: go to older (index -1, then older items)
+  const historyModifier = isMac.value ? event.altKey : event.ctrlKey
+
+  if (event.key === 'ArrowUp' && historyModifier) {
+    event.preventDefault()
+    navigateHistory(1) // Go to newer (next in history array)
+    return
+  }
+
+  if (event.key === 'ArrowDown' && historyModifier) {
+    event.preventDefault()
+    navigateHistory(-1) // Go to older (previous in history array)
+    return
+  }
+
+  // If user starts typing while browsing history, reset history index
+  if (
+    historyIndex.value !== -1 &&
+    event.key.length === 1 &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey
+  ) {
+    historyIndex.value = -1
+    originalInputBeforeHistory.value = ''
   }
 }
 
@@ -298,6 +468,13 @@ const handleSend = async () => {
   if (!currentInput.value.trim() || isDisabled.value) return
 
   const finalInput = currentInput.value.trim()
+
+  // Save to history before sending
+  saveToHistory(finalInput)
+
+  // Reset history browsing state
+  historyIndex.value = -1
+  originalInputBeforeHistory.value = ''
 
   // Prepare query with tool information if selected
   const query: InputMessage = {
@@ -320,7 +497,6 @@ const handleSend = async () => {
 
     if (selectedTool) {
       // Add tool information to query for backend processing
-      // This will be handled by handleChatSendMessage which will call executeByToolName
       const extendedQuery = query as InputMessage & {
         toolName?: string
         replacementParams?: Record<string, string>
@@ -333,16 +509,25 @@ const handleSend = async () => {
     }
   }
 
-  // Use Vue's emit to send a message (this will trigger handleChatSendMessage which shows assistant message)
-  emit('send', query)
+  // Call sendMessage from useMessageDialog directly
+  try {
+    await messageDialog.sendMessage(query)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('[InputArea] Send message failed:', errorMessage)
+  }
 
   // Clear the input but keep uploaded files and uploadKey for follow-up conversations
   clearInput()
 }
 
 const handlePlanModeClick = () => {
-  // Trigger the plan mode toggle event
-  emit('plan-mode-clicked')
+  // Toggle sidebar display state
+  sidebarStore.toggleSidebar()
+  console.log(
+    '[InputArea] Plan mode button clicked, sidebar toggled, isCollapsed:',
+    sidebarStore.isCollapsed
+  )
 }
 
 const handleStop = async () => {
@@ -361,7 +546,6 @@ const handleStop = async () => {
 const clearInput = () => {
   currentInput.value = ''
   adjustInputHeight()
-  emit('clear')
 }
 
 /**
@@ -370,10 +554,8 @@ const clearInput = () => {
  * @param {string} [placeholder] - Placeholder text when enabled
  */
 const updateState = (enabled: boolean, placeholder?: string) => {
-  if (placeholder) {
-    currentPlaceholder.value = enabled ? placeholder : t('input.waiting')
-  }
-  emit('update-state', enabled, placeholder)
+  // Update state in useMessageDialog (which will update inputPlaceholder)
+  messageDialog.updateInputState(enabled, placeholder)
 }
 
 /**
@@ -405,13 +587,11 @@ watch(
   { immediate: true }
 )
 
-// Expose methods to the parent component
+// Expose methods to the parent component (if needed)
 defineExpose({
   clearInput,
   updateState,
-  setInputValue,
   getQuery,
-  resetSession,
   focus: () => inputRef.value?.focus(),
   get uploadedFiles() {
     return fileUploadRef.value?.uploadedFiles?.map(f => f.originalName) || []
@@ -419,14 +599,6 @@ defineExpose({
   get uploadKey() {
     return fileUploadRef.value?.uploadKey || null
   },
-})
-
-onMounted(() => {
-  // Initialization logic after component mounting
-})
-
-onUnmounted(() => {
-  // Cleanup logic before component unmounting
 })
 </script>
 
@@ -474,10 +646,15 @@ onUnmounted(() => {
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
 
 .selection-input {
-  flex-shrink: 0;
+  flex-shrink: 1;
+  flex-basis: auto;
+  min-width: 0;
+  max-width: calc(100% - 200px);
   padding: 6px 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
@@ -491,6 +668,7 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  box-sizing: border-box;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);

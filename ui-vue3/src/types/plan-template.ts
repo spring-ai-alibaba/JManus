@@ -49,3 +49,47 @@ export interface PlanTemplateEvents {
   configTabClosed: []
   planExecutionRequested: [payload: PlanExecutionRequestPayload]
 }
+
+// Plan template configuration types
+export interface InputSchemaParam {
+  name: string
+  description: string
+  type: string
+  required?: boolean
+}
+
+export interface ToolConfigVO {
+  toolDescription?: string
+  enableInternalToolcall?: boolean
+  enableHttpService?: boolean
+  enableMcpService?: boolean
+  publishStatus?: string
+  inputSchema?: InputSchemaParam[]
+}
+
+export interface StepConfig {
+  stepRequirement?: string
+  agentName?: string
+  modelName?: string
+  terminateColumns?: string
+  selectedToolKeys?: string[]
+}
+
+export interface PlanTemplateConfigVO {
+  title?: string
+  steps?: StepConfig[]
+  directResponse?: boolean
+  planType?: string
+  planTemplateId?: string
+  readOnly?: boolean
+  serviceGroup?: string
+  toolConfig?: ToolConfigVO
+  createTime?: string
+  updateTime?: string
+}
+
+export interface CreateOrUpdatePlanTemplateWithToolResponse {
+  success: boolean
+  planTemplateId: string
+  toolRegistered: boolean
+}

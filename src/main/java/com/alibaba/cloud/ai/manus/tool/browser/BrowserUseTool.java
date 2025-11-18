@@ -40,8 +40,10 @@ import com.alibaba.cloud.ai.manus.tool.browser.actions.RefreshAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.ScreenShotAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.ScrollAction;
 import com.alibaba.cloud.ai.manus.tool.browser.actions.SwitchTabAction;
+import com.alibaba.cloud.ai.manus.tool.browser.actions.WriteCurrentWebContentAction;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
+import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.PlaywrightException;
@@ -57,11 +59,18 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	private final ObjectMapper objectMapper;
 
+	private final com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService;
+
+	private final TextFileService textFileService;
+
 	public BrowserUseTool(ChromeDriverService chromeDriverService, SmartContentSavingService innerStorageService,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper, com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService,
+			TextFileService textFileService) {
 		this.chromeDriverService = chromeDriverService;
 		this.innerStorageService = innerStorageService;
 		this.objectMapper = objectMapper;
+		this.shortUrlService = shortUrlService;
+		this.textFileService = textFileService;
 	}
 
 	public DriverWrapper getDriver() {
@@ -93,9 +102,19 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 	private volatile boolean hasRunAtLeastOnce = false;
 
 	public static synchronized BrowserUseTool getInstance(ChromeDriverService chromeDriverService,
-			SmartContentSavingService innerStorageService, ObjectMapper objectMapper) {
-		BrowserUseTool instance = new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper);
+			SmartContentSavingService innerStorageService, ObjectMapper objectMapper,
+			com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService shortUrlService, TextFileService textFileService) {
+		BrowserUseTool instance = new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper,
+				shortUrlService, textFileService);
 		return instance;
+	}
+
+	/**
+	 * Get ShortUrlService instance
+	 * @return ShortUrlService
+	 */
+	public com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService getShortUrlService() {
+		return shortUrlService;
 	}
 
 	public ToolExecuteResult run(BrowserRequestVO requestVO) {
@@ -213,6 +232,12 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 					}
 					case "move_to_and_click": {
 						result = executeActionWithRetry(() -> new MoveToAndClickAction(this).execute(requestVO),
+								action);
+						break;
+					}
+					case "write_current_web_snapshot": {
+						result = executeActionWithRetry(
+								() -> new WriteCurrentWebContentAction(this, textFileService).execute(requestVO),
 								action);
 						break;
 					}
@@ -379,14 +404,38 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 			// getting information during navigation
 			try {
 				Integer timeout = getBrowserTimeout();
+				// First wait for DOM content loaded
 				page.waitForLoadState(com.microsoft.playwright.options.LoadState.DOMCONTENTLOADED,
 						new Page.WaitForLoadStateOptions().setTimeout(timeout * 1000));
+				// Then wait for network idle to ensure all AJAX requests and dynamic
+				// content updates are complete
+				// This is especially important after actions like key_enter that trigger
+				// searches
+				try {
+					page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE,
+							new Page.WaitForLoadStateOptions().setTimeout(3000)); // 3
+																					// second
+																					// timeout
+																					// for
+																					// network
+																					// idle
+				}
+				catch (TimeoutError e) {
+					// If network idle timeout, wait a bit more for dynamic content to
+					// update
+					log.debug("Network idle timeout, waiting for content updates: {}", e.getMessage());
+					Thread.sleep(1000); // Wait 1 second for content to update
+				}
 			}
 			catch (TimeoutError e) {
 				log.warn("Page load state wait timeout, continuing anyway: {}", e.getMessage());
 			}
 			catch (PlaywrightException e) {
 				log.warn("Playwright error waiting for load state, continuing anyway: {}", e.getMessage());
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				log.warn("Interrupted while waiting for page load");
 			}
 			catch (Exception loadException) {
 				log.warn("Unexpected error waiting for load state, continuing anyway: {}", loadException.getMessage());
@@ -424,25 +473,31 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				state.put("tabs", List.of(Map.of("error", "Failed to get tabs: " + e.getMessage())));
 			}
 
+			// Wait a bit more before generating ARIA snapshot to ensure all dynamic
+			// content
+			// (like search results) is fully rendered
+			try {
+				Thread.sleep(500); // Additional wait for content rendering
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				log.warn("Interrupted while waiting for content rendering");
+			}
+
 			// Generate ARIA snapshot using the new AriaSnapshot utility with error
 			// handling
 			try {
 				AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
 					.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
-				DriverWrapper driver = getDriver();
-				AriaElementHolder ariaElementHolder = driver.getAriaElementHolder();
-				if (ariaElementHolder != null) {
-					String snapshot = ariaElementHolder.parsePageAndAssignRefs(page, snapshotOptions);
-					if (snapshot != null && !snapshot.trim().isEmpty()) {
-						state.put("interactive_elements", snapshot);
-					}
-					else {
-						state.put("interactive_elements", "No interactive elements found or snapshot is empty");
-					}
+
+				// Use compressUrl = true to enable URL compression
+				String snapshot = AriaElementHelper.parsePageAndAssignRefs(page, snapshotOptions, true, shortUrlService,
+						rootPlanId);
+				if (snapshot != null && !snapshot.trim().isEmpty()) {
+					state.put("interactive_elements", snapshot);
 				}
 				else {
-					log.warn("ARIA element holder is not available");
-					state.put("interactive_elements", "ARIA element holder not available");
+					state.put("interactive_elements", "No interactive elements found or snapshot is empty");
 				}
 			}
 			catch (PlaywrightException e) {
@@ -485,13 +540,13 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				- 'input_text': Input text in element
 				- 'key_enter': Press Enter key
 				- 'screenshot': Capture screenshot
-				- 'get_text': Get text content of current whole page text content, including all frames and nested elements.
 				- 'execute_js': Execute JavaScript code
 				- 'scroll': Scroll page up/down
 				- 'refresh': Refresh current page
 				- 'new_tab': Open new tab with specified URL
 				- 'close_tab': Close current tab
 				- 'switch_tab': Switch to specific tab
+				- 'write_current_web_snapshot': Write current page ARIA snapshot to a file named after the page title
 
 				Note: Browser operations have timeout configuration, default is 30 seconds.
 				""";
@@ -583,17 +638,6 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				            "properties": {
 				                "action": {
 				                    "type": "string",
-				                    "const": "get_text"
-				                }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				      },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
 				                    "const": "execute_js"
 				                },
 				                "script": {
@@ -671,6 +715,17 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				                "action": {
 				                    "type": "string",
 				                    "const": "refresh"
+				                }
+				            },
+				            "required": ["action"],
+				            "additionalProperties": false
+				        },
+				        {
+				            "type": "object",
+				            "properties": {
+				                "action": {
+				                    "type": "string",
+				                    "const": "write_current_web_snapshot"
 				                }
 				            },
 				            "required": ["action"],

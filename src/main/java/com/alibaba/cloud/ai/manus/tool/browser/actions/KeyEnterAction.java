@@ -18,6 +18,7 @@ package com.alibaba.cloud.ai.manus.tool.browser.actions;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 
 public class KeyEnterAction extends BrowserAction {
 
@@ -47,8 +48,22 @@ public class KeyEnterAction extends BrowserAction {
 			// Press Enter with explicit timeout
 			locator.press("Enter", new Locator.PressOptions().setTimeout(getBrowserTimeoutMs()));
 
-			// Add small delay to ensure the action is processed
-			Thread.sleep(500);
+			// Wait for page to process the action and update content
+			// This is especially important for search actions that trigger AJAX requests
+			Page page = getCurrentPage();
+			try {
+				// Wait for network idle to ensure search requests complete
+				page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE,
+						new com.microsoft.playwright.Page.WaitForLoadStateOptions().setTimeout(3000));
+			}
+			catch (com.microsoft.playwright.TimeoutError e) {
+				// If network idle timeout, wait a bit more for content to update
+				Thread.sleep(1000);
+			}
+			catch (Exception e) {
+				// If any error, wait a short time anyway
+				Thread.sleep(500);
+			}
 
 		}
 		catch (com.microsoft.playwright.TimeoutError e) {

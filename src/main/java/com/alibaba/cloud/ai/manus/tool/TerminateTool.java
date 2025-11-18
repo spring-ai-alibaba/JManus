@@ -139,19 +139,7 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 
 	@Override
 	public String getCurrentToolStateString() {
-		return String.format("""
-				Termination Tool Status:
-				- Current State: %s
-				- Last Termination: %s
-				- Termination Message: %s
-				- Timestamp: %s
-				- Plan ID: %s
-				- Expected Return Info: %s
-				""", isTerminated ? "🛑 Terminated" : "⚡ Active",
-				isTerminated ? "Process was terminated" : "No termination recorded",
-				lastTerminationMessage.isEmpty() ? "N/A" : lastTerminationMessage,
-				terminationTimestamp.isEmpty() ? "N/A" : terminationTimestamp,
-				currentPlanId != null ? currentPlanId : "N/A", expectedReturnInfo != null ? expectedReturnInfo : "N/A");
+		return "";
 	}
 
 	public TerminateTool(String planId, String expectedReturnInfo) {

@@ -110,14 +110,15 @@ public class DynamicAgentExecutionPlan extends AbstractExecutionPlan {
 	public String getPlanExecutionStateStringFormat(boolean onlyCompletedAndFirstInProgress) {
 		StringBuilder state = new StringBuilder();
 
-		state.append(
-				"- User Original Requirements (This requirement is the user's initial input, information can be referenced, but in the current interaction round only the current step requirements need to be completed!) :\n");
-		state.append(title).append("\n");
-		if (getUserRequest() != null && !getUserRequest().isEmpty()) {
-			state.append("").append(getUserRequest()).append("\n\n");
-		}
+		// state.append("- User Original Request :\n");
+		// if (getTitle() != null && !getTitle().isEmpty()) {
+		// state.append(getTitle()).append("\n\n");
+		// }
+		// else {
+		// state.append("\n");
+		// }
 
-		state.append("\n- Execution Parameters: ").append("\n");
+		state.append("- Execution Parameters: ").append("\n");
 		if (executionParams != null && !executionParams.isEmpty()) {
 			state.append(executionParams).append("\n\n");
 		}
@@ -178,7 +179,7 @@ public class DynamicAgentExecutionPlan extends AbstractExecutionPlan {
 				.append("    *   **Status:** ")
 				.append(symbol)
 				.append("\n")
-				.append("    *   **Action:** ")
+				.append("    *   **UserRequest:** ")
 				.append(step.getStepRequirement())
 				.append("\n");
 

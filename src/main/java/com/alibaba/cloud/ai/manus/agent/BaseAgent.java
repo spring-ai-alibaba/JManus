@@ -81,6 +81,8 @@ public abstract class BaseAgent {
 
 	private int planDepth = 0;
 
+	private String conversationId = null;
+
 	protected LlmService llmService;
 
 	protected final ManusProperties manusProperties;
@@ -200,8 +202,8 @@ public abstract class BaseAgent {
 
 				{planStatus}
 
-				- Current step requirements (this step needs to be completed by you! Required by the user's original request, but if not required in the current step, no need to complete in this step):
-				STEP {currentStepIndex}: {stepText}
+				- Current step requirements :
+				{stepText}
 
 				- Operation step instructions:
 				{extraParams}
@@ -210,7 +212,6 @@ public abstract class BaseAgent {
 				{detailOutput}
 				3. Do only and exactly what is required in the current step requirements
 				4. If the current step requirements have been completed, call the terminate tool to finish the current step.
-				5. The user's original request is for having a global understanding, do not complete this user's original request in the current step.
 
 				{parallelToolCallsResponse}
 
@@ -458,6 +459,14 @@ public abstract class BaseAgent {
 
 	public void setPlanDepth(int planDepth) {
 		this.planDepth = planDepth;
+	}
+
+	public String getConversationId() {
+		return conversationId;
+	}
+
+	public void setConversationId(String conversationId) {
+		this.conversationId = conversationId;
 	}
 
 	/**

@@ -19,19 +19,8 @@
       <Icon icon="carbon:code" width="16" />
       <span>{{ $t('sidebar.dynamicAgentPlan') }}</span>
     </div>
-    <!-- Error Display -->
-    <div v-if="planTypeError" class="error-section">
-      <div class="error-message">
-        <Icon icon="carbon:warning" width="16" />
-        <div class="error-content">
-          <div class="error-title">{{ $t('sidebar.planTypeError') }}</div>
-          <div class="error-description">{{ planTypeError }}</div>
-        </div>
-      </div>
-    </div>
-
     <!-- Visual JSON Editor -->
-    <div v-else class="visual-editor">
+    <div class="visual-editor">
       <!-- Plan Basic Info -->
       <div class="plan-basic-info">
         <div class="form-row">
@@ -50,71 +39,57 @@
           </div>
         </div>
 
-        <!-- Plan Template ID (Read-only) -->
+        <!-- Service Group -->
         <div class="form-row">
-          <label class="form-label">{{ $t('sidebar.planTemplateId') }}</label>
-          <input
-            :value="currentPlanTemplateId"
-            type="text"
-            class="form-input readonly-input"
-            readonly
-            :placeholder="$t('sidebar.planTemplateIdPlaceholder')"
-          />
+          <label class="form-label">{{ $t('mcpService.serviceGroup') }}</label>
+          <div class="service-group-autocomplete">
+            <input
+              type="text"
+              v-model="serviceGroup"
+              @input="handleServiceGroupInput"
+              @focus="showGroupSuggestions = true"
+              @blur="handleServiceGroupBlur"
+              :placeholder="$t('mcpService.serviceGroupPlaceholder')"
+              class="form-input"
+            />
+            <!-- Filtered group suggestions dropdown -->
+            <div
+              v-if="showGroupSuggestions && filteredServiceGroups.length > 0"
+              class="service-group-dropdown"
+            >
+              <div
+                v-for="group in filteredServiceGroups"
+                :key="group"
+                class="service-group-option"
+                @mousedown="selectServiceGroup(group)"
+              >
+                {{ group }}
+              </div>
+            </div>
+          </div>
+          <div class="field-description">{{ $t('mcpService.serviceGroupDescription') }}</div>
         </div>
       </div>
 
       <!-- Steps Editor -->
       <div class="steps-section">
-        <div class="steps-header">
-          <label class="form-label">{{ $t('sidebar.tasks') }}</label>
-          <div class="steps-actions">
-            <button @click="addStep" class="btn btn-xs" :title="$t('sidebar.addStep')">
-              <Icon icon="carbon:add" width="12" />
-            </button>
-          </div>
-        </div>
-
         <div class="steps-container">
           <div v-for="(step, index) in displayData.steps" :key="index" class="step-item">
-            <div class="step-header">
-              <span class="step-number">{{ $t('sidebar.subtask') }} {{ index + 1 }}</span>
-              <div class="step-actions">
-                <button
-                  @click="moveStepUp(index)"
-                  :disabled="index === 0"
-                  class="btn btn-xs"
-                  :title="$t('sidebar.moveUp')"
-                >
-                  <Icon icon="carbon:chevron-up" width="12" />
-                </button>
-                <button
-                  @click="moveStepDown(index)"
-                  :disabled="index === displayData.steps.length - 1"
-                  class="btn btn-xs"
-                  :title="$t('sidebar.moveDown')"
-                >
-                  <Icon icon="carbon:chevron-down" width="12" />
-                </button>
-                <button
-                  @click="removeStep(index)"
-                  class="btn btn-xs btn-danger"
-                  :title="$t('sidebar.removeStep')"
-                >
-                  <Icon icon="carbon:trash-can" width="12" />
-                </button>
-              </div>
-            </div>
-
             <div class="step-content">
               <!-- Step Requirement -->
               <div class="form-row">
                 <label class="form-label">{{ $t('sidebar.stepRequirement') }}</label>
                 <textarea
-                  v-model="step.stepRequirement"
+                  :value="step.stepRequirement || ''"
+                  @input="
+                    e => {
+                      step.stepRequirement = (e.target as HTMLTextAreaElement).value
+                      autoResizeTextarea(e)
+                    }
+                  "
                   class="form-textarea auto-resize"
                   :placeholder="$t('sidebar.stepRequirementPlaceholder')"
                   rows="4"
-                  @input="autoResizeTextarea($event)"
                 ></textarea>
               </div>
 
@@ -123,11 +98,16 @@
                 <label class="form-label">{{ $t('sidebar.terminateColumns') }}</label>
 
                 <textarea
-                  v-model="step.terminateColumns"
+                  :value="step.terminateColumns || ''"
+                  @input="
+                    e => {
+                      step.terminateColumns = (e.target as HTMLTextAreaElement).value
+                      autoResizeTextarea(e)
+                    }
+                  "
                   class="form-textarea auto-resize"
                   :placeholder="$t('sidebar.terminateColumnsPlaceholder')"
                   rows="4"
-                  @input="autoResizeTextarea($event)"
                 ></textarea>
 
                 <!-- Preview Section -->
@@ -272,8 +252,7 @@
               <div class="form-row">
                 <AssignedTools
                   :title="$t('sidebar.selectedTools')"
-                  :selected-tool-ids="step.selectedToolKeys"
-                  :available-tools="sidebarStore.availableTools"
+                  :selected-tool-ids="(step as StepConfigWithTools).selectedToolKeys || []"
                   :add-button-text="$t('sidebar.addRemoveTools')"
                   :empty-text="$t('sidebar.noTools')"
                   :use-grid-layout="true"
@@ -288,10 +267,10 @@
 
           <!-- Empty State -->
           <div v-if="displayData.steps.length === 0" class="empty-steps">
-            <Icon icon="carbon:add-alt" width="32" class="empty-icon" />
-            <p>{{ $t('sidebar.noSteps') }}</p>
-            <button @click="addStep" class="btn btn-primary">
-              <Icon icon="carbon:add" width="14" />
+            <Icon icon="carbon:add-alt" width="48" class="empty-icon" />
+            <p class="empty-text">{{ $t('sidebar.noSteps') }}</p>
+            <button class="btn btn-primary btn-add-step" @click="handleAddStep">
+              <Icon icon="carbon:add" width="16" />
               {{ $t('sidebar.addFirstStep') }}
             </button>
           </div>
@@ -306,7 +285,7 @@
             <Icon icon="carbon:close" width="12" />
           </button>
         </div>
-        <pre class="json-code">{{ formattedJsonOutput }}</pre>
+        <pre class="json-code">{{ generatedJsonOutput }}</pre>
       </div>
 
       <!-- Toggle JSON Preview -->
@@ -328,7 +307,7 @@
           <button
             class="btn btn-sm"
             @click="handleRollback"
-            :disabled="!(canRollback ?? false)"
+            :disabled="!templateConfig.canRollback.value"
             :title="$t('sidebar.rollback')"
           >
             <Icon icon="carbon:undo" width="14" />
@@ -336,7 +315,7 @@
           <button
             class="btn btn-sm"
             @click="handleRestore"
-            :disabled="!(canRestore ?? false)"
+            :disabled="!templateConfig.canRestore.value"
             :title="$t('sidebar.restore')"
           >
             <Icon icon="carbon:redo" width="14" />
@@ -356,75 +335,227 @@
     <!-- Tool Selection Modal -->
     <ToolSelectionModal
       v-model="showToolModal"
-      :tools="sidebarStore.availableTools"
       :selected-tool-ids="
-        currentStepIndex >= 0 ? displayData.steps[currentStepIndex]?.selectedToolKeys || [] : []
+        currentStepIndex >= 0
+          ? (displayData.steps[currentStepIndex] as StepConfigWithTools)?.selectedToolKeys || []
+          : []
       "
       @confirm="handleToolSelectionConfirm"
     />
+
+    <!-- Copy Plan Modal -->
+    <div v-if="showCopyPlanModal" class="modal-overlay" @click="closeCopyPlanModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>{{ $t('sidebar.copyPlan') }}</h3>
+          <button class="close-btn" @click="closeCopyPlanModal">
+            <Icon icon="carbon:close" width="16" />
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <label class="form-label">{{ $t('sidebar.newPlanTitle') }}</label>
+            <input
+              v-model="newPlanTitle"
+              type="text"
+              class="form-input"
+              :placeholder="$t('sidebar.enterNewPlanTitle')"
+              @keyup.enter="confirmCopyPlan"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeCopyPlanModal">
+            {{ $t('common.cancel') }}
+          </button>
+          <button
+            class="btn btn-primary"
+            @click="confirmCopyPlan"
+            :disabled="!newPlanTitle.trim() || isCopyingPlan"
+          >
+            <Icon v-if="isCopyingPlan" icon="carbon:loading" width="16" class="spinning" />
+            {{ isCopyingPlan ? $t('sidebar.copying') : $t('sidebar.copyPlan') }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ConfigApiService, type ModelOption } from '@/api/config-api-service'
+import { PlanTemplateApiService } from '@/api/plan-template-with-tool-api-service'
+import { ToolApiService } from '@/api/tool-api-service'
 import AssignedTools from '@/components/shared/AssignedTools.vue'
 import ToolSelectionModal from '@/components/tool-selection-modal/ToolSelectionModal.vue'
-import { sidebarStore } from '@/stores/sidebar'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import { useToast } from '@/plugins/useToast'
+import { templateStore } from '@/stores/templateStore'
+import type { PlanTemplateConfigVO, StepConfig } from '@/types/plan-template'
 import { Icon } from '@iconify/vue'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useJsonEditor, type JsonEditorProps } from './json-editor-logic'
+
+// Extended StepConfig with selectedToolKeys for UI state
+interface StepConfigWithTools extends StepConfig {
+  selectedToolKeys?: string[]
+}
 
 const { t } = useI18n()
+const toast = useToast()
 
 // Define props interface specific to JsonEditorV2
 interface JsonEditorV2Props {
-  jsonContent: string
-  canRollback: boolean
-  canRestore: boolean
-  isGenerating: boolean
-  isExecuting: boolean
-  currentPlanTemplateId: string
+  isGenerating?: boolean
+  isExecuting?: boolean
 }
 
 // Props
-const props = withDefaults(defineProps<JsonEditorV2Props>(), {
-  currentPlanTemplateId: '',
+const { isGenerating = false, isExecuting = false } = defineProps<JsonEditorV2Props>()
+
+// Get template config singleton
+const templateConfig = usePlanTemplateConfigSingleton()
+
+// Display data - sync with templateConfig
+const displayData = reactive<{
+  title: string
+  steps: StepConfigWithTools[]
+}>({
+  title: '',
+  steps: [],
 })
 
-// Emits
-const emit = defineEmits<{
-  rollback: []
-  restore: []
-  save: []
-  'copy-plan': []
-  'update:jsonContent': [value: string]
-}>()
+// JSON preview state
+const showJsonPreview = ref(false)
 
-// Create compatible props object for useJsonEditor
-const compatibleProps: JsonEditorProps = {
-  ...props,
-  hiddenFields: [],
+// Service group autocomplete state
+const showGroupSuggestions = ref(false)
+const availableServiceGroups = ref<string[]>([])
+const isLoadingGroups = ref(false)
+const serviceGroup = ref('')
+
+// Dynamically generate JSON output from templateConfig (not cached, regenerated each time)
+const generatedJsonOutput = computed(() => {
+  return templateConfig.generateJsonString()
+})
+
+// Sync displayData with templateConfig
+const syncDisplayDataFromConfig = () => {
+  const config = templateConfig.getConfig()
+  displayData.title = config.title || ''
+  displayData.steps = config.steps || []
+  // Sync service group
+  serviceGroup.value = config.serviceGroup || ''
 }
 
-const {
-  showJsonPreview,
-  displayData,
-  formattedJsonOutput,
-  addStep,
-  removeStep,
-  moveStepUp,
-  moveStepDown,
-  handleRollback,
-  handleRestore,
-  handleSave,
-  toggleJsonPreview,
-  closeJsonPreview,
-} = useJsonEditor(compatibleProps, emit)
+// Sync displayData changes back to templateConfig
+watch(
+  () => displayData,
+  () => {
+    // Update templateConfig when displayData changes
+    templateConfig.setTitle(displayData.title)
+    templateConfig.setSteps(displayData.steps)
+  },
+  { deep: true }
+)
+
+// JSON preview functions
+const toggleJsonPreview = () => {
+  showJsonPreview.value = !showJsonPreview.value
+}
+
+const closeJsonPreview = () => {
+  showJsonPreview.value = false
+}
+
+// Action handlers (moved from json-editor-logic.ts to usePlanTemplateConfig)
+const handleRollback = () => {
+  try {
+    templateConfig.rollbackVersion()
+  } catch (error) {
+    console.error('Error during rollback operation:', error)
+    toast.error(t('sidebar.rollbackFailed') || 'Rollback failed')
+  }
+}
+
+const handleRestore = () => {
+  try {
+    templateConfig.restoreVersion()
+  } catch (error) {
+    console.error('Error during restore operation:', error)
+    toast.error(t('sidebar.restoreFailed') || 'Restore failed')
+  }
+}
+
+const handleSave = async () => {
+  try {
+    if (!templateConfig.selectedTemplate.value) {
+      toast.error(t('sidebar.selectPlanFirst'))
+      return
+    }
+
+    // Validate config
+    const validation = templateConfig.validate()
+    if (!validation.isValid) {
+      toast.error(
+        'Invalid format, please correct and save.\nErrors: ' + validation.errors.join(', ')
+      )
+      return
+    }
+
+    const planTemplateId = templateConfig.selectedTemplate.value.planTemplateId
+    if (!planTemplateId) {
+      toast.error('Plan template ID is required')
+      return
+    }
+
+    // Save using templateConfig (this already calls PlanTemplateApiService.createOrUpdatePlanTemplateWithTool)
+    // The save() method already calls load() which reloads versions from backend
+    const success = await templateConfig.save()
+    if (!success) {
+      toast.error('Failed to save plan template')
+      return
+    }
+
+    // Update versions after save (adds current content to local version history)
+    const content = templateConfig.generateJsonString().trim()
+    templateConfig.updateVersionsAfterSave(content)
+
+    // Get actual version count after update (save() already reloaded versions from backend, then updateVersionsAfterSave adds one more)
+    const versionCount = templateConfig.planVersions.value.length
+
+    // Reset modification flag after successful save
+    templateStore.hasTaskRequirementModified = false
+
+    // Refresh sidebar template list to reflect the saved changes
+    await templateStore.loadPlanTemplateList()
+
+    toast.success(t('sidebar.saveSuccess', { message: 'Plan saved successfully', versionCount }))
+  } catch (error: unknown) {
+    console.error('Failed to save plan modifications:', error)
+    const message = error instanceof Error ? error.message : t('sidebar.saveFailed')
+    toast.error(message)
+    throw error // Re-throw to allow caller to handle
+  }
+}
 
 // Error state
-const planTypeError = ref<string | null>(null)
 const titleError = ref<string>('')
+
+// Add step handler
+const handleAddStep = () => {
+  const newStep: StepConfigWithTools = {
+    stepRequirement: '',
+    agentName: '',
+    modelName: '',
+    terminateColumns: '',
+    selectedToolKeys: [],
+  }
+  displayData.steps.push(newStep)
+  // Sync to templateConfig
+  templateConfig.setSteps(displayData.steps)
+  console.log('[JsonEditorV2] Added new step, total steps:', displayData.steps.length)
+}
 
 // Model selection state
 const availableModels = ref<ModelOption[]>([])
@@ -608,7 +739,7 @@ watch(
   { deep: true, immediate: true }
 )
 
-// Tool selection state - use sidebar store's availableTools
+// Tool selection state
 const showToolModal = ref(false)
 const currentStepIndex = ref<number>(-1)
 
@@ -631,13 +762,10 @@ const loadAvailableModels = async () => {
   }
 }
 
-// Available tools are now loaded from sidebar store
-
 // Tool selection functions
 const showToolSelectionModal = (stepIndex: number) => {
   currentStepIndex.value = stepIndex
   showToolModal.value = true
-  console.log('[JsonEditorV2] Available tools from store:', sidebarStore.availableTools)
 }
 
 const handleToolSelectionConfirm = (selectedToolIds: string[]) => {
@@ -656,112 +784,212 @@ const handleToolsFiltered = (stepIndex: number, filteredTools: string[]) => {
   }
 }
 
+// Copy plan state
+const showCopyPlanModal = ref(false)
+const newPlanTitle = ref('')
+const isCopyingPlan = ref(false)
+
 // Copy plan function
 const handleCopyPlan = () => {
-  emit('copy-plan')
+  console.log('[JsonEditorV2] Copy plan clicked')
+
+  if (!templateConfig.selectedTemplate.value) {
+    console.log('[JsonEditorV2] No template selected, cannot copy')
+    toast.error(t('sidebar.selectPlanFirst'))
+    return
+  }
+
+  newPlanTitle.value =
+    (templateConfig.selectedTemplate.value.title ?? t('sidebar.unnamedPlan')) + ' (copy)'
+  console.log('[JsonEditorV2] Opening copy plan modal')
+  showCopyPlanModal.value = true
 }
 
-// Initialize parsedData with default structure
-const initializeParsedData = () => {
-  try {
-    // Clear any previous errors
-    planTypeError.value = null
+const closeCopyPlanModal = () => {
+  showCopyPlanModal.value = false
+  newPlanTitle.value = ''
+  isCopyingPlan.value = false
+}
 
-    // Initialize with default structure if not exists
-    if (!displayData.title) {
-      displayData.title = ''
+const confirmCopyPlan = async () => {
+  if (!newPlanTitle.value.trim()) {
+    toast.error(t('sidebar.titleRequired'))
+    return
+  }
+
+  if (!templateConfig.selectedTemplate.value) {
+    toast.error(t('sidebar.noPlanToCopy'))
+    return
+  }
+
+  isCopyingPlan.value = true
+
+  try {
+    // Get the current plan config
+    const currentConfig = templateConfig.getConfig()
+
+    // Generate a new planTemplateId in the format: planTemplate-{timestamp}
+    const newPlanTemplateId = `planTemplate-${Date.now()}`
+
+    // Create a new plan config with all fields copied, only changing the title and using new ID
+    const newPlanConfig: PlanTemplateConfigVO = {
+      ...currentConfig,
+      title: newPlanTitle.value.trim(),
+      planTemplateId: newPlanTemplateId,
     }
-    displayData.directResponse = false // Always false for dynamic agent planning
-  } catch (error) {
-    const errorMessage = `Failed to initialize JsonEditorV2: ${error instanceof Error ? error.message : 'Unknown error'}`
-    planTypeError.value = errorMessage
-    console.error(errorMessage, error)
+
+    const result = await PlanTemplateApiService.createOrUpdatePlanTemplateWithTool(newPlanConfig)
+
+    if (result.success) {
+      toast.success(t('sidebar.copyPlanSuccess', { title: newPlanTitle.value.trim() }))
+      await templateStore.loadPlanTemplateList()
+      closeCopyPlanModal()
+    } else {
+      toast.error(t('sidebar.copyPlanFailed', { message: 'Failed to copy plan' }))
+    }
+  } catch (error: unknown) {
+    console.error('[JsonEditorV2] Error copying plan:', error)
+    // Check if it's a duplicate title error
+    if (
+      error instanceof Error &&
+      (error as Error & { errorCode?: string }).errorCode === 'DUPLICATE_TITLE'
+    ) {
+      toast.error(t('sidebar.duplicatePlanTitle'))
+    } else {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      toast.error(t('sidebar.copyPlanFailed', { message: message }))
+    }
+  } finally {
+    isCopyingPlan.value = false
   }
 }
 
-// Watch for parsedData changes to validate structure
+// Watch for displayData changes to validate structure
 watch(
-  () => displayData,
-  newData => {
-    try {
-      // Soft validation for title - show warning but don't block the form
-      if (!newData.title.trim()) {
-        titleError.value = 'Title is required field'
-      } else {
-        titleError.value = ''
-      }
-
-      // Clear any structural errors
-      planTypeError.value = null
-    } catch (error) {
-      planTypeError.value = `Invalid data structure: ${error instanceof Error ? error.message : 'Unknown error'}`
+  () => displayData.title,
+  newTitle => {
+    // Soft validation for title - show warning but don't block the form
+    if (!newTitle?.trim()) {
+      titleError.value = 'Title is required field'
+    } else {
       titleError.value = ''
-    }
-  },
-  { immediate: true, deep: true }
-)
-
-// Watch for props changes
-watch(
-  () => props.jsonContent,
-  (newContent, oldContent) => {
-    console.log(
-      '[JsonEditorV2] Props watch triggered - jsonContent changed from',
-      oldContent,
-      'to',
-      newContent
-    )
-    if (newContent && newContent !== oldContent) {
-      console.log('[JsonEditorV2] Force parsing new jsonContent:', newContent)
-      try {
-        const parsed = JSON.parse(newContent)
-        console.log('[JsonEditorV2] Parsed new jsonContent:', parsed)
-        Object.assign(displayData, {
-          title: parsed.title || '',
-          steps: parsed.steps || [],
-          directResponse: false,
-          planTemplateId: parsed.planTemplateId || props.currentPlanTemplateId || '',
-          planType: parsed.planType || 'dynamic_agent',
-        })
-        console.log('[JsonEditorV2] Updated displayData with new content:', displayData)
-      } catch (error) {
-        console.warn('[JsonEditorV2] Failed to parse new jsonContent:', error)
-      }
     }
   },
   { immediate: true }
 )
 
-// Initialize on mount
-onMounted(() => {
-  console.log('[JsonEditorV2] Component mounted with jsonContent:', props.jsonContent)
-  console.log(
-    '[JsonEditorV2] Component mounted with currentPlanTemplateId:',
-    props.currentPlanTemplateId
-  )
-  console.log('[JsonEditorV2] Component mounted with displayData:', displayData)
+// Load service group from template config
+const loadServiceGroup = () => {
+  const group = templateConfig.getServiceGroup() || ''
+  serviceGroup.value = group
+}
 
-  // Force parse the current jsonContent to ensure it's processed
-  if (props.jsonContent) {
-    console.log('[JsonEditorV2] Force parsing jsonContent on mount:', props.jsonContent)
-    // Call parseJsonToVisual directly to ensure it's processed
-    try {
-      const parsed = JSON.parse(props.jsonContent)
-      console.log('[JsonEditorV2] Parsed jsonContent on mount:', parsed)
-      Object.assign(displayData, {
-        title: parsed.title || '',
-        steps: parsed.steps || [],
-        directResponse: false,
-        planTemplateId: parsed.planTemplateId || props.currentPlanTemplateId || '',
-        planType: parsed.planType || 'dynamic_agent',
-      })
-      console.log('[JsonEditorV2] Updated displayData on mount:', displayData)
-    } catch (error) {
-      console.warn('[JsonEditorV2] Failed to parse jsonContent on mount:', error)
+// Watch for templateConfig changes and sync to displayData
+watch(
+  () => templateConfig.config,
+  () => {
+    syncDisplayDataFromConfig()
+  },
+  { deep: true, immediate: true }
+)
+
+// Watch for templateConfig changes (when template is loaded)
+watch(
+  () => templateConfig.currentPlanTemplateId.value,
+  (newId, oldId) => {
+    // Only reset if template actually changed (not initial load)
+    if (oldId !== null && oldId !== undefined && newId !== oldId) {
+      // Reset UI states when template changes
+      modelSearchFilters.value.clear()
+      openDropdownSteps.value.clear()
+      highlightedIndices.value.clear()
+      showToolModal.value = false
+      showCopyPlanModal.value = false
+      showJsonPreview.value = false
+      currentStepIndex.value = -1
+      newPlanTitle.value = ''
+      isCopyingPlan.value = false
     }
+    // Sync displayData when template changes
+    syncDisplayDataFromConfig()
+    // Load service group when template changes
+    loadServiceGroup()
+  },
+  { immediate: true }
+)
+
+// Watch service group changes and sync to template config
+watch(
+  () => serviceGroup.value,
+  newGroup => {
+    templateConfig.setServiceGroup(newGroup)
+  }
+)
+
+// Load available service groups
+const loadAvailableServiceGroups = async () => {
+  if (isLoadingGroups.value) {
+    return
   }
 
-  initializeParsedData()
+  isLoadingGroups.value = true
+  try {
+    const tools = await ToolApiService.getAvailableTools()
+    const groupsSet = new Set<string>()
+    tools.forEach(tool => {
+      if (tool.serviceGroup) {
+        groupsSet.add(tool.serviceGroup)
+      }
+    })
+    availableServiceGroups.value = Array.from(groupsSet).sort()
+  } catch (error) {
+    console.error('[JsonEditorV2] Failed to load service groups:', error)
+    availableServiceGroups.value = []
+  } finally {
+    isLoadingGroups.value = false
+  }
+}
+
+// Filtered service groups
+const filteredServiceGroups = computed(() => {
+  const trimmedGroup = serviceGroup.value.trim()
+  if (!trimmedGroup) {
+    return availableServiceGroups.value
+  }
+
+  const query = trimmedGroup.toLowerCase()
+  return availableServiceGroups.value.filter(group => group.toLowerCase().includes(query))
+})
+
+// Handle service group input
+const handleServiceGroupInput = () => {
+  showGroupSuggestions.value = true
+}
+
+// Handle service group blur
+const handleServiceGroupBlur = () => {
+  setTimeout(() => {
+    showGroupSuggestions.value = false
+  }, 200)
+}
+
+// Select a service group from dropdown
+const selectServiceGroup = (group: string) => {
+  serviceGroup.value = group
+  showGroupSuggestions.value = false
+}
+
+// Initialize on mount
+onMounted(() => {
+  // Sync displayData from templateConfig
+  syncDisplayDataFromConfig()
+
+  // Load service group
+  loadServiceGroup()
+
+  // Load available service groups
+  loadAvailableServiceGroups()
+
   loadAvailableModels()
 
   // Add click outside listener
@@ -771,6 +999,11 @@ onMounted(() => {
 onUnmounted(() => {
   // Remove click outside listener
   document.removeEventListener('click', handleClickOutside)
+})
+
+// Expose save method for parent component to call
+defineExpose({
+  save: handleSave,
 })
 
 const autoResizeTextarea = (event: Event) => {
@@ -900,8 +1133,14 @@ const formatTableHeader = (terminateColumns: string): string => {
   color: rgba(255, 255, 255, 0.9);
 }
 
+.field-description {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
 .form-input,
-.form-select,
 .form-textarea {
   padding: 8px 12px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -914,7 +1153,6 @@ const formatTableHeader = (terminateColumns: string): string => {
 }
 
 .form-input:focus,
-.form-select:focus,
 .form-textarea:focus {
   outline: none;
   border-color: #667eea;
@@ -923,7 +1161,6 @@ const formatTableHeader = (terminateColumns: string): string => {
 
 /* Error state for form inputs */
 .form-input.error,
-.form-select.error,
 .form-textarea.error {
   border-color: #ef4444;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
@@ -1069,102 +1306,9 @@ const formatTableHeader = (terminateColumns: string): string => {
   cursor: not-allowed;
 }
 
-.tool-keys-display {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-height: 32px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-}
-
-.tool-key-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tool-key-input {
-  flex: 1;
-  font-size: 10px;
-}
-
-.remove-tool-key-btn {
-  width: 20px;
-  height: 20px;
-  background: transparent;
-  border: none;
-  border-radius: 2px;
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.remove-tool-key-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-}
-
-.no-tool-keys {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 10px;
-  font-style: italic;
-  text-align: center;
-  padding: 8px;
-}
-
-.btn-add-tool-key {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  align-self: flex-start;
-}
-
-.btn-add-tool-key:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-}
-
 /* Steps Section */
 .steps-section {
   margin-bottom: 20px;
-}
-
-.steps-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.steps-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.agent-count-badge {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.error-badge {
-  font-size: 10px;
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  display: flex;
-  align-items: center;
-  gap: 2px;
 }
 
 .error-message {
@@ -1193,56 +1337,50 @@ const formatTableHeader = (terminateColumns: string): string => {
   overflow: hidden;
 }
 
-.step-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 16px;
-  background: rgba(102, 126, 234, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.step-number {
-  font-weight: 600;
-  color: #667eea;
-  font-size: 11px;
-  min-width: 20px;
-}
-
-.step-actions {
-  display: flex;
-  gap: 4px;
-}
-
 .step-content {
   padding: 16px;
 }
 
-.agent-selector {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.agent-select {
-  flex: 1;
-}
-
-.btn-add-step {
-  padding: 6px 8px;
-  min-width: auto;
-}
-
 /* Empty State */
 .empty-steps {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 40px 20px;
-  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  gap: 16px;
+  min-height: 200px;
 }
 
-.empty-icon {
-  color: rgba(255, 255, 255, 0.3);
-  margin-bottom: 12px;
+.empty-steps .empty-icon {
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 8px;
+}
+
+.empty-steps .empty-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  margin: 0;
+}
+
+.empty-steps .btn-add-step {
+  margin-top: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.empty-steps .btn-add-step:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
 }
 
 /* JSON Preview */
@@ -1382,5 +1520,199 @@ const formatTableHeader = (terminateColumns: string): string => {
   color: #ef4444;
   font-weight: 600;
   border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Copy Plan Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #1a1a1a;
+  border-radius: 8px;
+  padding: 0;
+  min-width: 400px;
+  max-width: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-footer .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-footer .form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.modal-footer .form-input {
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.modal-footer .form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.modal-footer .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.modal-footer .btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-footer .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.modal-footer .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5566dd 0%, #653b91 100%);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.modal-footer .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-footer .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Service Group Autocomplete Styles */
+.service-group-autocomplete {
+  position: relative;
+  width: 100%;
+}
+
+.service-group-autocomplete .form-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  font-size: 11px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.service-group-autocomplete .form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.service-group-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.service-group-option {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.service-group-option:last-child {
+  border-bottom: none;
+}
+
+.service-group-option:hover {
+  background: rgba(102, 126, 234, 0.2);
+  color: white;
+}
+
+.service-group-option:active {
+  background: rgba(102, 126, 234, 0.3);
 }
 </style>
