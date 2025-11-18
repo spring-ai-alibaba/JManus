@@ -65,10 +65,10 @@ export function useConversationHistory() {
    * Java LocalDateTimeSerializer can serialize as:
    * - ISO-8601 string: "2025-01-17T10:30:00" or "2025-01-17T10:30:00.123"
    * - Array format: [2025, 1, 17, 10, 30, 0] (if WRITE_DATES_AS_TIMESTAMPS is enabled)
-   * @param dateValue Date value from backend (string, array, or object)
+   * @param dateValue Date value from backend (string, array, or number)
    * @returns Date object or current date if parsing fails
    */
-  const parseBackendDate = (dateValue: string | number[] | any): Date => {
+  const parseBackendDate = (dateValue: string | number[] | number | null | undefined): Date => {
     if (!dateValue) {
       console.warn('[useConversationHistory] Date value is null/undefined, using current time')
       return new Date()
