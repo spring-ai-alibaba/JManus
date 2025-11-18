@@ -450,11 +450,11 @@ const isSyncingFromConfig = ref(false)
 const syncDisplayDataFromConfig = () => {
   isSyncingFromConfig.value = true
   try {
-    const config = templateConfig.getConfig()
-    displayData.title = config.title || ''
-    displayData.steps = config.steps || []
-    // Sync service group
-    serviceGroup.value = config.serviceGroup || ''
+  const config = templateConfig.getConfig()
+  displayData.title = config.title || ''
+  displayData.steps = config.steps || []
+  // Sync service group
+  serviceGroup.value = config.serviceGroup || ''
   } finally {
     // Use nextTick to ensure the watch doesn't trigger during sync
     setTimeout(() => {
@@ -491,8 +491,8 @@ const syncDisplayDataFromConfig = () => {
 
 // Manual sync function to be called on save
 const syncDisplayDataToTemplateConfig = () => {
-  templateConfig.setTitle(displayData.title)
-  templateConfig.setSteps(displayData.steps)
+    templateConfig.setTitle(displayData.title)
+    templateConfig.setSteps(displayData.steps)
   if (templateConfig.currentPlanTemplateId.value) {
     templateStore.hasTaskRequirementModified = true
   }

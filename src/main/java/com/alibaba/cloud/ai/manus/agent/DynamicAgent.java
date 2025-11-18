@@ -241,7 +241,7 @@ public class DynamicAgent extends ReActAgent {
 				ChatMemory chatMemory = llmService.getAgentMemory(manusProperties.getMaxMemory());
 				List<Message> historyMem = chatMemory.get(getCurrentPlanId());
 				// List<Message> subAgentMem = chatMemory.get(getCurrentPlanId());
-
+				
 				// Add conversation history from MemoryService if conversationId is
 				// available and conversation memory is enabled
 				if (manusProperties.getEnableConversationMemory() && memoryService != null
@@ -298,11 +298,11 @@ public class DynamicAgent extends ReActAgent {
 				}
 				// Calculate and log word count for userPrompt
 				int wordCount = messages.stream().mapToInt(message -> {
-					String text = message.getText();
-					if (text == null || text.trim().isEmpty()) {
-						return 0;
-					}
-					return text.length();
+						String text = message.getText();
+						if (text == null || text.trim().isEmpty()) {
+							return 0;
+						}
+						return text.length();
 				}).sum();
 				log.info("User prompt word count: {}", wordCount);
 

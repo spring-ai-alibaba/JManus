@@ -73,6 +73,7 @@ import com.alibaba.cloud.ai.manus.tool.cron.CronTool;
 import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseMetadataTool;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseReadTool;
+import com.alibaba.cloud.ai.manus.tool.database.DatabaseTableToExcelTool;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseWriteTool;
 import com.alibaba.cloud.ai.manus.tool.database.UuidGenerateTool;
 import com.alibaba.cloud.ai.manus.tool.dirOperator.DirectoryOperator;
@@ -113,6 +114,8 @@ public class PlanningFactory {
 
 	// private final TableProcessingService tableProcessingService; // Currently unused -
 	// commented out for future use
+
+	private final IExcelProcessingService excelProcessingService;
 
 	private final static Logger log = LoggerFactory.getLogger(PlanningFactory.class);
 
@@ -184,6 +187,7 @@ public class PlanningFactory {
 		this.unifiedDirectoryManager = unifiedDirectoryManager;
 		this.dataSourceService = dataSourceService;
 		// this.tableProcessingService = tableProcessingService; // Currently unused
+		this.excelProcessingService = excelProcessingService;
 	}
 
 	/**
@@ -236,6 +240,8 @@ public class PlanningFactory {
 			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
+			toolDefinitions.add(DatabaseTableToExcelTool.getInstance(manusProperties, dataSourceService,
+					excelProcessingService, unifiedDirectoryManager));
 			toolDefinitions.add(UuidGenerateTool.getInstance(objectMapper));
 			toolDefinitions
 				.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService, manusProperties));
@@ -263,7 +269,8 @@ public class PlanningFactory {
 					new PdfOcrProcessor(unifiedDirectoryManager, llmService, manusProperties,
 							new ImageRecognitionExecutorPool(manusProperties)),
 					new ImageOcrProcessor(unifiedDirectoryManager, llmService, manusProperties,
-							new ImageRecognitionExecutorPool(manusProperties))));
+							new ImageRecognitionExecutorPool(manusProperties)),
+					excelProcessingService, objectMapper));
 			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
 		}
 		else {
