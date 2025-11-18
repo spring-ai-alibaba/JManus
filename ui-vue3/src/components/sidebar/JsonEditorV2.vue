@@ -348,8 +348,8 @@
     />
 
     <!-- Copy Plan Modal -->
-    <div v-if="showCopyPlanModal" class="modal-overlay" @click="closeCopyPlanModal">
-      <div class="modal-content" @click.stop>
+    <div v-if="showCopyPlanModal" class="modal-overlay" @mousedown="handleModalOverlayClick">
+      <div class="modal-content" @mousedown.stop>
         <div class="modal-header">
           <h3>{{ $t('sidebar.copyPlan') }}</h3>
           <button class="close-btn" @click="closeCopyPlanModal">
@@ -450,11 +450,11 @@ const isSyncingFromConfig = ref(false)
 const syncDisplayDataFromConfig = () => {
   isSyncingFromConfig.value = true
   try {
-  const config = templateConfig.getConfig()
-  displayData.title = config.title || ''
-  displayData.steps = config.steps || []
-  // Sync service group
-  serviceGroup.value = config.serviceGroup || ''
+    const config = templateConfig.getConfig()
+    displayData.title = config.title || ''
+    displayData.steps = config.steps || []
+    // Sync service group
+    serviceGroup.value = config.serviceGroup || ''
   } finally {
     // Use nextTick to ensure the watch doesn't trigger during sync
     setTimeout(() => {
@@ -491,8 +491,8 @@ const syncDisplayDataFromConfig = () => {
 
 // Manual sync function to be called on save
 const syncDisplayDataToTemplateConfig = () => {
-    templateConfig.setTitle(displayData.title)
-    templateConfig.setSteps(displayData.steps)
+  templateConfig.setTitle(displayData.title)
+  templateConfig.setSteps(displayData.steps)
   if (templateConfig.currentPlanTemplateId.value) {
     templateStore.hasTaskRequirementModified = true
   }
@@ -854,6 +854,14 @@ const closeCopyPlanModal = () => {
   isCopyingPlan.value = false
 }
 
+// Handle modal overlay click - only close if clicking directly on overlay
+const handleModalOverlayClick = (event: MouseEvent) => {
+  // Only close if the click target is the overlay itself, not its children
+  if (event.target === event.currentTarget) {
+    closeCopyPlanModal()
+  }
+}
+
 const confirmCopyPlan = async () => {
   if (!newPlanTitle.value.trim()) {
     toast.error(t('sidebar.titleRequired'))
@@ -874,12 +882,17 @@ const confirmCopyPlan = async () => {
     // Generate a new planTemplateId in the format: planTemplate-{timestamp}
     const newPlanTemplateId = `planTemplate-${Date.now()}`
 
+    // Exclude toolConfig from the copy to avoid copying service configuration
+    const { toolConfig: _toolConfig, ...configWithoutToolConfig } = currentConfig
+
     // Create a new plan config with all fields copied, only changing the title and using new ID
     const newPlanConfig: PlanTemplateConfigVO = {
-      ...currentConfig,
+      ...configWithoutToolConfig,
       title: newPlanTitle.value.trim(),
       planTemplateId: newPlanTemplateId,
     }
+
+    console.log('[JsonEditorV2] Copying plan without toolConfig:', newPlanConfig)
 
     const result = await PlanTemplateApiService.createOrUpdatePlanTemplateWithTool(newPlanConfig)
 

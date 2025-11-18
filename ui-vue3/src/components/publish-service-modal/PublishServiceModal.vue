@@ -256,6 +256,7 @@ const loadParameterRequirements = async () => {
       hasParameters: false,
       requirements: '',
     }
+    formData.parameters = [] // Clear parameters when no template
     return
   }
 
@@ -263,6 +264,8 @@ const loadParameterRequirements = async () => {
   try {
     const requirements = await PlanParameterApiService.getParameterRequirements(planTemplateId)
     parameterRequirements.value = requirements
+
+    console.log('[PublishModal] Parameter requirements loaded:', requirements)
 
     // Initialize form parameters with extracted parameters
     // Preserve existing descriptions if parameters already exist (from toolConfig)
@@ -280,6 +283,15 @@ const loadParameterRequirements = async () => {
         name: param,
         description: existingParamsMap.get(param) || '',
       }))
+      console.log(
+        '[PublishModal] Updated formData.parameters with requirements:',
+        formData.parameters
+      )
+    } else {
+      // IMPORTANT: When no parameters in plan template, clear formData.parameters
+      // This ensures old toolConfig parameters are removed from UI
+      formData.parameters = []
+      console.log('[PublishModal] No parameters in plan template, cleared formData.parameters')
     }
   } catch (error) {
     console.error('[PublishModal] Failed to load parameter requirements:', error)
@@ -292,9 +304,57 @@ const loadParameterRequirements = async () => {
       hasParameters: false,
       requirements: '',
     }
+    formData.parameters = [] // Clear parameters on error
   } finally {
     isLoadingParameters.value = false
   }
+}
+
+// Merge frontend parameters with backend toolConfig
+// Use frontend parameter list (from plan template) as source of truth
+// Preserve descriptions from backend for matching parameters
+const mergeParametersWithBackend = (): Array<{ name: string; description: string }> => {
+  console.log('[PublishModal] Starting parameter merge')
+  console.log('[PublishModal] Frontend parameters:', parameterRequirements.value.parameters)
+  console.log('[PublishModal] Form parameters:', formData.parameters)
+
+  // Get backend parameters from toolConfig.inputSchema
+  const backendInputSchema = templateConfig.selectedTemplate.value?.toolConfig?.inputSchema || []
+  console.log('[PublishModal] Backend inputSchema:', backendInputSchema)
+
+  // Create a map of backend parameters by name
+  const backendParamsMap = new Map<string, string>()
+  backendInputSchema.forEach(param => {
+    if (param.name) {
+      backendParamsMap.set(param.name, param.description || '')
+    }
+  })
+
+  // If there are parameters from plan template (parameterRequirements), use them as source
+  if (parameterRequirements.value.hasParameters) {
+    const merged = parameterRequirements.value.parameters.map(paramName => {
+      // Try to get description from formData first (user may have edited it)
+      const formParam = formData.parameters.find(p => p.name === paramName)
+      const formDescription = formParam?.description || ''
+
+      // If formData has description, use it; otherwise try backend; otherwise empty
+      const description = formDescription || backendParamsMap.get(paramName) || ''
+
+      return {
+        name: paramName,
+        description: description,
+      }
+    })
+
+    console.log('[PublishModal] Merged parameters (from plan template):', merged)
+    return merged
+  }
+
+  // When hasParameters is false (no parameters in plan template)
+  // Return empty array to clear backend parameters
+  // This ensures frontend parameter list (even if empty) replaces backend
+  console.log('[PublishModal] No parameters in plan template, clearing backend parameters')
+  return []
 }
 
 // Show message
@@ -372,12 +432,18 @@ const handlePublish = async () => {
 
   publishing.value = true
   try {
-    // Prepare inputSchema
-    const inputSchema = formData.parameters
-      .filter(param => param.name.trim() && param.description.trim())
+    // Merge parameters: Use frontend parameters (from plan template) as the source of truth
+    // Preserve descriptions from backend toolConfig for matching parameters
+    const mergedParameters = mergeParametersWithBackend()
+
+    console.log('[PublishModal] Merged parameters:', mergedParameters)
+
+    // Prepare inputSchema from merged parameters
+    const inputSchema = mergedParameters
+      .filter(param => param.name.trim())
       .map(param => ({
         name: param.name.trim(),
-        description: param.description.trim(),
+        description: param.description.trim() || '', // Use empty string if no description
         type: 'string',
       }))
 
