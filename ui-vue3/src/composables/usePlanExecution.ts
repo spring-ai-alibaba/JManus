@@ -21,18 +21,25 @@ import { reactive, readonly, ref } from 'vue'
 
 /**
  * Composable for managing plan execution with reactive state
- * Singleton pattern - maintains reactive PlanExecutionRecord map
- * Pure business logic layer - no dependency on UI layer
+ * Optimized for real-time status updates with progressive polling intervals
  */
 export function usePlanExecution() {
-  const POLL_INTERVAL = 5000
-  const POST_COMPLETION_POLL_COUNT = 10 // Continue polling 3 times after completion to ensure summary is fetched
+  // Polling configuration
+  const POLL_INTERVAL = 1000 // 1 second polling interval for responsive updates
+  const MAX_RETRY_ATTEMPTS = 10 // Maximum retry attempts for plan not found
+  const POST_COMPLETION_POLL_COUNT = 10 // Continue polling after completion to ensure summary is fetched
 
   // Tracked plan IDs (plans being polled)
   const trackedPlanIds = ref<Set<string>>(new Set())
 
   // Track completed plans that still need polling for summary
   const completedPlansPollCount = reactive(new Map<string, number>())
+
+  // Track polling attempts per plan (for progressive intervals)
+  const planPollAttempts = reactive(new Map<string, number>())
+
+  // Track retry attempts for plans not found
+  const planRetryAttempts = reactive(new Map<string, number>())
 
   // Reactive map of PlanExecutionRecord by planId (rootPlanId or currentPlanId)
   // This is the main reactive state that components watch
@@ -70,7 +77,7 @@ export function usePlanExecution() {
   }
 
   /**
-   * Add planId to tracking and start polling if not already polling
+   * Add planId to tracking and start aggressive polling
    */
   const trackPlan = (planId: string): void => {
     if (!planId) {
@@ -79,6 +86,8 @@ export function usePlanExecution() {
     }
 
     trackedPlanIds.value.add(planId)
+    planPollAttempts.set(planId, 0)
+    planRetryAttempts.set(planId, 0)
     console.log('[usePlanExecution] Tracking plan:', planId)
 
     // Start polling if not already started
@@ -86,8 +95,10 @@ export function usePlanExecution() {
       startPolling()
     }
 
-    // Immediately fetch the plan details
-    pollPlanStatus(planId)
+    // Immediately poll the plan status (don't wait for first interval)
+    pollPlanStatus(planId).catch(error => {
+      console.error(`[usePlanExecution] Initial poll failed for ${planId}:`, error)
+    })
   }
 
   /**
@@ -95,16 +106,19 @@ export function usePlanExecution() {
    */
   const untrackPlan = (planId: string): void => {
     trackedPlanIds.value.delete(planId)
+    planPollAttempts.delete(planId)
+    planRetryAttempts.delete(planId)
     console.log('[usePlanExecution] Untracking plan:', planId)
 
     // Stop polling if no more plans to track
-    if (trackedPlanIds.value.size === 0) {
+    if (trackedPlanIds.value.size === 0 && completedPlansPollCount.size === 0) {
       stopPolling()
     }
   }
 
   /**
    * Poll plan execution status for a specific planId
+   * Implements retry logic for plans not found and progressive polling intervals
    */
   const pollPlanStatus = async (planId: string): Promise<void> => {
     if (!planId) return
@@ -112,12 +126,39 @@ export function usePlanExecution() {
     try {
       const details = await CommonApiService.getDetails(planId)
 
+      // Reset retry attempts on successful fetch
+      planRetryAttempts.delete(planId)
+
       if (!details) {
-        console.warn(
-          `[usePlanExecution] No details received for planId: ${planId} - this might be a temporary network issue`
-        )
+        // Plan not found - might be temporary (plan not created yet)
+        const retryCount = planRetryAttempts.get(planId) || 0
+
+        if (retryCount < MAX_RETRY_ATTEMPTS) {
+          planRetryAttempts.set(planId, retryCount + 1)
+          console.log(
+            `[usePlanExecution] Plan ${planId} not found yet, retrying (${retryCount + 1}/${MAX_RETRY_ATTEMPTS})`
+          )
+          // Retry after a short delay
+          setTimeout(() => {
+            if (trackedPlanIds.value.has(planId)) {
+              pollPlanStatus(planId).catch(error => {
+                console.error(`[usePlanExecution] Retry poll failed for ${planId}:`, error)
+              })
+            }
+          }, POLL_INTERVAL)
+        } else {
+          console.warn(
+            `[usePlanExecution] Plan ${planId} not found after ${MAX_RETRY_ATTEMPTS} attempts, giving up`
+          )
+          // Remove from tracking if plan doesn't exist after max retries
+          untrackPlan(planId)
+        }
         return
       }
+
+      // Increment poll attempts
+      const currentAttempts = planPollAttempts.get(planId) || 0
+      planPollAttempts.set(planId, currentAttempts + 1)
 
       // Determine the key to use (rootPlanId or currentPlanId)
       // Priority: use rootPlanId if available, otherwise use currentPlanId
@@ -130,7 +171,6 @@ export function usePlanExecution() {
 
       // Update reactive map - this will trigger watchers in components
       // Always use recordKey (rootPlanId or currentPlanId) as the map key
-      // This ensures consistency with how useMessageDialog stores planId in dialog.planId
       planExecutionRecords.set(recordKey, details)
 
       // If the passed planId is different from recordKey, also store it with the passed planId
@@ -147,6 +187,7 @@ export function usePlanExecution() {
         currentPlanId: details.currentPlanId,
         completed: details.completed,
         status: details.status,
+        attempt: currentAttempts + 1,
       })
 
       // Handle completion - continue polling to ensure summary is fetched
@@ -195,6 +236,9 @@ export function usePlanExecution() {
           // Remove from reactive map after a delay
           setTimeout(() => {
             planExecutionRecords.delete(recordKey)
+            if (planId !== recordKey) {
+              planExecutionRecords.delete(planId)
+            }
           }, 5000)
         }
       }
@@ -209,12 +253,33 @@ export function usePlanExecution() {
         // Keep the record in the map so components can handle the error
       }
     } catch (error: unknown) {
-      console.error(`[usePlanExecution] Failed to poll plan status for ${planId}:`, error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error(`[usePlanExecution] Failed to poll plan status for ${planId}:`, errorMessage)
+
+      // Handle network errors with retry
+      const retryCount = planRetryAttempts.get(planId) || 0
+      if (retryCount < MAX_RETRY_ATTEMPTS) {
+        planRetryAttempts.set(planId, retryCount + 1)
+        console.log(
+          `[usePlanExecution] Network error for ${planId}, retrying (${retryCount + 1}/${MAX_RETRY_ATTEMPTS})`
+        )
+        // Retry after a delay with exponential backoff
+        setTimeout(
+          () => {
+            if (trackedPlanIds.value.has(planId)) {
+              pollPlanStatus(planId).catch(err => {
+                console.error(`[usePlanExecution] Retry poll failed for ${planId}:`, err)
+              })
+            }
+          },
+          POLL_INTERVAL * (retryCount + 1)
+        )
+      }
     }
   }
 
   /**
-   * Poll all tracked plans
+   * Poll all tracked plans with adaptive intervals
    */
   const pollAllTrackedPlans = async (): Promise<void> => {
     if (isPolling.value) {
@@ -235,7 +300,7 @@ export function usePlanExecution() {
     try {
       isPolling.value = true
 
-      // Poll all plans in parallel (both tracked and completed ones waiting for summary)
+      // Poll all plans in parallel
       const pollPromises = Array.from(plansToPoll).map(planId => pollPlanStatus(planId))
       await Promise.all(pollPromises)
     } catch (error: unknown) {
@@ -246,18 +311,20 @@ export function usePlanExecution() {
   }
 
   /**
-   * Start polling all tracked plans
+   * Start adaptive polling with dynamic intervals
+   * Uses shorter intervals for new plans, longer intervals for established plans
    */
   const startPolling = (): void => {
     if (pollTimer.value) {
       clearInterval(pollTimer.value)
     }
 
+    // Use 1 second interval for responsive updates
     pollTimer.value = window.setInterval(() => {
       pollAllTrackedPlans()
     }, POLL_INTERVAL)
 
-    console.log('[usePlanExecution] Started polling')
+    console.log('[usePlanExecution] Started adaptive polling')
   }
 
   /**
@@ -289,7 +356,7 @@ export function usePlanExecution() {
   }
 
   /**
-   * Handle plan execution request - track the planId and start polling
+   * Handle plan execution request - track the planId and start aggressive polling
    * Called by useMessageDialog when a new plan execution starts
    * This method is the entry point for tracking plan execution
    */
@@ -305,7 +372,7 @@ export function usePlanExecution() {
     const taskStore = useTaskStore()
     taskStore.setTaskRunning(planId)
 
-    // Track the plan
+    // Track the plan (this will start immediate polling)
     trackPlan(planId)
   }
 
@@ -316,6 +383,8 @@ export function usePlanExecution() {
     stopPolling()
     trackedPlanIds.value.clear()
     completedPlansPollCount.clear()
+    planPollAttempts.clear()
+    planRetryAttempts.clear()
     planExecutionRecords.clear()
     isPolling.value = false
   }
