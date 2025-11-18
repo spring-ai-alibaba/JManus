@@ -160,6 +160,7 @@ export function useConversationHistory() {
 
   /**
    * Process and add a single history record to the dialog
+   * Each history record should create its own dialog round to maintain proper structure
    */
   const processHistoryRecord = (record: PlanExecutionRecord): void => {
     if (!record) return
@@ -173,7 +174,34 @@ export function useConversationHistory() {
       endTimeType: typeof record.endTime,
     })
 
-    // Add user message (the original query)
+    // Create a new dialog for this history record (each round gets its own dialog)
+    // Note: createDialog will automatically set conversationId if conversationId.value is set
+    // But since we're loading history, conversationId.value might not be set yet
+    // So we'll create the dialog and then manually set conversationId on it
+    const dialogTitle = record.userRequest || record.title || 'History Round'
+    const historyDialog = messageDialog.createDialog(dialogTitle)
+
+    // Set conversationId and planId on the dialog if available
+    // This ensures the dialog is properly linked to the conversation
+    const conversationId = memoryStore.getConversationId()
+    if (conversationId) {
+      const dialog = messageDialog.getDialog(historyDialog.id)
+      if (dialog) {
+        // Manually set conversationId on the dialog
+        // TypeScript might complain, but this is necessary for history loading
+        ;(dialog as { conversationId?: string }).conversationId = conversationId
+        if (record.rootPlanId) {
+          ;(dialog as { planId?: string }).planId = record.rootPlanId
+        }
+        console.log(
+          '[useConversationHistory] Set conversationId on history dialog:',
+          historyDialog.id,
+          conversationId
+        )
+      }
+    }
+
+    // Add user message (the original query) to the new dialog
     if (record.userRequest && record.startTime) {
       const parsedDate = parseBackendDate(record.startTime)
       console.log('[useConversationHistory] Parsed date:', {
@@ -182,12 +210,18 @@ export function useConversationHistory() {
         parsedISO: parsedDate.toISOString(),
         isValid: !isNaN(parsedDate.getTime()),
       })
-      messageDialog.addMessage('user', record.userRequest, {
+
+      const userMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: 'user' as const,
+        content: record.userRequest,
         timestamp: parsedDate,
-      })
+        isStreaming: false,
+      }
+      messageDialog.addMessageToDialog(historyDialog.id, userMessage)
     }
 
-    // Add assistant message (the result/summary)
+    // Add assistant message (the result/summary) to the same dialog
     if (record.currentPlanId) {
       const assistantContent =
         record.summary || record.result || record.message || 'Execution completed'
@@ -195,15 +229,20 @@ export function useConversationHistory() {
       // Convert API record to plan execution record format
       const planExecutionRecord = convertApiRecordToPlanExecutionRecord(record)
 
-      messageDialog.addMessage('assistant', assistantContent, {
+      const assistantMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: 'assistant' as const,
+        content: assistantContent,
         timestamp:
           record.endTime && record.endTime
             ? parseBackendDate(record.endTime)
             : record.startTime
               ? parseBackendDate(record.startTime)
               : new Date(),
+        isStreaming: false,
         planExecution: planExecutionRecord as PlanExecutionRecord,
-      })
+      }
+      messageDialog.addMessageToDialog(historyDialog.id, assistantMessage)
 
       // Store the plan record in the plan execution manager cache for future reference
       if (record.rootPlanId) {
@@ -240,6 +279,11 @@ export function useConversationHistory() {
 
       // Set the conversation ID in memory store
       memoryStore.setConversationId(conversationId)
+
+      // Also ensure conversationId.value is set in useMessageDialog
+      // This is needed so that createDialog can automatically link new dialogs to the conversation
+      // and so that the messages computed property can merge messages from all dialogs
+      messageDialog.setConversationId(conversationId)
 
       // Fetch conversation history from backend
       const historyRecords = await MemoryApiService.getConversationHistory(conversationId)

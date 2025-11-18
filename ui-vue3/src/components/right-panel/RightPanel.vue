@@ -145,19 +145,26 @@
                       {{ t('rightPanel.action') }}
                     </h5>
                     <div class="action-content">
-                      <div v-for="(actToolInfo, index) in tas.actToolInfoList" :key="index">
+                      <div
+                        v-for="(actToolInfo, index) in tas.actToolInfoList || []"
+                        :key="`tool-${index}-${actToolInfo?.id || actToolInfo?.name || index}`"
+                        class="tool-execution-item"
+                      >
                         <div class="tool-info">
                           <span class="label">{{ t('rightPanel.tool') }}:</span>
-                          <span class="value">{{ actToolInfo.name || '' }}</span>
+                          <span class="value">{{ actToolInfo?.name || 'N/A' }}</span>
                         </div>
                         <div class="input">
                           <span class="label">{{ t('rightPanel.toolParameters') }}:</span>
-                          <pre>{{ formatJson(actToolInfo.parameters) }}</pre>
+                          <pre>{{ formatJson(actToolInfo?.parameters) }}</pre>
                         </div>
                         <div class="output">
                           <span class="label">{{ t('rightPanel.executionResult') }}:</span>
-                          <pre>{{ formatJson(actToolInfo.result) }}</pre>
+                          <pre>{{ formatJson(actToolInfo?.result) }}</pre>
                         </div>
+                      </div>
+                      <div v-if="!tas.actToolInfoList || tas.actToolInfoList.length === 0" class="no-tools">
+                        <p>{{ t('rightPanel.noToolsExecuted') }}</p>
                       </div>
                     </div>
 
@@ -934,6 +941,25 @@ defineExpose({
 
   .think-content,
   .action-content {
+    .tool-execution-item {
+      margin-bottom: 20px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    .no-tools {
+      padding: 12px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+    }
+
     .input,
     .output,
     .tool-info {

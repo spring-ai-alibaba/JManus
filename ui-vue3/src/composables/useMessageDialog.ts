@@ -424,8 +424,21 @@ export function useMessageDialog() {
       isLoading.value = true
       error.value = null
 
+      // Check if there's an existing conversationId from memoryStore (persisted)
+      // This allows appending new dialog rounds to existing conversations
+      const existingConversationId = memoryStore.getConversationId()
+      if (existingConversationId && !conversationId.value) {
+        // Restore conversationId from memoryStore if we don't have one yet
+        conversationId.value = existingConversationId
+        console.log(
+          '[useMessageDialog] Restored conversationId from memoryStore:',
+          existingConversationId
+        )
+      }
+
       // Always create a new dialog for each conversation round
       // Each round (user message + assistant response) gets a new dialogId
+      // If conversationId exists, it will be automatically linked to the new dialog
       targetDialog = createDialog(payload.title)
 
       // Update dialog title if provided
@@ -466,6 +479,7 @@ export function useMessageDialog() {
       }
 
       // Call PlanActApiService.executePlan
+      // Note: DirectApiService.executeByToolName will automatically include conversationId from memoryStore
       const response = (await PlanActApiService.executePlan(
         planTemplateId as string,
         payload.params,
@@ -476,13 +490,37 @@ export function useMessageDialog() {
       )) as { planId?: string; conversationId?: string }
 
       // Update conversationId if present (persisted)
+      // Only update if it's different from what we already have
       if (response.conversationId) {
-        // Maintain conversationId independently (persisted)
-        conversationId.value = response.conversationId
-        // Also set on dialog for reference
-        targetDialog.conversationId = response.conversationId
-        memoryStore.setConversationId(response.conversationId)
-        console.log('[useMessageDialog] Conversation ID set:', response.conversationId)
+        const newConversationId = response.conversationId
+        const currentConversationId = conversationId.value || memoryStore.getConversationId()
+
+        // Only update if the backend returned a different conversationId
+        // This can happen if:
+        // 1. We didn't send a conversationId (first request)
+        // 2. Backend generated a new one (shouldn't happen if we sent one)
+        if (newConversationId !== currentConversationId) {
+          console.log(
+            '[useMessageDialog] Conversation ID changed:',
+            currentConversationId,
+            '->',
+            newConversationId
+          )
+          // Maintain conversationId independently (persisted)
+          conversationId.value = newConversationId
+          // Also set on dialog for reference
+          targetDialog.conversationId = newConversationId
+          memoryStore.setConversationId(newConversationId)
+        } else {
+          // Ensure dialog has the conversationId even if it didn't change
+          targetDialog.conversationId = newConversationId
+          console.log('[useMessageDialog] Conversation ID unchanged:', newConversationId)
+        }
+      } else {
+        // If backend didn't return conversationId, ensure dialog uses the one we have
+        if (conversationId.value) {
+          targetDialog.conversationId = conversationId.value
+        }
       }
 
       // Update assistant message with plan execution info
@@ -714,6 +752,15 @@ export function useMessageDialog() {
   }
 
   /**
+   * Set conversationId (internal method for restoring from history)
+   * This is needed when loading conversation history to ensure new dialogs are linked correctly
+   */
+  const setConversationId = (id: string | null) => {
+    conversationId.value = id
+    console.log('[useMessageDialog] Set conversationId:', id)
+  }
+
+  /**
    * Reset state
    */
   const reset = () => {
@@ -869,6 +916,7 @@ export function useMessageDialog() {
     executePlan,
     updatePlanExecutionStatus,
     updateInputState,
+    setConversationId,
     reset,
 
     // Convenience methods for ChatContainer

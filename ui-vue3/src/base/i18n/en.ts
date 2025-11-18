@@ -1161,6 +1161,7 @@ const words: I18nType = {
     output: 'Output',
     tool: 'Tool',
     toolParameters: 'Tool Parameters',
+    noToolsExecuted: 'No tools were executed in this action',
     noStepDetails: 'No detailed step information available',
     scrollToBottom: 'Scroll to Bottom',
     stepInfo: 'Step Information',
