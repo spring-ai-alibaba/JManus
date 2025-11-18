@@ -152,7 +152,7 @@ interface Emits {
   (e: 'step-selected', stepId: string): void
 }
 
-const props = defineProps<Props>()
+const _props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 // Initialize i18n

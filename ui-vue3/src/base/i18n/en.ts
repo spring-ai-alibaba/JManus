@@ -817,7 +817,8 @@ const words: I18nType = {
     statusApiUrl: 'Status Query API',
     executing: 'Executing...',
     executePlan: 'Execute Plan',
-    executionInProgress: 'A task is currently executing. Please wait for it to complete before starting a new one',
+    executionInProgress:
+      'A task is currently executing. Please wait for it to complete before starting a new one',
     publishMcpService: 'Publish as Tool Service',
     updateServiceStatus: 'Update Service Status',
 
