@@ -50,7 +50,7 @@ Get JManus up and running in under 5 minutes:
 ### Prerequisites
 
 - 🌐 **DashScope API Key** (or alternative AI model provider)
-- ☕ **Java 17+** (for running JAR files or source code execution)
+- ☕ **Java 17+** (for running JAR files or source code execution) or 🐳 **Docker** (for containerized deployment)
 
 ### Method 1: Using GitHub Release (Recommended)
 
@@ -79,7 +79,77 @@ After the application starts, navigate to `http://localhost:18080` in your brows
 
 ---
 
-### Method 2: Running from Source Code (Alternative)
+### Method 2: Using Docker (Recommended for Production)
+
+#### 🐳 Pull and Run Docker Image
+
+```bash
+# Pull the latest JManus Docker image
+docker pull ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+
+# Run the container
+docker run -d \
+  --name jmanus \
+  -p 18080:18080 \
+  ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+```
+
+#### 🔧 Advanced Docker Configuration
+
+**Run with data persistence (recommended for production):**
+
+```bash
+# Create a directory for data persistence
+mkdir -p ./jmanus-data
+
+# Run with volume mounting
+docker run -d \
+  --name jmanus \
+  -p 18080:18080 \
+  -v $(pwd)/jmanus-data:/app/data \
+  ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+```
+
+**Run with custom environment variables:**
+
+```bash
+docker run -d \
+  --name jmanus \
+  -p 18080:18080 \
+  -e SPRING_PROFILES_ACTIVE=mysql \
+  -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/jmanus \
+  -e SPRING_DATASOURCE_USERNAME=your_username \
+  -e SPRING_DATASOURCE_PASSWORD=your_password \
+  ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+```
+
+#### 🌐 Access Application
+
+After the container starts, navigate to `http://localhost:18080` in your browser.
+
+> 💡 **Guided Setup**: After the application starts, it will automatically display a guided setup page. On the first page, select your language (English/Chinese), then on the second page, enter your DashScope API key that you just obtained to complete the configuration.
+
+#### 📋 Useful Docker Commands
+
+```bash
+# View container logs
+docker logs -f jmanus
+
+# Stop the container
+docker stop jmanus
+
+# Start the container
+docker start jmanus
+
+# Remove the container
+docker rm jmanus
+```
+
+🎉 **Congratulations!** Your multi-agent system is now running in Docker. You can visit https://github.com/talk-flow/public-usecase to explore some effective practices we recommend.
+
+---
+
+### Method 3: Running from Source Code (Alternative)
 
 #### 1. Clone and Navigate
 
