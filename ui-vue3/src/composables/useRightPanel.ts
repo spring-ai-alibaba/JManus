@@ -269,16 +269,40 @@ export function useRightPanel() {
    * @returns Formatted JSON string or 'N/A' if invalid
    */
   const formatJson = (jsonData: unknown): string => {
+    // Handle null, undefined, or empty string
     if (jsonData === null || typeof jsonData === 'undefined' || jsonData === '') {
       return 'N/A'
     }
-    try {
-      const jsonObj = typeof jsonData === 'object' ? jsonData : JSON.parse(jsonData as string)
-      return JSON.stringify(jsonObj, null, 2)
-    } catch {
-      // If parsing fails, return string format directly (similar to _escapeHtml in right-sidebar.js)
-      return String(jsonData)
+
+    // If it's already an object, stringify it directly
+    if (typeof jsonData === 'object' && jsonData !== null) {
+      try {
+        return JSON.stringify(jsonData, null, 2)
+      } catch {
+        return String(jsonData)
+      }
     }
+
+    // If it's a string, try to parse it as JSON
+    if (typeof jsonData === 'string') {
+      const trimmed = jsonData.trim()
+      if (trimmed === '') {
+        return 'N/A'
+      }
+
+      try {
+        // Try to parse as JSON
+        const parsed = JSON.parse(trimmed)
+        // Re-stringify with formatting
+        return JSON.stringify(parsed, null, 2)
+      } catch {
+        // If parsing fails, return the string as-is (might be plain text)
+        return trimmed
+      }
+    }
+
+    // For other types (number, boolean, etc.), convert to string
+    return String(jsonData)
   }
 
   /**

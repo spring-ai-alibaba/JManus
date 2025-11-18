@@ -1102,6 +1102,7 @@ const words: I18nType = {
     output: '输出',
     tool: '工具',
     toolParameters: '工具参数',
+    noToolsExecuted: '此操作中未执行任何工具',
     noStepDetails: '暂无详细步骤信息',
     scrollToBottom: '滚动到底部',
     stepInfo: '步骤信息',

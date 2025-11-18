@@ -85,6 +85,14 @@
                     e => {
                       step.stepRequirement = (e.target as HTMLTextAreaElement).value
                       autoResizeTextarea(e)
+                      // Sync to templateConfig and mark as modified
+                      templateConfig.setSteps(displayData.steps)
+                      if (templateConfig.currentPlanTemplateId.value) {
+                        templateStore.hasTaskRequirementModified = true
+                        console.log(
+                          '[JsonEditorV2] Step requirement modified, hasTaskRequirementModified set to true'
+                        )
+                      }
                     }
                   "
                   class="form-textarea auto-resize"
@@ -103,6 +111,14 @@
                     e => {
                       step.terminateColumns = (e.target as HTMLTextAreaElement).value
                       autoResizeTextarea(e)
+                      // Sync to templateConfig and mark as modified
+                      templateConfig.setSteps(displayData.steps)
+                      if (templateConfig.currentPlanTemplateId.value) {
+                        templateStore.hasTaskRequirementModified = true
+                        console.log(
+                          '[JsonEditorV2] Terminate columns modified, hasTaskRequirementModified set to true'
+                        )
+                      }
                     }
                   "
                   class="form-textarea auto-resize"
@@ -439,22 +455,47 @@ const generatedJsonOutput = computed(() => {
   return templateConfig.generateJsonString()
 })
 
+// Flag to track if we're syncing from config (to avoid setting modification flag during load)
+const isSyncingFromConfig = ref(false)
+
 // Sync displayData with templateConfig
 const syncDisplayDataFromConfig = () => {
-  const config = templateConfig.getConfig()
-  displayData.title = config.title || ''
-  displayData.steps = config.steps || []
-  // Sync service group
-  serviceGroup.value = config.serviceGroup || ''
+  isSyncingFromConfig.value = true
+  try {
+    const config = templateConfig.getConfig()
+    displayData.title = config.title || ''
+    displayData.steps = config.steps || []
+    // Sync service group
+    serviceGroup.value = config.serviceGroup || ''
+  } finally {
+    // Use nextTick to ensure the watch doesn't trigger during sync
+    setTimeout(() => {
+      isSyncingFromConfig.value = false
+    }, 0)
+  }
 }
 
 // Sync displayData changes back to templateConfig
 watch(
   () => displayData,
   () => {
+    // Skip if we're syncing from config (initial load)
+    if (isSyncingFromConfig.value) {
+      return
+    }
+
     // Update templateConfig when displayData changes
     templateConfig.setTitle(displayData.title)
     templateConfig.setSteps(displayData.steps)
+
+    // Mark task requirements as modified if there's a selected template
+    // Note: This is a fallback - the @input handlers should handle most cases
+    if (templateConfig.currentPlanTemplateId.value) {
+      templateStore.hasTaskRequirementModified = true
+      console.log(
+        '[JsonEditorV2] Task requirements modified (via watch), hasTaskRequirementModified set to true'
+      )
+    }
   },
   { deep: true }
 )
