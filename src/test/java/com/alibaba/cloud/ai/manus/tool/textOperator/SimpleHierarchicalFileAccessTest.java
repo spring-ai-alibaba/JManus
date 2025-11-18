@@ -15,19 +15,20 @@
  */
 package com.alibaba.cloud.ai.manus.tool.textOperator;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Simple test class for enhanced hierarchical file access functionality Tests the new
@@ -226,16 +227,6 @@ public class SimpleHierarchicalFileAccessTest {
 
 		public void setAllowExternalAccess(boolean allowExternalAccess) {
 			this.allowExternalAccess = allowExternalAccess;
-		}
-
-		@Override
-		public Boolean getInfiniteContextEnabled() {
-			return false;
-		}
-
-		@Override
-		public Integer getInfiniteContextTaskContextSize() {
-			return 10000;
 		}
 
 	}

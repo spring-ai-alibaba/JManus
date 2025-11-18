@@ -15,11 +15,16 @@
  */
 package com.alibaba.cloud.ai.manus.exception.handler;
 
-import com.alibaba.cloud.ai.manus.exception.PlanException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.reactive.result.method.annotation.ResponseEntityExceptionHandler;
+
+import com.alibaba.cloud.ai.manus.exception.PlanException;
+import com.alibaba.cloud.ai.manus.planning.exception.PlanTemplateConfigException;
 
 /**
  * @author dahua
@@ -33,7 +38,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@SuppressWarnings("rawtypes")
 	@ExceptionHandler(PlanException.class)
 	public ResponseEntity handlePlanException(PlanException ex) {
-		return ResponseEntity.internalServerError().body(ex.getMessage());
+		Map<String, Object> response = new HashMap<>();
+		response.put("error", ex.getMessage());
+		return ResponseEntity.internalServerError().body(response);
+	}
+
+	/**
+	 * Handle PlanTemplateConfigException - return JSON format with errorCode
+	 */
+	@ExceptionHandler(PlanTemplateConfigException.class)
+	public ResponseEntity<Map<String, Object>> handlePlanTemplateConfigException(PlanTemplateConfigException ex) {
+		Map<String, Object> response = new HashMap<>();
+		response.put("error", ex.getMessage());
+		response.put("errorCode", ex.getErrorCode());
+		return ResponseEntity.badRequest().body(response);
 	}
 
 	/**
@@ -42,7 +60,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@SuppressWarnings("rawtypes")
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity handleGlobalException(Exception ex) {
-		return ResponseEntity.internalServerError().body(ex.getMessage());
+		Map<String, Object> response = new HashMap<>();
+		response.put("error", ex.getMessage());
+		return ResponseEntity.internalServerError().body(response);
 	}
 
 }

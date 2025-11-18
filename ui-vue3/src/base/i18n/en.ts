@@ -432,7 +432,9 @@ const words: I18nType = {
       selectType: 'Select database type',
       enable: 'Enable',
       url: 'URL',
-      urlPlaceholder: 'e.g.: jdbc:mysql://localhost:3306/dbname',
+      urlPlaceholder: 'e.g.: localhost:3306/dbname',
+      urlHint:
+        'Enter connection string (e.g., localhost:3306/dbname). JDBC prefix will be added automatically.',
       driverClassName: 'Driver Class Name',
       driverClassNamePlaceholder: 'e.g.: com.mysql.cj.jdbc.Driver',
       driverClassNameHint: 'Auto-filled based on database type',
@@ -748,6 +750,8 @@ const words: I18nType = {
     triggeredByTool: 'Triggered by Tool',
     planExecution: 'Plan Execution',
     userInputRequired: 'User Input Required',
+    funcAgentExecutionDetails: 'Func-Agent Execution Details',
+    clickToViewExecutionDetails: 'Click to view execution details',
   },
 
   // Input component
@@ -780,7 +784,7 @@ const words: I18nType = {
   sidebar: {
     title: 'Func-Agent Template Name',
     templateList: 'Template List',
-    configuration: 'Configuration',
+    configuration: 'Func-Agent Config',
     newPlan: 'New Func-Agent Plan',
     loading: 'Loading...',
     retry: 'Retry',
@@ -813,6 +817,8 @@ const words: I18nType = {
     statusApiUrl: 'Status Query API',
     executing: 'Executing...',
     executePlan: 'Execute Plan',
+    executionInProgress:
+      'A task is currently executing. Please wait for it to complete before starting a new one',
     publishMcpService: 'Publish as Tool Service',
     updateServiceStatus: 'Update Service Status',
 
@@ -898,6 +904,13 @@ const words: I18nType = {
     updateSuccess: 'Plan updated successfully!',
     updateFailed: 'Failed to update plan',
     executeFailed: 'Failed to execute plan',
+    copyPlan: 'Copy Plan',
+    newPlanTitle: 'New Plan Title',
+    enterNewPlanTitle: 'Enter new plan title',
+    copying: 'Copying...',
+    copyPlanSuccess: 'Plan copied successfully: {title}',
+    copyPlanFailed: 'Failed to copy plan: {message}',
+    duplicatePlanTitle: 'Duplicate plan title',
     unknown: 'Unknown',
     newTemplateName: 'New Execution Plan',
     newTemplateDescription: 'Please use the plan generator to create a new plan template',
@@ -1148,6 +1161,7 @@ const words: I18nType = {
     output: 'Output',
     tool: 'Tool',
     toolParameters: 'Tool Parameters',
+    noToolsExecuted: 'No tools were executed in this action',
     noStepDetails: 'No detailed step information available',
     scrollToBottom: 'Scroll to Bottom',
     stepInfo: 'Step Information',
@@ -1281,7 +1295,7 @@ const words: I18nType = {
     toolDescriptionPlaceholder: 'Please enter tool description',
     toolDescriptionDescription:
       'Tell the model when to use this tool. The more detailed you write (when to choose, when not to choose), the more accurate the model will be in selecting tools.',
-    serviceGroup: 'Service Group *',
+    serviceGroup: 'Service Group',
     serviceGroupPlaceholder: 'Please enter service group',
     serviceGroupDescription:
       'Used to group tools, making it easier for you to find your tool among many tools.',
@@ -1353,6 +1367,7 @@ const words: I18nType = {
     selectMemory: 'Select Memory',
     clearMemory: 'Clear Memory',
     newChat: 'new chat',
+    loadHistoryFailed: 'Failed to load conversation history',
   },
   // Common placeholders
   selectCommon: {

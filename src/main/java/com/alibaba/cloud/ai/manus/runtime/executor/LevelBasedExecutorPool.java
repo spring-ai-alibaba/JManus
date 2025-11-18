@@ -23,6 +23,8 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +37,7 @@ import org.springframework.stereotype.Component;
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 
 /**
@@ -53,9 +56,15 @@ public class LevelBasedExecutorPool {
 
 	private static final long DEFAULT_KEEP_ALIVE_TIME = 60L;
 
+	private static final long POOL_SIZE_CHECK_INTERVAL_SECONDS = 10L;
+
 	private final Map<Integer, ExecutorService> levelPools = new ConcurrentHashMap<>();
 
 	private final AtomicInteger poolCounter = new AtomicInteger(0);
+
+	private volatile int currentPoolSize = -1;
+
+	private ScheduledExecutorService poolSizeMonitor;
 
 	@Autowired(required = false)
 	private ManusProperties manusProperties;
@@ -71,7 +80,7 @@ public class LevelBasedExecutorPool {
 			depthLevel = 0;
 		}
 
-		return levelPools.computeIfAbsent(depthLevel, this::createLevelPool);
+		return levelPools.computeIfAbsent(depthLevel, level -> createLevelPool(level));
 	}
 
 	/**
@@ -174,11 +183,125 @@ public class LevelBasedExecutorPool {
 	}
 
 	/**
+	 * Initialize the dynamic pool size monitor
+	 */
+	@PostConstruct
+	public void init() {
+		// Initialize current pool size
+		currentPoolSize = getConfiguredPoolSize();
+
+		// Start the periodic pool size monitor
+		poolSizeMonitor = new ScheduledThreadPoolExecutor(1, r -> {
+			Thread thread = new Thread(r, "level-based-executor-pool-size-monitor");
+			thread.setDaemon(true);
+			return thread;
+		});
+
+		poolSizeMonitor.scheduleWithFixedDelay(this::checkAndAdjustPoolSizes, POOL_SIZE_CHECK_INTERVAL_SECONDS,
+				POOL_SIZE_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS);
+
+		log.info("Started dynamic pool size monitor (check interval: {} seconds)", POOL_SIZE_CHECK_INTERVAL_SECONDS);
+	}
+
+	/**
+	 * Check configured pool size and adjust all level pools if changed
+	 */
+	private void checkAndAdjustPoolSizes() {
+		try {
+			int configuredSize = getConfiguredPoolSize();
+			// Validate configured size before using it
+			if (configuredSize <= 0) {
+				log.warn("Invalid pool size configuration: {}. Using default value: 5", configuredSize);
+				configuredSize = 5;
+			}
+			if (configuredSize != currentPoolSize) {
+				log.info("Pool size configuration changed from {} to {}. Adjusting all level pools...", currentPoolSize,
+						configuredSize);
+				adjustAllPoolSizes(configuredSize);
+				currentPoolSize = configuredSize;
+			}
+		}
+		catch (Exception e) {
+			log.error("Error while checking and adjusting pool sizes: {}", e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Adjust pool size for all existing level pools
+	 * @param newPoolSize The new pool size to apply
+	 */
+	private void adjustAllPoolSizes(int newPoolSize) {
+		for (Map.Entry<Integer, ExecutorService> entry : levelPools.entrySet()) {
+			int level = entry.getKey();
+			ExecutorService executor = entry.getValue();
+			if (executor instanceof ThreadPoolExecutor) {
+				adjustPoolSize(level, (ThreadPoolExecutor) executor, newPoolSize);
+			}
+		}
+	}
+
+	/**
+	 * Adjust the pool size of a specific ThreadPoolExecutor
+	 * @param depthLevel The depth level
+	 * @param executor The ThreadPoolExecutor to adjust
+	 * @param newPoolSize The new pool size
+	 */
+	private void adjustPoolSize(int depthLevel, ThreadPoolExecutor executor, int newPoolSize) {
+		try {
+			// Validate newPoolSize before using it
+			if (newPoolSize <= 0) {
+				log.error("Invalid pool size {} for level {}. Pool size must be greater than 0. Skipping adjustment.",
+						newPoolSize, depthLevel);
+				return;
+			}
+
+			if (executor == null) {
+				log.error("Executor is null for level {}. Skipping adjustment.", depthLevel);
+				return;
+			}
+
+			int oldCoreSize = executor.getCorePoolSize();
+			int oldMaxSize = executor.getMaximumPoolSize();
+
+			// Update both core and maximum pool size
+			executor.setCorePoolSize(newPoolSize);
+			executor.setMaximumPoolSize(newPoolSize);
+
+			log.info("Adjusted pool size for level {}: core {} -> {}, max {} -> {}", depthLevel, oldCoreSize,
+					newPoolSize, oldMaxSize, newPoolSize);
+		}
+		catch (IllegalArgumentException e) {
+			log.error("Failed to adjust pool size for level {}: Invalid pool size value. Error: {}", depthLevel,
+					e.getMessage());
+		}
+		catch (Exception e) {
+			log.error("Failed to adjust pool size for level {}: {}", depthLevel, e.getMessage(), e);
+		}
+	}
+
+	/**
 	 * Shutdown all level pools
 	 */
 	@PreDestroy
 	public void shutdownAll() {
 		log.info("Shutting down all level-based executor pools");
+
+		// Shutdown the pool size monitor
+		if (poolSizeMonitor != null && !poolSizeMonitor.isShutdown()) {
+			log.info("Shutting down pool size monitor");
+			poolSizeMonitor.shutdown();
+			try {
+				if (!poolSizeMonitor.awaitTermination(5, TimeUnit.SECONDS)) {
+					poolSizeMonitor.shutdownNow();
+				}
+			}
+			catch (InterruptedException e) {
+				poolSizeMonitor.shutdownNow();
+				Thread.currentThread().interrupt();
+			}
+		}
+
+		// Shutdown all level pools
 		for (Map.Entry<Integer, ExecutorService> entry : levelPools.entrySet()) {
 			int level = entry.getKey();
 			ExecutorService executor = entry.getValue();
@@ -193,8 +316,17 @@ public class LevelBasedExecutorPool {
 	 * configured
 	 */
 	private int getConfiguredPoolSize() {
-		if (manusProperties != null && manusProperties.getExecutorPoolSize() != null) {
-			return manusProperties.getExecutorPoolSize();
+		try {
+			if (manusProperties != null) {
+				Integer poolSize = manusProperties.getExecutorPoolSize();
+				if (poolSize != null && poolSize > 0) {
+					return poolSize;
+				}
+			}
+		}
+		catch (Exception e) {
+			log.warn("Error getting executor pool size from ManusProperties: {}. Using default value: 5",
+					e.getMessage());
 		}
 		return 5; // Default value
 	}

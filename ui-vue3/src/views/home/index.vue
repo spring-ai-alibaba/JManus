@@ -82,13 +82,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
 import BlurCard from '@/components/blurCard/BlurCard.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
 import { useTaskStore } from '@/stores/task'
+import { Icon } from '@iconify/vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 // Define component name for Vue linting rules
 defineOptions({
@@ -222,41 +222,34 @@ onMounted(() => {
 })
 
 import { sidebarStore } from '@/stores/sidebar'
+import { templateStore } from '@/stores/templateStore'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+
+const templateConfig = usePlanTemplateConfigSingleton()
 
 const saveJsonPlanToTemplate = async (jsonPlan: JsonPlan) => {
   try {
-    await sidebarStore.createNewTemplate(jsonPlan.planType)
-    sidebarStore.jsonContent = JSON.stringify(jsonPlan)
-    const saveResult = await sidebarStore.saveTemplate()
-    const result = saveResult as {
-      duplicate?: boolean
-      saved?: boolean
-      message?: string
-      versionCount?: number
+    await templateStore.createNewTemplate(jsonPlan.planType)
+    templateConfig.fromJsonString(JSON.stringify(jsonPlan))
+    const saveSuccess = await templateConfig.save()
+
+    if (!saveSuccess) {
+      throw new Error('Failed to save plan template')
     }
-    if (result?.duplicate) {
-      console.log(
-        '[Sidebar] ' +
-          t('sidebar.saveCompleted', {
-            message: result.message,
-            versionCount: result.versionCount,
-          })
-      )
-    } else if (result?.saved) {
-      console.log(
-        '[Sidebar] ' +
-          t('sidebar.saveSuccess', {
-            message: result.message,
-            versionCount: result.versionCount,
-          })
-      )
-    } else if (result?.message) {
-      console.log('[Sidebar] ' + t('sidebar.saveStatus', { message: result.message }))
+
+    // Return success result with plan template ID
+    const result = {
+      saved: true,
+      message: 'Plan template saved successfully',
+      planId:
+        templateConfig.config.planTemplateId ||
+        templateConfig.selectedTemplate.value?.planTemplateId,
     }
-    return saveResult // Return the save result
+
+    console.log('[Home] Plan template saved successfully:', result.planId)
+    return result
   } catch (error: unknown) {
-    console.error('[Sidebar] Failed to save the plan to the template library:', error)
-    // Note: This would need toast import if used in this context
+    console.error('[Home] Failed to save the plan to the template library:', error)
     const errorMessage = error instanceof Error ? error.message : t('sidebar.saveFailed')
     alert(errorMessage)
     throw error // Re-throw the error
@@ -274,9 +267,10 @@ const adjustTextareaHeight = () => {
 
 const handleKeydown = (event: KeyboardEvent) => {
   console.log('[Home] handleKeydown called, key:', event.key)
-  if (event.key === 'Enter' && !event.shiftKey) {
+  // Ctrl+Enter to send
+  if (event.key === 'Enter' && event.ctrlKey) {
     event.preventDefault()
-    console.log('[Home] Enter key pressed, calling handleSend')
+    console.log('[Home] Ctrl+Enter key pressed, calling handleSend')
     handleSend()
   }
 }
@@ -362,37 +356,39 @@ const selectPlan = async (plan: PlanItem) => {
       // Toggle the sidebar
       if (sidebarStore.isCollapsed) {
         await sidebarStore.toggleSidebar()
-        console.log('[Sidebar] Sidebar toggled')
+        console.log('[Home] Sidebar toggled')
       } else {
-        console.log('[Sidebar] Sidebar is already open')
+        console.log('[Home] Sidebar is already open')
       }
 
       // Load the template list
-      await sidebarStore.loadPlanTemplateList()
-      console.log('[Sidebar] Template list loaded')
+      await templateStore.loadPlanTemplateList()
+      console.log('[Home] Template list loaded')
 
       // Find and select the template - use the updated ID from saveResult or fallback to original
       const templateId = (saveResult as { planId?: string })?.planId || plan.planJson.planTemplateId
-      const template = sidebarStore.planTemplateList.find(t => t.id === templateId)
+      const template = templateConfig.planTemplateList.value.find(
+        t => t.planTemplateId === templateId
+      )
       if (!template) {
-        console.error('[Sidebar] Template not found for ID:', templateId)
+        console.error('[Home] Template not found for ID:', templateId)
         console.log(
-          '[Sidebar] Available templates:',
-          sidebarStore.planTemplateList.map(t => t.id)
+          '[Home] Available templates:',
+          templateConfig.planTemplateList.value.map(t => t.planTemplateId)
         )
         return
       }
 
-      await sidebarStore.selectTemplate(template)
-      console.log('[Sidebar] Template selected:', template.title)
+      await templateStore.selectTemplate(template)
+      console.log('[Home] Template selected:', template.title)
 
       // Call the execute logic directly
       const executeBtn = document.querySelector('.execute-btn') as HTMLButtonElement
       if (!executeBtn.disabled) {
-        console.log('[Sidebar] Triggering execute button click')
+        console.log('[Home] Triggering execute button click')
         executeBtn.click()
       } else {
-        console.error('[Sidebar] Execute button not found or disabled')
+        console.error('[Home] Execute button not found or disabled')
       }
     })
   } catch (error) {

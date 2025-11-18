@@ -241,7 +241,8 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 
 		}
 		catch (Exception e) {
-			logger.error("Failed to create or update AgentExecutionRecordEntity for step: {}", step.getStepId(), e);
+			String stepId = (step != null && step.getStepId() != null) ? step.getStepId() : "unknown";
+			logger.error("Failed to create or update AgentExecutionRecordEntity for step: {}", stepId, e);
 			return null;
 		}
 	}

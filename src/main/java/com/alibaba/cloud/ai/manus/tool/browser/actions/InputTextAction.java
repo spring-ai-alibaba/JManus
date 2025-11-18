@@ -15,7 +15,6 @@
  */
 package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
-import com.alibaba.cloud.ai.manus.tool.browser.AriaElementHolder;
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.microsoft.playwright.Locator;
@@ -34,19 +33,6 @@ public class InputTextAction extends BrowserAction {
 		if (index == null || text == null) {
 			return new ToolExecuteResult("Index and text are required for 'input_text' action");
 		}
-
-		// Get ARIA node to check role
-		AriaElementHolder.AriaNode node = getAriaNodeByIdx(index);
-		if (node == null) {
-			return new ToolExecuteResult("Element with index " + index + " not found in ARIA snapshot");
-		}
-
-		// Check if element is a text input element
-		if (!"textbox".equals(node.role) && !"combobox".equals(node.role)) {
-			return new ToolExecuteResult(
-					"Element at index " + index + " is not an input element (role: " + node.role + ")");
-		}
-
 		// Get element locator
 		Locator elementLocator = getLocatorByIdx(index);
 		if (elementLocator == null) {
@@ -84,6 +70,16 @@ public class InputTextAction extends BrowserAction {
 				}
 			}
 		}
+
+		// Wait 500ms after input to allow page to update and JavaScript events to process
+		try {
+			Thread.sleep(500);
+		}
+		catch (InterruptedException ie) {
+			Thread.currentThread().interrupt();
+			// Continue execution even if interrupted
+		}
+
 		return new ToolExecuteResult(
 				"Successfully input: '" + text + "' to the specified element with index: " + index);
 	}

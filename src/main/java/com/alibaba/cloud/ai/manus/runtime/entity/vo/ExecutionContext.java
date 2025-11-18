@@ -50,8 +50,7 @@ public class ExecutionContext {
 	/** Execution plan entity containing detailed plan information and execution steps */
 	private PlanInterface plan;
 
-	/** User's original request content */
-	private String userRequest;
+	private String title;
 
 	/**
 	 * Whether to call large model to generate summary for execution results, true calls
@@ -201,20 +200,12 @@ public class ExecutionContext {
 		this.toolsContext.put(toolsKey, value);
 	}
 
-	/**
-	 * Get user's original request content
-	 * @return User request string
-	 */
-	public String getUserRequest() {
-		return userRequest;
+	public String getTitle() {
+		return title;
 	}
 
-	/**
-	 * Set user's original request content
-	 * @param userRequest User request string
-	 */
-	public void setUserRequest(String userRequest) {
-		this.userRequest = userRequest;
+	public void setTitle(String title) {
+		this.title = title;
 	}
 
 	// public boolean isUseConversation() {

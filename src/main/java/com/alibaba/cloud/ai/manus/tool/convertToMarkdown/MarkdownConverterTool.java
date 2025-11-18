@@ -15,15 +15,16 @@
  */
 package com.alibaba.cloud.ai.manus.tool.convertToMarkdown;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 /**
  * Markdown Converter Tool - Converts various file types to Markdown format
@@ -62,6 +63,9 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 		@JsonProperty("additionalRequirement")
 		private String additionalRequirement;
 
+		@JsonProperty("forceLlmForPdf")
+		private Boolean forceLlmForPdf;
+
 		// Getters and setters
 		public String getFilename() {
 			return filename;
@@ -79,15 +83,24 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 			this.additionalRequirement = additionalRequirement;
 		}
 
+		public Boolean getForceLlmForPdf() {
+			return forceLlmForPdf;
+		}
+
+		public void setForceLlmForPdf(Boolean forceLlmForPdf) {
+			this.forceLlmForPdf = forceLlmForPdf;
+		}
+
 	}
 
 	@Override
 	public ToolExecuteResult run(MarkdownConverterInput input) {
 		String filename = input.getFilename();
 		String additionalRequirement = input.getAdditionalRequirement();
+		Boolean forceLlmForPdf = input.getForceLlmForPdf();
 
-		log.info("MarkdownConverterTool processing file: {} with additional requirement: {}", filename,
-				additionalRequirement);
+		log.info("MarkdownConverterTool processing file: {} with additional requirement: {}, forceLlmForPdf: {}",
+				filename, additionalRequirement, forceLlmForPdf);
 
 		try {
 			// Step 1: Validate input
@@ -101,11 +114,11 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 				return new ToolExecuteResult("Error: File has no extension: " + filename);
 			}
 
-			// Step 3: Find the file in current plan directory
-			Path sourceFile = findFileInCurrentPlan(filename);
+			// Step 3: Find the file in root plan shared directory
+			Path sourceFile = findFileInRootPlan(filename);
 			if (sourceFile == null || !Files.exists(sourceFile)) {
 				return new ToolExecuteResult("Error: File not found: " + filename
-						+ ". Please ensure the file exists in the current plan directory.");
+						+ ". Please ensure the file exists in the root plan shared directory (rootPlanId/shared/).");
 			}
 
 			// Step 4: Dispatch to appropriate processor
@@ -113,7 +126,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 			return switch (ext) {
 				case "doc", "docx" -> processWordToMarkdown(sourceFile, additionalRequirement);
 				case "xlsx", "xls" -> processExcelToMarkdown(sourceFile, additionalRequirement);
-				case "pdf" -> processPdfToMarkdown(sourceFile, additionalRequirement);
+				case "pdf" -> processPdfToMarkdown(sourceFile, additionalRequirement, forceLlmForPdf);
 				case "jpg", "jpeg", "png", "gif" -> processImageToMarkdown(sourceFile, additionalRequirement);
 				case "txt", "md", "json", "xml", "yaml", "yml", "log", "java", "py", "js", "html", "css" ->
 					processTextToMarkdown(sourceFile, additionalRequirement);
@@ -134,7 +147,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	private ToolExecuteResult processWordToMarkdown(Path sourceFile, String additionalRequirement) {
 		try {
 			WordToMarkdownProcessor processor = new WordToMarkdownProcessor(directoryManager);
-			return processor.convertToMarkdown(sourceFile, additionalRequirement, currentPlanId);
+			return processor.convertToMarkdown(sourceFile, additionalRequirement, rootPlanId);
 		}
 		catch (Exception e) {
 			log.error("Word to Markdown conversion failed: {}", sourceFile.getFileName(), e);
@@ -148,7 +161,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	private ToolExecuteResult processExcelToMarkdown(Path sourceFile, String additionalRequirement) {
 		try {
 			ExcelToMarkdownProcessor processor = new ExcelToMarkdownProcessor(directoryManager);
-			return processor.convertToMarkdown(sourceFile, additionalRequirement, currentPlanId);
+			return processor.convertToMarkdown(sourceFile, additionalRequirement, rootPlanId);
 		}
 		catch (Exception e) {
 			log.error("Excel to Markdown conversion failed: {}", sourceFile.getFileName(), e);
@@ -159,10 +172,12 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	/**
 	 * Process PDF files to Markdown
 	 */
-	private ToolExecuteResult processPdfToMarkdown(Path sourceFile, String additionalRequirement) {
+	private ToolExecuteResult processPdfToMarkdown(Path sourceFile, String additionalRequirement,
+			Boolean forceLlmForPdf) {
 		try {
 			PdfToMarkdownProcessor processor = new PdfToMarkdownProcessor(directoryManager, ocrProcessor);
-			return processor.convertToMarkdown(sourceFile, additionalRequirement, currentPlanId);
+			boolean forceLlm = forceLlmForPdf != null && forceLlmForPdf;
+			return processor.convertToMarkdown(sourceFile, additionalRequirement, rootPlanId, forceLlm);
 		}
 		catch (Exception e) {
 			log.error("PDF to Markdown conversion failed: {}", sourceFile.getFileName(), e);
@@ -181,7 +196,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 
 			// Generate markdown filename
 			String markdownFilename = generateMarkdownFilename(sourceFile.getFileName().toString());
-			return imageOcrProcessor.convertImageToTextWithOcr(sourceFile, additionalRequirement, currentPlanId,
+			return imageOcrProcessor.convertImageToTextWithOcr(sourceFile, additionalRequirement, rootPlanId,
 					markdownFilename);
 		}
 		catch (Exception e) {
@@ -196,7 +211,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	private ToolExecuteResult processTextToMarkdown(Path sourceFile, String additionalRequirement) {
 		try {
 			TextToMarkdownProcessor processor = new TextToMarkdownProcessor(directoryManager);
-			return processor.convertToMarkdown(sourceFile, additionalRequirement, currentPlanId);
+			return processor.convertToMarkdown(sourceFile, additionalRequirement, rootPlanId);
 		}
 		catch (Exception e) {
 			log.error("Text to Markdown conversion failed: {}", sourceFile.getFileName(), e);
@@ -205,19 +220,35 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	}
 
 	/**
-	 * Find file in current plan directory
+	 * Find file in root plan shared directory (same as GlobalFileOperator)
 	 */
-	private Path findFileInCurrentPlan(String filename) {
+	private Path findFileInRootPlan(String filename) {
 		try {
-			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path filePath = currentPlanDir.resolve(filename);
+			if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
+				log.error("rootPlanId is required for file operations but is null or empty");
+				return null;
+			}
+
+			// Get the root plan directory and resolve to shared subdirectory (same as
+			// GlobalFileOperator)
+			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
+			Path sharedDirectory = rootPlanDirectory.resolve("shared");
+
+			// Resolve file path within the shared directory
+			Path filePath = sharedDirectory.resolve(filename).normalize();
+
+			// Ensure the path stays within the shared directory
+			if (!filePath.startsWith(sharedDirectory)) {
+				log.warn("File path is outside shared directory: {}", filename);
+				return null;
+			}
 
 			if (Files.exists(filePath)) {
-				log.info("Found file in current plan: {}", filename);
+				log.info("Found file in root plan shared directory: {}", filename);
 				return filePath;
 			}
 
-			log.warn("File not found in current plan: {}", filename);
+			log.warn("File not found in root plan shared directory: {}", filename);
 			return null;
 		}
 		catch (Exception e) {
@@ -261,7 +292,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 				+ "Supports image files (.jpg, .jpeg, .png, .gif) using OCR processing to extract text content. "
 				+ "Supports text files (.txt, .md, .json, .xml, .yaml, .yml, .log, .java, .py, .js, .html, .css) "
 				+ "with type-specific formatting. "
-				+ "The converted file will be saved with .md extension in the current plan directory. "
+				+ "The converted file will be saved with .md extension in the root plan shared directory (rootPlanId/shared/). "
 				+ "Additional requirements can be specified for custom conversion needs. "
 				+ "**Best Practice**: Always convert complex documents to Markdown first for better content analysis and processing.";
 	}
@@ -269,10 +300,12 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	@Override
 	public String getParameters() {
 		return "{\"type\":\"object\"," + "\"properties\":{" + "\"filename\":{\"type\":\"string\","
-				+ "\"description\":\"Name of the file to convert to Markdown (must exist in current plan directory)\"},"
+				+ "\"description\":\"Name of the file to convert to Markdown (must exist in root plan shared directory, rootPlanId/shared/)\"},"
 				+ "\"additionalRequirement\":{\"type\":\"string\","
-				+ "\"description\":\"Optional additional requirements for conversion (e.g., specific formatting, structure)\"}"
-				+ "}," + "\"required\":[\"filename\"]}";
+				+ "\"description\":\"Optional additional requirements for conversion (e.g., specific formatting, structure)\"},"
+				+ "\"forceLlmForPdf\":{\"type\":\"boolean\","
+				+ "\"description\":\"Optional flag to force using LLM/OCR for PDF processing instead of auto-detection. Only applies to PDF files.\","
+				+ "\"default\":false}" + "}," + "\"required\":[\"filename\"]}";
 	}
 
 	@Override
@@ -287,9 +320,7 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 
 	@Override
 	public String getCurrentToolStateString() {
-		return String.format(
-				"MarkdownConverterTool State:\n- Current Plan ID: %s\n- Supported File Types: .doc, .docx, .xlsx, .xls, .pdf, .jpg, .jpeg, .png, .gif, .txt, .md, .json, .xml, .yaml, .yml, .log, .java, .py, .js, .html, .css",
-				currentPlanId);
+		return "";
 	}
 
 	@Override

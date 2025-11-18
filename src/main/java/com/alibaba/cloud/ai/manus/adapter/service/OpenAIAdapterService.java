@@ -15,19 +15,19 @@
  */
 package com.alibaba.cloud.ai.manus.adapter.service;
 
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.alibaba.cloud.ai.manus.adapter.model.OpenAIRequest;
 import com.alibaba.cloud.ai.manus.adapter.model.OpenAIResponse;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * OpenAI Adapter Service Converts OpenAI format requests to JManus execution flow and
@@ -187,15 +187,15 @@ public class OpenAIAdapterService {
 	/**
 	 * Create execution context for JManus
 	 */
-	private ExecutionContext createExecutionContext(String userMessage, String planId) {
+	private ExecutionContext createExecutionContext(String title, String planId) {
 		try {
 			ExecutionContext context = new ExecutionContext();
-			context.setUserRequest(userMessage);
+			context.setTitle(title);
 			context.setCurrentPlanId(planId);
 			context.setRootPlanId(planId);
 			context.setNeedSummary(true);
 
-			logger.debug("Created execution context for planId: {}, messageLength: {}", planId, userMessage.length());
+			logger.debug("Created execution context for planId: {}, titleLength: {}", planId, title.length());
 			return context;
 		}
 		catch (Exception e) {

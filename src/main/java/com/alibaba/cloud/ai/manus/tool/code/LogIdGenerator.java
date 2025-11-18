@@ -46,9 +46,32 @@ public class LogIdGenerator {
 
 	private static final short CUR_VERSION = 0;
 
-	private static final int CUR_IP = InetAddresses.coerceToInteger(InetAddresses.forString(IpUtils.getLocalIp()));
+	private static final int CUR_IP = initializeCurIp();
 
 	private static final AtomicInteger SERIAL_GEN = new AtomicInteger(Integer.MIN_VALUE);
+
+	private static int initializeCurIp() {
+		String localIp = IpUtils.getLocalIp();
+		if (localIp == null || localIp.trim().isEmpty()) {
+			localIp = "127.0.0.1";
+		}
+		try {
+			var inetAddress = InetAddresses.forString(localIp);
+			if (inetAddress != null) {
+				return InetAddresses.coerceToInteger(inetAddress);
+			}
+		}
+		catch (Exception e) {
+			// Fall through to default
+		}
+		// Default to localhost if parsing fails
+		var defaultAddress = InetAddresses.forString("127.0.0.1");
+		if (defaultAddress != null) {
+			return InetAddresses.coerceToInteger(defaultAddress);
+		}
+		// Last resort: return 0 if everything fails
+		return 0;
+	}
 
 	/**
 	 * Generate a UUID using snowflake algorithm approach, generating a globally roughly

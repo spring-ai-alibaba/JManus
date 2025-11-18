@@ -16,23 +16,88 @@
 <template>
   <div class="chat-container">
     <!-- Messages container -->
-    <div
-      class="messages"
-      ref="messagesRef"
-      @scroll="handleScroll"
-      @click="handleMessageContainerClick"
-    >
+    <div class="messages" ref="messagesRef" @click="handleMessageContainerClick">
       <!-- Message list -->
-      <ChatMessage
+      <div
         v-for="message in compatibleMessages"
         :key="message.id"
-        :message="message"
-        :is-streaming="isMessageStreaming(message.id)"
-        @copy="handleCopyMessage"
-        @regenerate="handleRegenerateMessage"
-        @retry="handleRetryMessage"
-        @step-selected="handleStepSelected"
-      />
+        class="chat-message"
+        :class="[getMessageClasses(message), { streaming: isMessageStreaming(message.id) }]"
+      >
+        <!-- User message -->
+        <div v-if="message.type === 'user'" class="user-message" :data-message-id="message.id">
+          <div class="user-content">
+            <div class="message-text">
+              {{ message.content }}
+            </div>
+
+            <!-- Attachments if any -->
+            <div v-if="message.attachments?.length" class="attachments">
+              <div
+                v-for="(attachment, index) in message.attachments"
+                :key="index"
+                class="attachment-item"
+              >
+                <Icon icon="carbon:document" class="attachment-icon" />
+                <span class="attachment-name">{{ attachment.name }}</span>
+                <span class="attachment-size">{{ formatFileSize(attachment.size) }}</span>
+              </div>
+            </div>
+
+            <!-- Timestamp -->
+            <div class="message-timestamp">
+              {{ formatTimestamp(message.timestamp) }}
+            </div>
+          </div>
+
+          <!-- Message status indicator -->
+          <div v-if="message.error" class="message-status error">
+            <Icon icon="carbon:warning" class="status-icon" />
+            <span class="status-text">{{ message.error }}</span>
+          </div>
+        </div>
+
+        <!-- Assistant message -->
+        <div v-else-if="message.type === 'assistant'" class="assistant-message">
+          <!-- Plan execution section (when available) -->
+          <ExecutionDetails
+            v-if="message.planExecution"
+            :plan-execution="message.planExecution"
+            :step-actions="message.stepActions || []"
+            :generic-input="message.genericInput || ''"
+            @step-selected="handleStepSelected"
+          />
+
+          <!-- Response section -->
+          <ResponseSection
+            v-if="
+              message.content ||
+              message.error ||
+              isMessageStreaming(message.id) ||
+              message.planExecution?.userInputWaitState?.waiting
+            "
+            :content="message.content || ''"
+            :is-streaming="isMessageStreaming(message.id) || false"
+            v-bind="{
+              ...(message.error ? { error: message.error } : {}),
+              ...(message.planExecution?.userInputWaitState
+                ? { userInputWaitState: message.planExecution.userInputWaitState }
+                : {}),
+              ...(message.planExecution?.currentPlanId
+                ? { planId: message.planExecution.currentPlanId }
+                : {}),
+            }"
+            :timestamp="message.timestamp"
+            :generic-input="message.genericInput || ''"
+            @copy="() => handleCopyMessage(message.id)"
+            @regenerate="() => handleRegenerateMessage(message.id)"
+            @retry="() => handleRetryMessage(message.id)"
+            @user-input-submitted="
+              (inputData: Record<string, unknown>) => handleUserInputSubmit(message, inputData)
+            "
+          />
+        </div>
+      </div>
 
       <!-- Loading indicator -->
       <div v-if="isLoading" class="loading-message">
@@ -63,18 +128,17 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 // Import new modular components
-import ChatMessage from './ChatMessage.vue'
+import ExecutionDetails from './ExecutionDetails.vue'
+import ResponseSection from './ResponseSection.vue'
 
 // Import composables
-import {
-  convertMessageToCompatible,
-  useChatMessages,
-  type ChatMessage as ChatMessageType,
-} from './composables/useChatMessages'
+import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
+import type { ChatMessage as ChatMessageType } from '@/types/message-dialog'
+import { useMessageFormatting } from './composables/useMessageFormatting'
 import { useScrollBehavior } from './composables/useScrollBehavior'
 
-// Import plan execution manager
-import { planExecutionManager } from '@/utils/plan-execution-manager'
+// Plan execution updates are handled by useMessageDialog's watchEffect
+// No need to import usePlanExecutionSingleton here
 
 interface Emits {
   (e: 'step-selected', stepId: string): void
@@ -91,39 +155,33 @@ const emit = defineEmits<Emits>()
 // Initialize composables
 const { t } = useI18n()
 
-// Chat messages state
-const {
-  messages,
-  isLoading,
-  streamingMessageId,
-  addMessage,
-  updateMessage,
-  startStreaming,
-  stopStreaming,
-  findMessage,
-} = useChatMessages()
+// Message dialog state
+const messageDialog = useMessageDialogSingleton()
+const { messages, isLoading, streamingMessageId, updateMessage, startStreaming, findMessage } =
+  messageDialog
+
+// Plan execution updates are handled by useMessageDialog's watchEffect
+// No need to access planExecution directly here
 
 // Scroll behavior
 const messagesRef = ref<HTMLElement | null>(null)
 const { scrollToBottom, autoScrollToBottom, showScrollToBottom } = useScrollBehavior(messagesRef)
 
-// Local state
-const pollingInterval = ref<number>()
+// Message formatting
+const { getMessageClasses, formatTimestamp, formatFileSize } = useMessageFormatting()
 
 // Computed properties
 const isMessageStreaming = (messageId: string) => {
   return streamingMessageId.value === messageId
 }
 
-// Convert messages to compatible format for ChatMessage component
-const compatibleMessages = computed(() => {
-  return messages.value.map(convertMessageToCompatible)
-})
+// Messages are already in compatible format (useMessageDialog handles conversion)
+// Directly use messages.value instead of creating unnecessary wrapper
+const compatibleMessages = computed(() => messages.value)
 
 // Event handlers
-const handleScroll = () => {
-  // Scroll behavior is handled by useScrollBehavior composable
-}
+// Note: Scroll behavior is handled by useScrollBehavior composable
+// The @scroll handler is kept for potential future use but currently not needed
 
 const handleMessageContainerClick = (event: Event) => {
   // Handle markdown copy buttons and other click events
@@ -158,8 +216,10 @@ const handleCopyMessage = async (messageId: string) => {
   }
 }
 
+// Regenerate and retry handlers - placeholder implementations
+// TODO: Implement actual regeneration/retry logic when needed
+// Currently these are UI placeholders that reset message state
 const handleRegenerateMessage = (messageId: string) => {
-  // Implementation for regenerating assistant response
   const message = findMessage(messageId)
   if (message && message.type === 'assistant') {
     // Reset message content and restart generation
@@ -167,19 +227,23 @@ const handleRegenerateMessage = (messageId: string) => {
       content: '',
     })
     startStreaming(messageId)
-    // Trigger regeneration logic here
+    // TODO: Trigger actual regeneration API call here
+    console.warn('[ChatContainer] Regenerate not yet implemented')
   }
 }
 
 const handleRetryMessage = (messageId: string) => {
-  // Implementation for retrying failed message
   const message = findMessage(messageId)
   if (message) {
-    updateMessage(messageId, {
+    // Remove error property instead of setting to undefined
+    const updates: Partial<ChatMessageType> = {
       content: '',
-    })
+    }
+    // Only include error if we want to clear it (delete the property)
+    updateMessage(messageId, updates)
     startStreaming(messageId)
-    // Trigger retry logic here
+    // TODO: Trigger actual retry API call here
+    console.warn('[ChatContainer] Retry not yet implemented')
   }
 }
 
@@ -188,100 +252,19 @@ const handleStepSelected = (stepId: string) => {
   emit('step-selected', stepId)
 }
 
+// User input submission handler
+// TODO: Implement actual user input submission logic when needed
+// This should send user input to the backend for plan execution continuation
+const handleUserInputSubmit = (message: ChatMessageType, inputData: Record<string, unknown>) => {
+  console.log('[ChatContainer] User input submitted:', inputData, 'for message:', message.id)
+  // TODO: Send user input to backend via API
+  // Should call messageDialog or planExecution API to continue plan execution
+  console.warn('[ChatContainer] User input submission not yet implemented')
+}
+
 // Message handling methods removed - ChatContainer is now a pure display component
-
-// Plan execution handlers
-const handlePlanUpdate = (rootPlanId: string) => {
-  console.log('[ChatContainer] Plan update received:', rootPlanId)
-
-  // Get the PlanExecutionRecord from the cache
-  const planDetails = planExecutionManager.getCachedPlanRecord(rootPlanId)
-
-  if (!planDetails) {
-    console.warn('[ChatContainer] No cached plan data found for rootPlanId:', rootPlanId)
-    return
-  }
-
-  console.log('[ChatContainer] Retrieved plan details from cache:', planDetails)
-
-  // Find the corresponding message
-  const messageIndex = messages.value.findIndex(
-    m => m.planExecution?.currentPlanId === planDetails.currentPlanId && m.type === 'assistant'
-  )
-
-  if (messageIndex !== -1) {
-    const message = messages.value[messageIndex]
-
-    // Update planExecution data using updateMessage
-    const updates: Partial<ChatMessageType> = {
-      planExecution: JSON.parse(JSON.stringify(planDetails)),
-    }
-
-    // Handle simple responses (cases without agent execution sequence)
-    if (!planDetails.agentExecutionSequence || planDetails.agentExecutionSequence.length === 0) {
-      console.log('[ChatContainer] Handling simple response without agent execution sequence')
-
-      if (planDetails.completed) {
-        // Clear thinking state and set final response
-        updates.thinking = ''
-        const finalResponse =
-          planDetails.summary ?? planDetails.result ?? planDetails.message ?? 'Execution completed'
-        updates.content = finalResponse
-        console.log('[ChatContainer] Set simple response content:', finalResponse)
-      }
-    } else {
-      console.log('[ChatContainer] Handling detailed plan with agent execution sequence')
-      // This is a detailed plan with execution steps, keep the plan execution display
-    }
-
-    // Update the message
-    updateMessage(message.id, updates)
-  }
-}
-
-const handlePlanCompleted = (planDetails: unknown) => {
-  console.log('[ChatContainer] Plan completed:', planDetails)
-
-  if (
-    planDetails &&
-    typeof planDetails === 'object' &&
-    'rootPlanId' in planDetails &&
-    planDetails.rootPlanId
-  ) {
-    const planDetailsObj = planDetails as Record<string, unknown>
-    const rootPlanId = planDetailsObj.rootPlanId as string
-    const messageIndex = messages.value.findIndex(
-      m => m.planExecution?.currentPlanId === rootPlanId
-    )
-
-    if (messageIndex !== -1) {
-      const message = messages.value[messageIndex]
-
-      const summary =
-        (planDetailsObj.summary as string) ??
-        (planDetailsObj.result as string) ??
-        'Execution completed'
-      updateMessage(message.id, {
-        thinking: '',
-        content: summary,
-      })
-      console.log('[ChatContainer] Updated completed message:', summary)
-    }
-  }
-}
-
-const handleDialogRoundStart = (planId: string) => {
-  console.log('[ChatContainer] Dialog round start:', planId)
-  // This method can be used to initialize plan execution state
-}
-
-const handlePlanError = (message: string) => {
-  console.log('[ChatContainer] Plan error:', message)
-
-  // Show error message
-  addMessage('assistant', `Error: ${message}`)
-  console.error('[ChatContainer] Plan execution error:', message)
-}
+// Plan execution record updates are handled by useMessageDialog's watchEffect
+// No need for duplicate watch here - useMessageDialog.updateMessageWithPlanRecord handles summary content
 
 // Scroll handlers (remove unused function)
 
@@ -299,33 +282,11 @@ onMounted(() => {
     },
     { deep: true }
   )
-
-  // Register plan execution callbacks
-  planExecutionManager.setEventCallbacks({
-    onPlanUpdate: handlePlanUpdate,
-    onPlanCompleted: handlePlanCompleted,
-    onDialogRoundStart: handleDialogRoundStart,
-    onPlanError: handlePlanError,
-  })
 })
 
 onUnmounted(() => {
-  if (pollingInterval.value) {
-    clearInterval(pollingInterval.value)
-  }
-})
-
-// Expose methods for parent components
-defineExpose({
-  scrollToBottom,
-  handlePlanUpdate,
-  handlePlanCompleted,
-  handleDialogRoundStart,
-  handlePlanError,
-  addMessage,
-  updateMessage,
-  startStreaming,
-  stopStreaming,
+  // Cleanup handled by composables (useScrollBehavior, useMessageDialog)
+  // No local cleanup needed
 })
 </script>
 
@@ -360,6 +321,115 @@ defineExpose({
       &:hover {
         background: rgba(255, 255, 255, 0.5);
       }
+    }
+  }
+
+  .chat-message {
+    width: 100%;
+
+    &.streaming {
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #4f46e5, transparent);
+        animation: streaming-pulse 2s ease-in-out infinite;
+      }
+    }
+  }
+
+  .user-message {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-bottom: 16px;
+
+    .user-content {
+      max-width: 70%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      padding: 12px 16px;
+      border-radius: 18px 18px 4px 18px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      position: relative;
+
+      .message-text {
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        line-height: 1.5;
+        font-size: 14px;
+      }
+
+      .attachments {
+        margin-top: 8px;
+
+        .attachment-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 8px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          margin-bottom: 4px;
+          font-size: 12px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .attachment-icon {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+          }
+
+          .attachment-name {
+            flex: 1;
+            color: #ffffff;
+          }
+
+          .attachment-size {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+          }
+        }
+      }
+
+      .message-timestamp {
+        margin-top: 6px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.7);
+        text-align: right;
+      }
+    }
+
+    .message-status {
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+
+      &.error {
+        color: #ff6b6b;
+
+        .status-icon {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+
+  .assistant-message {
+    margin-bottom: 24px;
+
+    // Add spacing between thinking and response sections
+    > * + * {
+      margin-top: 16px;
     }
   }
 
@@ -429,6 +499,20 @@ defineExpose({
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes streaming-pulse {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
   }
 }
 

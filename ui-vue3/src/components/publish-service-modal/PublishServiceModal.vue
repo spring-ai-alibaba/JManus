@@ -16,21 +16,6 @@
 <template>
   <Modal v-model="showModal" :title="modalTitle" @confirm="handlePublish">
     <div class="modal-form wide-modal">
-      <!-- Tool Name -->
-      <div class="form-section">
-        <div class="form-item">
-          <label>{{ t('mcpService.toolNameRequired') }}</label>
-          <input
-            type="text"
-            v-model="formData.serviceName"
-            :placeholder="t('mcpService.toolNamePlaceholder')"
-            :class="{ error: !formData.serviceName || !formData.serviceName.trim() }"
-            required
-          />
-          <div class="field-description">{{ t('mcpService.toolNameDescription') }}</div>
-        </div>
-      </div>
-
       <!-- Tool Description -->
       <div class="form-section">
         <div class="form-item">
@@ -44,40 +29,6 @@
             required
           />
           <div class="field-description">{{ t('mcpService.toolDescriptionDescription') }}</div>
-        </div>
-      </div>
-
-      <!-- Service Group -->
-      <div class="form-section">
-        <div class="form-item">
-          <label>{{ t('mcpService.serviceGroup') }}</label>
-          <div class="service-group-autocomplete">
-            <input
-              type="text"
-              v-model="formData.serviceGroup"
-              @input="handleServiceGroupInput"
-              @focus="showGroupSuggestions = true"
-              @blur="handleServiceGroupBlur"
-              :placeholder="t('mcpService.serviceGroupPlaceholder')"
-              :class="{ error: !formData.serviceGroup || !formData.serviceGroup.trim() }"
-              required
-            />
-            <!-- Filtered group suggestions dropdown -->
-            <div
-              v-if="showGroupSuggestions && filteredServiceGroups.length > 0"
-              class="service-group-dropdown"
-            >
-              <div
-                v-for="group in filteredServiceGroups"
-                :key="group"
-                class="service-group-option"
-                @mousedown="selectServiceGroup(group)"
-              >
-                {{ group }}
-              </div>
-            </div>
-          </div>
-          <div class="field-description">{{ t('mcpService.serviceGroupDescription') }}</div>
         </div>
       </div>
 
@@ -157,12 +108,7 @@
     <template #footer>
       <div class="button-container">
         <!-- Delete Button - Only shown when saved -->
-        <button
-          v-if="isSaved && currentTool?.id"
-          class="action-btn danger"
-          @click="handleDelete"
-          :disabled="deleting"
-        >
+        <button v-if="isSaved" class="action-btn danger" @click="handleDelete" :disabled="deleting">
           <Icon icon="carbon:loading" v-if="deleting" class="loading-icon" />
           <Icon icon="carbon:trash-can" v-else />
           {{ deleting ? t('mcpService.deleting') : t('mcpService.delete') }}
@@ -193,38 +139,37 @@
 
 <script setup lang="ts">
 import {
-  CoordinatorToolApiService,
-  type CoordinatorToolVO,
-} from '@/api/coordinator-tool-api-service'
-import {
   PlanParameterApiService,
   type ParameterRequirements,
 } from '@/api/plan-parameter-api-service'
-import { ToolApiService } from '@/api/tool-api-service'
 import Modal from '@/components/modal/index.vue'
+import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
+// Get template config singleton
+const templateConfig = usePlanTemplateConfigSingleton()
+
+// Get available tools singleton to refresh tool list after publishing
+const availableToolsStore = useAvailableToolsSingleton()
+
 // Props
 interface Props {
   modelValue: boolean
-  planTemplateId?: string
-  planDescription?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: false,
-  planTemplateId: '',
-  planDescription: '',
 })
 
 // Emits
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  published: [tool: CoordinatorToolVO | null]
+  published: [tool: null]
 }>()
 
 // Reactive data
@@ -238,12 +183,6 @@ const success = ref('')
 const publishing = ref(false)
 const deleting = ref(false)
 
-// Current tool data, used to determine whether to create or update
-const currentTool = ref<CoordinatorToolVO | null>(null)
-
-// Publishing status
-const isSaved = ref(false)
-
 // Service publishing options
 const publishAsHttpService = ref(false)
 const publishAsInternalToolcall = ref(true) // Default to true
@@ -256,112 +195,62 @@ const parameterRequirements = ref<ParameterRequirements>({
 })
 const isLoadingParameters = ref(false)
 
-// Service group autocomplete state
-const showGroupSuggestions = ref(false)
-const availableServiceGroups = ref<string[]>([])
-const isLoadingGroups = ref(false)
-
 // Form data
 const formData = reactive({
-  serviceName: '',
   userRequest: '',
-  endpoint: '',
-  serviceGroup: '',
   parameters: [] as Array<{ name: string; description: string }>,
 })
 
-// Filtered service groups based on input (reusing filtering pattern from ToolSelectionModal)
-const filteredServiceGroups = computed(() => {
-  const trimmedGroup = formData.serviceGroup.trim()
-  if (!trimmedGroup) {
-    return availableServiceGroups.value
-  }
-
-  const query = trimmedGroup.toLowerCase()
-  return availableServiceGroups.value.filter(group => group.toLowerCase().includes(query))
-})
-
-// Calculate modal title
+// Calculate modal title - check if toolConfig exists to determine if updating or creating
 const modalTitle = computed(() => {
-  const isUpdate = currentTool.value?.id
-  return isUpdate ? t('mcpService.updateService') : t('mcpService.createService')
+  const hasToolConfig = !!templateConfig.selectedTemplate.value?.toolConfig
+  return hasToolConfig ? t('mcpService.updateService') : t('mcpService.createService')
 })
 
-// Initialize form data
-const initializeFormData = () => {
-  formData.serviceName = '' // Show empty when no entity
-  formData.userRequest = props.planDescription || ''
-  formData.endpoint = ''
-  formData.serviceGroup = ''
-  // Only reset parameters when not loaded from plan template
-  if (!parameterRequirements.value.hasParameters) {
-    formData.parameters = []
-  }
-  currentTool.value = null
-  isSaved.value = false
-}
+// Check if tool is saved (has toolConfig)
+const isSaved = computed(() => {
+  return !!templateConfig.selectedTemplate.value?.toolConfig
+})
 
-// Watch tool description and copy to tool name when description changes
-watch(
-  () => formData.userRequest,
-  newDescription => {
-    // Copy description to tool name when description is entered
-    const trimmedDescription = newDescription.trim()
-    if (trimmedDescription) {
-      // Only copy if tool name is empty to avoid overwriting user input
-      if (!formData.serviceName.trim()) {
-        formData.serviceName = trimmedDescription
-      }
+// Initialize form data from templateConfig
+const initializeFormData = () => {
+  const toolConfig = templateConfig.selectedTemplate.value?.toolConfig
+
+  if (toolConfig) {
+    // Load from existing toolConfig
+    formData.userRequest = toolConfig.toolDescription || ''
+    publishAsHttpService.value = toolConfig.enableHttpService ?? false
+    publishAsInternalToolcall.value = toolConfig.enableInternalToolcall ?? true
+
+    // Load parameters from inputSchema if available, otherwise use parameter requirements
+    if (
+      toolConfig.inputSchema &&
+      Array.isArray(toolConfig.inputSchema) &&
+      toolConfig.inputSchema.length > 0
+    ) {
+      formData.parameters = toolConfig.inputSchema.map(param => ({
+        name: param.name || '',
+        description: param.description || '',
+      }))
+    } else if (!parameterRequirements.value.hasParameters) {
+      formData.parameters = []
+    }
+  } else {
+    // Initialize with defaults
+    formData.userRequest = ''
+    publishAsHttpService.value = false
+    publishAsInternalToolcall.value = true
+    // Only reset parameters when not loaded from plan template
+    if (!parameterRequirements.value.hasParameters) {
+      formData.parameters = []
     }
   }
-)
-
-// Load available service groups from tools (reusing logic from ToolSelectionModal)
-const loadAvailableServiceGroups = async () => {
-  if (isLoadingGroups.value) {
-    return
-  }
-
-  isLoadingGroups.value = true
-  try {
-    const tools = await ToolApiService.getAvailableTools()
-    // Extract unique service groups (same pattern as groupedTools in ToolSelectionModal)
-    const groupsSet = new Set<string>()
-    tools.forEach(tool => {
-      if (tool.serviceGroup) {
-        groupsSet.add(tool.serviceGroup)
-      }
-    })
-    availableServiceGroups.value = Array.from(groupsSet).sort()
-  } catch (error) {
-    console.error('[PublishModal] Failed to load service groups:', error)
-    availableServiceGroups.value = []
-  } finally {
-    isLoadingGroups.value = false
-  }
-}
-
-// Handle service group input
-const handleServiceGroupInput = () => {
-  showGroupSuggestions.value = true
-}
-
-// Handle service group blur (with delay to allow option click)
-const handleServiceGroupBlur = () => {
-  setTimeout(() => {
-    showGroupSuggestions.value = false
-  }, 200)
-}
-
-// Select a service group from dropdown
-const selectServiceGroup = (group: string) => {
-  formData.serviceGroup = group
-  showGroupSuggestions.value = false
 }
 
 // Load parameter requirements from plan template
 const loadParameterRequirements = async () => {
-  if (!props.planTemplateId) {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
     parameterRequirements.value = {
       parameters: [],
       hasParameters: false,
@@ -372,16 +261,24 @@ const loadParameterRequirements = async () => {
 
   isLoadingParameters.value = true
   try {
-    const requirements = await PlanParameterApiService.getParameterRequirements(
-      props.planTemplateId
-    )
+    const requirements = await PlanParameterApiService.getParameterRequirements(planTemplateId)
     parameterRequirements.value = requirements
 
     // Initialize form parameters with extracted parameters
+    // Preserve existing descriptions if parameters already exist (from toolConfig)
     if (requirements.hasParameters) {
+      // Create a map of existing parameters by name to preserve descriptions
+      const existingParamsMap = new Map<string, string>()
+      formData.parameters.forEach(param => {
+        if (param.name) {
+          existingParamsMap.set(param.name, param.description || '')
+        }
+      })
+
+      // Merge: use existing description if available, otherwise use empty string
       formData.parameters = requirements.parameters.map(param => ({
         name: param,
-        description: '',
+        description: existingParamsMap.get(param) || '',
       }))
     }
   } catch (error) {
@@ -417,21 +314,23 @@ const showMessage = (msg: string, type: 'success' | 'error' | 'info') => {
 
 // Validate form
 const validateForm = (): boolean => {
-  // Validate tool name
-  if (!formData.serviceName.trim()) {
-    showMessage(t('mcpService.toolNameRequiredError'), 'error')
-    return false
-  }
-
   // Validate tool description
   if (!formData.userRequest.trim()) {
     showMessage(t('mcpService.toolDescriptionRequiredError'), 'error')
     return false
   }
 
-  // Validate service group
-  if (!formData.serviceGroup.trim()) {
+  // Validate service group (from templateConfig)
+  const serviceGroup = templateConfig.getServiceGroup() || ''
+  if (!serviceGroup.trim()) {
     showMessage(t('mcpService.serviceGroupRequiredError'), 'error')
+    return false
+  }
+
+  // Validate tool name (from templateConfig title)
+  const toolName = templateConfig.getTitle() || ''
+  if (!toolName.trim()) {
+    showMessage(t('mcpService.toolNameRequiredError'), 'error')
     return false
   }
 
@@ -464,7 +363,6 @@ const validateForm = (): boolean => {
 const handlePublish = async () => {
   console.log('[PublishModal] Starting to handle publish request')
   console.log('[PublishModal] Form data:', formData)
-  console.log('[PublishModal] Current tool:', currentTool.value)
   console.log('[PublishModal] Publish as HTTP service:', publishAsHttpService.value)
 
   if (!validateForm()) {
@@ -474,41 +372,7 @@ const handlePublish = async () => {
 
   publishing.value = true
   try {
-    // 1. If no current tool data, get or create default first
-    if (!currentTool.value) {
-      console.log('[PublishModal] No current tool data, getting existing tool or creating default')
-      const existingTool = await CoordinatorToolApiService.getCoordinatorToolByTemplate(
-        props.planTemplateId
-      )
-
-      if (existingTool) {
-        currentTool.value = existingTool
-      } else {
-        // Create default tool VO (not saved yet)
-        currentTool.value = CoordinatorToolApiService.createDefaultCoordinatorTool(
-          props.planTemplateId,
-          undefined,
-          props.planDescription
-        )
-      }
-    }
-
-    // 2. Update tool information
-    console.log('[PublishModal] Updating tool information')
-    currentTool.value.toolName = formData.serviceName.trim()
-    currentTool.value.toolDescription = formData.userRequest.trim()
-    currentTool.value.serviceGroup = formData.serviceGroup.trim()
-    currentTool.value.planTemplateId = props.planTemplateId // Ensure planTemplateId is set
-
-    // Set service enabled status and corresponding endpoint
-    currentTool.value.enableInternalToolcall = publishAsInternalToolcall.value
-    currentTool.value.enableHttpService = publishAsHttpService.value
-    currentTool.value.enableMcpService = false
-
-    // Set corresponding endpoint
-    currentTool.value.mcpEndpoint = undefined
-
-    // 3. Update inputSchema
+    // Prepare inputSchema
     const inputSchema = formData.parameters
       .filter(param => param.name.trim() && param.description.trim())
       .map(param => ({
@@ -517,46 +381,41 @@ const handlePublish = async () => {
         type: 'string',
       }))
 
-    currentTool.value.inputSchema = JSON.stringify(inputSchema)
-    console.log('[PublishModal] Updated tool information:', currentTool.value)
+    // Update toolConfig in templateConfig
+    templateConfig.setToolDescription(formData.userRequest.trim())
+    templateConfig.setEnableInternalToolcall(publishAsInternalToolcall.value)
+    templateConfig.setEnableHttpService(publishAsHttpService.value)
+    templateConfig.setInputSchema(inputSchema)
 
-    // 4. Save tool
-    if (currentTool.value.id) {
-      console.log('[PublishModal] Updating existing tool, ID:', currentTool.value.id)
-      await CoordinatorToolApiService.updateCoordinatorTool(currentTool.value.id, currentTool.value)
-    } else {
-      console.log('[PublishModal] Creating new tool')
-      const savedTool = await CoordinatorToolApiService.createCoordinatorTool(currentTool.value)
-      currentTool.value = savedTool // Update current tool, including newly generated ID
+    // Save the plan template with updated toolConfig
+    const saveSuccess = await templateConfig.save()
+
+    if (!saveSuccess) {
+      throw new Error('Failed to save plan template')
     }
 
-    // 5. Perform corresponding publishing operations based on publish type
+    // selectedTemplate is automatically refreshed by templateConfig.save()
+
+    // Perform corresponding publishing operations based on publish type
     const enabledServices = []
     if (publishAsInternalToolcall.value) enabledServices.push('Internal Method Call')
     if (publishAsHttpService.value) enabledServices.push('HTTP Service')
 
     if (enabledServices.length > 0) {
       console.log(
-        '[PublishModal] Step 5: Publishing service, ID:',
-        currentTool.value.id,
-        'Enabled services:',
+        '[PublishModal] Service published successfully. Enabled services:',
         enabledServices.join(', ')
       )
-
-      // Build service URL information
-      const serviceUrls = []
-      if (publishAsInternalToolcall.value) {
-        serviceUrls.push(`Internal Call: ${formData.serviceName}`)
-      }
-
-      console.log('[PublishModal] Service published successfully')
       showMessage(t('mcpService.publishSuccess'), 'success')
-      emit('published', currentTool.value)
+      // Refresh available tools list to include the newly published tool
+      await availableToolsStore.loadAvailableTools()
+      emit('published', null) // Emit null since state is managed in templateConfig
     } else {
-      // Just save, don't publish as any service
       console.log('[PublishModal] Only saving tool, not publishing as any service')
       showMessage(t('mcpService.saveSuccess'), 'success')
-      emit('published', currentTool.value)
+      // Refresh available tools list even when only saving (tool might have been updated)
+      await availableToolsStore.loadAvailableTools()
+      emit('published', null)
     }
   } catch (err: unknown) {
     console.error('[PublishModal] Failed to publish service:', err)
@@ -576,7 +435,8 @@ const handleDelete = async () => {
     return
   }
 
-  if (!currentTool.value?.id) {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
     showMessage(
       t('mcpService.deleteFailed') + ': ' + t('mcpService.selectPlanTemplateFirst'),
       'error'
@@ -586,25 +446,30 @@ const handleDelete = async () => {
 
   deleting.value = true
   try {
-    console.log('[PublishModal] Starting to delete MCP service, ID:', currentTool.value.id)
+    console.log('[PublishModal] Starting to delete tool config for planTemplateId:', planTemplateId)
 
-    // Call delete API
-    const result = await CoordinatorToolApiService.deleteCoordinatorTool(currentTool.value.id)
+    // Remove toolConfig from templateConfig
+    templateConfig.setToolConfig(undefined)
 
-    if (result.success) {
-      console.log('[PublishModal] Deleted successfully')
-      showMessage(t('mcpService.deleteSuccess'), 'success')
+    // Save the plan template without toolConfig
+    const saveSuccess = await templateConfig.save()
 
-      // Close modal
-      showModal.value = false
-
-      // Notify parent component of successful deletion
-      emit('published', null)
-    } else {
-      throw new Error(result.message)
+    if (!saveSuccess) {
+      throw new Error('Failed to save plan template after deletion')
     }
+
+    // selectedTemplate is automatically refreshed by templateConfig.save()
+
+    console.log('[PublishModal] Deleted successfully')
+    showMessage(t('mcpService.deleteSuccess'), 'success')
+
+    // Close modal
+    showModal.value = false
+
+    // Notify parent component of successful deletion
+    emit('published', null)
   } catch (error: unknown) {
-    console.error('[PublishModal] Failed to delete MCP service:', error)
+    console.error('[PublishModal] Failed to delete tool config:', error)
     const message = error instanceof Error ? error.message : 'Unknown error'
     showMessage(t('mcpService.deleteFailed') + ': ' + message, 'error')
   } finally {
@@ -617,101 +482,7 @@ const watchModal = async () => {
   if (showModal.value) {
     console.log('[PublishModal] Modal opened, starting to initialize data')
     initializeFormData()
-    await loadCoordinatorToolData()
-  }
-}
-
-// Load coordinator tool data
-const loadCoordinatorToolData = async () => {
-  if (!props.planTemplateId) {
-    console.log('[PublishModal] ' + t('mcpService.noPlanTemplateId'))
-    return
-  }
-
-  try {
-    console.log(
-      '[PublishModal] Starting to load coordinator tool data, planTemplateId:',
-      props.planTemplateId
-    )
-
-    // Try to get existing tool
-    const existingTool = await CoordinatorToolApiService.getCoordinatorToolByTemplate(
-      props.planTemplateId
-    )
-
-    let tool: CoordinatorToolVO
-    if (existingTool) {
-      // Use existing tool
-      tool = existingTool
-      console.log('[PublishModal] Found existing coordinator tool:', tool)
-    } else {
-      // Create default tool VO (not saved to database)
-      tool = CoordinatorToolApiService.createDefaultCoordinatorTool(
-        props.planTemplateId,
-        undefined,
-        props.planDescription
-      )
-      console.log('[PublishModal] Created default coordinator tool VO:', tool)
-    }
-
-    // Save current tool data
-    currentTool.value = tool
-
-    // Only existing tools (with ID) are set as saved
-    isSaved.value = !!tool.id
-
-    // Build service URL information
-    const serviceUrls = []
-    if (tool.enableMcpService && tool.mcpEndpoint) {
-      const baseUrl = window.location.origin
-      serviceUrls.push(`MCP: ${baseUrl}/mcp${tool.mcpEndpoint}`)
-    }
-    if (tool.enableInternalToolcall) {
-      serviceUrls.push(`Internal Call: ${tool.toolName}`)
-    }
-
-    console.log('[PublishModal] Load tool data completed')
-    // Fill form data
-    formData.serviceName = tool.toolName || ''
-    formData.userRequest = tool.toolDescription || props.planDescription || ''
-    formData.serviceGroup = tool.serviceGroup ?? ''
-
-    // Set form data based on service type
-    publishAsHttpService.value = tool.enableHttpService ?? false
-    publishAsInternalToolcall.value = tool.enableInternalToolcall ?? false
-
-    // Parse inputSchema as parameters
-    try {
-      if (tool.inputSchema) {
-        const parameters = JSON.parse(tool.inputSchema)
-        if (Array.isArray(parameters) && parameters.length > 0) {
-          // Only override when inputSchema has parameters, otherwise keep parameters loaded from plan template
-          formData.parameters = parameters.map(param => ({
-            name: param.name || '',
-            description: param.description || '',
-          }))
-          console.log('[PublishModal] Load parameters from inputSchema:', formData.parameters)
-        } else {
-          console.log(
-            '[PublishModal] inputSchema is empty, keeping existing parameters:',
-            formData.parameters
-          )
-        }
-      }
-    } catch (e) {
-      console.warn('[PublishModal] ' + t('mcpService.parseInputSchemaFailed') + ':', e)
-      // Don't clear parameters when parsing fails, keep existing parameters
-      console.log(
-        '[PublishModal] Parsing failed, keeping existing parameters:',
-        formData.parameters
-      )
-    }
-
-    console.log('[PublishModal] Form data filled:', formData)
-  } catch (err: unknown) {
-    console.error('[PublishModal] ' + t('mcpService.loadToolDataFailed') + ':', err)
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    showMessage(t('mcpService.loadToolDataFailed') + ': ' + message, 'error')
+    await loadParameterRequirements()
   }
 }
 
@@ -720,7 +491,7 @@ watch(() => props.modelValue, watchModal)
 
 // Watch for planTemplateId changes
 watch(
-  () => props.planTemplateId,
+  () => templateConfig.currentPlanTemplateId.value,
   (newId, oldId) => {
     if (newId && newId !== oldId) {
       // If this is a new template ID (not from initial load), retry loading parameters
@@ -736,19 +507,11 @@ watch(
   }
 )
 
-// Load available service groups when modal opens
-watch(showModal, newVisible => {
-  if (newVisible) {
-    loadAvailableServiceGroups()
-  }
-})
-
 // Initialize when component mounts
 onMounted(async () => {
   if (showModal.value) {
     console.log('[PublishModal] Initialize when component mounted')
     initializeFormData()
-    await loadCoordinatorToolData()
     await loadParameterRequirements()
   }
 })

@@ -17,13 +17,6 @@
   <div class="execution-details">
     <!-- Plan overview -->
     <div class="plan-overview" v-if="planExecution">
-      <div class="plan-header">
-        <h3 class="plan-title">{{ planExecution.title || $t('chat.planExecution') }}</h3>
-        <div class="plan-status-badge" :class="getPlanStatusClass()">
-          {{ getPlanStatusText() }}
-        </div>
-      </div>
-
       <!-- Parent tool call information for sub-plans -->
       <div v-if="planExecution.parentActToolCall" class="parent-tool-call">
         <div class="parent-tool-header">
@@ -58,8 +51,19 @@
           <div class="agent-info">
             <Icon :icon="getAgentStatusIcon(agentExecution.status)" class="agent-status-icon" />
             <div class="agent-details">
-              <div class="agent-name">
-                {{ agentExecution.agentName || $t('chat.unknownAgent') }}
+              <div
+                class="agent-name"
+                :title="
+                  agentExecution.agentName === 'ConfigurableDynaAgent'
+                    ? $t('chat.clickToViewExecutionDetails')
+                    : ''
+                "
+              >
+                {{
+                  agentExecution.agentName === 'ConfigurableDynaAgent'
+                    ? $t('chat.funcAgentExecutionDetails')
+                    : agentExecution.agentName || $t('chat.unknownAgent')
+                }}
               </div>
               <pre class="request-content">{{ agentExecution.agentRequest }}</pre>
             </div>
@@ -124,15 +128,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
+import type { CompatiblePlanExecutionRecord } from '@/types/message-dialog'
 import type {
-  PlanExecutionRecord,
   AgentExecutionRecord,
   ExecutionStatus,
+  PlanExecutionRecord,
 } from '@/types/plan-execution-record'
-import type { CompatiblePlanExecutionRecord } from './composables/useChatMessages'
+import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
 import RecursiveSubPlan from './RecursiveSubPlan.vue'
 
 interface Props {
@@ -149,14 +152,11 @@ interface Emits {
   (e: 'step-selected', stepId: string): void
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 // Initialize i18n
 const { t } = useI18n()
-
-// Computed properties
-const agentExecutionSequence = computed(() => props.planExecution.agentExecutionSequence ?? [])
 
 // Agent click handler
 const handleAgentClick = (agentExecution: AgentExecutionRecord) => {
@@ -164,41 +164,6 @@ const handleAgentClick = (agentExecution: AgentExecutionRecord) => {
     emit('step-selected', agentExecution.stepId)
   } else {
     console.warn('[ExecutionDetails] Agent execution has no stepId:', agentExecution)
-  }
-}
-
-// Plan status methods
-const getPlanStatusClass = (): string => {
-  if (props.planExecution.completed) {
-    return 'completed'
-  }
-
-  const hasRunningAgent = agentExecutionSequence.value.some(agent => agent.status === 'RUNNING')
-  if (hasRunningAgent) {
-    return 'running'
-  }
-
-  const hasFinishedAgent = agentExecutionSequence.value.some(agent => agent.status === 'FINISHED')
-  if (hasFinishedAgent) {
-    return 'in-progress'
-  }
-
-  return 'pending'
-}
-
-const getPlanStatusText = (): string => {
-  const statusClass = getPlanStatusClass()
-  switch (statusClass) {
-    case 'completed':
-      return t('chat.status.completed')
-    case 'running':
-      return t('chat.status.executing')
-    case 'in-progress':
-      return t('chat.status.inProgress')
-    case 'pending':
-      return t('chat.status.pending')
-    default:
-      return t('chat.status.unknown')
   }
 }
 
@@ -277,47 +242,6 @@ const formatToolParameters = (parameters?: string): string => {
   // Plan overview
   .plan-overview {
     margin-bottom: 20px;
-
-    .plan-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-
-      .plan-title {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 600;
-        color: #ffffff;
-      }
-
-      .plan-status-badge {
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 500;
-
-        &.completed {
-          background: rgba(34, 197, 94, 0.2);
-          color: #22c55e;
-        }
-
-        &.running {
-          background: rgba(102, 126, 234, 0.2);
-          color: #667eea;
-        }
-
-        &.in-progress {
-          background: rgba(251, 191, 36, 0.2);
-          color: #fbbf24;
-        }
-
-        &.pending {
-          background: rgba(156, 163, 175, 0.2);
-          color: #9ca3af;
-        }
-      }
-    }
 
     .parent-tool-call {
       background: rgba(102, 126, 234, 0.1);

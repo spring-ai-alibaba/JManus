@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.manus.runtime.entity.vo;
 
 import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -46,8 +47,6 @@ public abstract class AbstractExecutionPlan implements PlanInterface {
 	 */
 	@JsonIgnore
 	protected String executionParams;
-
-	private String userRequest;
 
 	/**
 	 * Default constructor
@@ -176,22 +175,6 @@ public abstract class AbstractExecutionPlan implements PlanInterface {
 	}
 
 	/**
-	 * Get user request
-	 * @return User request string
-	 */
-	public String getUserRequest() {
-		return userRequest;
-	}
-
-	/**
-	 * Set user request
-	 * @param userRequest User request string
-	 */
-	public void setUserRequest(String userRequest) {
-		this.userRequest = userRequest;
-	}
-
-	/**
 	 * Whether it's direct feedback mode
 	 */
 	protected boolean directResponse = false;
@@ -224,7 +207,7 @@ public abstract class AbstractExecutionPlan implements PlanInterface {
 	public String toString() {
 		return "AbstractExecutionPlan{" + "rootPlanId='" + rootPlanId + '\'' + ", currentPlanId='" + currentPlanId
 				+ '\'' + ", title='" + title + '\'' + ", planningThinking='" + planningThinking + '\''
-				+ ", executionParams='" + executionParams + '\'' + ", userRequest='" + userRequest + '\'' + '}';
+				+ ", executionParams='" + executionParams + '\'' + '}';
 	}
 
 }

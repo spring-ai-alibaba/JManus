@@ -52,6 +52,42 @@ public class DatasourceConfigService {
 	}
 
 	/**
+	 * Refresh datasource in DataSourceService after configuration change
+	 */
+	private void refreshDatasource(DatasourceConfigEntity entity) {
+		if (dataSourceService == null) {
+			return;
+		}
+
+		try {
+			// Remove existing datasource if it exists
+			// Note: DataSourceService doesn't have remove method, so we'll add/update it
+			String datasourceName = entity.getName();
+			Boolean enable = entity.getEnable();
+
+			// Only add/update if enabled
+			if (enable != null && enable) {
+				String url = entity.getUrl();
+				String username = entity.getUsername();
+				String password = entity.getPassword();
+				String driverClassName = entity.getDriverClassName();
+				String type = entity.getType();
+
+				if (url != null && username != null && password != null && driverClassName != null) {
+					dataSourceService.addDataSource(datasourceName, url, username, password, driverClassName, type);
+					logger.info("Refreshed datasource '{}' in DataSourceService", datasourceName);
+				}
+				else {
+					logger.warn("Cannot refresh datasource '{}': incomplete configuration", datasourceName);
+				}
+			}
+		}
+		catch (Exception e) {
+			logger.error("Failed to refresh datasource '{}'", entity.getName(), e);
+		}
+	}
+
+	/**
 	 * Get all datasource configurations
 	 */
 	public List<DatasourceConfigVO> getAllConfigs() {
@@ -101,6 +137,10 @@ public class DatasourceConfigService {
 		entity.setUpdatedAt(LocalDateTime.now());
 		entity = repository.save(entity);
 		logger.info("Created datasource configuration with ID: {}", entity.getId());
+
+		// Refresh datasource in DataSourceService
+		refreshDatasource(entity);
+
 		return mapToVO(entity);
 	}
 
@@ -138,6 +178,10 @@ public class DatasourceConfigService {
 
 		entity = repository.save(entity);
 		logger.info("Updated datasource configuration with ID: {}", id);
+
+		// Refresh datasource in DataSourceService
+		refreshDatasource(entity);
+
 		return mapToVO(entity);
 	}
 
@@ -200,6 +244,11 @@ public class DatasourceConfigService {
 	private DatasourceConfigEntity mapToEntity(DatasourceConfigVO vo) {
 		DatasourceConfigEntity entity = new DatasourceConfigEntity();
 		BeanUtils.copyProperties(vo, entity);
+		// Ensure password is not null (database constraint requires non-null)
+		// If password is null, set it to empty string
+		if (entity.getPassword() == null) {
+			entity.setPassword("");
+		}
 		return entity;
 	}
 

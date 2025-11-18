@@ -48,8 +48,6 @@ public class DriverWrapper {
 
 	private Browser browser;
 
-	private AriaElementHolder ariaElementHolder;
-
 	private final Path cookiePath;
 
 	// Mixin class for Playwright Cookie deserialization
@@ -86,7 +84,7 @@ public class DriverWrapper {
 		this.playwright = playwright;
 		this.currentPage = currentPage;
 		this.browser = browser;
-		this.ariaElementHolder = null; // Will be initialized on first use
+
 		this.objectMapper = objectMapper;
 		// Configure ObjectMapper
 		this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -205,7 +203,8 @@ public class DriverWrapper {
 	}
 
 	/**
-	 * Public method to save cookies (can be called after operations)
+	 * Public method to save cookies (can be called after operations) Also saves storage
+	 * state for better persistence (includes cookies, localStorage, etc.)
 	 */
 	public void persistCookies() {
 		saveCookies();
@@ -242,40 +241,6 @@ public class DriverWrapper {
 		}
 	}
 
-	/**
-	 * Get AriaElementHolder, refreshing from current page if needed
-	 * @return AriaElementHolder instance
-	 */
-	public AriaElementHolder getAriaElementHolder() {
-		if (ariaElementHolder == null && currentPage != null) {
-			refreshAriaElementHolder();
-		}
-		return ariaElementHolder;
-	}
-
-	/**
-	 * Refresh ARIA element holder from current page
-	 */
-	private void refreshAriaElementHolder() {
-		if (currentPage == null) {
-			return;
-		}
-		try {
-			AriaSnapshotOptions options = new AriaSnapshotOptions().setSelector("body").setTimeout(30000);
-
-			// Create new instance and use the new method to parse page and assign refs
-			ariaElementHolder = new AriaElementHolder();
-			String snapshot = ariaElementHolder.parsePageAndAssignRefs(currentPage, options);
-
-			if (snapshot != null) {
-				log.debug("Successfully refreshed ARIA element holder with snapshot");
-			}
-		}
-		catch (Exception e) {
-			log.warn("Failed to refresh ARIA element holder: {}", e.getMessage());
-		}
-	}
-
 	public Playwright getPlaywright() {
 		return playwright;
 	}
@@ -291,7 +256,6 @@ public class DriverWrapper {
 	public void setCurrentPage(Page currentPage) {
 		this.currentPage = currentPage;
 		// Refresh ARIA element holder when page changes
-		this.ariaElementHolder = null;
 		// Potentially load cookies if page context changes and it's desired
 		// loadCookies();
 	}
@@ -369,9 +333,6 @@ public class DriverWrapper {
 				this.browser = null;
 			}
 		}
-
-		// Clean up ARIA element holder
-		this.ariaElementHolder = null;
 
 		log.info("DriverWrapper close operation completed");
 

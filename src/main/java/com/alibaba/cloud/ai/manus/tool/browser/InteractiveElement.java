@@ -116,10 +116,10 @@ public class InteractiveElement {
 			content = content.replaceAll("\\s+style=\"[^\"]*\"", "");
 		}
 
-		if (content.length() > 500) {
+		if (content != null && content.length() > 500) {
 			content = content.substring(0, 500) + " ... " + content.substring(content.length() - 100);
 		}
-		return String.format("[%d] %s: %s", index, tagName, content);
+		return String.format("[%d] %s: %s", index, tagName, content != null ? content : "");
 	}
 
 }

@@ -13,139 +13,141 @@
       <h2>{{ t('config.databaseConfig.title') }}</h2>
     </template>
 
-    <div class="description-section">
-      <p class="description-text">{{ t('config.databaseConfig.description') }}</p>
-    </div>
+    <div class="content-wrapper">
+      <div class="description-section">
+        <p class="description-text">{{ t('config.databaseConfig.description') }}</p>
+      </div>
 
-    <div class="database-layout">
-      <!-- Datasource List -->
-      <div class="config-list">
-        <div class="list-header">
-          <h3>{{ t('config.databaseConfig.configList') }}</h3>
-          <span class="config-count">({{ configs.length }})</span>
-        </div>
+      <div class="database-layout">
+        <!-- Datasource List -->
+        <div class="config-list">
+          <div class="list-header">
+            <h3>{{ t('config.databaseConfig.configList') }}</h3>
+            <span class="config-count">({{ configs.length }})</span>
+          </div>
 
-        <div class="search-box">
-          <input
-            v-model="searchQuery"
-            type="text"
-            :placeholder="t('config.databaseConfig.search')"
-            class="search-input"
-          />
-          <Icon icon="carbon:search" class="search-icon" />
-        </div>
+          <div class="search-box">
+            <input
+              v-model="searchQuery"
+              type="text"
+              :placeholder="t('config.databaseConfig.search')"
+              class="search-input"
+            />
+            <Icon icon="carbon:search" class="search-icon" />
+          </div>
 
-        <div class="configs-container" v-if="!loading">
-          <div
-            v-for="config in filteredConfigs"
-            :key="config.id ?? `config-${config.name}`"
-            class="config-card"
-            :class="{ active: selectedConfig?.id === config.id }"
-            @click="selectConfig(config)"
-          >
-            <div class="config-card-header">
-              <span class="config-name">{{ config.name }}</span>
-              <div class="config-status-toggle" @click.stop="toggleConfigStatus(config)">
-                <div class="status-toggle" :class="{ enabled: config.enable }">
-                  <div class="toggle-thumb"></div>
-                  <span class="toggle-label">{{
-                    config.enable
-                      ? t('config.databaseConfig.enabled')
-                      : t('config.databaseConfig.disabled')
-                  }}</span>
+          <div class="configs-container" v-if="!loading">
+            <div
+              v-for="config in filteredConfigs"
+              :key="config.id ?? `config-${config.name}`"
+              class="config-card"
+              :class="{ active: selectedConfig?.id === config.id }"
+              @click="selectConfig(config)"
+            >
+              <div class="config-card-header">
+                <span class="config-name">{{ config.name }}</span>
+                <div class="config-status-toggle" @click.stop="toggleConfigStatus(config)">
+                  <div class="status-toggle" :class="{ enabled: config.enable }">
+                    <div class="toggle-thumb"></div>
+                    <span class="toggle-label">{{
+                      config.enable
+                        ? t('config.databaseConfig.enabled')
+                        : t('config.databaseConfig.disabled')
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="config-type-badge">
+                <Icon icon="carbon:database" class="type-icon" />
+                <span class="type-badge" :class="config.type.toLowerCase()">
+                  {{ config.type.toUpperCase() }}
+                </span>
+              </div>
+              <div class="config-summary">
+                <div class="summary-item">
+                  <span class="summary-label">{{ t('config.databaseConfig.url') }}:</span>
+                  <span class="summary-value">{{ truncateUrl(config.url) }}</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">{{ t('config.databaseConfig.username') }}:</span>
+                  <span class="summary-value">{{ config.username }}</span>
                 </div>
               </div>
             </div>
-            <div class="config-type-badge">
-              <Icon icon="carbon:database" class="type-icon" />
-              <span class="type-badge" :class="config.type.toLowerCase()">
-                {{ config.type.toUpperCase() }}
-              </span>
+          </div>
+
+          <div v-if="loading" class="loading-state">
+            <Icon icon="carbon:loading" class="loading-icon" />
+            {{ t('common.loading') }}
+          </div>
+
+          <div v-if="!loading && filteredConfigs.length === 0" class="empty-state">
+            <Icon icon="carbon:database" class="empty-icon" />
+            <p>{{ searchQuery ? t('config.notFound') : t('config.databaseConfig.noConfigs') }}</p>
+          </div>
+
+          <!-- Add configuration button -->
+          <div class="add-config-button-container">
+            <button class="add-btn" @click="startAddConfig">
+              <Icon icon="carbon:add" />
+              {{ t('config.databaseConfig.newConfig') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Config Detail (Edit Mode) -->
+        <div class="config-detail" v-if="selectedConfig">
+          <div class="detail-header">
+            <h3>{{ selectedConfig.name }}</h3>
+            <div class="detail-actions">
+              <button class="action-btn primary" @click="handleSave" :disabled="loading">
+                <Icon icon="carbon:save" />
+                {{ t('config.databaseConfig.save') }}
+              </button>
+              <button class="action-btn danger" @click="handleDelete" :disabled="loading">
+                <Icon icon="carbon:trash-can" />
+                {{ t('config.databaseConfig.delete') }}
+              </button>
             </div>
-            <div class="config-summary">
-              <div class="summary-item">
-                <span class="summary-label">{{ t('config.databaseConfig.url') }}:</span>
-                <span class="summary-value">{{ truncateUrl(config.url) }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">{{ t('config.databaseConfig.username') }}:</span>
-                <span class="summary-value">{{ config.username }}</span>
-              </div>
+          </div>
+          <div class="detail-content">
+            <DatasourceConfigForm
+              :form-data="formData"
+              :is-edit-mode="true"
+              @update:form-data="formData = $event"
+            />
+          </div>
+        </div>
+
+        <!-- Add configuration form panel -->
+        <div v-else-if="showAddForm" class="config-detail">
+          <div class="detail-header">
+            <h3>{{ t('config.databaseConfig.newConfig') }}</h3>
+            <div class="detail-actions">
+              <button class="action-btn secondary" @click="cancelAddConfig">
+                {{ t('common.cancel') }}
+              </button>
+              <button class="action-btn primary" @click="handleCreate" :disabled="loading">
+                <Icon icon="carbon:save" />
+                {{ t('config.databaseConfig.create') }}
+              </button>
             </div>
           </div>
-        </div>
-
-        <div v-if="loading" class="loading-state">
-          <Icon icon="carbon:loading" class="loading-icon" />
-          {{ t('common.loading') }}
-        </div>
-
-        <div v-if="!loading && filteredConfigs.length === 0" class="empty-state">
-          <Icon icon="carbon:database" class="empty-icon" />
-          <p>{{ searchQuery ? t('config.notFound') : t('config.databaseConfig.noConfigs') }}</p>
-        </div>
-
-        <!-- Add configuration button -->
-        <div class="add-config-button-container">
-          <button class="add-btn" @click="startAddConfig">
-            <Icon icon="carbon:add" />
-            {{ t('config.databaseConfig.newConfig') }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Config Detail (Edit Mode) -->
-      <div class="config-detail" v-if="selectedConfig">
-        <div class="detail-header">
-          <h3>{{ selectedConfig.name }}</h3>
-          <div class="detail-actions">
-            <button class="action-btn primary" @click="handleSave" :disabled="loading">
-              <Icon icon="carbon:save" />
-              {{ t('config.databaseConfig.save') }}
-            </button>
-            <button class="action-btn danger" @click="handleDelete" :disabled="loading">
-              <Icon icon="carbon:trash-can" />
-              {{ t('config.databaseConfig.delete') }}
-            </button>
+          <div class="detail-content">
+            <DatasourceConfigForm
+              :form-data="formData"
+              :is-edit-mode="false"
+              @update:form-data="formData = $event"
+            />
           </div>
         </div>
-        <div class="detail-content">
-          <DatasourceConfigForm
-            :form-data="formData"
-            :is-edit-mode="true"
-            @update:form-data="formData = $event"
-          />
-        </div>
-      </div>
 
-      <!-- Add configuration form panel -->
-      <div v-else-if="showAddForm" class="config-detail">
-        <div class="detail-header">
-          <h3>{{ t('config.databaseConfig.newConfig') }}</h3>
-          <div class="detail-actions">
-            <button class="action-btn secondary" @click="cancelAddConfig">
-              {{ t('common.cancel') }}
-            </button>
-            <button class="action-btn primary" @click="handleCreate" :disabled="loading">
-              <Icon icon="carbon:save" />
-              {{ t('config.databaseConfig.create') }}
-            </button>
+        <!-- Empty state when no config selected -->
+        <div v-else class="config-detail empty-detail">
+          <div class="empty-detail-content">
+            <Icon icon="carbon:database" class="empty-detail-icon" />
+            <p>{{ t('config.databaseConfig.selectOrCreate') }}</p>
           </div>
-        </div>
-        <div class="detail-content">
-          <DatasourceConfigForm
-            :form-data="formData"
-            :is-edit-mode="false"
-            @update:form-data="formData = $event"
-          />
-        </div>
-      </div>
-
-      <!-- Empty state when no config selected -->
-      <div v-else class="config-detail empty-detail">
-        <div class="empty-detail-content">
-          <Icon icon="carbon:database" class="empty-detail-icon" />
-          <p>{{ t('config.databaseConfig.selectOrCreate') }}</p>
         </div>
       </div>
     </div>
@@ -341,7 +343,12 @@ const handleCreate = async () => {
 
   loading.value = true
   try {
-    const created = await DatasourceConfigApiService.createConfig(formData.value)
+    // Ensure password is always a string (empty string if not provided)
+    const configToCreate = {
+      ...formData.value,
+      password: formData.value.password ?? '',
+    }
+    const created = await DatasourceConfigApiService.createConfig(configToCreate)
     toast.success('Configuration created successfully')
     await loadConfigs()
     selectConfig(created)
@@ -435,12 +442,21 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.content-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .description-section {
   margin-bottom: 24px;
   padding: 16px;
   background: rgba(102, 126, 234, 0.1);
   border: 1px solid rgba(102, 126, 234, 0.2);
   border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .description-text {
@@ -455,7 +471,9 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .config-list {
@@ -710,7 +728,11 @@ onMounted(() => {
 
 .config-detail {
   padding-left: 24px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
 }
 
 .detail-header {
@@ -790,6 +812,10 @@ onMounted(() => {
 }
 
 .detail-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px 0;
 }
 

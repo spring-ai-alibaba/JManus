@@ -17,6 +17,7 @@ package com.alibaba.cloud.ai.manus.tool.browser.actions;
 
 import com.alibaba.cloud.ai.manus.tool.browser.BrowserUseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.shortUrl.ShortUrlService;
 import com.microsoft.playwright.Page;
 
 public class NewTabAction extends BrowserAction {
@@ -30,6 +31,22 @@ public class NewTabAction extends BrowserAction {
 		String url = request.getUrl();
 		if (url == null || url.trim().isEmpty()) {
 			return new ToolExecuteResult("URL is required for 'new_tab' action");
+		}
+
+		// Check if URL is a short URL
+		if (ShortUrlService.isShortUrl(url)) {
+			String realUrl = getShortUrlService().getRealUrlFromShortUrl(getRootPlanId(), url);
+			if (realUrl == null) {
+				return new ToolExecuteResult("Short URL not found in mapping: " + url);
+			}
+			url = realUrl;
+			org.slf4j.LoggerFactory.getLogger(NewTabAction.class)
+				.debug("Resolved short URL {} to real URL {}", request.getUrl(), url);
+		}
+
+		// Auto-complete the URL prefix
+		if (!url.startsWith("http://") && !url.startsWith("https://")) {
+			url = "https://" + url;
 		}
 
 		// Get current page to access browser context

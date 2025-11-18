@@ -120,18 +120,6 @@ public interface PlanInterface {
 	int getTotalStepCount();
 
 	/**
-	 * Get the user request.
-	 * @return The user request
-	 */
-	public String getUserRequest();
-
-	/**
-	 * Set the user request.
-	 * @param userRequest The user request
-	 */
-	void setUserRequest(String userRequest);
-
-	/**
 	 * Add an execution step.
 	 * @param step The execution step
 	 */

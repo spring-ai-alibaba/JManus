@@ -26,6 +26,7 @@ import com.alibaba.cloud.ai.manus.planning.service.PlanFinalizer;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanInterface;
+import com.alibaba.cloud.ai.manus.runtime.entity.vo.RequestSource;
 import com.alibaba.cloud.ai.manus.runtime.executor.PlanExecutorInterface;
 import com.alibaba.cloud.ai.manus.runtime.executor.factory.PlanExecutorFactory;
 import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
@@ -60,44 +61,59 @@ public class PlanningCoordinator {
 	 * @param parentPlanId The ID of the parent plan (can be null for root plans)
 	 * @param currentPlanId The current plan ID for execution
 	 * @param toolcallId The ID of the tool call that triggered this plan execution
-	 * @param isVueRequest Flag indicating whether this is a Vue frontend request
+	 * @param requestSource Request source (HTTP_REQUEST, VUE_SIDEBAR, or VUE_DIALOG)
 	 * @param uploadKey The upload key for file upload context (can be null)
 	 * @param planDepth The depth of the plan in the execution hierarchy (0 for root, 1
 	 * for first level, etc.)
+	 * @param conversationId The conversation ID for the execution (can be null, will be
+	 * generated if needed)
 	 * @return A CompletableFuture that completes with the execution result
 	 */
 	public CompletableFuture<PlanExecutionResult> executeByPlan(PlanInterface plan, String rootPlanId,
-			String parentPlanId, String currentPlanId, String toolcallId, boolean isVueRequest, String uploadKey,
-			int planDepth) {
+			String parentPlanId, String currentPlanId, String toolcallId, RequestSource requestSource, String uploadKey,
+			int planDepth, String conversationId) {
 		try {
 			log.info("Starting direct plan execution for plan: {} at depth: {}", plan.getCurrentPlanId(), planDepth);
 
 			// Create execution context
 			ExecutionContext context = new ExecutionContext();
-			String userRequest = plan.getUserRequest();
-			if (userRequest == null) {
-				userRequest = plan.getTitle();
-			}
-			context.setUserRequest(userRequest);
+			String title = plan.getTitle();
+			context.setTitle(title);
 			context.setCurrentPlanId(currentPlanId);
 			context.setRootPlanId(rootPlanId);
 			context.setPlan(plan);
 			context.setPlanDepth(planDepth); // Set the plan depth
+			boolean isVueRequest = requestSource.isVueRequest();
 			if (toolcallId == null && isVueRequest) {
 				context.setNeedSummary(true);
-				log.debug("Setting needSummary=true for planId: {}, toolcallId: {}, isVueRequest: {}", currentPlanId,
-						toolcallId, isVueRequest);
+				log.debug("Setting needSummary=true for planId: {}, toolcallId: {}, requestSource: {}", currentPlanId,
+						toolcallId, requestSource);
 			}
 			else {
 				// in sub plan or non-Vue request, we don't need to generate summary
 				context.setNeedSummary(false);
-				log.debug("Setting needSummary=false for planId: {}, toolcallId: {}, isVueRequest: {}", currentPlanId,
-						toolcallId, isVueRequest);
+				log.debug("Setting needSummary=false for planId: {}, toolcallId: {}, requestSource: {}", currentPlanId,
+						toolcallId, requestSource);
 			}
-			// Generate a conversation ID if none exists, since we're using conversation
-			if (context.getConversationId() == null) {
+			// Set conversation ID (use provided or generate for VUE_DIALOG and
+			// VUE_SIDEBAR requests)
+			// Both VUE_DIALOG and VUE_SIDEBAR should use the same conversation memory
+			if (conversationId != null && !conversationId.trim().isEmpty()) {
+				context.setConversationId(conversationId);
+			}
+			else if (requestSource == RequestSource.VUE_DIALOG || requestSource == RequestSource.VUE_SIDEBAR) {
+				// Generate conversation ID for VUE_DIALOG and VUE_SIDEBAR requests
+				// Both should use the same conversation memory
 				String generatedConversationId = memoryService.generateConversationId();
 				context.setConversationId(generatedConversationId);
+				log.info("Generated conversation ID for {} request plan execution: {} (source: {})", requestSource,
+						generatedConversationId, requestSource);
+			}
+			else {
+				// For non-Vue requests (HTTP_REQUEST, internal calls), do not set
+				// conversationId
+				log.debug("No conversationId provided for non-Vue request, skipping conversationId (source: {})",
+						requestSource);
 			}
 			context.setUseConversation(true);
 			context.setParentPlanId(parentPlanId);

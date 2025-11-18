@@ -59,3 +59,4 @@ src/.DS_Store
 .venv/
 .cursor/rules/1.mdc
 application-database-tool.yml
+.cursor/rules/eng.mdc

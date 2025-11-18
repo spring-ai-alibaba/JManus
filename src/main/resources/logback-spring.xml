@@ -158,6 +158,7 @@
     <logger name="org.springframework" level="INFO"/>
     <logger name="org.springframework.context" level="WARN"/>
     <logger name="org.springframework.beans" level="WARN"/>
+    <logger name="org.springframework.core.codec" level="INFO"/>
     <logger name="com.baomidou.mybatisplus" level="INFO"/>
     <logger name="org.apache.ibatis.io" level="INFO"/>
 

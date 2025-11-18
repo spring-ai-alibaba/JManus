@@ -111,8 +111,9 @@ public class ExcelToMarkdownProcessor {
 	 */
 	private boolean markdownFileExists(String currentPlanId, String markdownFilename) {
 		try {
-			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path markdownFile = currentPlanDir.resolve(markdownFilename);
+			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
+			Path sharedDir = rootPlanDir.resolve("shared");
+			Path markdownFile = sharedDir.resolve(markdownFilename);
 			return Files.exists(markdownFile);
 		}
 		catch (Exception e) {
@@ -336,8 +337,9 @@ public class ExcelToMarkdownProcessor {
 	 */
 	private Path saveMarkdownFile(String content, String filename, String currentPlanId) {
 		try {
-			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path outputFile = currentPlanDir.resolve(filename);
+			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
+			Path sharedDir = rootPlanDir.resolve("shared");
+			Path outputFile = sharedDir.resolve(filename);
 
 			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
 					StandardOpenOption.TRUNCATE_EXISTING);

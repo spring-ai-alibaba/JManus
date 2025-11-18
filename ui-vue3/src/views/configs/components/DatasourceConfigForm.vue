@@ -61,12 +61,14 @@
     <div class="form-item">
       <label>{{ $t('config.databaseConfig.url') }} <span class="required">*</span></label>
       <input
-        :value="formData.url || ''"
-        @input="handleInput('url', $event)"
+        v-model="urlDisplayValue"
         type="text"
         class="config-input"
         :placeholder="$t('config.databaseConfig.urlPlaceholder')"
       />
+      <div class="form-hint">
+        {{ $t('config.databaseConfig.urlHint') }}
+      </div>
     </div>
 
     <div class="form-item">
@@ -107,11 +109,22 @@
         class="config-input"
         :placeholder="$t('config.databaseConfig.passwordPlaceholder')"
       />
-      <div v-if="formData.password_set" class="password-status-hint password-set">
+      <div
+        v-if="
+          formData.password_set ||
+          (formData.password !== undefined &&
+            formData.password !== null &&
+            formData.password !== '')
+        "
+        class="password-status-hint password-set"
+      >
         <Icon icon="carbon:checkmark-filled" />
         {{ $t('config.databaseConfig.passwordSetHint') }}
       </div>
-      <div v-else class="password-status-hint password-not-set">
+      <div
+        v-else-if="!formData.password_set && (!formData.password || formData.password === '')"
+        class="password-status-hint password-not-set"
+      >
         <Icon icon="carbon:warning" />
         {{ $t('config.databaseConfig.passwordNotSetHint') }}
       </div>
@@ -140,12 +153,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { Icon } from '@iconify/vue'
 import {
   DatasourceConfigApiService,
   type DatasourceConfig,
 } from '@/api/datasource-config-api-service'
+import { Icon } from '@iconify/vue'
+import { computed, ref } from 'vue'
 
 // Driver class name mapping based on database type
 const DRIVER_CLASS_NAMES: Record<string, string> = {
@@ -154,6 +167,15 @@ const DRIVER_CLASS_NAMES: Record<string, string> = {
   postgresql: 'org.postgresql.Driver',
   oracle: 'oracle.jdbc.OracleDriver',
   sqlserver: 'com.microsoft.sqlserver.jdbc.SQLServerDriver',
+}
+
+// JDBC URL prefix mapping based on database type
+const JDBC_URL_PREFIXES: Record<string, string> = {
+  mysql: 'jdbc:mysql://',
+  h2: 'jdbc:h2:',
+  postgresql: 'jdbc:postgresql://',
+  oracle: 'jdbc:oracle:thin:@',
+  sqlserver: 'jdbc:sqlserver://',
 }
 
 interface Props {
@@ -172,6 +194,32 @@ const emit = defineEmits<{
 const testingConnection = ref(false)
 const testResult = ref<{ success: boolean; message: string } | null>(null)
 
+// Track URL input value for display (without JDBC prefix)
+const urlDisplayValue = computed({
+  get: () => {
+    if (!props.formData.url) {
+      return ''
+    }
+    return getDisplayUrl(props.formData.url, props.formData.type || null)
+  },
+  set: (value: string) => {
+    // When user types, store the raw value temporarily
+    // We'll normalize it on blur
+    if (props.formData.type) {
+      const normalizedUrl = normalizeUrl(value, props.formData.type)
+      emit('update:formData', {
+        ...props.formData,
+        url: normalizedUrl,
+      })
+    } else {
+      emit('update:formData', {
+        ...props.formData,
+        url: value,
+      })
+    }
+  },
+})
+
 const canTestConnection = computed(() => {
   // Password can be empty string, so we check if it's defined or if password_set is true
   const hasPassword = props.formData.password !== undefined
@@ -183,12 +231,63 @@ const canTestConnection = computed(() => {
   )
 })
 
+/**
+ * Normalize URL by adding JDBC prefix if needed
+ * If user enters "localhost:3306/dbname", it becomes "jdbc:mysql://localhost:3306/dbname"
+ */
+const normalizeUrl = (url: string, dbType: string | null): string => {
+  if (!url || !dbType) {
+    return url
+  }
+
+  const prefix = JDBC_URL_PREFIXES[dbType.toLowerCase()]
+  if (!prefix) {
+    return url
+  }
+
+  // If URL already starts with jdbc:, return as is
+  if (url.toLowerCase().startsWith('jdbc:')) {
+    return url
+  }
+
+  // Add JDBC prefix
+  return prefix + url
+}
+
+/**
+ * Get display URL (remove JDBC prefix for display)
+ */
+const getDisplayUrl = (url: string, dbType: string | null): string => {
+  if (!url || !dbType) {
+    return url || ''
+  }
+
+  const prefix = JDBC_URL_PREFIXES[dbType.toLowerCase()]
+  if (!prefix) {
+    return url
+  }
+
+  // If URL starts with the prefix, remove it for display
+  if (url.toLowerCase().startsWith(prefix.toLowerCase())) {
+    return url.substring(prefix.length)
+  }
+
+  return url
+}
+
 const handleInput = (field: keyof DatasourceConfig, event: Event) => {
   const target = event.target as HTMLInputElement
-  emit('update:formData', {
+  const value = target.value
+
+  const newFormData = {
     ...props.formData,
-    [field]: target.value,
-  })
+    [field]: value,
+  }
+  // When password is entered, set password_set to true
+  if (field === 'password' && value !== undefined && value !== null) {
+    newFormData.password_set = true
+  }
+  emit('update:formData', newFormData)
   // Clear test result when form data changes
   if (testResult.value) {
     testResult.value = null
@@ -201,11 +300,21 @@ const handleSelectChange = (field: keyof DatasourceConfig, event: Event) => {
 
   // Auto-fill driver class name when database type is selected
   if (field === 'type' && newValue && DRIVER_CLASS_NAMES[newValue.toLowerCase()]) {
-    emit('update:formData', {
+    const newFormData = {
       ...props.formData,
       [field]: newValue,
       driver_class_name: DRIVER_CLASS_NAMES[newValue.toLowerCase()],
-    })
+    }
+
+    // Normalize URL when database type changes
+    if (newFormData.url) {
+      // Get the display URL (without any JDBC prefix)
+      const displayUrl = getDisplayUrl(newFormData.url, props.formData.type || null)
+      // Normalize with new database type
+      newFormData.url = normalizeUrl(displayUrl, newValue)
+    }
+
+    emit('update:formData', newFormData)
   } else {
     emit('update:formData', {
       ...props.formData,

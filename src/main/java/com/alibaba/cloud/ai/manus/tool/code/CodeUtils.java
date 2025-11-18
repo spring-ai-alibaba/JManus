@@ -152,6 +152,10 @@ public class CodeUtils {
 			executeCommandResult = CodeUtils.executeCommand(cmd);
 		}
 
+		if (executeCommandResult == null) {
+			throw new RuntimeException("Unsupported language: " + lang);
+		}
+
 		CodeExecutionResult codeExecutionResult = new CodeExecutionResult();
 		codeExecutionResult.setExitcode(executeCommandResult.getExitCode());
 		codeExecutionResult.setLogs(executeCommandResult.getOutput());

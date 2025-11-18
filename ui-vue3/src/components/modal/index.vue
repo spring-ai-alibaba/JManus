@@ -94,18 +94,40 @@ const handleOverlayClick = (e: MouseEvent) => {
   }
 }
 
-const handleEscKey = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && props.modelValue) {
+// Check if the active element is an input field that should not trigger keyboard shortcuts
+const isInputElement = (element: EventTarget | null): boolean => {
+  if (!element || !(element instanceof HTMLElement)) {
+    return false
+  }
+  const tagName = element.tagName.toLowerCase()
+  const isEditable = element.isContentEditable
+  return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || isEditable
+}
+
+const handleKeyboard = (e: KeyboardEvent) => {
+  if (!props.modelValue) {
+    return
+  }
+
+  // Don't trigger if user is typing in an input field
+  if (isInputElement(e.target)) {
+    return
+  }
+
+  if (e.key === 'Escape') {
     emit('update:modelValue', false)
+  } else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+    // Enter key to confirm (but not if Shift/Ctrl/Cmd is pressed)
+    emit('confirm')
   }
 }
 
 onMounted(() => {
-  document.addEventListener('keydown', handleEscKey)
+  document.addEventListener('keydown', handleKeyboard)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleEscKey)
+  document.removeEventListener('keydown', handleKeyboard)
 })
 </script>
 
