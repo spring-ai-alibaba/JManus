@@ -86,6 +86,7 @@ import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
 import com.alibaba.cloud.ai.manus.tool.textOperator.FileImportOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.GlobalFileOperator;
+import com.alibaba.cloud.ai.manus.tool.textOperator.LinkedFolderOperator;
 import com.alibaba.cloud.ai.manus.tool.textOperator.TextFileService;
 import com.alibaba.cloud.ai.manus.workspace.conversation.service.MemoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -251,6 +252,7 @@ public class PlanningFactory {
 
 			toolDefinitions
 				.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper, shortUrlService));
+			toolDefinitions.add(new LinkedFolderOperator(manusProperties, innerStorageService, objectMapper));
 			toolDefinitions.add(new FileImportOperator(textFileService, null));
 			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager,

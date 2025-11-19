@@ -494,10 +494,10 @@ const syncDisplayDataToTemplateConfig = () => {
   // Set flag to prevent watcher from syncing back during this update
   isSyncingFromConfig.value = true
   try {
-    templateConfig.setTitle(displayData.title)
-    templateConfig.setSteps(displayData.steps)
-    if (templateConfig.currentPlanTemplateId.value) {
-      templateStore.hasTaskRequirementModified = true
+  templateConfig.setTitle(displayData.title)
+  templateConfig.setSteps(displayData.steps)
+  if (templateConfig.currentPlanTemplateId.value) {
+    templateStore.hasTaskRequirementModified = true
     }
   } finally {
     setTimeout(() => {
@@ -955,7 +955,7 @@ watch(
     // Don't sync if we're already syncing (prevents circular updates)
     // Also check isUserUpdating flag from composable (for updates from other components)
     if (!isSyncingFromConfig.value && !templateConfig.isUserUpdating.value) {
-      syncDisplayDataFromConfig()
+    syncDisplayDataFromConfig()
     }
   },
   { deep: true, immediate: true }
@@ -993,7 +993,7 @@ watch(
     // Set a flag to prevent syncDisplayDataFromConfig from running
     isSyncingFromConfig.value = true
     try {
-      templateConfig.setServiceGroup(newGroup)
+    templateConfig.setServiceGroup(newGroup)
     } finally {
       // Reset the flag after a microtask to prevent the templateConfig watcher from syncing back
       setTimeout(() => {

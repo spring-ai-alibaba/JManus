@@ -355,28 +355,23 @@ public class ManusProperties implements IManusProperties {
 	// End----------------------------------------------------------------------------------------------
 
 	// File System Security SubGroup
-	@ConfigProperty(group = "manus", subGroup = "filesystem", key = "allowExternalAccess",
-			path = "manus.filesystem.allowExternalAccess",
-			description = "Whether to allow file operations outside the working directory", defaultValue = "false",
-			inputType = ConfigInputType.CHECKBOX,
-			options = { @ConfigOption(value = "true", label = "Yes"), @ConfigOption(value = "false", label = "No") })
-	private volatile Boolean allowExternalAccess;
+	@ConfigProperty(group = "manus", subGroup = "filesystem", key = "externalLinkedFolder",
+			path = "manus.filesystem.externalLinkedFolder",
+			description = "External folder path to be linked in shared directory (read-only access)", defaultValue = "",
+			inputType = ConfigInputType.TEXT)
+	private volatile String externalLinkedFolder = "";
 
-	public Boolean getAllowExternalAccess() {
-		String configPath = "manus.filesystem.allowExternalAccess";
+	public String getExternalLinkedFolder() {
+		String configPath = "manus.filesystem.externalLinkedFolder";
 		String value = configService.getConfigValue(configPath);
 		if (value != null) {
-			allowExternalAccess = Boolean.valueOf(value);
+			externalLinkedFolder = value;
 		}
-		// Default to false for security
-		if (allowExternalAccess == null) {
-			allowExternalAccess = false;
-		}
-		return allowExternalAccess;
+		return externalLinkedFolder;
 	}
 
-	public void setAllowExternalAccess(Boolean allowExternalAccess) {
-		this.allowExternalAccess = allowExternalAccess;
+	public void setExternalLinkedFolder(String externalLinkedFolder) {
+		this.externalLinkedFolder = externalLinkedFolder;
 	}
 
 	// MCP Service Loader Settings

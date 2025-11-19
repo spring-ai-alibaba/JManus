@@ -138,9 +138,10 @@ public class UnifiedDirectoryManager {
 	/**
 	 * Validate if a path is within the allowed working directory scope. This method
 	 * enforces security by ensuring all file operations stay within the designated
-	 * working directory unless external access is explicitly allowed.
+	 * working directory. External access is not allowed through this method. Only
+	 * LinkedFolderOperator can access external folders.
 	 * @param targetPath The path to validate
-	 * @return true if path is allowed, false otherwise
+	 * @return true if path is allowed (within working directory), false otherwise
 	 */
 	public boolean isPathAllowed(Path targetPath) {
 		try {
@@ -150,18 +151,13 @@ public class UnifiedDirectoryManager {
 			// Check if target is within working directory
 			boolean isWithinWorkingDir = normalizedTarget.startsWith(workingDir);
 
-			// If within working directory, always allow
-			if (isWithinWorkingDir) {
-				return true;
-			}
+			// Only allow paths within working directory
+			// External access is not allowed through UnifiedDirectoryManager
+			// Use LinkedFolderOperator for external folder access
+			log.debug("Path validation - Working Dir: {}, Target: {}, Within: {}, Allowed: {}", workingDir,
+					normalizedTarget, isWithinWorkingDir, isWithinWorkingDir);
 
-			// If outside working directory, check configuration
-			boolean allowExternal = manusProperties.getAllowExternalAccess();
-
-			log.debug("Path validation - Working Dir: {}, Target: {}, Within: {}, External Allowed: {}, Final: {}",
-					workingDir, normalizedTarget, isWithinWorkingDir, allowExternal, allowExternal);
-
-			return allowExternal;
+			return isWithinWorkingDir;
 		}
 		catch (Exception e) {
 			log.error("Error validating path: {}", targetPath, e);
