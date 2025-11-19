@@ -506,9 +506,9 @@ export function useMessageDialog() {
             '->',
             newConversationId
           )
-        // Maintain conversationId independently (persisted)
+          // Maintain conversationId independently (persisted)
           conversationId.value = newConversationId
-        // Also set on dialog for reference
+          // Also set on dialog for reference
           targetDialog.conversationId = newConversationId
           memoryStore.setConversationId(newConversationId)
         } else {
@@ -823,27 +823,43 @@ export function useMessageDialog() {
   watchEffect(() => {
     const records = planExecution.planExecutionRecords
 
+    // Force reactivity by accessing the Map size - this ensures watchEffect tracks Map changes
+    const recordsSize = records.size
+
     // Iterate over all records in the Map to ensure watchEffect tracks all changes
     // This is important for first-time execution when records are added to the Map
     const recordsArray = Array.from(records.entries())
 
+    // Also access dialogList to ensure we re-run when dialogs change
+    const dialogs = dialogList.value
+
+    console.log(
+      '[useMessageDialog] watchEffect triggered - records count:',
+      recordsArray.length,
+      'size:',
+      recordsSize
+    )
+    console.log('[useMessageDialog] watchEffect - dialogList count:', dialogs.length)
+    console.log(
+      '[useMessageDialog] watchEffect - dialogs with planId:',
+      dialogs.filter(d => d.planId).map(d => ({ id: d.id, planId: d.planId }))
+    )
+
     // Process all dialogs that have associated planIds
-    for (const dialog of dialogList.value) {
-      if (!dialog.planId) continue
+    for (const dialog of dialogs) {
+      if (!dialog.planId) {
+        console.log('[useMessageDialog] watchEffect: Skipping dialog without planId:', dialog.id)
+        continue
+      }
 
       // Find the record for this dialog's planId
       const recordEntry = recordsArray.find(([planId]) => planId === dialog.planId)
       if (!recordEntry) {
-        // Debug: log when record is not found (only when Map is empty to avoid spam)
-        if (recordsArray.length === 0) {
-          console.log(
-            '[useMessageDialog] watchEffect: No records in Map yet for planId:',
-            dialog.planId,
-            {
-              dialogId: dialog.id,
-            }
-          )
-        }
+        // Debug: log when record is not found
+        console.log('[useMessageDialog] watchEffect: No record found for planId:', dialog.planId, {
+          dialogId: dialog.id,
+          availableRecordKeys: recordsArray.map(([key]) => key),
+        })
         continue
       }
 
@@ -864,10 +880,19 @@ export function useMessageDialog() {
             id: m.id,
             type: m.type,
             planExecutionRootPlanId: m.planExecution?.rootPlanId,
+            hasPlanExecution: !!m.planExecution,
           })),
         })
         continue
       }
+
+      console.log('[useMessageDialog] watchEffect: Updating message with plan record:', {
+        dialogId: dialog.id,
+        messageId: message.id,
+        planId: dialog.planId,
+        recordCompleted: record.completed,
+        recordStatus: record.status,
+      })
 
       // Update message with latest plan execution record
       updateMessageWithPlanRecord(dialog, message, record)

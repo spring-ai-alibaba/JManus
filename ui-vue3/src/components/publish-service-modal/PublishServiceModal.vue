@@ -447,11 +447,11 @@ const handlePublish = async () => {
         type: 'string',
       }))
 
-    // Update toolConfig in templateConfig
-    templateConfig.setToolDescription(formData.userRequest.trim())
-    templateConfig.setEnableInternalToolcall(publishAsInternalToolcall.value)
-    templateConfig.setEnableHttpService(publishAsHttpService.value)
-    templateConfig.setInputSchema(inputSchema)
+    // Update toolConfig in templateConfig with guard to prevent watcher syncing
+    templateConfig.setToolDescriptionWithGuard(formData.userRequest.trim())
+    templateConfig.setEnableInternalToolcallWithGuard(publishAsInternalToolcall.value)
+    templateConfig.setEnableHttpServiceWithGuard(publishAsHttpService.value)
+    templateConfig.setInputSchemaWithGuard(inputSchema)
 
     // Save the plan template with updated toolConfig
     const saveSuccess = await templateConfig.save()
@@ -514,8 +514,8 @@ const handleDelete = async () => {
   try {
     console.log('[PublishModal] Starting to delete tool config for planTemplateId:', planTemplateId)
 
-    // Remove toolConfig from templateConfig
-    templateConfig.setToolConfig(undefined)
+    // Remove toolConfig from templateConfig with guard to prevent watcher syncing
+    templateConfig.setToolConfigWithGuard(undefined)
 
     // Save the plan template without toolConfig
     const saveSuccess = await templateConfig.save()

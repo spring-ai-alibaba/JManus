@@ -169,8 +169,8 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	 */
 	private ToolExecuteResult processExcelToMarkdown(Path sourceFile, String additionalRequirement) {
 		try {
-			ExcelToMarkdownProcessor processor = new ExcelToMarkdownProcessor(directoryManager,
-					excelProcessingService, objectMapper);
+			ExcelToMarkdownProcessor processor = new ExcelToMarkdownProcessor(directoryManager, excelProcessingService,
+					objectMapper);
 			return processor.convertToMarkdown(sourceFile, additionalRequirement, rootPlanId);
 		}
 		catch (Exception e) {

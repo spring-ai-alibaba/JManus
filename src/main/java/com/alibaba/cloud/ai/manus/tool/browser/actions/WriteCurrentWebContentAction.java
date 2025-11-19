@@ -135,8 +135,8 @@ public class WriteCurrentWebContentAction extends BrowserAction {
 					StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 
 			log.info("Successfully wrote page state to file: {}", filePath);
-			return new ToolExecuteResult(
-					"Successfully wrote page state to file: " + filePath.toAbsolutePath().toString());
+			// Return relative path (just the filename) instead of absolute path
+			return new ToolExecuteResult("Successfully wrote page state to file: " + fileName);
 		}
 		catch (IOException e) {
 			log.error("Failed to write page state to file: {}", e.getMessage(), e);

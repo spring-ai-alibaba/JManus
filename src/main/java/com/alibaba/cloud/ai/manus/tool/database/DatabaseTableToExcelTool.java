@@ -455,4 +455,3 @@ public class DatabaseTableToExcelTool extends AbstractBaseTool<DatabaseTableToEx
 	}
 
 }
-

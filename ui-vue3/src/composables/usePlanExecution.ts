@@ -124,7 +124,9 @@ export function usePlanExecution() {
     if (!planId) return
 
     try {
+      console.log('[usePlanExecution] Polling plan status for:', planId)
       const details = await CommonApiService.getDetails(planId)
+      console.log('[usePlanExecution] Received plan details:', details ? 'YES' : 'NO', details)
 
       // Reset retry attempts on successful fetch
       planRetryAttempts.delete(planId)

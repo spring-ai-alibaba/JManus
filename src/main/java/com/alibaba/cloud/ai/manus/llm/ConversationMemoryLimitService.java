@@ -24,6 +24,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -120,8 +121,57 @@ public class ConversationMemoryLimitService {
 		}
 
 		try {
+			StringBuilder content = new StringBuilder();
+
+			// Extract text content
 			String text = message.getText();
-			return text != null ? text : "";
+			if (text != null && !text.isEmpty()) {
+				content.append(text);
+			}
+
+			// Extract tool calls from AssistantMessage
+			if (message instanceof AssistantMessage assistantMessage) {
+				var toolCalls = assistantMessage.getToolCalls();
+				if (toolCalls != null && !toolCalls.isEmpty()) {
+					if (content.length() > 0) {
+						content.append("\n");
+					}
+					content.append("[Tool Calls: ");
+					for (int i = 0; i < toolCalls.size(); i++) {
+						var toolCall = toolCalls.get(i);
+						if (i > 0) {
+							content.append(", ");
+						}
+						content.append(toolCall.name()).append("(").append(toolCall.arguments()).append(")");
+					}
+					content.append("]");
+				}
+			}
+			// Extract tool responses from ToolResponseMessage
+			else if (message instanceof ToolResponseMessage toolResponseMessage) {
+				var responses = toolResponseMessage.getResponses();
+				if (responses != null && !responses.isEmpty()) {
+					if (content.length() > 0) {
+						content.append("\n");
+					}
+					content.append("[Tool Responses: ");
+					for (int i = 0; i < responses.size(); i++) {
+						var response = responses.get(i);
+						if (i > 0) {
+							content.append(", ");
+						}
+						String responseData = response.responseData();
+						// Limit response data length to avoid too long content
+						if (responseData != null && responseData.length() > 200) {
+							responseData = responseData.substring(0, 200) + "...";
+						}
+						content.append(responseData);
+					}
+					content.append("]");
+				}
+			}
+
+			return content.toString();
 		}
 		catch (Exception e) {
 			log.debug("Failed to extract content from message: {}", e.getMessage());
@@ -245,7 +295,9 @@ public class ConversationMemoryLimitService {
 	}
 
 	/**
-	 * Group messages into dialog rounds (UserMessage + AssistantMessage pairs).
+	 * Group messages into dialog rounds (AssistantMessage + ToolResponseMessage pairs).
+	 * For agent memory, the pattern is: AssistantMessage (with tool calls) followed by
+	 * ToolResponseMessage (tool execution results)
 	 * @param messages List of messages
 	 * @return List of dialog rounds
 	 */
@@ -255,7 +307,7 @@ public class ConversationMemoryLimitService {
 
 		for (Message message : messages) {
 			if (message instanceof UserMessage) {
-				// Start a new round
+				// User messages start a new round (for conversation memory scenarios)
 				if (currentRound != null) {
 					rounds.add(currentRound);
 				}
@@ -263,13 +315,21 @@ public class ConversationMemoryLimitService {
 				currentRound.addMessage(message);
 			}
 			else if (message instanceof AssistantMessage) {
-				// Add to current round
+				// Assistant messages start a new round (for agent memory scenarios)
+				if (currentRound != null) {
+					rounds.add(currentRound);
+				}
+				currentRound = new DialogRound();
+				currentRound.addMessage(message);
+			}
+			else if (message instanceof ToolResponseMessage) {
+				// Add tool response to current round
 				if (currentRound == null) {
-					// If no user message before, create a new round
+					// If no assistant message before, create a new round
 					currentRound = new DialogRound();
 				}
 				currentRound.addMessage(message);
-				// Round is complete (User + Assistant), add it
+				// Round is complete (Assistant + ToolResponse), add it
 				rounds.add(currentRound);
 				currentRound = null;
 			}
@@ -307,6 +367,9 @@ public class ConversationMemoryLimitService {
 					else if (message instanceof AssistantMessage) {
 						conversationText.append("Assistant: ").append(content).append("\n\n");
 					}
+					else if (message instanceof ToolResponseMessage) {
+						conversationText.append("Tool Response: ").append(content).append("\n\n");
+					}
 				}
 			}
 
@@ -316,7 +379,7 @@ public class ConversationMemoryLimitService {
 			String summaryPrompt = String.format("""
 					Please summarize the following conversation history into a concise summary.
 					The summary should be between %d and %d characters.
-					Preserve key information, decisions, and important details.
+					Preserve key information, decisions,url,file , and important details.
 					Format the summary as a clear narrative of what happened in the conversation.
 
 					Conversation history:
@@ -357,7 +420,9 @@ public class ConversationMemoryLimitService {
 	}
 
 	/**
-	 * Inner class to represent a dialog round (UserMessage + AssistantMessage pair).
+	 * Inner class to represent a dialog round. For conversation memory: typically
+	 * UserMessage + AssistantMessage pairs For agent memory: typically AssistantMessage
+	 * (with tool calls) + ToolResponseMessage pairs
 	 */
 	private static class DialogRound {
 
@@ -378,6 +443,89 @@ public class ConversationMemoryLimitService {
 			}).sum();
 		}
 
+	}
+
+	/**
+	 * Force compress agent memory to break potential loops caused by repeated tool call
+	 * results. This method compresses the memory regardless of character count limits.
+	 * @param chatMemory The chat memory instance
+	 * @param planId The plan ID to compress memory for (agent memory uses planId)
+	 */
+	public void forceCompressAgentMemory(ChatMemory chatMemory, String planId) {
+		if (chatMemory == null || planId == null || planId.trim().isEmpty()) {
+			return;
+		}
+
+		try {
+			List<Message> messages = chatMemory.get(planId);
+			if (messages == null || messages.isEmpty()) {
+				log.debug("No messages found for planId: {}, skipping forced compression", planId);
+				return;
+			}
+
+			log.info("Force compressing agent memory for planId: {} to break potential loop. Message count: {}", planId,
+					messages.size());
+
+			// Group messages into dialog rounds
+			List<DialogRound> dialogRounds = groupMessagesIntoRounds(messages);
+
+			if (dialogRounds.isEmpty()) {
+				log.warn("No dialog rounds found for planId: {}", planId);
+				return;
+			}
+
+			// Force compression: keep only the most recent round, summarize all older
+			// rounds
+			List<DialogRound> roundsToKeep = new ArrayList<>();
+			List<DialogRound> roundsToSummarize = new ArrayList<>();
+
+			// Keep only the most recent round
+			if (dialogRounds.size() > 1) {
+				DialogRound newestRound = dialogRounds.get(dialogRounds.size() - 1);
+				roundsToKeep.add(newestRound);
+
+				// Summarize all older rounds
+				for (int i = 0; i < dialogRounds.size() - 1; i++) {
+					roundsToSummarize.add(dialogRounds.get(i));
+				}
+			}
+			else {
+				// If only one round, just keep it
+				roundsToKeep.add(dialogRounds.get(0));
+			}
+
+			// Summarize older rounds
+			UserMessage summaryMessage = null;
+			if (!roundsToSummarize.isEmpty()) {
+				summaryMessage = summarizeRounds(roundsToSummarize);
+			}
+
+			// Rebuild memory: summary first, then most recent round
+			chatMemory.clear(planId);
+
+			if (summaryMessage != null) {
+				chatMemory.add(planId, summaryMessage);
+				log.info("Added forced summary message ({} chars) for planId: {}", summaryMessage.getText().length(),
+						planId);
+			}
+
+			// Add most recent round
+			for (DialogRound round : roundsToKeep) {
+				for (Message message : round.getMessages()) {
+					chatMemory.add(planId, message);
+				}
+			}
+
+			int keptChars = calculateTotalCharacters(
+					roundsToKeep.stream().flatMap(round -> round.getMessages().stream()).toList());
+			log.info(
+					"Forced compression completed for planId: {}. Kept {} recent round(s) ({} chars), summarized {} older rounds into {} chars",
+					planId, roundsToKeep.size(), keptChars, roundsToSummarize.size(),
+					summaryMessage != null ? summaryMessage.getText().length() : 0);
+		}
+		catch (Exception e) {
+			log.warn("Failed to force compress agent memory for planId: {}", planId, e);
+		}
 	}
 
 	/**

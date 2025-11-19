@@ -491,10 +491,18 @@ const syncDisplayDataFromConfig = () => {
 
 // Manual sync function to be called on save
 const syncDisplayDataToTemplateConfig = () => {
-  templateConfig.setTitle(displayData.title)
-  templateConfig.setSteps(displayData.steps)
-  if (templateConfig.currentPlanTemplateId.value) {
-    templateStore.hasTaskRequirementModified = true
+  // Set flag to prevent watcher from syncing back during this update
+  isSyncingFromConfig.value = true
+  try {
+    templateConfig.setTitle(displayData.title)
+    templateConfig.setSteps(displayData.steps)
+    if (templateConfig.currentPlanTemplateId.value) {
+      templateStore.hasTaskRequirementModified = true
+    }
+  } finally {
+    setTimeout(() => {
+      isSyncingFromConfig.value = false
+    }, 0)
   }
 }
 
@@ -595,8 +603,8 @@ const handleAddStep = () => {
     selectedToolKeys: [],
   }
   displayData.steps.push(newStep)
-  // Sync to templateConfig
-  templateConfig.setSteps(displayData.steps)
+  // Sync to templateConfig with guard to prevent circular update
+  templateConfig.setStepsWithGuard(displayData.steps)
   console.log('[JsonEditorV2] Added new step, total steps:', displayData.steps.length)
 }
 
@@ -944,7 +952,11 @@ const loadServiceGroup = () => {
 watch(
   () => templateConfig.config,
   () => {
-    syncDisplayDataFromConfig()
+    // Don't sync if we're already syncing (prevents circular updates)
+    // Also check isUserUpdating flag from composable (for updates from other components)
+    if (!isSyncingFromConfig.value && !templateConfig.isUserUpdating.value) {
+      syncDisplayDataFromConfig()
+    }
   },
   { deep: true, immediate: true }
 )
@@ -978,7 +990,16 @@ watch(
 watch(
   () => serviceGroup.value,
   newGroup => {
-    templateConfig.setServiceGroup(newGroup)
+    // Set a flag to prevent syncDisplayDataFromConfig from running
+    isSyncingFromConfig.value = true
+    try {
+      templateConfig.setServiceGroup(newGroup)
+    } finally {
+      // Reset the flag after a microtask to prevent the templateConfig watcher from syncing back
+      setTimeout(() => {
+        isSyncingFromConfig.value = false
+      }, 0)
+    }
   }
 )
 

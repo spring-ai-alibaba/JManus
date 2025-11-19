@@ -356,7 +356,16 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	private List<Map<String, Object>> getTabsInfo(Page page) {
 		try {
-			return page.context().pages().stream().map(p -> {
+			// Filter out closed pages to avoid including history
+			return page.context().pages().stream().filter(p -> {
+				try {
+					return !p.isClosed();
+				}
+				catch (Exception e) {
+					log.debug("Error checking if page is closed: {}", e.getMessage());
+					return false;
+				}
+			}).map(p -> {
 				Map<String, Object> tabInfo = new HashMap<>();
 				try {
 					tabInfo.put("url", p.url());
