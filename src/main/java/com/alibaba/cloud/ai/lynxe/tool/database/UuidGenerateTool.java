@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,7 +31,7 @@ public class UuidGenerateTool extends AbstractBaseTool<UuidGenerateRequest> {
 
 	private static final Logger log = LoggerFactory.getLogger(UuidGenerateTool.class);
 
-	public UuidGenerateTool(ManusProperties manusProperties, ObjectMapper objectMapper) {
+	public UuidGenerateTool(LynxeProperties lynxeProperties, ObjectMapper objectMapper) {
 		// Constructor for dependency injection
 	}
 

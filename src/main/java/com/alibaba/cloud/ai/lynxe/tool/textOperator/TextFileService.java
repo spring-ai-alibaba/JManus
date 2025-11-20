@@ -30,7 +30,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
 
@@ -46,7 +46,7 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 	 * File state class for storing current file path and last operation result
 	 */
 	@Autowired
-	private ManusProperties manusProperties;
+	private LynxeProperties lynxeProperties;
 
 	@Autowired
 	private SmartContentSavingService innerStorageService;
@@ -136,8 +136,8 @@ public class TextFileService implements ApplicationRunner, ITextFileService {
 		return getFileState(planId).getCurrentFilePath();
 	}
 
-	public ManusProperties getManusProperties() {
-		return manusProperties;
+	public LynxeProperties getLynxeProperties() {
+		return lynxeProperties;
 	}
 
 	public String getLastOperationResult(String planId) {

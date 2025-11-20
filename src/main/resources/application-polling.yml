@@ -1,5 +1,5 @@
 # 计划轮询配置
-manus:
+lynxe:
   plan:
     polling:
       # 是否启用轮询

@@ -4,14 +4,14 @@
 
 ## 1. 核心模块接口入口
 
-- 所有核心 REST API 均在 `src/main/java/com/alibaba/cloud/ai/example/manus/planning/controller/` 及 `config/` 目录下。
-- 推荐从 `ManusController.java`、`PlanTemplateController.java`、`ConfigController.java` 入手，快速定位主要业务流程。
+- 所有核心 REST API 均在 `src/main/java/com/alibaba/cloud/ai/lynxe/runtime/controller/` 及 `config/` 目录下。
+- 推荐从 `LynxeController.java`、`PlanTemplateController.java`、`ConfigController.java` 入手，快速定位主要业务流程。
 
 ## 2. 任务发起与处理
 
 ### 任务发起
 
-- 接口文件：`ManusController.java`
+- 接口文件：`LynxeController.java`
 - 主要入口：`/api/executor/execute`（POST）
   - 参数：`query`（用户查询内容）
   - 功能：发起一个新的计划任务，系统自动分配 planId，异步执行。
@@ -23,7 +23,7 @@
 
 ## 3. 任务异步状态跟踪
 
-- 接口文件：`ManusController.java`
+- 接口文件：`LynxeController.java`
 - 主要入口：
   - `/api/executor/details/{planId}`（GET）：获取指定 planId 的详细执行记录及状态。
 - 辅助接口

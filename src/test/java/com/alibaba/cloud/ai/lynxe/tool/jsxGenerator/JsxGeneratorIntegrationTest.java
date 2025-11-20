@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.lynxe.tool.jsxGenerator.JsxGeneratorOperator.JsxInput;
@@ -51,7 +51,7 @@ public class JsxGeneratorIntegrationTest {
 
 	private UnifiedDirectoryManager unifiedDirectoryManager;
 
-	private ManusProperties manusProperties;
+	private LynxeProperties lynxeProperties;
 
 	private JsxGeneratorOperator jsxGeneratorOperator;
 
@@ -62,7 +62,7 @@ public class JsxGeneratorIntegrationTest {
 		log.info("===== Starting Test Setup =====");
 
 		// Initialize mock dependencies
-		manusProperties = mock(ManusProperties.class);
+		lynxeProperties = mock(LynxeProperties.class);
 		unifiedDirectoryManager = mock(UnifiedDirectoryManager.class);
 		objectMapper = new ObjectMapper();
 
@@ -72,9 +72,9 @@ public class JsxGeneratorIntegrationTest {
 
 		// Inject dependencies using reflection
 		try {
-			Field manusField = JsxGeneratorService.class.getDeclaredField("manusProperties");
-			manusField.setAccessible(true);
-			manusField.set(jsxGeneratorService, manusProperties);
+			Field lynxeField = JsxGeneratorService.class.getDeclaredField("lynxeProperties");
+			lynxeField.setAccessible(true);
+			lynxeField.set(jsxGeneratorService, lynxeProperties);
 
 			Field unifiedDirField = JsxGeneratorService.class.getDeclaredField("unifiedDirectoryManager");
 			unifiedDirField.setAccessible(true);

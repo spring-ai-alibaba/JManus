@@ -44,7 +44,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import com.alibaba.cloud.ai.lynxe.agent.ToolCallbackProvider;
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.cron.service.CronService;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.llm.StreamingResponseHandler;
@@ -103,7 +103,7 @@ public class PlanningFactory {
 
 	private final PlanExecutionRecorder recorder;
 
-	private final ManusProperties manusProperties;
+	private final LynxeProperties lynxeProperties;
 
 	private final TextFileService textFileService;
 
@@ -175,13 +175,13 @@ public class PlanningFactory {
 	private com.alibaba.cloud.ai.lynxe.tool.shortUrl.ShortUrlService shortUrlService;
 
 	public PlanningFactory(ChromeDriverService chromeDriverService, PlanExecutionRecorder recorder,
-			ManusProperties manusProperties, TextFileService textFileService, McpService mcpService,
+			LynxeProperties lynxeProperties, TextFileService textFileService, McpService mcpService,
 			SmartContentSavingService innerStorageService, UnifiedDirectoryManager unifiedDirectoryManager,
 			DataSourceService dataSourceService, TableProcessingService tableProcessingService,
 			IExcelProcessingService excelProcessingService) {
 		this.chromeDriverService = chromeDriverService;
 		this.recorder = recorder;
-		this.manusProperties = manusProperties;
+		this.lynxeProperties = lynxeProperties;
 		this.textFileService = textFileService;
 		this.mcpService = mcpService;
 		this.innerStorageService = innerStorageService;
@@ -196,7 +196,7 @@ public class PlanningFactory {
 	 * @return configured PlanFinalizer instance
 	 */
 	public PlanFinalizer createPlanFinalizer() {
-		return new PlanFinalizer(llmService, recorder, manusProperties, streamingResponseHandler,
+		return new PlanFinalizer(llmService, recorder, lynxeProperties, streamingResponseHandler,
 				taskInterruptionManager, memoryService);
 	}
 
@@ -241,11 +241,11 @@ public class PlanningFactory {
 			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
-			toolDefinitions.add(DatabaseTableToExcelTool.getInstance(manusProperties, dataSourceService,
+			toolDefinitions.add(DatabaseTableToExcelTool.getInstance(lynxeProperties, dataSourceService,
 					excelProcessingService, unifiedDirectoryManager));
 			toolDefinitions.add(UuidGenerateTool.getInstance(objectMapper));
 			toolDefinitions
-				.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService, manusProperties));
+				.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService, lynxeProperties));
 			toolDefinitions.add(new DebugTool());
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
@@ -268,16 +268,16 @@ public class PlanningFactory {
 					new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher, levelBasedExecutorPool));
 			toolDefinitions.add(new CronTool(cronService, objectMapper));
 			toolDefinitions.add(new MarkdownConverterTool(unifiedDirectoryManager,
-					new PdfOcrProcessor(unifiedDirectoryManager, llmService, manusProperties,
-							new ImageRecognitionExecutorPool(manusProperties)),
-					new ImageOcrProcessor(unifiedDirectoryManager, llmService, manusProperties,
-							new ImageRecognitionExecutorPool(manusProperties)),
+					new PdfOcrProcessor(unifiedDirectoryManager, llmService, lynxeProperties,
+							new ImageRecognitionExecutorPool(lynxeProperties)),
+					new ImageOcrProcessor(unifiedDirectoryManager, llmService, lynxeProperties,
+							new ImageRecognitionExecutorPool(lynxeProperties)),
 					excelProcessingService, objectMapper));
 			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
 		}
 		else {
 			toolDefinitions
-				.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService, manusProperties));
+				.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService, lynxeProperties));
 		}
 
 		List<McpServiceEntity> functionCallbacks = mcpService.getFunctionCallbacks(planId);

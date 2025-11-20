@@ -21,9 +21,9 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * CORS configuration for Manus API endpoints
+ * CORS configuration for Lynxe API endpoints
  *
- * @author Manus Team
+ * @author Lynxe Team
  */
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {

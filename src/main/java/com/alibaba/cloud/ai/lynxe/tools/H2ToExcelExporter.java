@@ -61,11 +61,11 @@ public class H2ToExcelExporter {
 	/**
 	 * Main method to run the export tool
 	 * @param args Command line arguments: [dbPath] [outputPath] - dbPath: Path to H2
-	 * database file (optional, defaults to ./h2-data/openmanus_db) - outputPath: Output
+	 * database file (optional, defaults to ./h2-data/openlynxe_db) - outputPath: Output
 	 * Excel file path (optional, defaults to h2-export-{timestamp}.xlsx)
 	 */
 	public static void main(String[] args) {
-		String dbPath = args.length > 0 ? args[0] : "./h2-data/openmanus_db";
+		String dbPath = args.length > 0 ? args[0] : "./h2-data/openlynxe_db";
 		String outputPath = args.length > 1 ? args[1] : generateDefaultOutputPath();
 
 		log.info("Starting H2 to Excel export tool");

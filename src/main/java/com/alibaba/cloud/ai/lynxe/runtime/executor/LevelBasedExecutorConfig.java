@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
  * Configuration properties for level-based executor pools
  */
 @Component
-@ConfigurationProperties(prefix = "manus.executor.level-based")
+@ConfigurationProperties(prefix = "lynxe.executor.level-based")
 public class LevelBasedExecutorConfig {
 
 	/**

@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.tool.ToolCallback;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.event.LynxeEventPublisher;
 import com.alibaba.cloud.ai.lynxe.llm.ConversationMemoryLimitService;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
@@ -55,7 +55,7 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 	 * Constructor for ConfigurableDynaAgent with configurable parameters
 	 * @param llmService LLM service
 	 * @param planExecutionRecorder Plan execution recorder
-	 * @param manusProperties Manus properties
+	 * @param lynxeProperties Lynxe properties
 	 * @param name Agent name (configurable)
 	 * @param description Agent description (configurable)
 	 * @param nextStepPrompt Next step prompt (configurable)
@@ -70,14 +70,14 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 	 * @param planIdDispatcher Plan ID dispatcher
 	 */
 	public ConfigurableDynaAgent(LlmService llmService, PlanExecutionRecorder planExecutionRecorder,
-			ManusProperties manusProperties, String name, String description, String nextStepPrompt,
+			LynxeProperties lynxeProperties, String name, String description, String nextStepPrompt,
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
 			Map<String, Object> initialAgentSetting, UserInputService userInputService, String modelName,
 			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
 			LynxeEventPublisher lynxeEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
 			ObjectMapper objectMapper, ParallelToolExecutionService parallelToolExecutionService,
 			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService) {
-		super(llmService, planExecutionRecorder, manusProperties, name, description, nextStepPrompt, availableToolKeys,
+		super(llmService, planExecutionRecorder, lynxeProperties, name, description, nextStepPrompt, availableToolKeys,
 				toolCallingManager, initialAgentSetting, userInputService, modelName, streamingResponseHandler, step,
 				planIdDispatcher, lynxeEventPublisher, agentInterruptionHelper, objectMapper,
 				parallelToolExecutionService, memoryService, conversationMemoryLimitService);

@@ -17,7 +17,7 @@ package com.alibaba.cloud.ai.lynxe.tool.pptGenerator;
 
 import java.io.IOException;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.textOperator.FileState;
 
 /**
@@ -84,10 +84,10 @@ public interface IPptGeneratorService {
 	void cleanupForPlan(String planId);
 
 	/**
-	 * Get the Manus configuration properties
-	 * @return Manus configuration properties
+	 * Get the Lynxe configuration properties
+	 * @return Lynxe configuration properties
 	 */
-	ManusProperties getManusProperties();
+	LynxeProperties getLynxeProperties();
 
 	/**
 	 * Get template list

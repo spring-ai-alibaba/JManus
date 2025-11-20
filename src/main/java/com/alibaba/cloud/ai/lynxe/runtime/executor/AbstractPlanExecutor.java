@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.cloud.ai.lynxe.agent.AgentState;
 import com.alibaba.cloud.ai.lynxe.agent.BaseAgent;
 import com.alibaba.cloud.ai.lynxe.agent.entity.DynamicAgentEntity;
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.lynxe.runtime.entity.vo.ExecutionContext;
@@ -61,7 +61,7 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 
 	protected LlmService llmService;
 
-	protected final ManusProperties manusProperties;
+	protected final LynxeProperties lynxeProperties;
 
 	protected final FileUploadService fileUploadService;
 
@@ -77,12 +77,12 @@ public abstract class AbstractPlanExecutor implements PlanExecutorInterface {
 	public static final String EXECUTION_ENV_STRING_KEY = "current_step_env_data";
 
 	public AbstractPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder, LlmService llmService,
-			ManusProperties manusProperties, LevelBasedExecutorPool levelBasedExecutorPool,
+			LynxeProperties lynxeProperties, LevelBasedExecutorPool levelBasedExecutorPool,
 			FileUploadService fileUploadService, AgentInterruptionHelper agentInterruptionHelper) {
 		this.agents = agents;
 		this.recorder = recorder;
 		this.llmService = llmService;
-		this.manusProperties = manusProperties;
+		this.lynxeProperties = lynxeProperties;
 		this.levelBasedExecutorPool = levelBasedExecutorPool;
 		this.fileUploadService = fileUploadService;
 		this.agentInterruptionHelper = agentInterruptionHelper;

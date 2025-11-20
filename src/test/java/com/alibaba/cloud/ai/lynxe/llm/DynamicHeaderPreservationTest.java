@@ -32,7 +32,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.model.entity.DynamicModelEntity;
 import com.alibaba.cloud.ai.lynxe.model.repository.DynamicModelRepository;
 import com.alibaba.cloud.ai.lynxe.recorder.service.PlanExecutionRecorder;
@@ -41,7 +41,7 @@ import com.alibaba.cloud.ai.lynxe.recorder.service.PlanExecutionRecorder;
 public class DynamicHeaderPreservationTest {
 
 	@Mock
-	private ManusProperties manusProperties;
+	private LynxeProperties lynxeProperties;
 
 	@Mock
 	private DynamicModelRepository dynamicModelRepository;
@@ -79,9 +79,9 @@ public class DynamicHeaderPreservationTest {
 		try {
 			java.lang.reflect.Field field;
 			
-			field = LlmService.class.getDeclaredField("manusProperties");
+			field = LlmService.class.getDeclaredField("lynxeProperties");
 			field.setAccessible(true);
-			field.set(llmService, manusProperties);
+			field.set(llmService, lynxeProperties);
 			
 			field = LlmService.class.getDeclaredField("dynamicModelRepository");
 			field.setAccessible(true);

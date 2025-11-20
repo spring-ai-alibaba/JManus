@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 
 /**
  * Internal file storage service for storing intermediate data in MapReduce processes
@@ -29,14 +29,14 @@ public class SmartContentSavingService implements ISmartContentSavingService {
 
 	private static final Logger log = LoggerFactory.getLogger(SmartContentSavingService.class);
 
-	private final ManusProperties manusProperties;
+	private final LynxeProperties lynxeProperties;
 
-	public SmartContentSavingService(ManusProperties manusProperties) {
-		this.manusProperties = manusProperties;
+	public SmartContentSavingService(LynxeProperties lynxeProperties) {
+		this.lynxeProperties = lynxeProperties;
 	}
 
-	public ManusProperties getManusProperties() {
-		return manusProperties;
+	public LynxeProperties getLynxeProperties() {
+		return lynxeProperties;
 	}
 
 	/**

@@ -43,7 +43,7 @@ import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.tool.ToolCallback;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.event.LynxeEventPublisher;
 import com.alibaba.cloud.ai.lynxe.event.PlanExceptionClearedEvent;
 import com.alibaba.cloud.ai.lynxe.llm.ConversationMemoryLimitService;
@@ -154,14 +154,14 @@ public class DynamicAgent extends ReActAgent {
 	}
 
 	public DynamicAgent(LlmService llmService, PlanExecutionRecorder planExecutionRecorder,
-			ManusProperties manusProperties, String name, String description, String nextStepPrompt,
+			LynxeProperties lynxeProperties, String name, String description, String nextStepPrompt,
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
 			Map<String, Object> initialAgentSetting, UserInputService userInputService, String modelName,
 			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
 			LynxeEventPublisher lynxeEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
 			ObjectMapper objectMapper, ParallelToolExecutionService parallelToolExecutionService,
 			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService) {
-		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, step, planIdDispatcher);
+		super(llmService, planExecutionRecorder, lynxeProperties, initialAgentSetting, step, planIdDispatcher);
 		this.objectMapper = objectMapper;
 		super.objectMapper = objectMapper; // Set parent's objectMapper as well
 		this.agentName = name;
@@ -249,17 +249,17 @@ public class DynamicAgent extends ReActAgent {
 				// Build current prompt. System message is the first message
 				List<Message> messages = new ArrayList<>();
 				// Add history message from agent memory
-				ChatMemory chatMemory = llmService.getAgentMemory(manusProperties.getMaxMemory());
+				ChatMemory chatMemory = llmService.getAgentMemory(lynxeProperties.getMaxMemory());
 				List<Message> historyMem = chatMemory.get(getCurrentPlanId());
 				// List<Message> subAgentMem = chatMemory.get(getCurrentPlanId());
 
 				// Add conversation history from MemoryService if conversationId is
 				// available and conversation memory is enabled
-				if (manusProperties.getEnableConversationMemory() && memoryService != null
+				if (lynxeProperties.getEnableConversationMemory() && memoryService != null
 						&& getConversationId() != null && !getConversationId().trim().isEmpty()) {
 					try {
 						ChatMemory conversationMemory = llmService
-							.getConversationMemoryWithLimit(manusProperties.getMaxMemory(), getConversationId());
+							.getConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), getConversationId());
 						List<Message> conversationHistory = conversationMemory.get(getConversationId());
 						if (conversationHistory != null && !conversationHistory.isEmpty()) {
 							log.debug("Adding {} conversation history messages for conversationId: {}",
@@ -275,7 +275,7 @@ public class DynamicAgent extends ReActAgent {
 								getConversationId(), e);
 					}
 				}
-				else if (!manusProperties.getEnableConversationMemory()) {
+				else if (!lynxeProperties.getEnableConversationMemory()) {
 					log.debug("Conversation memory is disabled, skipping conversation history retrieval");
 				}
 				messages.addAll(Collections.singletonList(systemMessage));
@@ -296,7 +296,7 @@ public class DynamicAgent extends ReActAgent {
 					.internalToolExecutionEnabled(false)
 					.toolContext(toolContextMap)
 					// can't support by toocall options :
-					// .parallelToolCalls(manusProperties.getParallelToolCalls())
+					// .parallelToolCalls(lynxeProperties.getParallelToolCalls())
 					.build();
 				userPrompt = new Prompt(messages, chatOptions);
 				List<ToolCallback> callbacks = getToolCallList();
@@ -323,7 +323,7 @@ public class DynamicAgent extends ReActAgent {
 					.toolCallbacks(callbacks)
 					.stream()
 					.chatResponse();
-				boolean isDebugModel = manusProperties.getDebugDetail() != null && manusProperties.getDebugDetail();
+				boolean isDebugModel = lynxeProperties.getDebugDetail() != null && lynxeProperties.getDebugDetail();
 				// Enable early termination for agent thinking (should have tool calls)
 				streamResult = streamingResponseHandler.processStreamingResponse(responseFlux,
 						"Agent " + getName() + " thinking", getCurrentPlanId(), isDebugModel, true);
@@ -1101,7 +1101,7 @@ public class DynamicAgent extends ReActAgent {
 				// Force compress agent memory to break the loop
 				if (conversationMemoryLimitService != null) {
 					conversationMemoryLimitService.forceCompressAgentMemory(
-							llmService.getAgentMemory(manusProperties.getMaxMemory()), getCurrentPlanId());
+							llmService.getAgentMemory(lynxeProperties.getMaxMemory()), getCurrentPlanId());
 				}
 
 				// Clear the recent results after compression
@@ -1119,7 +1119,7 @@ public class DynamicAgent extends ReActAgent {
 			if (!StringUtils.isBlank(userInput)) {
 				// Add user input to memory
 
-				llmService.getAgentMemory(manusProperties.getMaxMemory()).add(getCurrentPlanId(), userMessage);
+				llmService.getAgentMemory(lynxeProperties.getMaxMemory()).add(getCurrentPlanId(), userMessage);
 
 			}
 		}
@@ -1135,7 +1135,7 @@ public class DynamicAgent extends ReActAgent {
 			return;
 		}
 		// clear current plan memory
-		llmService.getAgentMemory(manusProperties.getMaxMemory()).clear(getCurrentPlanId());
+		llmService.getAgentMemory(lynxeProperties.getMaxMemory()).clear(getCurrentPlanId());
 		for (Message message : messages) {
 			// exclude all system message
 			if (message instanceof SystemMessage) {
@@ -1147,7 +1147,7 @@ public class DynamicAgent extends ReActAgent {
 				continue;
 			}
 			// only keep assistant message and tool_call message
-			llmService.getAgentMemory(manusProperties.getMaxMemory()).add(getCurrentPlanId(), message);
+			llmService.getAgentMemory(lynxeProperties.getMaxMemory()).add(getCurrentPlanId(), message);
 		}
 	}
 
@@ -1313,7 +1313,7 @@ public class DynamicAgent extends ReActAgent {
 	 */
 	private void saveUserRequestToConversationMemory() {
 		// Skip if conversation memory is disabled
-		if (!manusProperties.getEnableConversationMemory()) {
+		if (!lynxeProperties.getEnableConversationMemory()) {
 			log.debug("Conversation memory is disabled, skipping user request save");
 			return;
 		}
@@ -1338,7 +1338,7 @@ public class DynamicAgent extends ReActAgent {
 
 		try {
 			UserMessage userMessage = new UserMessage(stepText);
-			llmService.addToConversationMemoryWithLimit(manusProperties.getMaxMemory(), getConversationId(),
+			llmService.addToConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), getConversationId(),
 					userMessage);
 			log.info("Saved user request to conversation memory for conversationId: {}, request length: {}",
 					getConversationId(), stepText.length());
@@ -1353,8 +1353,8 @@ public class DynamicAgent extends ReActAgent {
 		log.info("Waiting for user input for planId: {}...", getCurrentPlanId());
 		long startTime = System.currentTimeMillis();
 		long lastInterruptionCheck = startTime;
-		// Get timeout from ManusProperties and convert to milliseconds
-		long userInputTimeoutMs = getManusProperties().getUserInputTimeout() * 1000L;
+		// Get timeout from LynxeProperties and convert to milliseconds
+		long userInputTimeoutMs = getLynxeProperties().getUserInputTimeout() * 1000L;
 		long interruptionCheckIntervalMs = 2000L; // Check for interruption every 2
 													// seconds
 

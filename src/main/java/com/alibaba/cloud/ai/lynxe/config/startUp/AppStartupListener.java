@@ -24,7 +24,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 
 import java.awt.*;
 import java.net.URI;
@@ -41,12 +41,12 @@ public class AppStartupListener implements ApplicationListener<ApplicationReadyE
 	private String serverPort;
 
 	@Autowired
-	private ManusProperties manusProperties;
+	private LynxeProperties lynxeProperties;
 
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
 		// Only execute when configuration allows auto-opening browser
-		if (!manusProperties.getOpenBrowserAuto()) {
+		if (!lynxeProperties.getOpenBrowserAuto()) {
 			logger.info("Auto-open browser feature is disabled");
 			return;
 		}

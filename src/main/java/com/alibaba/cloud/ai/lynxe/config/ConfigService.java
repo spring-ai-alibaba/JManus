@@ -80,9 +80,9 @@ public class ConfigService implements IConfigService, ApplicationListener<Contex
 			.map(field -> field.getAnnotation(ConfigProperty.class).path())
 			.collect(Collectors.toSet());
 
-		// Remove obsolete configurations that are no longer defined in ManusProperties
-		if (bean instanceof ManusProperties) {
-			log.info("Cleaning up obsolete configurations not defined in ManusProperties...");
+		// Remove obsolete configurations that are no longer defined in LynxeProperties
+		if (bean instanceof LynxeProperties) {
+			log.info("Cleaning up obsolete configurations not defined in LynxeProperties...");
 			List<ConfigEntity> allConfigs = configRepository.findAll();
 			List<ConfigEntity> obsoleteConfigs = allConfigs.stream()
 				.filter(config -> !validConfigPaths.contains(config.getConfigPath()))

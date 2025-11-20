@@ -30,7 +30,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 
 /**
  * Service to automatically limit conversation memory size based on character count. Uses
@@ -50,7 +50,7 @@ public class ConversationMemoryLimitService {
 	private static final int SUMMARY_MAX_CHARS = 4000;
 
 	@Autowired
-	private ManusProperties manusProperties;
+	private LynxeProperties lynxeProperties;
 
 	@Autowired
 	private LlmService llmService;
@@ -529,11 +529,11 @@ public class ConversationMemoryLimitService {
 	}
 
 	/**
-	 * Get the configured maximum character count from ManusProperties.
+	 * Get the configured maximum character count from LynxeProperties.
 	 * @return Maximum character count
 	 */
 	public int getMaxCharacterCount() {
-		return manusProperties != null ? manusProperties.getConversationMemoryMaxChars() : 30000;
+		return lynxeProperties != null ? lynxeProperties.getConversationMemoryMaxChars() : 30000;
 	}
 
 }

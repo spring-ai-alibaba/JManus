@@ -59,12 +59,12 @@ private ExecutorService createLevelPool(int depthLevel) {
 }
 ```
 
-### 2. `ManusProperties.java`
+### 2. `LynxeProperties.java`
 
 添加了新的配置属性：
 ```java
 @ConfigProperty(
-    path = "manus.agent.enableDynamicLevelPoolSize",
+    path = "lynxe.agent.enableDynamicLevelPoolSize",
     defaultValue = "true"
 )
 private volatile Boolean enableDynamicLevelPoolSize;
@@ -86,14 +86,14 @@ private volatile Boolean enableDynamicLevelPoolSize;
 ### 禁用动态大小
 如果需要恢复固定大小，添加到配置：
 ```yaml
-manus:
+lynxe:
   agent:
     enableDynamicLevelPoolSize: false
 ```
 
 ### 调整基础池大小
 ```yaml
-manus:
+lynxe:
   agent:
     executorPoolSize: 5  # 基础大小（默认）
 ```
@@ -142,8 +142,8 @@ manus:
    ```
 
 3. **验证配置：**
-   - `manus.agent.executorPoolSize` 应该 >= 5
-   - `manus.agent.enableDynamicLevelPoolSize` 应该为 true（或不设置）
+   - `lynxe.agent.executorPoolSize` 应该 >= 5
+   - `lynxe.agent.enableDynamicLevelPoolSize` 应该为 true（或不设置）
 
 4. **检查其他瓶颈：**
    - 数据库连接池大小
@@ -154,23 +154,23 @@ manus:
 
 1. **减少基础池大小：**
    ```yaml
-   manus:
+   lynxe:
      agent:
        executorPoolSize: 3  # 从5减少到3
    ```
 
 2. **禁用动态大小：**
    ```yaml
-   manus:
+   lynxe:
      agent:
        enableDynamicLevelPoolSize: false
    ```
 
 ## 📚 相关文件
 
-- `src/main/java/com/alibaba/cloud/ai/manus/runtime/executor/LevelBasedExecutorPool.java`
-- `src/main/java/com/alibaba/cloud/ai/manus/config/ManusProperties.java`
-- `src/test/java/com/alibaba/cloud/ai/manus/runtime/executor/LevelBasedExecutorPoolTest.java`
+- `src/main/java/com/alibaba/cloud/ai/lynxe/runtime/executor/LevelBasedExecutorPool.java`
+- `src/main/java/com/alibaba/cloud/ai/lynxe/config/LynxeProperties.java`
+- `src/test/java/com/alibaba/cloud/ai/lynxe/runtime/executor/LevelBasedExecutorPoolTest.java`
 - `THREAD_POOL_ANALYSIS.md`（详细分析文档）
 - `THREAD_POOL_FIX_DIAGRAM.md`（可视化说明）
 - `FIX_SUMMARY.md`（英文版本）

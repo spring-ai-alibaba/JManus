@@ -31,7 +31,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.tool.ToolCallback;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.lynxe.recorder.service.PlanExecutionRecorder;
@@ -85,7 +85,7 @@ public abstract class BaseAgent {
 
 	protected LlmService llmService;
 
-	protected final ManusProperties manusProperties;
+	protected final LynxeProperties lynxeProperties;
 
 	protected ObjectMapper objectMapper;
 
@@ -154,7 +154,7 @@ public abstract class BaseAgent {
 		// Get current date time, format as yyyy-MM-dd
 		String currentDateTime = java.time.LocalDate.now().toString(); // Format as
 																		// yyyy-MM-dd
-		boolean isDebugModel = manusProperties.getDebugDetail();
+		boolean isDebugModel = lynxeProperties.getDebugDetail();
 		String detailOutput = "";
 		if (isDebugModel) {
 			detailOutput = """
@@ -168,7 +168,7 @@ public abstract class BaseAgent {
 					2. Do not provide reasoning or descriptions before tool calls!""";
 		}
 		String parallelToolCallsResponse = "";
-		if (manusProperties.getParallelToolCalls()) {
+		if (lynxeProperties.getParallelToolCalls()) {
 			parallelToolCallsResponse = """
 					# Response Rules:
 					- You must select and call from the provided tools. You can make repeated calls to a single tool, call multiple tools simultaneously, or use a mixed calling approach to improve problem-solving efficiency and accuracy.
@@ -240,12 +240,12 @@ public abstract class BaseAgent {
 	public abstract ToolCallBackContext getToolCallBackContext(String toolKey);
 
 	public BaseAgent(LlmService llmService, PlanExecutionRecorder planExecutionRecorder,
-			ManusProperties manusProperties, Map<String, Object> initialAgentSetting, ExecutionStep step,
+			LynxeProperties lynxeProperties, Map<String, Object> initialAgentSetting, ExecutionStep step,
 			PlanIdDispatcher planIdDispatcher) {
 		this.llmService = llmService;
 		this.planExecutionRecorder = planExecutionRecorder;
-		this.manusProperties = manusProperties;
-		this.maxSteps = manusProperties.getMaxSteps();
+		this.lynxeProperties = lynxeProperties;
+		this.maxSteps = lynxeProperties.getMaxSteps();
 		this.step = step;
 		this.planIdDispatcher = planIdDispatcher;
 		this.initSettingData = Collections.unmodifiableMap(new HashMap<>(initialAgentSetting));
@@ -485,8 +485,8 @@ public abstract class BaseAgent {
 		return initSettingData;
 	}
 
-	public ManusProperties getManusProperties() {
-		return manusProperties;
+	public LynxeProperties getLynxeProperties() {
+		return lynxeProperties;
 	}
 
 	public static class AgentExecResult {
@@ -540,7 +540,7 @@ public abstract class BaseAgent {
 			log.info("Generating final summary for agent execution");
 
 			// Get all memory entries for the current plan
-			List<Message> memoryEntries = llmService.getAgentMemory(manusProperties.getMaxMemory())
+			List<Message> memoryEntries = llmService.getAgentMemory(lynxeProperties.getMaxMemory())
 				.get(getCurrentPlanId());
 
 			if (memoryEntries == null || memoryEntries.isEmpty()) {

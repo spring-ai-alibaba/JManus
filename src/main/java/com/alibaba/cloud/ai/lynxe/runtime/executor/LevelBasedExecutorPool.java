@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -67,7 +67,7 @@ public class LevelBasedExecutorPool {
 	private ScheduledExecutorService poolSizeMonitor;
 
 	@Autowired(required = false)
-	private ManusProperties manusProperties;
+	private LynxeProperties lynxeProperties;
 
 	/**
 	 * Get or create an executor for the specified depth level
@@ -312,20 +312,20 @@ public class LevelBasedExecutorPool {
 	}
 
 	/**
-	 * Get the configured pool size from ManusProperties, defaulting to 5 if not
+	 * Get the configured pool size from LynxeProperties, defaulting to 5 if not
 	 * configured
 	 */
 	private int getConfiguredPoolSize() {
 		try {
-			if (manusProperties != null) {
-				Integer poolSize = manusProperties.getExecutorPoolSize();
+			if (lynxeProperties != null) {
+				Integer poolSize = lynxeProperties.getExecutorPoolSize();
 				if (poolSize != null && poolSize > 0) {
 					return poolSize;
 				}
 			}
 		}
 		catch (Exception e) {
-			log.warn("Error getting executor pool size from ManusProperties: {}. Using default value: 5",
+			log.warn("Error getting executor pool size from LynxeProperties: {}. Using default value: 5",
 					e.getMessage());
 		}
 		return 5; // Default value

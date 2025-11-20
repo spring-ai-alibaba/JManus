@@ -384,7 +384,7 @@ public class LocalFileOperator extends AbstractBaseTool<LocalFileOperator.LocalF
 		}
 
 		// Check if short URL feature is enabled
-		Boolean enableShortUrl = textFileService.getManusProperties().getEnableShortUrl();
+		Boolean enableShortUrl = textFileService.getLynxeProperties().getEnableShortUrl();
 		if (enableShortUrl == null || !enableShortUrl) {
 			return text; // Skip replacement if disabled
 		}

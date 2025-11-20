@@ -258,7 +258,7 @@ public DeferredResult<ToolExecuteResult> execute(@RequestBody RegisterBatchInput
 **建议：两种方案都保留，让用户选择！**
 
 ```yaml
-manus:
+lynxe:
   agent:
     # 方案1：动态线程池大小
     enableDynamicLevelPoolSize: true

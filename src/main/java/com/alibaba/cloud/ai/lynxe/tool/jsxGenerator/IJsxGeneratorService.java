@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 
 /**
  * Interface for JSX/Vue component generation operations. Provides methods for creating,
@@ -158,10 +158,10 @@ public interface IJsxGeneratorService {
 	String getLastOperationResult(String planId);
 
 	/**
-	 * Get Manus properties
-	 * @return Manus properties
+	 * Get Lynxe properties
+	 * @return Lynxe properties
 	 */
-	ManusProperties getManusProperties();
+	LynxeProperties getLynxeProperties();
 
 	/**
 	 * Clean up resources

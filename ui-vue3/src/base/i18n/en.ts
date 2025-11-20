@@ -528,7 +528,7 @@ const words: I18nType = {
       resetFailed: 'Reset failed, please try again',
       importFailed: 'Import failed, please check file format',
       groupDisplayNames: {
-        manus: 'Manus',
+        lynxe: 'Lynxe',
         browser: 'Browser',
         interaction: 'Interaction',
         system: 'System',

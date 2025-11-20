@@ -30,7 +30,7 @@ import com.alibaba.cloud.ai.lynxe.workspace.conversation.repository.PostgresChat
 /**
  * @author dahua
  * @time 2025/8/5
- * @desc memory config for manus
+ * @desc memory config for lynxe
  */
 @Configuration
 public class MemoryConfig {

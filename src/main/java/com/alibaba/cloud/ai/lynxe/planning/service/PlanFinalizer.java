@@ -30,7 +30,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.lynxe.recorder.service.PlanExecutionRecorder;
@@ -53,7 +53,7 @@ public class PlanFinalizer {
 
 	private final PlanExecutionRecorder recorder;
 
-	private final ManusProperties manusProperties;
+	private final LynxeProperties lynxeProperties;
 
 	private final StreamingResponseHandler streamingResponseHandler;
 
@@ -61,12 +61,12 @@ public class PlanFinalizer {
 
 	private final MemoryService memoryService;
 
-	public PlanFinalizer(LlmService llmService, PlanExecutionRecorder recorder, ManusProperties manusProperties,
+	public PlanFinalizer(LlmService llmService, PlanExecutionRecorder recorder, LynxeProperties lynxeProperties,
 			StreamingResponseHandler streamingResponseHandler, TaskInterruptionManager taskInterruptionManager,
 			MemoryService memoryService) {
 		this.llmService = llmService;
 		this.recorder = recorder;
-		this.manusProperties = manusProperties;
+		this.lynxeProperties = lynxeProperties;
 		this.streamingResponseHandler = streamingResponseHandler;
 		this.taskInterruptionManager = taskInterruptionManager;
 		this.memoryService = memoryService;
@@ -131,7 +131,7 @@ public class PlanFinalizer {
 		configureMemoryAdvisors(requestSpec, context);
 
 		Flux<ChatResponse> responseFlux = requestSpec.stream().chatResponse();
-		boolean isDebugModel = manusProperties.getDebugDetail() != null && manusProperties.getDebugDetail();
+		boolean isDebugModel = lynxeProperties.getDebugDetail() != null && lynxeProperties.getDebugDetail();
 		return streamingResponseHandler.processStreamingTextResponse(responseFlux, operationName,
 				context.getCurrentPlanId(), isDebugModel);
 	}
@@ -376,7 +376,7 @@ public class PlanFinalizer {
 
 		try {
 			AssistantMessage assistantMessage = new AssistantMessage(result);
-			llmService.addToConversationMemoryWithLimit(manusProperties.getMaxMemory(), context.getConversationId(),
+			llmService.addToConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), context.getConversationId(),
 					assistantMessage);
 			log.info("Saved agent execution result to conversation memory for conversationId: {}, result length: {}",
 					context.getConversationId(), result.length());

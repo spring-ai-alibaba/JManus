@@ -513,7 +513,7 @@ const words: I18nType = {
       resetFailed: '重置失败，请重试',
       importFailed: '导入失败，请检查文件格式',
       groupDisplayNames: {
-        manus: 'Manus',
+        lynxe: 'Lynxe',
         browser: '浏览器',
         interaction: '交互',
         system: '系统',

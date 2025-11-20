@@ -15,7 +15,7 @@
  */
 package com.alibaba.cloud.ai.lynxe.tool.browser;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
 
@@ -59,16 +59,16 @@ public interface IChromeDriverService {
 	void cleanup();
 
 	/**
-	 * Set Manus properties
-	 * @param manusProperties Manus properties
+	 * Set Lynxe properties
+	 * @param lynxeProperties Lynxe properties
 	 */
-	void setManusProperties(ManusProperties manusProperties);
+	void setLynxeProperties(LynxeProperties lynxeProperties);
 
 	/**
-	 * Get Manus properties
-	 * @return Manus properties
+	 * Get Lynxe properties
+	 * @return Lynxe properties
 	 */
-	ManusProperties getManusProperties();
+	LynxeProperties getLynxeProperties();
 
 	/**
 	 * Get internal storage service

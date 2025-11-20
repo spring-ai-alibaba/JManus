@@ -14,11 +14,11 @@ package com.alibaba.cloud.ai.lynxe.planning.factory;
 // * See the License for the specific language governing permissions and
 // * limitations under the License.
 // */
-// package com.alibaba.cloud.ai.manus.planning.factory;
+// package com.alibaba.cloud.ai.lynxe.planning.factory;
 
-// import com.alibaba.cloud.ai.manus.planning.model.vo.PlanType;
-// import com.alibaba.cloud.ai.manus.tool.PlanningTool;
-// import com.alibaba.cloud.ai.manus.tool.MapReducePlanningTool;
+// import com.alibaba.cloud.ai.lynxe.planning.model.vo.PlanType;
+// import com.alibaba.cloud.ai.lynxe.tool.PlanningTool;
+// import com.alibaba.cloud.ai.lynxe.tool.MapReducePlanningTool;
 // import org.springframework.ai.tool.function.FunctionToolCallback;
 // import org.springframework.ai.openai.api.OpenAiApi.FunctionTool;
 

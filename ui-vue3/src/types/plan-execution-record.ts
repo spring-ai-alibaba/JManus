@@ -25,12 +25,12 @@
 
 /**
  * Execution status enum matching Java ExecutionStatus
- * Maps to Java: com.alibaba.cloud.ai.manus.recorder.entity.vo.ExecutionStatus
+ * Maps to Java: com.alibaba.cloud.ai.lynxe.recorder.entity.vo.ExecutionStatus
  */
 export type ExecutionStatus = 'IDLE' | 'RUNNING' | 'FINISHED'
 
 /**
- * Maps to Java: com.alibaba.cloud.ai.manus.recorder.entity.vo.ActToolInfo
+ * Maps to Java: com.alibaba.cloud.ai.lynxe.recorder.entity.vo.ActToolInfo
  */
 export interface ActToolInfo {
   /** Name of the tool */
@@ -47,7 +47,7 @@ export interface ActToolInfo {
 }
 
 /**
- * Maps to Java: com.alibaba.cloud.ai.manus.recorder.entity.ThinkActRecord
+ * Maps to Java: com.alibaba.cloud.ai.lynxe.recorder.entity.ThinkActRecord
  *
  * Records the thinking and action process of an agent in a single execution step.
  */
@@ -105,7 +105,7 @@ export interface ThinkActRecord {
 }
 
 /**
- * Maps to Java: com.alibaba.cloud.ai.manus.recorder.entity.vo.AgentExecutionRecord
+ * Maps to Java: com.alibaba.cloud.ai.lynxe.recorder.entity.vo.AgentExecutionRecord
  *
  * Unified agent execution record class for tracking and recording detailed information about
  * BaseAgent execution process. This class combines the functionality of both Simple and Detail
@@ -162,7 +162,7 @@ export interface AgentExecutionRecord {
 }
 
 /**
- * Maps to Java: com.alibaba.cloud.ai.manus.runtime.entity.vo.UserInputWaitState
+ * Maps to Java: com.alibaba.cloud.ai.lynxe.runtime.entity.vo.UserInputWaitState
  *
  * User input wait state for handling user interaction during plan execution.
  */
@@ -184,7 +184,7 @@ export interface UserInputWaitState {
 }
 
 /**
- * Maps to Java: com.alibaba.cloud.ai.manus.recorder.entity.vo.PlanExecutionRecord
+ * Maps to Java: com.alibaba.cloud.ai.lynxe.recorder.entity.vo.PlanExecutionRecord
  *
  * Plan execution record class for tracking and recording detailed information about
  * PlanningFlow execution process.

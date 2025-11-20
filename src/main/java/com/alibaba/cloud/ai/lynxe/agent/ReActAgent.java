@@ -17,7 +17,7 @@ package com.alibaba.cloud.ai.lynxe.agent;
 
 import java.util.Map;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.lynxe.runtime.entity.vo.ExecutionStep;
@@ -34,13 +34,13 @@ public abstract class ReActAgent extends BaseAgent {
 	 * @param llmService LLM service instance for handling natural language interactions
 	 * @param planExecutionRecorder plan execution recorder for recording execution
 	 * process
-	 * @param manusProperties Manus configuration properties
+	 * @param lynxeProperties Lynxe configuration properties
 	 */
 
 	public ReActAgent(LlmService llmService, PlanExecutionRecorder planExecutionRecorder,
-			ManusProperties manusProperties, Map<String, Object> initialAgentSetting, ExecutionStep step,
+			LynxeProperties lynxeProperties, Map<String, Object> initialAgentSetting, ExecutionStep step,
 			PlanIdDispatcher planIdDispatcher) {
-		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, step, planIdDispatcher);
+		super(llmService, planExecutionRecorder, lynxeProperties, initialAgentSetting, step, planIdDispatcher);
 	}
 
 	/**

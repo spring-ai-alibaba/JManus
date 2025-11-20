@@ -62,9 +62,9 @@ private ExecutorService createLevelPool(int depthLevel) {
 }
 ```
 
-### 2. Added Configuration Property in `ManusProperties.java`
+### 2. Added Configuration Property in `LynxeProperties.java`
 
-New property: `manus.agent.enableDynamicLevelPoolSize`
+New property: `lynxe.agent.enableDynamicLevelPoolSize`
 - **Type**: Boolean (checkbox)
 - **Default**: `true` (enabled)
 - **Purpose**: Allows disabling dynamic sizing if needed
@@ -85,14 +85,14 @@ No configuration needed - enabled by default.
 ### Disable Dynamic Sizing
 Add to configuration if you want to revert to fixed sizing:
 ```yaml
-manus:
+lynxe:
   agent:
     enableDynamicLevelPoolSize: false
 ```
 
 ### Adjust Base Pool Size
 ```yaml
-manus:
+lynxe:
   agent:
     executorPoolSize: 5  # Base size (default)
 ```
@@ -137,8 +137,8 @@ You should see:
    ```
 
 3. **Verify configuration:**
-   - `manus.agent.executorPoolSize` should be >= 5
-   - `manus.agent.enableDynamicLevelPoolSize` should be true (or not set)
+   - `lynxe.agent.executorPoolSize` should be >= 5
+   - `lynxe.agent.enableDynamicLevelPoolSize` should be true (or not set)
 
 4. **Check for other bottlenecks:**
    - Database connection pool size
@@ -149,23 +149,23 @@ You should see:
 
 1. **Reduce base pool size:**
    ```yaml
-   manus:
+   lynxe:
      agent:
        executorPoolSize: 3  # Reduce from 5 to 3
    ```
 
 2. **Disable dynamic sizing:**
    ```yaml
-   manus:
+   lynxe:
      agent:
        enableDynamicLevelPoolSize: false
    ```
 
 ## 📚 Related Files
 
-- `src/main/java/com/alibaba/cloud/ai/manus/runtime/executor/LevelBasedExecutorPool.java`
-- `src/main/java/com/alibaba/cloud/ai/manus/config/ManusProperties.java`
-- `src/main/java/com/alibaba/cloud/ai/manus/tool/mapreduce/ParallelExecutionTool.java`
+- `src/main/java/com/alibaba/cloud/ai/lynxe/runtime/executor/LevelBasedExecutorPool.java`
+- `src/main/java/com/alibaba/cloud/ai/lynxe/config/LynxeProperties.java`
+- `src/main/java/com/alibaba/cloud/ai/lynxe/tool/mapreduce/ParallelExecutionTool.java`
 - `THREAD_POOL_ANALYSIS.md` (detailed analysis document)
 
 ## 🎓 Key Learnings

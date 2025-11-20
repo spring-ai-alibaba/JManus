@@ -33,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.mcp.config.McpProperties;
 import com.alibaba.cloud.ai.lynxe.mcp.model.po.McpConfigEntity;
 import com.alibaba.cloud.ai.lynxe.mcp.model.po.McpConfigStatus;
@@ -165,7 +165,7 @@ public class McpCacheManager {
 
 	private final McpConfigRepository mcpConfigRepository;
 
-	private final ManusProperties manusProperties;
+	private final LynxeProperties lynxeProperties;
 
 	// Double cache wrapper
 	private final DoubleCacheWrapper doubleCache = new DoubleCacheWrapper();
@@ -210,10 +210,10 @@ public class McpCacheManager {
 	private static final long CACHE_UPDATE_INTERVAL_MINUTES = 10;
 
 	public McpCacheManager(McpConnectionFactory connectionFactory, McpConfigRepository mcpConfigRepository,
-			McpProperties mcpProperties, ManusProperties manusProperties) {
+			McpProperties mcpProperties, LynxeProperties lynxeProperties) {
 		this.connectionFactory = connectionFactory;
 		this.mcpConfigRepository = mcpConfigRepository;
-		this.manusProperties = manusProperties;
+		this.lynxeProperties = lynxeProperties;
 
 		// Initialize thread pool
 		updateConnectionExecutor();
@@ -310,7 +310,7 @@ public class McpCacheManager {
 			}
 
 			// Create new thread pool
-			int maxConcurrentConnections = manusProperties.getMcpMaxConcurrentConnections();
+			int maxConcurrentConnections = lynxeProperties.getMcpMaxConcurrentConnections();
 			ExecutorService newExecutor = Executors.newFixedThreadPool(maxConcurrentConnections);
 			connectionExecutorRef.set(newExecutor);
 
@@ -325,9 +325,9 @@ public class McpCacheManager {
 	 */
 	private int calculateConfigHash() {
 		int hash = 17;
-		hash = 31 * hash + manusProperties.getMcpConnectionTimeoutSeconds();
-		hash = 31 * hash + manusProperties.getMcpMaxRetryCount();
-		hash = 31 * hash + manusProperties.getMcpMaxConcurrentConnections();
+		hash = 31 * hash + lynxeProperties.getMcpConnectionTimeoutSeconds();
+		hash = 31 * hash + lynxeProperties.getMcpMaxRetryCount();
+		hash = 31 * hash + lynxeProperties.getMcpMaxConcurrentConnections();
 		return hash;
 	}
 
@@ -392,7 +392,7 @@ public class McpCacheManager {
 
 		try {
 			// Set overall timeout (using current configuration)
-			allFutures.get(manusProperties.getMcpConnectionTimeoutSeconds(), TimeUnit.SECONDS);
+			allFutures.get(lynxeProperties.getMcpConnectionTimeoutSeconds(), TimeUnit.SECONDS);
 
 			// Collect results
 			for (int i = 0; i < mcpConfigEntities.size(); i++) {
@@ -458,8 +458,8 @@ public class McpCacheManager {
 				+ "{}"
 				+ "╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝",
 				formatTime(mainStartTime), formatTime(mainEndTime), mainTotalTime,
-				manusProperties.getMcpConnectionTimeoutSeconds(), manusProperties.getMcpMaxRetryCount(),
-				manusProperties.getMcpMaxConcurrentConnections(), toolCallbackMap.size(), mcpConfigEntities.size(),
+				lynxeProperties.getMcpConnectionTimeoutSeconds(), lynxeProperties.getMcpMaxRetryCount(),
+				lynxeProperties.getMcpMaxConcurrentConnections(), toolCallbackMap.size(), mcpConfigEntities.size(),
 				formatIndividualResults(allResults));
 
 		return toolCallbackMap;
@@ -477,7 +477,7 @@ public class McpCacheManager {
 		int retryCount = 0;
 
 		// Try to connect, retry at most MAX_RETRY_COUNT times
-		for (int attempt = 0; attempt <= manusProperties.getMcpMaxRetryCount(); attempt++) {
+		for (int attempt = 0; attempt <= lynxeProperties.getMcpMaxRetryCount(); attempt++) {
 			try {
 				McpServiceEntity serviceEntity = connectionFactory.createConnection(config);
 
@@ -487,7 +487,7 @@ public class McpCacheManager {
 							connectionType);
 				}
 				else {
-					if (attempt == manusProperties.getMcpMaxRetryCount()) {
+					if (attempt == lynxeProperties.getMcpMaxRetryCount()) {
 						long connectionTime = System.currentTimeMillis() - startTime;
 						return new McpConnectionResult(false, null, serverName, "Service entity is null",
 								connectionTime, retryCount, connectionType);
@@ -497,7 +497,7 @@ public class McpCacheManager {
 				}
 			}
 			catch (Exception e) {
-				if (attempt == manusProperties.getMcpMaxRetryCount()) {
+				if (attempt == lynxeProperties.getMcpMaxRetryCount()) {
 					long connectionTime = System.currentTimeMillis() - startTime;
 					return new McpConnectionResult(false, null, serverName, e.getMessage(), connectionTime, retryCount,
 							connectionType);
@@ -632,8 +632,8 @@ public class McpCacheManager {
 	 */
 	public String getConnectionConfigurationInfo() {
 		return String.format("MCP Service Loader Config - Timeout: %ds, MaxRetry: %d, MaxConcurrent: %d",
-				manusProperties.getMcpConnectionTimeoutSeconds(), manusProperties.getMcpMaxRetryCount(),
-				manusProperties.getMcpMaxConcurrentConnections());
+				lynxeProperties.getMcpConnectionTimeoutSeconds(), lynxeProperties.getMcpMaxRetryCount(),
+				lynxeProperties.getMcpMaxConcurrentConnections());
 	}
 
 	/**

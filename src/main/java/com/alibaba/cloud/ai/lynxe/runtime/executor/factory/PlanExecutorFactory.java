@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.event.LynxeEventPublisher;
 import com.alibaba.cloud.ai.lynxe.llm.ConversationMemoryLimitService;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
@@ -54,7 +54,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final PlanExecutionRecorder recorder;
 
-	private final ManusProperties manusProperties;
+	private final LynxeProperties lynxeProperties;
 
 	private final ObjectMapper objectMapper;
 
@@ -84,7 +84,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final ConversationMemoryLimitService conversationMemoryLimitService;
 
-	public PlanExecutorFactory(LlmService llmService, PlanExecutionRecorder recorder, ManusProperties manusProperties,
+	public PlanExecutorFactory(LlmService llmService, PlanExecutionRecorder recorder, LynxeProperties lynxeProperties,
 			ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
 			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
 			AgentInterruptionHelper agentInterruptionHelper, PlanningFactory planningFactory,
@@ -94,7 +94,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService) {
 		this.llmService = llmService;
 		this.recorder = recorder;
-		this.manusProperties = manusProperties;
+		this.lynxeProperties = lynxeProperties;
 		this.objectMapper = objectMapper;
 		this.levelBasedExecutorPool = levelBasedExecutorPool;
 		this.dynamicModelRepository = dynamicModelRepository;
@@ -117,7 +117,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 	 */
 	private PlanExecutorInterface createDynamicToolExecutor() {
 		log.debug("Creating dynamic agent plan executor");
-		return new DynamicToolPlanExecutor(null, recorder, llmService, manusProperties, levelBasedExecutorPool,
+		return new DynamicToolPlanExecutor(null, recorder, llmService, lynxeProperties, levelBasedExecutorPool,
 				dynamicModelRepository, fileUploadService, agentInterruptionHelper, planningFactory, toolCallingManager,
 				userInputService, streamingResponseHandler, planIdDispatcher, lynxeEventPublisher, objectMapper,
 				parallelToolExecutionService, memoryService, conversationMemoryLimitService);

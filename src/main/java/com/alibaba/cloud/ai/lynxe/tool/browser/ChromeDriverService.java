@@ -29,7 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -56,7 +56,7 @@ public class ChromeDriverService implements IChromeDriverService {
 
 	private final Lock driverLock = new ReentrantLock();
 
-	private ManusProperties manusProperties;
+	private LynxeProperties lynxeProperties;
 
 	private SmartContentSavingService innerStorageService;
 
@@ -130,9 +130,9 @@ public class ChromeDriverService implements IChromeDriverService {
 		}
 	}
 
-	public ChromeDriverService(ManusProperties manusProperties, SmartContentSavingService innerStorageService,
+	public ChromeDriverService(LynxeProperties lynxeProperties, SmartContentSavingService innerStorageService,
 			UnifiedDirectoryManager unifiedDirectoryManager, ObjectMapper objectMapper) {
-		this.manusProperties = manusProperties;
+		this.lynxeProperties = lynxeProperties;
 		this.innerStorageService = innerStorageService;
 		this.unifiedDirectoryManager = unifiedDirectoryManager;
 		this.objectMapper = objectMapper;
@@ -394,7 +394,7 @@ public class ChromeDriverService implements IChromeDriverService {
 							"--lang=zh-CN,zh,en-US,en", "--user-agent=" + userAgent, "--window-size=1920,1080"));
 
 				// Set headless mode based on configuration
-				if (manusProperties.getBrowserHeadless()) {
+				if (lynxeProperties.getBrowserHeadless()) {
 					log.info("Enable Playwright headless mode");
 					launchOptions.setHeadless(true);
 				}
@@ -574,7 +574,7 @@ public class ChromeDriverService implements IChromeDriverService {
 
 			// Configure page timeouts with error handling
 			try {
-				Integer timeout = manusProperties.getBrowserRequestTimeout();
+				Integer timeout = lynxeProperties.getBrowserRequestTimeout();
 				if (timeout != null && timeout > 0) {
 					log.info("Setting browser page timeout to {} seconds", timeout);
 					page.setDefaultTimeout(timeout * 1000); // Convert to milliseconds
@@ -699,12 +699,12 @@ public class ChromeDriverService implements IChromeDriverService {
 		cleanupAllPlaywrightProcesses();
 	}
 
-	public void setManusProperties(ManusProperties manusProperties) {
-		this.manusProperties = manusProperties;
+	public void setLynxeProperties(LynxeProperties lynxeProperties) {
+		this.lynxeProperties = lynxeProperties;
 	}
 
-	public ManusProperties getManusProperties() {
-		return manusProperties;
+	public LynxeProperties getLynxeProperties() {
+		return lynxeProperties;
 	}
 
 	public SmartContentSavingService getInnerStorageService() {

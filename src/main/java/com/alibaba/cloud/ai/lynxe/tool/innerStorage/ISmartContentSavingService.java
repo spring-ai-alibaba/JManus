@@ -15,7 +15,7 @@
  */
 package com.alibaba.cloud.ai.lynxe.tool.innerStorage;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 
 /**
  * Smart content saving service interface for storing intermediate data in MapReduce
@@ -24,10 +24,10 @@ import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
 public interface ISmartContentSavingService {
 
 	/**
-	 * Get Manus properties
-	 * @return Manus properties
+	 * Get Lynxe properties
+	 * @return Lynxe properties
 	 */
-	ManusProperties getManusProperties();
+	LynxeProperties getLynxeProperties();
 
 	/**
 	 * Process content, automatically store if content is too long

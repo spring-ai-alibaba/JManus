@@ -12,7 +12,7 @@
 - Level-2: 4 threads idle, only 1 thread executing
 
 ### Code Location:
-File: `src/main/java/com/alibaba/cloud/ai/manus/tool/mapreduce/ParallelExecutionTool.java:545`
+File: `src/main/java/com/alibaba/cloud/ai/lynxe/tool/mapreduce/ParallelExecutionTool.java:545`
 ```java
 CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 ```
@@ -107,7 +107,7 @@ CompletableFuture.runAsync(task, ForkJoinPool.commonPool());
 
 Add to `application.yml`:
 ```yaml
-manus:
+lynxe:
   agent:
     executorPoolSize: 20  # Increase from 5 to 20
 ```

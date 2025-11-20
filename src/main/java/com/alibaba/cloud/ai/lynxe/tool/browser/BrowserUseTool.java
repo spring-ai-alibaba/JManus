@@ -22,7 +22,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.browser.actions.BrowserRequestVO;
 import com.alibaba.cloud.ai.lynxe.tool.browser.actions.ClickByElementAction;
@@ -91,7 +91,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 	 * @return Timeout in seconds, returns default value of 30 seconds if not configured
 	 */
 	private Integer getBrowserTimeout() {
-		Integer timeout = getManusProperties().getBrowserRequestTimeout();
+		Integer timeout = getLynxeProperties().getBrowserRequestTimeout();
 		return timeout != null ? timeout : 30; // Default timeout is 30 seconds
 	}
 
@@ -499,7 +499,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 					.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
 
 				// Use compressUrl based on configuration
-				Boolean enableShortUrl = getManusProperties().getEnableShortUrl();
+				Boolean enableShortUrl = getLynxeProperties().getEnableShortUrl();
 				boolean compressUrl = enableShortUrl != null ? enableShortUrl : true; // Default
 																						// to
 																						// true
@@ -832,8 +832,8 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 		}
 	}
 
-	public ManusProperties getManusProperties() {
-		return (ManusProperties) this.chromeDriverService.getManusProperties();
+	public LynxeProperties getLynxeProperties() {
+		return (LynxeProperties) this.chromeDriverService.getLynxeProperties();
 	}
 
 	@Override

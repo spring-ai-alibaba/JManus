@@ -27,7 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 
 /**
@@ -44,22 +44,22 @@ public class SimpleHierarchicalFileAccessTest {
 
 	private UnifiedDirectoryManager directoryManager;
 
-	private ManusProperties manusProperties;
+	private LynxeProperties lynxeProperties;
 
 	@BeforeEach
 	void setUp() throws IOException {
 		// Create a simple test properties object that doesn't require config service
-		manusProperties = new TestManusProperties();
+		lynxeProperties = new TestLynxeProperties();
 
 		// Initialize services
-		directoryManager = new UnifiedDirectoryManager(manusProperties);
+		directoryManager = new UnifiedDirectoryManager(lynxeProperties);
 		textFileService = new TextFileService();
 
 		// Use reflection to inject dependencies for testing
 		try {
-			java.lang.reflect.Field manusPropertiesField = TextFileService.class.getDeclaredField("manusProperties");
-			manusPropertiesField.setAccessible(true);
-			manusPropertiesField.set(textFileService, manusProperties);
+			java.lang.reflect.Field lynxePropertiesField = TextFileService.class.getDeclaredField("lynxeProperties");
+			lynxePropertiesField.setAccessible(true);
+			lynxePropertiesField.set(textFileService, lynxeProperties);
 
 			java.lang.reflect.Field directoryManagerField = TextFileService.class
 				.getDeclaredField("unifiedDirectoryManager");
@@ -201,9 +201,9 @@ public class SimpleHierarchicalFileAccessTest {
 	}
 
 	/**
-	 * Test implementation of ManusProperties that doesn't require IConfigService
+	 * Test implementation of LynxeProperties that doesn't require IConfigService
 	 */
-	private static class TestManusProperties extends ManusProperties {
+	private static class TestLynxeProperties extends LynxeProperties {
 
 	}
 

@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.GetDatasourceInfoAction;
@@ -38,7 +38,7 @@ public class DatabaseMetadataTool extends AbstractBaseTool<DatabaseRequest> {
 
 	private final ObjectMapper objectMapper;
 
-	public DatabaseMetadataTool(ManusProperties manusProperties, DataSourceService dataSourceService,
+	public DatabaseMetadataTool(LynxeProperties lynxeProperties, DataSourceService dataSourceService,
 			ObjectMapper objectMapper) {
 		this.dataSourceService = dataSourceService;
 		this.objectMapper = objectMapper;

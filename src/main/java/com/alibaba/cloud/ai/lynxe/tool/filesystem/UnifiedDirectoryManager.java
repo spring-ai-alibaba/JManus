@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,7 +36,7 @@ public class UnifiedDirectoryManager {
 
 	private static final Logger log = LoggerFactory.getLogger(UnifiedDirectoryManager.class);
 
-	private final ManusProperties manusProperties;
+	private final LynxeProperties lynxeProperties;
 
 	private final String workingDirectoryPath;
 
@@ -52,7 +52,7 @@ public class UnifiedDirectoryManager {
 
 	/**
 	 * Get the linked external directory path for a root plan. This is the symbolic link
-	 * to the external folder configured in ManusProperties.
+	 * to the external folder configured in LynxeProperties.
 	 * @param rootPlanId The root plan ID
 	 * @return Path object of the linked external directory
 	 * @throws IOException if the linked external directory is not available
@@ -66,10 +66,10 @@ public class UnifiedDirectoryManager {
 
 		// Check if linked external directory exists
 		if (!Files.exists(linkedExternalDir)) {
-			String externalFolder = manusProperties.getExternalLinkedFolder();
+			String externalFolder = lynxeProperties.getExternalLinkedFolder();
 			if (externalFolder == null || externalFolder.trim().isEmpty()) {
 				throw new IOException(
-						"External linked folder is not configured. Please set 'manus.general.externalLinkedFolder' in system settings.");
+						"External linked folder is not configured. Please set 'lynxe.general.externalLinkedFolder' in system settings.");
 			}
 			throw new IOException("Linked external directory does not exist: " + linkedExternalDir
 					+ ". The external folder link may not have been created yet.");
@@ -83,8 +83,8 @@ public class UnifiedDirectoryManager {
 		return linkedExternalDir;
 	}
 
-	public UnifiedDirectoryManager(ManusProperties manusProperties) {
-		this.manusProperties = manusProperties;
+	public UnifiedDirectoryManager(LynxeProperties lynxeProperties) {
+		this.lynxeProperties = lynxeProperties;
 		this.workingDirectoryPath = getWorkingDirectory("");
 	}
 
@@ -141,7 +141,7 @@ public class UnifiedDirectoryManager {
 	}
 
 	/**
-	 * Get a specified directory with security validation. If ManusProperties
+	 * Get a specified directory with security validation. If LynxeProperties
 	 * configuration does not allow external access, only directories within the working
 	 * directory are allowed.
 	 * @param targetPath The target directory path (absolute or relative)
@@ -258,11 +258,11 @@ public class UnifiedDirectoryManager {
 	}
 
 	/**
-	 * Get ManusProperties for configuration access
-	 * @return ManusProperties instance
+	 * Get LynxeProperties for configuration access
+	 * @return LynxeProperties instance
 	 */
-	public ManusProperties getManusProperties() {
-		return manusProperties;
+	public LynxeProperties getLynxeProperties() {
+		return lynxeProperties;
 	}
 
 	/**
@@ -318,7 +318,7 @@ public class UnifiedDirectoryManager {
 	 * @throws IOException if link creation fails
 	 */
 	private void ensureExternalFolderLink(Path rootPlanDir) throws IOException {
-		String externalFolder = manusProperties.getExternalLinkedFolder();
+		String externalFolder = lynxeProperties.getExternalLinkedFolder();
 		if (externalFolder == null || externalFolder.trim().isEmpty()) {
 			// No external folder configured, nothing to do
 			return;

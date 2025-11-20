@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.excelProcessor.IExcelProcessingService;
@@ -54,7 +54,7 @@ public class DatabaseTableToExcelTool extends AbstractBaseTool<DatabaseTableToEx
 
 	private final UnifiedDirectoryManager directoryManager;
 
-	public DatabaseTableToExcelTool(ManusProperties manusProperties, DataSourceService dataSourceService,
+	public DatabaseTableToExcelTool(LynxeProperties lynxeProperties, DataSourceService dataSourceService,
 			IExcelProcessingService excelProcessingService, UnifiedDirectoryManager directoryManager) {
 		this.dataSourceService = dataSourceService;
 		this.excelProcessingService = excelProcessingService;
@@ -447,10 +447,10 @@ public class DatabaseTableToExcelTool extends AbstractBaseTool<DatabaseTableToEx
 		}
 	}
 
-	public static DatabaseTableToExcelTool getInstance(ManusProperties manusProperties,
+	public static DatabaseTableToExcelTool getInstance(LynxeProperties lynxeProperties,
 			DataSourceService dataSourceService, IExcelProcessingService excelProcessingService,
 			UnifiedDirectoryManager directoryManager) {
-		return new DatabaseTableToExcelTool(manusProperties, dataSourceService, excelProcessingService,
+		return new DatabaseTableToExcelTool(lynxeProperties, dataSourceService, excelProcessingService,
 				directoryManager);
 	}
 

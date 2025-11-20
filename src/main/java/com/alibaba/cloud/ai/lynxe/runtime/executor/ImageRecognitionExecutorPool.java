@@ -18,7 +18,7 @@ package com.alibaba.cloud.ai.lynxe.runtime.executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,7 +32,7 @@ public class ImageRecognitionExecutorPool {
 
 	private static final Logger log = LoggerFactory.getLogger(ImageRecognitionExecutorPool.class);
 
-	private final ManusProperties manusProperties;
+	private final LynxeProperties lynxeProperties;
 
 	private volatile ExecutorService executorService;
 
@@ -45,8 +45,8 @@ public class ImageRecognitionExecutorPool {
 	 */
 	private static final long CONFIG_CHECK_INTERVAL_MILLIS = 10_000;
 
-	public ImageRecognitionExecutorPool(ManusProperties manusProperties) {
-		this.manusProperties = manusProperties;
+	public ImageRecognitionExecutorPool(LynxeProperties lynxeProperties) {
+		this.lynxeProperties = lynxeProperties;
 
 		// Initialize thread pool with current configuration
 		this.currentPoolSize = getConfiguredPoolSize();
@@ -93,12 +93,12 @@ public class ImageRecognitionExecutorPool {
 	}
 
 	/**
-	 * Get the configured pool size from ManusProperties
+	 * Get the configured pool size from LynxeProperties
 	 * @return configured pool size or default value if not configured
 	 */
 	private int getConfiguredPoolSize() {
-		if (manusProperties != null) {
-			Integer configuredPoolSize = manusProperties.getImageRecognitionPoolSize();
+		if (lynxeProperties != null) {
+			Integer configuredPoolSize = lynxeProperties.getImageRecognitionPoolSize();
 			if (configuredPoolSize != null && configuredPoolSize > 0) {
 				log.debug("Using configured image recognition pool size: {}", configuredPoolSize);
 				return configuredPoolSize;

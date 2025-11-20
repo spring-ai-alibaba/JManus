@@ -87,4 +87,4 @@ echo -e "${DIM}━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 cd /app/extracted
-exec java $JAVA_OPTS -cp /app/extracted/BOOT-INF/classes:/app/extracted/BOOT-INF/lib/*:. com.alibaba.cloud.ai.manus.OpenManusSpringBootApplication --spring.profiles.active=h2,docker
+exec java $JAVA_OPTS -cp /app/extracted/BOOT-INF/classes:/app/extracted/BOOT-INF/lib/*:. com.alibaba.cloud.ai.lynxe.OpenLynxeSpringBootApplication --spring.profiles.active=h2,docker

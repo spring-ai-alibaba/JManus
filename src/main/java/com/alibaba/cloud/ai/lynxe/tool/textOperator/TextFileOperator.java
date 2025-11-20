@@ -14,12 +14,12 @@ package com.alibaba.cloud.ai.lynxe.tool.textOperator;
 // * See the License for the specific language governing permissions and
 // * limitations under the License.
 // */
-// package com.alibaba.cloud.ai.manus.tool.textOperator;
+// package com.alibaba.cloud.ai.lynxe.tool.textOperator;
 
-// import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
+// import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 
-// import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-// import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
+// import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+// import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
 // import com.fasterxml.jackson.core.type.TypeReference;
 // import com.fasterxml.jackson.databind.ObjectMapper;
 // import org.slf4j.Logger;

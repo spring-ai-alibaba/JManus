@@ -25,7 +25,7 @@ import com.alibaba.cloud.ai.lynxe.agent.BaseAgent;
 import com.alibaba.cloud.ai.lynxe.agent.ConfigurableDynaAgent;
 import com.alibaba.cloud.ai.lynxe.agent.ToolCallbackProvider;
 import com.alibaba.cloud.ai.lynxe.agent.entity.DynamicAgentEntity;
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.event.LynxeEventPublisher;
 import com.alibaba.cloud.ai.lynxe.llm.ConversationMemoryLimitService;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
@@ -56,7 +56,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 	 * @param recorder Plan execution recorder
 	 * @param agentService Agent service
 	 * @param llmService LLM service
-	 * @param manusProperties Manus properties
+	 * @param lynxeProperties Lynxe properties
 	 * @param levelBasedExecutorPool Level-based executor pool for depth-based execution
 	 * @param dynamicModelRepository Dynamic model repository
 	 */
@@ -81,7 +81,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 	private final ConversationMemoryLimitService conversationMemoryLimitService;
 
 	public DynamicToolPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
-			LlmService llmService, ManusProperties manusProperties, LevelBasedExecutorPool levelBasedExecutorPool,
+			LlmService llmService, LynxeProperties lynxeProperties, LevelBasedExecutorPool levelBasedExecutorPool,
 			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
 			AgentInterruptionHelper agentInterruptionHelper, PlanningFactory planningFactory,
 			ToolCallingManager toolCallingManager, UserInputService userInputService,
@@ -89,7 +89,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 			LynxeEventPublisher lynxeEventPublisher, ObjectMapper objectMapper,
 			ParallelToolExecutionService parallelToolExecutionService, MemoryService memoryService,
 			ConversationMemoryLimitService conversationMemoryLimitService) {
-		super(agents, recorder, llmService, manusProperties, levelBasedExecutorPool, fileUploadService,
+		super(agents, recorder, llmService, lynxeProperties, levelBasedExecutorPool, fileUploadService,
 				agentInterruptionHelper);
 		this.planningFactory = planningFactory;
 		this.toolCallingManager = toolCallingManager;
@@ -150,7 +150,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 		String description = "A configurable dynamic agent";
 		String nextStepPrompt = "Based on the current environment information and prompt to make a next step decision";
 
-		ConfigurableDynaAgent agent = new ConfigurableDynaAgent(llmService, getRecorder(), manusProperties, name,
+		ConfigurableDynaAgent agent = new ConfigurableDynaAgent(llmService, getRecorder(), lynxeProperties, name,
 				description, nextStepPrompt, selectedToolKeys, toolCallingManager, initialAgentSetting,
 				userInputService, modelName, streamingResponseHandler, step, planIdDispatcher, lynxeEventPublisher,
 				agentInterruptionHelper, objectMapper, parallelToolExecutionService, memoryService,

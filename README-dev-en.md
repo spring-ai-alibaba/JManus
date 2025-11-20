@@ -4,14 +4,14 @@ This project is Alibaba's AI plan execution and management system, built with Sp
 
 ## 1. Core Module API Entry Points
 
-- All core REST APIs are located in `src/main/java/com/alibaba/cloud/ai/example/manus/planning/controller/` and `config/` directories.
-- Recommended starting points: `ManusController.java`, `PlanTemplateController.java`, and `ConfigController.java` for the main business logic.
+- All core REST APIs are located in `src/main/java/com/alibaba/cloud/ai/lynxe/runtime/controller/` and `config/` directories.
+- Recommended starting points: `LynxeController.java`, `PlanTemplateController.java`, and `ConfigController.java` for the main business logic.
 
 ## 2. Task Initiation and Processing
 
 ### Task Initiation
 
-- API File: `ManusController.java`
+- API File: `LynxeController.java`
 - Main Endpoint: `/api/executor/execute` (POST)
   - Parameter: `query` (user query content)
   - Function: Initiates a new plan task, system automatically assigns a planId, and executes asynchronously.
@@ -23,7 +23,7 @@ This project is Alibaba's AI plan execution and management system, built with Sp
 
 ## 3. Asynchronous Task Status Tracking
 
-- API File: `ManusController.java`
+- API File: `LynxeController.java`
 - Main Endpoint:
   - `/api/executor/details/{planId}` (GET): Get detailed execution record and status for the specified planId.
 - Auxiliary Endpoints:

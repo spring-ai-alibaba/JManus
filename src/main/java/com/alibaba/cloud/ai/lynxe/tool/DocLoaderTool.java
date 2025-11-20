@@ -14,9 +14,9 @@ package com.alibaba.cloud.ai.lynxe.tool;
 // * See the License for the specific language governing permissions and
 // * limitations under the License.
 // */
-// package com.alibaba.cloud.ai.manus.tool;
+// package com.alibaba.cloud.ai.lynxe.tool;
 
-// import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+// import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 // import org.apache.commons.lang3.StringUtils;
 // import org.apache.pdfbox.pdmodel.PDDocument;
 // import org.apache.pdfbox.text.PDFTextStripper;

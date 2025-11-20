@@ -77,13 +77,6 @@
         </dependency>
 
 
-        <!-- Spring Native support -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context-indexer</artifactId>
-            <optional>true</optional>
-        </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-logging</artifactId>
@@ -457,7 +450,7 @@
                     <addResources>false</addResources>
                     <executable>false</executable>
                     <layout>ZIP</layout>
-                    <mainClass>com.alibaba.cloud.ai.manus.OpenManusSpringBootApplication</mainClass>
+                    <mainClass>com.alibaba.cloud.ai.lynxe.OpenLynxeSpringBootApplication</mainClass>
                 </configuration>
                 <executions>
                     <execution>

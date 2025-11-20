@@ -34,7 +34,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -47,7 +47,7 @@ public class JsxGeneratorService implements ApplicationRunner, IJsxGeneratorServ
 	private static final Logger log = LoggerFactory.getLogger(JsxGeneratorService.class);
 
 	@Autowired
-	private ManusProperties manusProperties;
+	private LynxeProperties lynxeProperties;
 
 	@Autowired
 	private UnifiedDirectoryManager unifiedDirectoryManager;
@@ -557,8 +557,8 @@ public class JsxGeneratorService implements ApplicationRunner, IJsxGeneratorServ
 	}
 
 	@Override
-	public ManusProperties getManusProperties() {
-		return manusProperties;
+	public LynxeProperties getLynxeProperties() {
+		return lynxeProperties;
 	}
 
 	@PreDestroy

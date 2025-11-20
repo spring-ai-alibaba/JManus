@@ -89,7 +89,7 @@ public class GetElementPositionByNameAction extends BrowserAction {
 
 	@Override
 	public ToolExecuteResult execute(BrowserRequestVO request) throws Exception {
-		boolean isDebug = getBrowserUseTool().getManusProperties().getDebugDetail();
+		boolean isDebug = getBrowserUseTool().getLynxeProperties().getDebugDetail();
 		String elementName = request.getElementName();
 		if (elementName == null || elementName.isEmpty()) {
 			return new ToolExecuteResult("Element name is required for 'get_element_position' action");

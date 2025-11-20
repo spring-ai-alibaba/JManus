@@ -211,7 +211,7 @@ public class OpenAIAdapterService {
 
 		// try {
 		// // Execute the plan using PlanningCoordinator
-		// CompletableFuture<com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult>
+		// CompletableFuture<com.alibaba.cloud.ai.lynxe.runtime.entity.vo.PlanExecutionResult>
 		// future = planningCoordinator
 		// .executeByUserQuery(context.getUserRequest(), context.getCurrentPlanId(),
 		// context.getCurrentPlanId(),
@@ -220,7 +220,7 @@ public class OpenAIAdapterService {
 		// // Wait for completion with extended timeout for complex tasks
 		// logger.info("Waiting for plan execution to complete for planId: {}",
 		// context.getCurrentPlanId());
-		// com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult result =
+		// com.alibaba.cloud.ai.lynxe.runtime.entity.vo.PlanExecutionResult result =
 		// future
 		// .get(PLAN_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES);
 		// logger.info("Plan execution completed for planId: {}",
@@ -285,13 +285,13 @@ public class OpenAIAdapterService {
 		// logger.info("Starting plan execution for planId: {}", planId);
 
 		// // Execute the plan using PlanningCoordinator
-		// CompletableFuture<com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult>
+		// CompletableFuture<com.alibaba.cloud.ai.lynxe.runtime.entity.vo.PlanExecutionResult>
 		// future = planningCoordinator
 		// .executeByUserQuery(context.getUserRequest(), planId, planId, planId,
 		// context.getConversationId(), null);
 
 		// // Wait for completion
-		// com.alibaba.cloud.ai.manus.runtime.entity.vo.PlanExecutionResult result =
+		// com.alibaba.cloud.ai.lynxe.runtime.entity.vo.PlanExecutionResult result =
 		// future.get();
 
 		// logger.info("Plan execution completed for planId: {}", planId);

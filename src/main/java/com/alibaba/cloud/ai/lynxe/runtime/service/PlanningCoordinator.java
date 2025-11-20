@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory;
 import com.alibaba.cloud.ai.lynxe.planning.service.PlanFinalizer;
 import com.alibaba.cloud.ai.lynxe.runtime.entity.vo.ExecutionContext;
@@ -47,14 +47,14 @@ public class PlanningCoordinator {
 
 	private final MemoryService memoryService;
 
-	private final ManusProperties manusProperties;
+	private final LynxeProperties lynxeProperties;
 
 	public PlanningCoordinator(PlanningFactory planningFactory, PlanExecutorFactory planExecutorFactory,
-			PlanFinalizer planFinalizer, MemoryService memoryService, ManusProperties manusProperties) {
+			PlanFinalizer planFinalizer, MemoryService memoryService, LynxeProperties lynxeProperties) {
 		this.planExecutorFactory = planExecutorFactory;
 		this.planFinalizer = planFinalizer;
 		this.memoryService = memoryService;
-		this.manusProperties = manusProperties;
+		this.lynxeProperties = lynxeProperties;
 	}
 
 	/**
@@ -103,7 +103,7 @@ public class PlanningCoordinator {
 			// VUE_SIDEBAR requests)
 			// Both VUE_DIALOG and VUE_SIDEBAR should use the same conversation memory
 			// If conversation memory is disabled, always generate a new conversationId
-			if (manusProperties != null && !manusProperties.getEnableConversationMemory()) {
+			if (lynxeProperties != null && !lynxeProperties.getEnableConversationMemory()) {
 				if (requestSource == RequestSource.VUE_DIALOG || requestSource == RequestSource.VUE_SIDEBAR) {
 					String generatedConversationId = memoryService.generateConversationId();
 					context.setConversationId(generatedConversationId);

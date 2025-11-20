@@ -28,7 +28,7 @@ import java.util.Map;
  * request - Maintain plan execution status - Store execution result summary - Control
  * whether execution summary generation is needed
  *
- * @see com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionPlan
+ * @see com.alibaba.cloud.ai.lynxe.runtime.entity.vo.ExecutionPlan
  * @see com.alibaba.cloud.ai.lynxe.runtime.service.PlanningCoordinator
  */
 public class ExecutionContext {

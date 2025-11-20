@@ -39,7 +39,7 @@ import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.util.MimeTypeUtils;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.runtime.executor.ImageRecognitionExecutorPool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
@@ -59,7 +59,7 @@ public class PdfOcrProcessor {
 
 	private final LlmService llmService;
 
-	private final ManusProperties manusProperties;
+	private final LynxeProperties lynxeProperties;
 
 	private final ImageRecognitionExecutorPool imageRecognitionExecutorPool;
 
@@ -71,10 +71,10 @@ public class PdfOcrProcessor {
 	private String imageFormatName = "JPEG";
 
 	public PdfOcrProcessor(UnifiedDirectoryManager directoryManager, LlmService llmService,
-			ManusProperties manusProperties, ImageRecognitionExecutorPool imageRecognitionExecutorPool) {
+			LynxeProperties lynxeProperties, ImageRecognitionExecutorPool imageRecognitionExecutorPool) {
 		this.directoryManager = directoryManager;
 		this.llmService = llmService;
-		this.manusProperties = manusProperties;
+		this.lynxeProperties = lynxeProperties;
 		this.imageRecognitionExecutorPool = imageRecognitionExecutorPool;
 		log.info("PdfOcrProcessor initialized with all dependencies");
 	}
@@ -256,7 +256,7 @@ public class PdfOcrProcessor {
 						try {
 							PDFRenderer pdfRenderer = new PDFRenderer(docRef);
 
-							// Use optimized DPI and image type from ManusProperties
+							// Use optimized DPI and image type from LynxeProperties
 							float dpi = getOptimizedDpi();
 							ImageType imageType = getConfiguredImageType();
 
@@ -437,7 +437,7 @@ public class PdfOcrProcessor {
 
 			// Get the ChatClient from LlmService
 			ChatClient chatClient = llmService.getDefaultDynamicAgentChatClient();
-			// Use configured model name from ManusProperties
+			// Use configured model name from LynxeProperties
 			String modelName = getConfiguredModelName();
 			ChatOptions chatOptions = ChatOptions.builder().model(modelName).build();
 			// Use ChatClient to process the image with OCR
@@ -615,12 +615,12 @@ public class PdfOcrProcessor {
 	}
 
 	/**
-	 * Get configured DPI from ManusProperties
+	 * Get configured DPI from LynxeProperties
 	 * @return configured DPI or default value
 	 */
 	private float getConfiguredDpi() {
-		if (manusProperties != null) {
-			Float configuredDpi = manusProperties.getImageRecognitionDpi();
+		if (lynxeProperties != null) {
+			Float configuredDpi = lynxeProperties.getImageRecognitionDpi();
 			if (configuredDpi != null && configuredDpi > 0) {
 				return configuredDpi;
 			}
@@ -694,12 +694,12 @@ public class PdfOcrProcessor {
 	}
 
 	/**
-	 * Get configured ImageType from ManusProperties
+	 * Get configured ImageType from LynxeProperties
 	 * @return configured ImageType or default RGB
 	 */
 	private ImageType getConfiguredImageType() {
-		if (manusProperties != null) {
-			String configuredImageType = manusProperties.getImageRecognitionImageType();
+		if (lynxeProperties != null) {
+			String configuredImageType = lynxeProperties.getImageRecognitionImageType();
 			if (configuredImageType != null) {
 				try {
 					return ImageType.valueOf(configuredImageType.toUpperCase());
@@ -713,12 +713,12 @@ public class PdfOcrProcessor {
 	}
 
 	/**
-	 * Get configured model name from ManusProperties
+	 * Get configured model name from LynxeProperties
 	 * @return configured model name or default value
 	 */
 	private String getConfiguredModelName() {
-		if (manusProperties != null) {
-			String configuredModelName = manusProperties.getImageRecognitionModelName();
+		if (lynxeProperties != null) {
+			String configuredModelName = lynxeProperties.getImageRecognitionModelName();
 			if (configuredModelName != null && !configuredModelName.trim().isEmpty()) {
 				return configuredModelName;
 			}
@@ -727,12 +727,12 @@ public class PdfOcrProcessor {
 	}
 
 	/**
-	 * Get configured max retry attempts from ManusProperties
+	 * Get configured max retry attempts from LynxeProperties
 	 * @return configured max retry attempts or default value
 	 */
 	private int getConfiguredMaxRetryAttempts() {
-		if (manusProperties != null) {
-			Integer configuredMaxRetryAttempts = manusProperties.getImageRecognitionMaxRetryAttempts();
+		if (lynxeProperties != null) {
+			Integer configuredMaxRetryAttempts = lynxeProperties.getImageRecognitionMaxRetryAttempts();
 			if (configuredMaxRetryAttempts != null && configuredMaxRetryAttempts > 0) {
 				return configuredMaxRetryAttempts;
 			}

@@ -15,7 +15,7 @@
  */
 package com.alibaba.cloud.ai.lynxe.tool.pptGenerator;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.lynxe.tool.pptGenerator.PptInput.SlideContent;
 import com.alibaba.cloud.ai.lynxe.tool.textOperator.FileState;
@@ -59,7 +59,7 @@ public class PptGeneratorService implements IPptGeneratorService {
 	private static final Logger log = LoggerFactory.getLogger(PptGeneratorService.class);
 
 	@Autowired
-	private ManusProperties manusProperties;
+	private LynxeProperties lynxeProperties;
 
 	@Autowired
 	private UnifiedDirectoryManager unifiedDirectoryManager;
@@ -370,8 +370,8 @@ public class PptGeneratorService implements IPptGeneratorService {
 	}
 
 	@Override
-	public ManusProperties getManusProperties() {
-		return manusProperties;
+	public LynxeProperties getLynxeProperties() {
+		return lynxeProperties;
 	}
 
 	@Override

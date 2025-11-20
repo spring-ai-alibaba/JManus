@@ -18,7 +18,7 @@ package com.alibaba.cloud.ai.lynxe.tool.textOperator;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
 
 /**
@@ -83,10 +83,10 @@ public interface ITextFileService {
 	String getCurrentFilePath(String planId);
 
 	/**
-	 * Get Manus properties
-	 * @return Manus properties
+	 * Get Lynxe properties
+	 * @return Lynxe properties
 	 */
-	ManusProperties getManusProperties();
+	LynxeProperties getLynxeProperties();
 
 	/**
 	 * Get last operation result

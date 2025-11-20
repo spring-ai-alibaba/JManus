@@ -25,7 +25,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
@@ -35,7 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Linked folder operator that provides read-only access to an external folder configured
- * in ManusProperties. This operator acts like a symbolic link, allowing users to browse
+ * in LynxeProperties. This operator acts like a symbolic link, allowing users to browse
  * and read files from an external directory that is outside the normal working directory.
  *
  * Keywords: external folder, linked directory, external access, read-only access,
@@ -153,7 +153,7 @@ public class LinkedFolderOperator extends AbstractBaseTool<LinkedFolderOperator.
 
 	}
 
-	private final ManusProperties manusProperties;
+	private final LynxeProperties lynxeProperties;
 
 	private final SmartContentSavingService innerStorageService;
 
@@ -161,9 +161,9 @@ public class LinkedFolderOperator extends AbstractBaseTool<LinkedFolderOperator.
 
 	private final UnifiedDirectoryManager unifiedDirectoryManager;
 
-	public LinkedFolderOperator(ManusProperties manusProperties, SmartContentSavingService innerStorageService,
+	public LinkedFolderOperator(LynxeProperties lynxeProperties, SmartContentSavingService innerStorageService,
 			ObjectMapper objectMapper, UnifiedDirectoryManager unifiedDirectoryManager) {
-		this.manusProperties = manusProperties;
+		this.lynxeProperties = lynxeProperties;
 		this.innerStorageService = innerStorageService;
 		this.objectMapper = objectMapper;
 		this.unifiedDirectoryManager = unifiedDirectoryManager;
@@ -665,7 +665,7 @@ public class LinkedFolderOperator extends AbstractBaseTool<LinkedFolderOperator.
 				symbolic link, external files.
 
 				Configuration required:
-				- manus.general.externalLinkedFolder: Path to the external folder
+				- lynxe.general.externalLinkedFolder: Path to the external folder
 
 				Supported operations:
 				- list_files: List files and directories in the linked folder, optional file_path parameter (defaults to root)
@@ -803,7 +803,7 @@ public class LinkedFolderOperator extends AbstractBaseTool<LinkedFolderOperator.
 	@Override
 	public boolean isSelectable() {
 		// Only show this tool if external linked folder is configured
-		String externalFolder = manusProperties.getExternalLinkedFolder();
+		String externalFolder = lynxeProperties.getExternalLinkedFolder();
 		return externalFolder != null && !externalFolder.trim().isEmpty();
 	}
 
