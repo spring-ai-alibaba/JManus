@@ -382,7 +382,7 @@ const CONFIG_DISPLAY_NAMES: Record<string, string> = {
 
   // General Settings
   debugDetail: 'config.basicConfig.general.debugDetail',
-  baseDir: 'config.basicConfig.general.baseDir',
+  externalLinkedFolder: 'config.basicConfig.general.externalLinkedFolder',
   enableConversationMemory: 'config.basicConfig.general.enableConversationMemory',
 
   // Interaction Settings

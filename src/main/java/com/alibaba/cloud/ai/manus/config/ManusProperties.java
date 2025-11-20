@@ -334,35 +334,17 @@ public class ManusProperties implements IManusProperties {
 	// Normal Settings
 	// Begin--------------------------------------------------------------------------------------------
 
-	@ConfigProperty(group = "manus", subGroup = "general", key = "baseDir", path = "manus.baseDir",
-			description = "manus.general.baseDir.description", defaultValue = "", inputType = ConfigInputType.TEXT)
-	private volatile String baseDir = "";
-
-	public String getBaseDir() {
-		String configPath = "manus.baseDir";
-		String value = configService.getConfigValue(configPath);
-		if (value != null) {
-			baseDir = value;
-		}
-		return baseDir;
-	}
-
-	public void setBaseDir(String baseDir) {
-		this.baseDir = baseDir;
-	}
-
 	// Normal Settings
 	// End----------------------------------------------------------------------------------------------
 
 	// File System Security SubGroup
-	@ConfigProperty(group = "manus", subGroup = "filesystem", key = "externalLinkedFolder",
-			path = "manus.filesystem.externalLinkedFolder",
-			description = "External folder path to be linked in shared directory (read-only access)", defaultValue = "",
-			inputType = ConfigInputType.TEXT)
+	@ConfigProperty(group = "manus", subGroup = "general", key = "externalLinkedFolder",
+			path = "manus.general.externalLinkedFolder", description = "manus.general.externalLinkedFolder.description",
+			defaultValue = "", inputType = ConfigInputType.TEXT)
 	private volatile String externalLinkedFolder = "";
 
 	public String getExternalLinkedFolder() {
-		String configPath = "manus.filesystem.externalLinkedFolder";
+		String configPath = "manus.general.externalLinkedFolder";
 		String value = configService.getConfigValue(configPath);
 		if (value != null) {
 			externalLinkedFolder = value;

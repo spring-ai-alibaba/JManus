@@ -18,7 +18,6 @@ package com.alibaba.cloud.ai.manus.tool.textOperator;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -159,11 +159,14 @@ public class LinkedFolderOperator extends AbstractBaseTool<LinkedFolderOperator.
 
 	private final ObjectMapper objectMapper;
 
+	private final UnifiedDirectoryManager unifiedDirectoryManager;
+
 	public LinkedFolderOperator(ManusProperties manusProperties, SmartContentSavingService innerStorageService,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper, UnifiedDirectoryManager unifiedDirectoryManager) {
 		this.manusProperties = manusProperties;
 		this.innerStorageService = innerStorageService;
 		this.objectMapper = objectMapper;
+		this.unifiedDirectoryManager = unifiedDirectoryManager;
 	}
 
 	public ToolExecuteResult run(String toolInput) {
@@ -274,58 +277,35 @@ public class LinkedFolderOperator extends AbstractBaseTool<LinkedFolderOperator.
 	}
 
 	/**
-	 * Get the external linked folder path from configuration Ensures the folder is
-	 * outside the working directory (extensions/inner_storage)
+	 * Get the linked external directory path through UnifiedDirectoryManager. This
+	 * ensures access is only through the rootPlanId/linked_external symbolic link.
 	 */
 	private Path getExternalLinkedFolder() throws IOException {
-		String externalFolder = manusProperties.getExternalLinkedFolder();
-
-		if (externalFolder == null || externalFolder.trim().isEmpty()) {
-			throw new IOException(
-					"External linked folder is not configured. Please set 'manus.filesystem.externalLinkedFolder' in system settings.");
+		if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
+			throw new IOException("Error: rootPlanId is required for linked folder operations but is null or empty");
 		}
 
-		Path externalPath = Paths.get(externalFolder).toAbsolutePath().normalize();
+		// Get the linked external directory through UnifiedDirectoryManager
+		// This ensures we only access through the symbolic link at
+		// rootPlanId/linked_external
+		Path linkedExternalDir = unifiedDirectoryManager.getLinkedExternalDirectory(this.rootPlanId);
 
-		if (!Files.exists(externalPath)) {
-			throw new IOException("External linked folder does not exist: " + externalPath);
-		}
+		log.debug("Linked external folder accessed through UnifiedDirectoryManager: {}", linkedExternalDir);
 
-		if (!Files.isDirectory(externalPath)) {
-			throw new IOException("External linked folder is not a directory: " + externalPath);
-		}
-
-		// Ensure the external folder is NOT within the working directory structure
-		// Working directory is typically: baseDir/extensions
-		// Inner storage is: baseDir/extensions/inner_storage
-		// External folder must be outside this structure
-		String baseDir = manusProperties.getBaseDir();
-		if (baseDir == null || baseDir.trim().isEmpty()) {
-			baseDir = System.getProperty("user.dir");
-		}
-		Path baseDirPath = Paths.get(baseDir).toAbsolutePath().normalize();
-		Path extensionsDir = baseDirPath.resolve("extensions").normalize();
-		Path innerStorageDir = extensionsDir.resolve("inner_storage").normalize();
-
-		// Check if external folder is within working directory structure
-		if (externalPath.startsWith(innerStorageDir) || externalPath.startsWith(extensionsDir)) {
-			throw new IOException("External linked folder must be outside the working directory structure. "
-					+ "The folder cannot be within 'extensions' or 'extensions/inner_storage'. " + "Configured path: "
-					+ externalPath + " is within: " + extensionsDir);
-		}
-
-		log.debug("External linked folder validated: {} (outside working directory: {})", externalPath, extensionsDir);
-
-		return externalPath;
+		return linkedExternalDir;
 	}
 
 	/**
-	 * Validate and get the absolute path within the external linked folder
+	 * Validate and get the absolute path within the external linked folder. User paths
+	 * are relative to the external folder root (e.g., "abc.md" not
+	 * "~/Downloads/folder1/abc.md"). This ensures users can only access files within the
+	 * configured external folder, not outside it.
 	 */
 	private Path validateLinkedPath(String filePath) throws IOException {
 		Path externalFolder = getExternalLinkedFolder();
 
 		// Normalize the file path to remove any relative path elements
+		// User paths are relative to the external folder root
 		String normalizedPath = normalizeFilePath(filePath);
 
 		// Check file type for non-directory operations
@@ -334,12 +314,20 @@ public class LinkedFolderOperator extends AbstractBaseTool<LinkedFolderOperator.
 		}
 
 		// Resolve file path within the external folder
+		// User provides paths relative to external folder root (e.g., "abc.md" or
+		// "subdir/file.txt")
 		Path absolutePath = normalizedPath.isEmpty() ? externalFolder
 				: externalFolder.resolve(normalizedPath).normalize();
 
-		// Ensure the path stays within the external folder
-		if (!absolutePath.startsWith(externalFolder)) {
-			throw new IOException("Access denied: Invalid file path - path traversal not allowed");
+		// Ensure the path stays within the external folder (prevent path traversal)
+		// This ensures users cannot access files outside the configured external folder
+		// Note: We resolve the symbolic link to get the actual external folder path
+		Path resolvedExternalFolder = externalFolder.toRealPath();
+		Path resolvedAbsolutePath = absolutePath.toRealPath();
+
+		if (!resolvedAbsolutePath.startsWith(resolvedExternalFolder)) {
+			throw new IOException("Access denied: Invalid file path - path traversal not allowed. "
+					+ "File path must be within the external linked folder.");
 		}
 
 		return absolutePath;
@@ -666,28 +654,37 @@ public class LinkedFolderOperator extends AbstractBaseTool<LinkedFolderOperator.
 	@Override
 	public String getDescription() {
 		return """
-				Provides read-only access to an external folder linked to the system. This tool acts like a
-				symbolic link, allowing you to browse and read files from a folder outside the normal working
-				directory.
+				Provides read-only access to an external folder linked to the system. This tool accesses files
+				through the rootPlanId/linked_external symbolic link, ensuring secure access to external folders.
+
+				Important: All file paths are relative to the external folder root. For example, if the external
+				folder is ~/Downloads/folder1, to access ~/Downloads/folder1/abc.md, use file_path "abc.md"
+				(not "~/Downloads/folder1/abc.md").
 
 				Keywords: external folder, linked directory, external access, read-only access,
 				symbolic link, external files.
 
 				Configuration required:
-				- manus.filesystem.externalLinkedFolder: Path to the external folder
+				- manus.general.externalLinkedFolder: Path to the external folder
 
 				Supported operations:
 				- list_files: List files and directories in the linked folder, optional file_path parameter (defaults to root)
+				  Example: file_path "subdir" to list files in subdir, or empty to list root directory
 				- get_text: Get content from specified line range in file, requires start_line and end_line parameters
+				  Example: file_path "abc.md" to access abc.md in the external folder root
 				  Limitation: Maximum 500 lines per call, use multiple calls for more content
 				- get_all_text: Get all content from file
+				  Example: file_path "subdir/file.txt" to access subdir/file.txt
 				  Note: If file content is too long, it will be automatically stored in temporary file and return file path
 				- grep: Search for text patterns in file, similar to Linux grep command
 				  Parameters: pattern (required), case_sensitive (optional, default false), whole_word (optional, default false)
+				  Example: file_path "document.md" to search in document.md
 
 				Features:
 				- Read-only access (no write, delete, or modify operations)
-				- Access to external folders outside the working directory
+				- Access through rootPlanId/linked_external symbolic link (managed by UnifiedDirectoryManager)
+				- File paths are relative to external folder root (e.g., "abc.md" not "~/Downloads/folder1/abc.md")
+				- Cannot access files outside the configured external folder
 				- Respects system security settings
 				- Supports text file formats only
 

@@ -449,7 +449,7 @@ const words: I18nType = {
       },
       general: {
         debugDetail: 'debug模式 ：会要求模型输出更多内容，方便查找问题，但速度更慢',
-        baseDir: 'manus根目录',
+        externalLinkedFolder: '外部目录映射 : 你可以指定一个外部的目录，系统会把这个目录映射到每个任务的一个子目录下面，这样就可以不需要将内容导入。 你可以用 带/或者不带/的绝对目录',
         enableConversationMemory: '开启对话记忆',
       },
       interactionSettings: {

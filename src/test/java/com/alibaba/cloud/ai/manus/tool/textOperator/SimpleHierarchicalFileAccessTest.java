@@ -50,7 +50,6 @@ public class SimpleHierarchicalFileAccessTest {
 	void setUp() throws IOException {
 		// Create a simple test properties object that doesn't require config service
 		manusProperties = new TestManusProperties();
-		((TestManusProperties) manusProperties).setBaseDir(tempDir.toString());
 
 		// Initialize services
 		directoryManager = new UnifiedDirectoryManager(manusProperties);
@@ -205,17 +204,6 @@ public class SimpleHierarchicalFileAccessTest {
 	 * Test implementation of ManusProperties that doesn't require IConfigService
 	 */
 	private static class TestManusProperties extends ManusProperties {
-
-		private String baseDir = "";
-
-		@Override
-		public String getBaseDir() {
-			return baseDir;
-		}
-
-		public void setBaseDir(String baseDir) {
-			this.baseDir = baseDir;
-		}
 
 	}
 

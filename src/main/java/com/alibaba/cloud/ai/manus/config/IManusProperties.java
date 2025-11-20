@@ -121,16 +121,6 @@ public interface IManusProperties {
 	void setParallelToolCalls(Boolean parallelToolCalls);
 
 	/**
-	 * Get base directory
-	 */
-	String getBaseDir();
-
-	/**
-	 * Set base directory
-	 */
-	void setBaseDir(String baseDir);
-
-	/**
 	 * Get enable short URL setting
 	 */
 	Boolean getEnableShortUrl();
