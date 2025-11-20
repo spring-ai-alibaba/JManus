@@ -464,7 +464,7 @@ const words: I18nType = {
         debugDetail:
           'Debug mode: The model will output more content to facilitate problem - finding, but it will be slower',
         externalLinkedFolder:
-          'External Directory Mapping: You can specify an external directory, and the system will map this directory to a subdirectory under each task, so you don\'t need to import the content. You can use an absolute directory path with or without a trailing slash.',
+          "External Directory Mapping: You can specify an external directory, and the system will map this directory to a subdirectory under each task, so you don't need to import the content. You can use an absolute directory path with or without a trailing slash.",
         enableConversationMemory: 'Enable Conversation Memory',
       },
       interactionSettings: {

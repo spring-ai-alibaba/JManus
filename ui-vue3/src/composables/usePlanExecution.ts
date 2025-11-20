@@ -149,9 +149,9 @@ export function usePlanExecution() {
             }
           }, POLL_INTERVAL)
         } else {
-        console.warn(
+          console.warn(
             `[usePlanExecution] Plan ${planId} not found after ${MAX_RETRY_ATTEMPTS} attempts, giving up`
-        )
+          )
           // Remove from tracking if plan doesn't exist after max retries
           untrackPlan(planId)
         }
@@ -220,28 +220,28 @@ export function usePlanExecution() {
             pollCount: currentPollCount,
           })
 
-        // Delete execution details from backend
-        try {
-          await CommonApiService.deleteExecutionDetails(recordKey)
-          console.log(`[usePlanExecution] Deleted execution details for plan: ${recordKey}`)
-        } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : 'Unknown error'
-          console.error(`[usePlanExecution] Failed to delete execution details: ${message}`)
-        }
+          // Delete execution details from backend
+          try {
+            await CommonApiService.deleteExecutionDetails(recordKey)
+            console.log(`[usePlanExecution] Deleted execution details for plan: ${recordKey}`)
+          } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error'
+            console.error(`[usePlanExecution] Failed to delete execution details: ${message}`)
+          }
 
-        // Remove from tracking
-        untrackPlan(planId)
+          // Remove from tracking
+          untrackPlan(planId)
 
           // Clean up poll count tracking
           completedPlansPollCount.delete(recordKey)
 
-        // Remove from reactive map after a delay
-        setTimeout(() => {
-          planExecutionRecords.delete(recordKey)
+          // Remove from reactive map after a delay
+          setTimeout(() => {
+            planExecutionRecords.delete(recordKey)
             if (planId !== recordKey) {
               planExecutionRecords.delete(planId)
             }
-        }, 5000)
+          }, 5000)
         }
       }
 
