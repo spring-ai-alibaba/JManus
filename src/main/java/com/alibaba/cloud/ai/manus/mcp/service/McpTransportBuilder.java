@@ -17,11 +17,14 @@ package com.alibaba.cloud.ai.manus.mcp.service;
 
 import java.io.IOException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -36,9 +39,16 @@ import io.modelcontextprotocol.client.transport.WebClientStreamableHttpTransport
 import io.modelcontextprotocol.client.transport.WebFluxSseClientTransport;
 import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.spec.McpClientTransport;
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
+import io.netty.resolver.DefaultAddressResolverGroup;
+import jakarta.annotation.PreDestroy;
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
 
 /**
- * MCP transport builder
+ * MCP transport builder with shared HttpClient instance for better resource management
  */
 @Component
 public class McpTransportBuilder {
@@ -51,11 +61,50 @@ public class McpTransportBuilder {
 
 	private final ObjectMapper objectMapper;
 
+	/**
+	 * Shared connection provider for MCP transports
+	 */
+	private final ConnectionProvider connectionProvider;
+
+	/**
+	 * Shared HttpClient instance for all MCP transports to reduce resource consumption
+	 * and prevent HttpClientImpl$SelectorManager thread accumulation
+	 */
+	private final HttpClient sharedHttpClient;
+
+	/**
+	 * Shared ReactorClientHttpConnector using the shared HttpClient
+	 */
+	private final ReactorClientHttpConnector sharedConnector;
+
 	public McpTransportBuilder(McpConfigValidator configValidator, McpProperties mcpProperties,
 			ObjectMapper objectMapper) {
 		this.configValidator = configValidator;
 		this.mcpProperties = mcpProperties;
 		this.objectMapper = objectMapper;
+
+		// Create shared connection provider for MCP transports
+		this.connectionProvider = ConnectionProvider.builder("mcp-shared-pool")
+			.maxConnections(200) // Increased for multiple MCP servers
+			.maxIdleTime(Duration.ofMinutes(5))
+			.maxLifeTime(Duration.ofMinutes(10))
+			.pendingAcquireTimeout(Duration.ofSeconds(30))
+			.evictInBackground(Duration.ofSeconds(120))
+			.build();
+
+		// Create shared HttpClient instance with optimized configuration
+		this.sharedHttpClient = HttpClient.create(connectionProvider)
+			.resolver(DefaultAddressResolverGroup.INSTANCE)
+			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000) // 30 seconds
+			.doOnConnected(conn -> conn.addHandlerLast(new ReadTimeoutHandler(30, TimeUnit.SECONDS))
+				.addHandlerLast(new WriteTimeoutHandler(30, TimeUnit.SECONDS)))
+			.option(ChannelOption.SO_KEEPALIVE, true)
+			.option(ChannelOption.TCP_NODELAY, true);
+
+		// Create shared connector
+		this.sharedConnector = new ReactorClientHttpConnector(sharedHttpClient);
+
+		logger.info("Initialized shared HttpClient for MCP transports with connection pool size: 200");
 	}
 
 	/**
@@ -230,12 +279,13 @@ public class McpTransportBuilder {
 	}
 
 	/**
-	 * Create WebClient builder (with baseUrl)
+	 * Create WebClient builder (with baseUrl) using shared HttpClient instance
 	 * @param baseUrl Base URL
 	 * @return WebClient builder
 	 */
 	private WebClient.Builder createWebClientBuilder(String baseUrl) {
 		return WebClient.builder()
+			.clientConnector(sharedConnector) // Use shared HttpClient connector
 			.baseUrl(baseUrl)
 			.defaultHeader("Accept", "text/event-stream")
 			.defaultHeader("Content-Type", "application/json")
@@ -250,6 +300,22 @@ public class McpTransportBuilder {
 						}
 						return ex;
 					}));
+	}
+
+	/**
+	 * Cleanup shared HttpClient resources on application shutdown
+	 */
+	@PreDestroy
+	public void shutdown() {
+		logger.info("Shutting down shared HttpClient for MCP transports");
+		try {
+			// Dispose the connection provider, which will close all connections
+			connectionProvider.dispose();
+			logger.info("Shared HttpClient connection provider disposed successfully");
+		}
+		catch (Exception e) {
+			logger.warn("Error disposing shared HttpClient connection provider", e);
+		}
 	}
 
 }
