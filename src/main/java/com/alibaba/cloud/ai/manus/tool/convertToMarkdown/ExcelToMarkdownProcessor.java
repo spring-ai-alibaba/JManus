@@ -15,18 +15,25 @@
  */
 package com.alibaba.cloud.ai.manus.tool.convertToMarkdown;
 
-import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.manus.tool.excelProcessor.ExcelProcessorTool;
-import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
-import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.excelProcessor.ExcelProcessorTool;
+import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
+import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Excel to Markdown Processor
@@ -40,11 +47,15 @@ public class ExcelToMarkdownProcessor {
 
 	private final UnifiedDirectoryManager directoryManager;
 
-	@Autowired
-	private IExcelProcessingService excelProcessingService;
+	private final IExcelProcessingService excelProcessingService;
 
-	public ExcelToMarkdownProcessor(UnifiedDirectoryManager directoryManager) {
+	private final ObjectMapper objectMapper;
+
+	public ExcelToMarkdownProcessor(UnifiedDirectoryManager directoryManager,
+			IExcelProcessingService excelProcessingService, ObjectMapper objectMapper) {
 		this.directoryManager = directoryManager;
+		this.excelProcessingService = excelProcessingService;
+		this.objectMapper = objectMapper;
 	}
 
 	/**
@@ -69,7 +80,7 @@ public class ExcelToMarkdownProcessor {
 
 			// Step 1: Get Excel structure and data
 			String structureInfo = getExcelStructure(sourceFile, currentPlanId);
-			String dataContent = getExcelData(sourceFile, currentPlanId);
+			String dataContent = getExcelData(sourceFile, currentPlanId, structureInfo);
 
 			if (structureInfo == null && dataContent == null) {
 				return new ToolExecuteResult("Error: Could not extract content from Excel file");
@@ -146,26 +157,172 @@ public class ExcelToMarkdownProcessor {
 	}
 
 	/**
-	 * Get Excel file data content
+	 * Get Excel file data content Tries to read data from all worksheets found in the
+	 * structure
 	 */
-	private String getExcelData(Path sourceFile, String currentPlanId) {
+	private String getExcelData(Path sourceFile, String currentPlanId, String structureInfo) {
 		try {
+			// Extract worksheet names from structure info
+			List<String> worksheetNames = extractWorksheetNames(structureInfo);
+			if (worksheetNames.isEmpty()) {
+				// Fallback: try common worksheet names
+				worksheetNames.add("Sheet1");
+			}
+
 			IExcelProcessingService excelService = excelProcessingService;
 			ExcelProcessorTool excelTool = new ExcelProcessorTool(excelService);
-			ExcelProcessorTool.ExcelInput input = new ExcelProcessorTool.ExcelInput();
-			input.setAction("read_data");
-			input.setFilePath(sourceFile.toString());
-			input.setWorksheetName("Sheet1"); // Try default worksheet first
-
 			excelTool.setCurrentPlanId(currentPlanId);
 			excelTool.setRootPlanId(currentPlanId);
 
-			ToolExecuteResult result = excelTool.run(input);
-			return result != null ? result.getOutput() : null;
+			// Try to read data from each worksheet
+			List<String> allDataResults = new ArrayList<>();
+			for (String worksheetName : worksheetNames) {
+				try {
+					ExcelProcessorTool.ExcelInput input = new ExcelProcessorTool.ExcelInput();
+					input.setAction("read_data");
+					input.setFilePath(sourceFile.toString());
+					input.setWorksheetName(worksheetName);
+
+					ToolExecuteResult result = excelTool.run(input);
+					if (result != null && result.getOutput() != null) {
+						// Check if result contains error
+						if (!result.getOutput().contains("\"error\"")) {
+							allDataResults.add(result.getOutput());
+							log.info("Successfully read data from worksheet: {}", worksheetName);
+						}
+						else {
+							log.warn("Error reading worksheet {}: {}", worksheetName, result.getOutput());
+						}
+					}
+				}
+				catch (Exception e) {
+					log.warn("Could not read data from worksheet {}: {}", worksheetName, e.getMessage());
+					// Continue to next worksheet
+				}
+			}
+
+			if (allDataResults.isEmpty()) {
+				log.warn("Could not read data from any worksheet");
+				return null;
+			}
+
+			// Combine all worksheet data
+			if (allDataResults.size() == 1) {
+				return allDataResults.get(0);
+			}
+			else {
+				// Multiple worksheets: combine them
+				return combineWorksheetData(allDataResults);
+			}
 		}
 		catch (Exception e) {
 			log.warn("Could not get Excel data: {}", e.getMessage());
 			return null;
+		}
+	}
+
+	/**
+	 * Extract worksheet names from structure info JSON
+	 */
+	private List<String> extractWorksheetNames(String structureInfo) {
+		List<String> worksheetNames = new ArrayList<>();
+		if (structureInfo == null || structureInfo.trim().isEmpty()) {
+			return worksheetNames;
+		}
+
+		try {
+			// Try to parse as JSON
+			JsonNode rootNode = objectMapper.readTree(structureInfo);
+
+			// Navigate to structure field: data.structure
+			JsonNode dataNode = rootNode.get("data");
+			if (dataNode != null) {
+				JsonNode structureNode = dataNode.get("structure");
+				if (structureNode != null && structureNode.isObject()) {
+					Iterator<String> fieldNames = structureNode.fieldNames();
+					while (fieldNames.hasNext()) {
+						worksheetNames.add(fieldNames.next());
+					}
+				}
+			}
+
+			// Alternative: try direct structure field
+			if (worksheetNames.isEmpty()) {
+				JsonNode structureNode = rootNode.get("structure");
+				if (structureNode != null && structureNode.isObject()) {
+					Iterator<String> fieldNames = structureNode.fieldNames();
+					while (fieldNames.hasNext()) {
+						worksheetNames.add(fieldNames.next());
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			log.debug("Could not parse structure info as JSON, trying text extraction: {}", e.getMessage());
+			// Fallback: try to extract from text
+			// Look for patterns like "RI":[...] or "AIR":[...]
+			if (structureInfo.contains("\"RI\"")) {
+				worksheetNames.add("RI");
+			}
+			if (structureInfo.contains("\"AIR\"")) {
+				worksheetNames.add("AIR");
+			}
+		}
+
+		log.info("Extracted worksheet names: {}", worksheetNames);
+		return worksheetNames;
+	}
+
+	/**
+	 * Combine data from multiple worksheets Each dataResult is a JSON string from
+	 * ExcelProcessorTool, format: {"message":"...", "data":{"action":"read_data",
+	 * "worksheet_name":"...", "data":[[...]], ...}} We extract the actual data array and
+	 * worksheet name from each result
+	 */
+	private String combineWorksheetData(List<String> dataResults) {
+		try {
+			List<Map<String, Object>> worksheetsData = new ArrayList<>();
+
+			for (String dataResult : dataResults) {
+				try {
+					JsonNode rootNode = objectMapper.readTree(dataResult);
+					JsonNode dataNode = rootNode.get("data");
+					if (dataNode != null) {
+						Map<String, Object> worksheetInfo = new HashMap<>();
+						worksheetInfo.put("worksheet_name", dataNode.get("worksheet_name").asText());
+						worksheetInfo.put("data", objectMapper.treeToValue(dataNode.get("data"), List.class));
+						worksheetInfo.put("rows_read", dataNode.get("rows_read").asInt());
+						worksheetsData.add(worksheetInfo);
+					}
+				}
+				catch (Exception e) {
+					log.warn("Failed to parse worksheet data result: {}", e.getMessage());
+					// Keep original string as fallback
+					Map<String, Object> worksheetInfo = new HashMap<>();
+					worksheetInfo.put("raw_data", dataResult);
+					worksheetsData.add(worksheetInfo);
+				}
+			}
+
+			Map<String, Object> combined = new HashMap<>();
+			combined.put("worksheets", worksheetsData);
+			combined.put("worksheet_count", worksheetsData.size());
+
+			return objectMapper.writeValueAsString(combined);
+		}
+		catch (Exception e) {
+			log.error("Failed to combine worksheet data: {}", e.getMessage());
+			// Fallback: return simple concatenation
+			StringBuilder combined = new StringBuilder();
+			combined.append("{\"worksheets\":[");
+			for (int i = 0; i < dataResults.size(); i++) {
+				if (i > 0) {
+					combined.append(",");
+				}
+				combined.append("\"").append(dataResults.get(i).replace("\"", "\\\"")).append("\"");
+			}
+			combined.append("]}");
+			return combined.toString();
 		}
 	}
 
@@ -233,10 +390,52 @@ public class ExcelToMarkdownProcessor {
 	}
 
 	/**
-	 * Convert data content to Markdown tables
+	 * Convert data content to Markdown tables Handles both single worksheet and multiple
+	 * worksheets data
 	 */
 	private String convertDataToMarkdown(String dataContent) {
 		StringBuilder markdown = new StringBuilder();
+
+		// Try to parse as JSON first (for structured data from ExcelProcessorTool)
+		try {
+			JsonNode rootNode = objectMapper.readTree(dataContent);
+
+			// Check if it's multiple worksheets format
+			JsonNode worksheetsNode = rootNode.get("worksheets");
+			if (worksheetsNode != null && worksheetsNode.isArray()) {
+				// Multiple worksheets
+				for (JsonNode worksheetNode : worksheetsNode) {
+					String worksheetName = worksheetNode.has("worksheet_name")
+							? worksheetNode.get("worksheet_name").asText() : "Unknown";
+					JsonNode dataNode = worksheetNode.get("data");
+
+					if (dataNode != null && dataNode.isArray()) {
+						markdown.append("### Worksheet: ").append(worksheetName).append("\n\n");
+						markdown.append(convertDataArrayToMarkdownTable(dataNode));
+						markdown.append("\n");
+					}
+				}
+				return markdown.toString();
+			}
+
+			// Check if it's single worksheet format from ExcelProcessorTool
+			JsonNode dataNode = rootNode.get("data");
+			if (dataNode != null) {
+				JsonNode worksheetDataNode = dataNode.get("data");
+				if (worksheetDataNode != null && worksheetDataNode.isArray()) {
+					String worksheetName = dataNode.has("worksheet_name") ? dataNode.get("worksheet_name").asText()
+							: "Sheet1";
+					markdown.append("### Worksheet: ").append(worksheetName).append("\n\n");
+					markdown.append(convertDataArrayToMarkdownTable(worksheetDataNode));
+					return markdown.toString();
+				}
+			}
+		}
+		catch (Exception e) {
+			log.debug("Data content is not JSON format, using text parsing: {}", e.getMessage());
+		}
+
+		// Fallback: treat as plain text and parse line by line
 		String[] lines = dataContent.split("\n");
 		boolean inTable = false;
 		int tableRowCount = 0;
@@ -289,6 +488,47 @@ public class ExcelToMarkdownProcessor {
 			markdown.append("\n");
 		}
 
+		return markdown.toString();
+	}
+
+	/**
+	 * Convert JSON data array to Markdown table
+	 */
+	private String convertDataArrayToMarkdownTable(JsonNode dataArray) {
+		if (dataArray == null || !dataArray.isArray() || dataArray.size() == 0) {
+			return "*No data available*\n\n";
+		}
+
+		StringBuilder markdown = new StringBuilder();
+
+		// First row is header
+		JsonNode firstRow = dataArray.get(0);
+		if (firstRow != null && firstRow.isArray()) {
+			List<String> headers = new ArrayList<>();
+			for (JsonNode cell : firstRow) {
+				headers.add(cell.asText(""));
+			}
+
+			if (!headers.isEmpty()) {
+				// Header row
+				markdown.append("| ").append(String.join(" | ", headers)).append(" |\n");
+				markdown.append("| ").append("--- |".repeat(headers.size())).append("\n");
+
+				// Data rows
+				for (int i = 1; i < dataArray.size(); i++) {
+					JsonNode row = dataArray.get(i);
+					if (row != null && row.isArray()) {
+						List<String> cells = new ArrayList<>();
+						for (JsonNode cell : row) {
+							cells.add(cell.asText(""));
+						}
+						markdown.append("| ").append(String.join(" | ", cells)).append(" |\n");
+					}
+				}
+			}
+		}
+
+		markdown.append("\n");
 		return markdown.toString();
 	}
 

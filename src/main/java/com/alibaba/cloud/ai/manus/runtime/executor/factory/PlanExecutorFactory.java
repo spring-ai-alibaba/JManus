@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.manus.llm.ConversationMemoryLimitService;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
@@ -81,6 +82,8 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final MemoryService memoryService;
 
+	private final ConversationMemoryLimitService conversationMemoryLimitService;
+
 	public PlanExecutorFactory(LlmService llmService, PlanExecutionRecorder recorder, ManusProperties manusProperties,
 			ObjectMapper objectMapper, LevelBasedExecutorPool levelBasedExecutorPool,
 			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
@@ -88,7 +91,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 			ToolCallingManager toolCallingManager, UserInputService userInputService,
 			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
 			JmanusEventPublisher jmanusEventPublisher, ParallelToolExecutionService parallelToolExecutionService,
-			MemoryService memoryService) {
+			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService) {
 		this.llmService = llmService;
 		this.recorder = recorder;
 		this.manusProperties = manusProperties;
@@ -105,6 +108,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		this.jmanusEventPublisher = jmanusEventPublisher;
 		this.parallelToolExecutionService = parallelToolExecutionService;
 		this.memoryService = memoryService;
+		this.conversationMemoryLimitService = conversationMemoryLimitService;
 	}
 
 	/**
@@ -116,7 +120,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		return new DynamicToolPlanExecutor(null, recorder, llmService, manusProperties, levelBasedExecutorPool,
 				dynamicModelRepository, fileUploadService, agentInterruptionHelper, planningFactory, toolCallingManager,
 				userInputService, streamingResponseHandler, planIdDispatcher, jmanusEventPublisher, objectMapper,
-				parallelToolExecutionService, memoryService);
+				parallelToolExecutionService, memoryService, conversationMemoryLimitService);
 	}
 
 	/**

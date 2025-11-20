@@ -27,6 +27,7 @@ import com.alibaba.cloud.ai.manus.agent.ToolCallbackProvider;
 import com.alibaba.cloud.ai.manus.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.manus.llm.ConversationMemoryLimitService;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.model.repository.DynamicModelRepository;
@@ -77,6 +78,8 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 
 	private final MemoryService memoryService;
 
+	private final ConversationMemoryLimitService conversationMemoryLimitService;
+
 	public DynamicToolPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			LlmService llmService, ManusProperties manusProperties, LevelBasedExecutorPool levelBasedExecutorPool,
 			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
@@ -84,7 +87,8 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 			ToolCallingManager toolCallingManager, UserInputService userInputService,
 			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
 			JmanusEventPublisher jmanusEventPublisher, ObjectMapper objectMapper,
-			ParallelToolExecutionService parallelToolExecutionService, MemoryService memoryService) {
+			ParallelToolExecutionService parallelToolExecutionService, MemoryService memoryService,
+			ConversationMemoryLimitService conversationMemoryLimitService) {
 		super(agents, recorder, llmService, manusProperties, levelBasedExecutorPool, fileUploadService,
 				agentInterruptionHelper);
 		this.planningFactory = planningFactory;
@@ -96,6 +100,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 		this.objectMapper = objectMapper;
 		this.parallelToolExecutionService = parallelToolExecutionService;
 		this.memoryService = memoryService;
+		this.conversationMemoryLimitService = conversationMemoryLimitService;
 	}
 
 	protected String getStepFromStepReq(String stepRequirement) {
@@ -148,7 +153,8 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 		ConfigurableDynaAgent agent = new ConfigurableDynaAgent(llmService, getRecorder(), manusProperties, name,
 				description, nextStepPrompt, selectedToolKeys, toolCallingManager, initialAgentSetting,
 				userInputService, modelName, streamingResponseHandler, step, planIdDispatcher, jmanusEventPublisher,
-				agentInterruptionHelper, objectMapper, parallelToolExecutionService, memoryService);
+				agentInterruptionHelper, objectMapper, parallelToolExecutionService, memoryService,
+				conversationMemoryLimitService);
 
 		agent.setCurrentPlanId(planId);
 		agent.setRootPlanId(rootPlanId);

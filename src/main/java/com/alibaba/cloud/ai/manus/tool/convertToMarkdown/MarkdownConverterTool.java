@@ -23,8 +23,10 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Markdown Converter Tool - Converts various file types to Markdown format
@@ -45,11 +47,18 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 
 	private final ImageOcrProcessor imageOcrProcessor;
 
+	private final IExcelProcessingService excelProcessingService;
+
+	private final ObjectMapper objectMapper;
+
 	public MarkdownConverterTool(UnifiedDirectoryManager directoryManager, PdfOcrProcessor ocrProcessor,
-			ImageOcrProcessor imageOcrProcessor) {
+			ImageOcrProcessor imageOcrProcessor, IExcelProcessingService excelProcessingService,
+			ObjectMapper objectMapper) {
 		this.directoryManager = directoryManager;
 		this.ocrProcessor = ocrProcessor;
 		this.imageOcrProcessor = imageOcrProcessor;
+		this.excelProcessingService = excelProcessingService;
+		this.objectMapper = objectMapper;
 	}
 
 	/**
@@ -160,7 +169,8 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	 */
 	private ToolExecuteResult processExcelToMarkdown(Path sourceFile, String additionalRequirement) {
 		try {
-			ExcelToMarkdownProcessor processor = new ExcelToMarkdownProcessor(directoryManager);
+			ExcelToMarkdownProcessor processor = new ExcelToMarkdownProcessor(directoryManager, excelProcessingService,
+					objectMapper);
 			return processor.convertToMarkdown(sourceFile, additionalRequirement, rootPlanId);
 		}
 		catch (Exception e) {

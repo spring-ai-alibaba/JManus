@@ -44,9 +44,47 @@ public class UnifiedDirectoryManager {
 
 	private static final String INNER_STORAGE_DIR = "inner_storage";
 
+	/**
+	 * Fixed directory name for external linked folder mapping
+	 */
+	private static final String LINKED_EXTERNAL_DIR = "linked_external";
+
+	/**
+	 * Get the linked external directory path for a root plan. This is the symbolic link
+	 * to the external folder configured in ManusProperties.
+	 * @param rootPlanId The root plan ID
+	 * @return Path object of the linked external directory
+	 * @throws IOException if the linked external directory is not available
+	 */
+	public Path getLinkedExternalDirectory(String rootPlanId) throws IOException {
+		if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
+			throw new IllegalArgumentException("rootPlanId cannot be null or empty");
+		}
+		Path rootPlanDir = getRootPlanDirectory(rootPlanId);
+		Path linkedExternalDir = rootPlanDir.resolve(LINKED_EXTERNAL_DIR);
+
+		// Check if linked external directory exists
+		if (!Files.exists(linkedExternalDir)) {
+			String externalFolder = manusProperties.getExternalLinkedFolder();
+			if (externalFolder == null || externalFolder.trim().isEmpty()) {
+				throw new IOException(
+						"External linked folder is not configured. Please set 'manus.general.externalLinkedFolder' in system settings.");
+			}
+			throw new IOException("Linked external directory does not exist: " + linkedExternalDir
+					+ ". The external folder link may not have been created yet.");
+		}
+
+		// Check if it's a valid symbolic link or directory
+		if (!Files.isDirectory(linkedExternalDir)) {
+			throw new IOException("Linked external path is not a directory: " + linkedExternalDir);
+		}
+
+		return linkedExternalDir;
+	}
+
 	public UnifiedDirectoryManager(ManusProperties manusProperties) {
 		this.manusProperties = manusProperties;
-		this.workingDirectoryPath = getWorkingDirectory(manusProperties.getBaseDir());
+		this.workingDirectoryPath = getWorkingDirectory("");
 	}
 
 	/**
@@ -75,7 +113,16 @@ public class UnifiedDirectoryManager {
 		if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
 			throw new IllegalArgumentException("rootPlanId cannot be null or empty");
 		}
-		return getWorkingDirectory().resolve(INNER_STORAGE_DIR).resolve(rootPlanId);
+		Path rootPlanDir = getWorkingDirectory().resolve(INNER_STORAGE_DIR).resolve(rootPlanId);
+		// Ensure directory exists and create external folder link if configured
+		try {
+			ensureDirectoryExists(rootPlanDir);
+			ensureExternalFolderLink(rootPlanDir);
+		}
+		catch (IOException e) {
+			log.warn("Failed to ensure root plan directory or external folder link: {}", e.getMessage());
+		}
+		return rootPlanDir;
 	}
 
 	/**
@@ -138,9 +185,10 @@ public class UnifiedDirectoryManager {
 	/**
 	 * Validate if a path is within the allowed working directory scope. This method
 	 * enforces security by ensuring all file operations stay within the designated
-	 * working directory unless external access is explicitly allowed.
+	 * working directory. External access is not allowed through this method. Only
+	 * LinkedFolderOperator can access external folders.
 	 * @param targetPath The path to validate
-	 * @return true if path is allowed, false otherwise
+	 * @return true if path is allowed (within working directory), false otherwise
 	 */
 	public boolean isPathAllowed(Path targetPath) {
 		try {
@@ -150,18 +198,13 @@ public class UnifiedDirectoryManager {
 			// Check if target is within working directory
 			boolean isWithinWorkingDir = normalizedTarget.startsWith(workingDir);
 
-			// If within working directory, always allow
-			if (isWithinWorkingDir) {
-				return true;
-			}
+			// Only allow paths within working directory
+			// External access is not allowed through UnifiedDirectoryManager
+			// Use LinkedFolderOperator for external folder access
+			log.debug("Path validation - Working Dir: {}, Target: {}, Within: {}, Allowed: {}", workingDir,
+					normalizedTarget, isWithinWorkingDir, isWithinWorkingDir);
 
-			// If outside working directory, check configuration
-			boolean allowExternal = manusProperties.getAllowExternalAccess();
-
-			log.debug("Path validation - Working Dir: {}, Target: {}, Within: {}, External Allowed: {}, Final: {}",
-					workingDir, normalizedTarget, isWithinWorkingDir, allowExternal, allowExternal);
-
-			return allowExternal;
+			return isWithinWorkingDir;
 		}
 		catch (Exception e) {
 			log.error("Error validating path: {}", targetPath, e);
@@ -265,6 +308,95 @@ public class UnifiedDirectoryManager {
 					log.error("Failed to delete: {}", path, e);
 				}
 			});
+	}
+
+	/**
+	 * Ensure external folder symbolic link exists in root plan directory. Creates a
+	 * symbolic link from rootPlanId/linked_external to the configured external folder.
+	 * @param rootPlanDir The root plan directory
+	 * @throws IOException if link creation fails
+	 */
+	private void ensureExternalFolderLink(Path rootPlanDir) throws IOException {
+		String externalFolder = manusProperties.getExternalLinkedFolder();
+		if (externalFolder == null || externalFolder.trim().isEmpty()) {
+			// No external folder configured, nothing to do
+			return;
+		}
+
+		Path externalPath = Paths.get(externalFolder).toAbsolutePath().normalize();
+		Path linkPath = rootPlanDir.resolve(LINKED_EXTERNAL_DIR);
+
+		// Check if external folder exists
+		if (!Files.exists(externalPath)) {
+			log.warn("External linked folder does not exist: {}, skipping link creation", externalPath);
+			return;
+		}
+
+		if (!Files.isDirectory(externalPath)) {
+			log.warn("External linked folder is not a directory: {}, skipping link creation", externalPath);
+			return;
+		}
+
+		// Check if link already exists
+		if (Files.exists(linkPath)) {
+			// Check if it's already a valid symbolic link pointing to the correct target
+			try {
+				if (Files.isSymbolicLink(linkPath)) {
+					Path existingTarget = Files.readSymbolicLink(linkPath);
+					Path existingTargetAbsolute = linkPath.getParent().resolve(existingTarget).normalize();
+					if (existingTargetAbsolute.equals(externalPath)) {
+						// Link already exists and points to correct target
+						log.debug("External folder link already exists: {} -> {}", linkPath, externalPath);
+						return;
+					}
+					else {
+						// Link exists but points to wrong target, remove it
+						log.info("Removing existing link with wrong target: {} -> {}", linkPath, existingTarget);
+						Files.delete(linkPath);
+					}
+				}
+				else {
+					// Link path exists but is not a symbolic link, remove it
+					log.info("Removing existing non-symbolic link path: {}", linkPath);
+					if (Files.isDirectory(linkPath)) {
+						deleteDirectoryRecursively(linkPath);
+					}
+					else {
+						Files.delete(linkPath);
+					}
+				}
+			}
+			catch (IOException e) {
+				log.warn("Error checking existing link: {}, will try to recreate", e.getMessage());
+				try {
+					if (Files.isDirectory(linkPath)) {
+						deleteDirectoryRecursively(linkPath);
+					}
+					else {
+						Files.delete(linkPath);
+					}
+				}
+				catch (IOException deleteException) {
+					log.error("Failed to remove existing link path: {}", linkPath, deleteException);
+					throw deleteException;
+				}
+			}
+		}
+
+		// Create symbolic link
+		try {
+			Files.createSymbolicLink(linkPath, externalPath);
+			log.info("Created external folder symbolic link: {} -> {}", linkPath, externalPath);
+		}
+		catch (UnsupportedOperationException e) {
+			// Symbolic links not supported on this platform, log warning
+			log.warn("Symbolic links are not supported on this platform, cannot create link: {} -> {}", linkPath,
+					externalPath);
+		}
+		catch (IOException e) {
+			log.error("Failed to create external folder symbolic link: {} -> {}", linkPath, externalPath, e);
+			throw e;
+		}
 	}
 
 }

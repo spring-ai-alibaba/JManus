@@ -40,11 +40,6 @@ public class ShortUrlService {
 	 */
 	public static final String SHORT_URL_PREFIX = "http://s@Url.a/";
 
-	/**
-	 * HTTPS version of short URL prefix
-	 */
-	public static final String SHORT_URL_PREFIX_HTTPS = "https://s@Url.a/";
-
 	// Map to store URL mappings per planId: planId -> (shortUrl -> realUrl)
 	private final ConcurrentHashMap<String, Map<String, String>> planUrlMappings = new ConcurrentHashMap<>();
 
@@ -140,7 +135,7 @@ public class ShortUrlService {
 		if (url == null || url.trim().isEmpty()) {
 			return false;
 		}
-		return url.startsWith(SHORT_URL_PREFIX) || url.startsWith(SHORT_URL_PREFIX_HTTPS);
+		return url.startsWith(SHORT_URL_PREFIX);
 	}
 
 	/**

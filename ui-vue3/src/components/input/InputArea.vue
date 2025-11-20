@@ -118,16 +118,10 @@ interface InnerToolOption {
   paramName: string
 }
 
-interface Emits {
-  (e: 'selection-changed', value: string): void
-}
-
 const props = withDefaults(defineProps<Props>(), {
   initialValue: '',
   selectionOptions: () => [],
 })
-
-const emit = defineEmits<Emits>()
 
 const inputRef = ref<HTMLTextAreaElement>()
 const fileUploadRef = ref<InstanceType<typeof FileUploadComponent>>()
@@ -149,6 +143,8 @@ const uploadKey = ref<string | null>(null)
 const selectedOption = ref('')
 const innerToolOptions = ref<InnerToolOption[]>([])
 const isLoadingTools = ref(false)
+// Flag to prevent watcher from saving during restoration from localStorage
+const isRestoringSelection = ref(false)
 
 // History management
 const HISTORY_STORAGE_KEY = 'chatInputHistory'
@@ -204,14 +200,42 @@ const loadInnerTools = async () => {
     // Restore selected tool from localStorage and validate it still exists
     const savedTool = localStorage.getItem('inputAreaSelectedTool')
     if (savedTool) {
-      const toolExists = filteredTools.some(tool => tool.value === savedTool)
-      if (toolExists) {
-        selectedOption.value = savedTool
-        console.log('[InputArea] Restored selected tool from localStorage:', savedTool)
+      // Only check if tools are loaded (avoid clearing selection if list is empty during loading)
+      if (filteredTools.length > 0) {
+        const toolExists = filteredTools.some(tool => tool.value === savedTool)
+        if (toolExists) {
+          // Set flag to prevent watcher from overwriting during restoration
+          isRestoringSelection.value = true
+          try {
+            selectedOption.value = savedTool
+            console.log('[InputArea] Restored selected tool from localStorage:', savedTool)
+          } finally {
+            // Reset flag after restoration completes
+            isRestoringSelection.value = false
+          }
+        } else {
+          console.log('[InputArea] Saved tool no longer available, clearing selection')
+          localStorage.removeItem('inputAreaSelectedTool')
+          // Only clear if current selection matches the saved one (avoid clearing user's new selection)
+          if (selectedOption.value === savedTool) {
+            selectedOption.value = ''
+          }
+        }
       } else {
-        console.log('[InputArea] Saved tool no longer available, clearing selection')
-        localStorage.removeItem('inputAreaSelectedTool')
-        selectedOption.value = ''
+        // Tools list is empty, keep existing selection if it matches saved value
+        // This prevents clearing selection when tools haven't loaded yet
+        if (selectedOption.value !== savedTool) {
+          isRestoringSelection.value = true
+          try {
+            selectedOption.value = savedTool
+            console.log(
+              '[InputArea] Restored selected tool from localStorage (tools not loaded yet):',
+              savedTool
+            )
+          } finally {
+            isRestoringSelection.value = false
+          }
+        }
       }
     }
   } catch (error) {
@@ -235,9 +259,10 @@ const selectionOptions = computed(() => {
 
 // Watch for selection changes and persist to localStorage
 watch(selectedOption, newValue => {
-  emit('selection-changed', newValue)
-  // Save to localStorage
-  localStorage.setItem('inputAreaSelectedTool', newValue || '')
+  // Only save to localStorage if not restoring (prevents overwriting during restoration)
+  if (!isRestoringSelection.value) {
+    localStorage.setItem('inputAreaSelectedTool', newValue || '')
+  }
 })
 
 // History management functions

@@ -46,6 +46,7 @@ import org.springframework.ai.tool.ToolCallback;
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
 import com.alibaba.cloud.ai.manus.event.PlanExceptionClearedEvent;
+import com.alibaba.cloud.ai.manus.llm.ConversationMemoryLimitService;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
@@ -114,6 +115,8 @@ public class DynamicAgent extends ReActAgent {
 
 	private MemoryService memoryService;
 
+	private ConversationMemoryLimitService conversationMemoryLimitService;
+
 	/**
 	 * List to record all exceptions from LLM calls during retry attempts
 	 */
@@ -123,6 +126,13 @@ public class DynamicAgent extends ReActAgent {
 	 * Latest exception from LLM calls, used when max retries are reached
 	 */
 	private Exception latestLlmException = null;
+
+	/**
+	 * Track the last N tool call results to detect loops
+	 */
+	private static final int REPEATED_RESULT_THRESHOLD = 3;
+
+	private final List<String> recentToolResults = new ArrayList<>();
 
 	public void clearUp(String planId) {
 		Map<String, ToolCallBackContext> toolCallBackContext = toolCallbackProvider.getToolCallBackContext();
@@ -150,7 +160,7 @@ public class DynamicAgent extends ReActAgent {
 			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
 			JmanusEventPublisher jmanusEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
 			ObjectMapper objectMapper, ParallelToolExecutionService parallelToolExecutionService,
-			MemoryService memoryService) {
+			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService) {
 		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, step, planIdDispatcher);
 		this.objectMapper = objectMapper;
 		super.objectMapper = objectMapper; // Set parent's objectMapper as well
@@ -171,6 +181,7 @@ public class DynamicAgent extends ReActAgent {
 		this.agentInterruptionHelper = agentInterruptionHelper;
 		this.parallelToolExecutionService = parallelToolExecutionService;
 		this.memoryService = memoryService;
+		this.conversationMemoryLimitService = conversationMemoryLimitService;
 	}
 
 	@Override
@@ -243,8 +254,9 @@ public class DynamicAgent extends ReActAgent {
 				// List<Message> subAgentMem = chatMemory.get(getCurrentPlanId());
 
 				// Add conversation history from MemoryService if conversationId is
-				// available
-				if (memoryService != null && getConversationId() != null && !getConversationId().trim().isEmpty()) {
+				// available and conversation memory is enabled
+				if (manusProperties.getEnableConversationMemory() && memoryService != null
+						&& getConversationId() != null && !getConversationId().trim().isEmpty()) {
 					try {
 						ChatMemory conversationMemory = llmService
 							.getConversationMemoryWithLimit(manusProperties.getMaxMemory(), getConversationId());
@@ -262,6 +274,9 @@ public class DynamicAgent extends ReActAgent {
 								"Failed to retrieve conversation history for conversationId: {}. Continuing without it.",
 								getConversationId(), e);
 					}
+				}
+				else if (!manusProperties.getEnableConversationMemory()) {
+					log.debug("Conversation memory is disabled, skipping conversation history retrieval");
 				}
 				messages.addAll(Collections.singletonList(systemMessage));
 				messages.addAll(historyMem);
@@ -631,6 +646,9 @@ public class DynamicAgent extends ReActAgent {
 
 			// Execute shared post-tool flow
 			executePostToolFlow(toolInstance, toolCallResponse, result, List.of(param));
+
+			// Check for repeated results and force compress if detected
+			checkAndHandleRepeatedResult(result);
 
 			// Return result with appropriate state
 			// Note: Final result will be saved to conversation memory in
@@ -1045,6 +1063,54 @@ public class DynamicAgent extends ReActAgent {
 		return toolResult.getOutput();
 	}
 
+	/**
+	 * Check if the tool result is repeating and force compress memory if detected This
+	 * helps break potential loops where the agent keeps getting the same result
+	 * @param result The tool execution result to check
+	 */
+	private void checkAndHandleRepeatedResult(String result) {
+		if (result == null || result.trim().isEmpty()) {
+			return;
+		}
+
+		// Add to recent results list without normalization
+		recentToolResults.add(result);
+
+		// Keep only the last REPEATED_RESULT_THRESHOLD results
+		if (recentToolResults.size() > REPEATED_RESULT_THRESHOLD) {
+			recentToolResults.remove(0);
+		}
+
+		// Check if we have enough samples and if they're all the same
+		if (recentToolResults.size() >= REPEATED_RESULT_THRESHOLD) {
+			boolean allSame = true;
+			String firstResult = recentToolResults.get(0);
+
+			for (int i = 1; i < recentToolResults.size(); i++) {
+				if (!firstResult.equals(recentToolResults.get(i))) {
+					allSame = false;
+					break;
+				}
+			}
+
+			if (allSame) {
+				log.warn(
+						"🔁 Detected repeated tool result {} times for planId: {}. Forcing memory compression to break potential loop.",
+						REPEATED_RESULT_THRESHOLD, getCurrentPlanId());
+
+				// Force compress agent memory to break the loop
+				if (conversationMemoryLimitService != null) {
+					conversationMemoryLimitService.forceCompressAgentMemory(
+							llmService.getAgentMemory(manusProperties.getMaxMemory()), getCurrentPlanId());
+				}
+
+				// Clear the recent results after compression
+				recentToolResults.clear();
+				log.info("✅ Forced memory compression completed for planId: {}", getCurrentPlanId());
+			}
+		}
+	}
+
 	private void processUserInputToMemory(UserMessage userMessage) {
 		if (userMessage != null && userMessage.getText() != null) {
 			// Process the user message to update memory
@@ -1246,6 +1312,12 @@ public class DynamicAgent extends ReActAgent {
 	 * Save user request (stepText) to conversation memory
 	 */
 	private void saveUserRequestToConversationMemory() {
+		// Skip if conversation memory is disabled
+		if (!manusProperties.getEnableConversationMemory()) {
+			log.debug("Conversation memory is disabled, skipping user request save");
+			return;
+		}
+
 		if (getConversationId() == null || getConversationId().trim().isEmpty()) {
 			log.debug("No conversationId available, skipping user request save");
 			return;

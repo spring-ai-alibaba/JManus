@@ -26,6 +26,7 @@ import org.springframework.ai.tool.ToolCallback;
 
 import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.manus.llm.ConversationMemoryLimitService;
 import com.alibaba.cloud.ai.manus.llm.LlmService;
 import com.alibaba.cloud.ai.manus.llm.StreamingResponseHandler;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory.ToolCallBackContext;
@@ -75,11 +76,11 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
 			JmanusEventPublisher jmanusEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
 			ObjectMapper objectMapper, ParallelToolExecutionService parallelToolExecutionService,
-			MemoryService memoryService) {
+			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService) {
 		super(llmService, planExecutionRecorder, manusProperties, name, description, nextStepPrompt, availableToolKeys,
 				toolCallingManager, initialAgentSetting, userInputService, modelName, streamingResponseHandler, step,
 				planIdDispatcher, jmanusEventPublisher, agentInterruptionHelper, objectMapper,
-				parallelToolExecutionService, memoryService);
+				parallelToolExecutionService, memoryService, conversationMemoryLimitService);
 	}
 
 	/**
