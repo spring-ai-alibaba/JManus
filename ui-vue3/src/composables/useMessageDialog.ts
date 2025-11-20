@@ -896,16 +896,28 @@ export function useMessageDialog() {
 
       // Update message with latest plan execution record
       updateMessageWithPlanRecord(dialog, message, record)
+    }
 
-      // Reset isLoading when all plans are completed
-      // Check if this is the last running plan
-      const hasRunningPlans = recordsArray.some(
-        ([, record]) => record && !record.completed && record.status !== 'failed'
-      )
-      if (!hasRunningPlans && isLoading.value) {
-        console.log('[useMessageDialog] All plans completed, resetting isLoading')
-        isLoading.value = false
-      }
+    // Reset isLoading when all plans are completed
+    // Check both trackedPlanIds and planExecutionRecords to handle the case where
+    // a plan has just started but hasn't been polled yet (no record in planExecutionRecords)
+    const hasTrackedPlans = planExecution.trackedPlanIds.value.size > 0
+    const hasRunningPlansInRecords = recordsArray.some(
+      ([, record]) => record && !record.completed && record.status !== 'failed'
+    )
+
+    // If there are tracked plans but no records yet, consider it as running
+    // This handles the race condition where a plan just started but hasn't been polled
+    const hasRunningPlans = hasTrackedPlans || hasRunningPlansInRecords
+
+    if (!hasRunningPlans && isLoading.value) {
+      console.log('[useMessageDialog] All plans completed, resetting isLoading', {
+        hasTrackedPlans,
+        hasRunningPlansInRecords,
+        trackedPlanIds: Array.from(planExecution.trackedPlanIds.value),
+        recordsCount: recordsArray.length,
+      })
+      isLoading.value = false
     }
   })
 

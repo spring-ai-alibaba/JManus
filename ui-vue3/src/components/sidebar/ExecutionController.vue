@@ -398,6 +398,21 @@ const canExecute = computed(() => {
     return false
   }
 
+  // Disable if there's a plan execution in progress (prevents duplicate submissions)
+  if (isExecutingPlan.value) {
+    return false
+  }
+
+  // Also check if there are any tracked plans or running plans
+  const hasTrackedPlans = planExecution.trackedPlanIds.value.size > 0
+  const recordsArray = Array.from(planExecution.planExecutionRecords.entries())
+  const hasRunningPlansInRecords = recordsArray.some(
+    ([, record]) => record && !record.completed && record.status !== 'failed'
+  )
+  if (hasTrackedPlans || hasRunningPlansInRecords) {
+    return false
+  }
+
   if (parameterRequirements.value.hasParameters) {
     // Check if all required parameters are filled
     return parameterRequirements.value.parameters.every(param => {
@@ -911,14 +926,25 @@ watchEffect(() => {
   const records = planExecution.planExecutionRecords
   const recordsArray = Array.from(records.entries())
 
-  // Check if there are any running plans
-  const hasRunningPlans = recordsArray.some(
+  // Check both trackedPlanIds and planExecutionRecords to handle the case where
+  // a plan has just started but hasn't been polled yet (no record in planExecutionRecords)
+  const hasTrackedPlans = planExecution.trackedPlanIds.value.size > 0
+  const hasRunningPlansInRecords = recordsArray.some(
     ([, record]) => record && !record.completed && record.status !== 'failed'
   )
 
+  // If there are tracked plans but no records yet, consider it as running
+  // This handles the race condition where a plan just started but hasn't been polled
+  const hasRunningPlans = hasTrackedPlans || hasRunningPlansInRecords
+
   // Reset isExecutingPlan when all plans are completed
   if (!hasRunningPlans && isExecutingPlan.value) {
-    console.log('[ExecutionController] All plans completed, resetting isExecutingPlan')
+    console.log('[ExecutionController] All plans completed, resetting isExecutingPlan', {
+      hasTrackedPlans,
+      hasRunningPlansInRecords,
+      trackedPlanIds: Array.from(planExecution.trackedPlanIds.value),
+      recordsCount: recordsArray.length,
+    })
     isExecutingPlan.value = false
   }
 })

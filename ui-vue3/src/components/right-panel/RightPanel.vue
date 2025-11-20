@@ -425,16 +425,6 @@ const checkScrollState = () => {
     // If user clearly scrolled up (more than 100px from bottom), stop auto-scrolling
     shouldAutoScrollToBottom.value = false
   }
-
-  console.log('[RightPanel] Scroll state check:', {
-    scrollTop,
-    scrollHeight,
-    clientHeight,
-    isAtBottom,
-    hasScrollableContent,
-    showButton: showScrollToBottomButton.value,
-    shouldAutoScroll: shouldAutoScrollToBottom.value,
-  })
 }
 
 const scrollToBottom = () => {

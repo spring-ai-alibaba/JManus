@@ -106,7 +106,13 @@ public class McpConfigValidator {
 	}
 
 	/**
-	 * Validate command configuration
+	 * Validate command configuration. Supports common MCP server commands:
+	 * <ul>
+	 * <li>Package managers: npx, uvx, npm, yarn</li>
+	 * <li>Python: python, python3, python.exe (Windows), py (Windows launcher)</li>
+	 * <li>Node.js: node, nodejs</li>
+	 * <li>Custom executables: Full paths to executables (e.g., venv scripts)</li>
+	 * </ul>
 	 * @param command Command
 	 * @param serverName Server name
 	 * @throws IOException Thrown when validation fails
@@ -118,15 +124,119 @@ public class McpConfigValidator {
 
 		// Validate that command is a proper executable
 		String trimmedCommand = command.trim();
-		if (trimmedCommand.contains(" ")) {
+		if (trimmedCommand.contains(" ") && !isAbsolutePath(trimmedCommand)) {
 			throw new IOException("Command field should contain only the executable name, not arguments. "
 					+ "Use 'args' field for arguments. Invalid command: '" + command + "' for server: " + serverName);
 		}
 
+		// Extract base command name for validation (handle paths)
+		String baseCommand = extractBaseCommand(trimmedCommand);
+
 		// Check for common MCP server commands
-		if (trimmedCommand.equals("uvx") || trimmedCommand.equals("npx") || trimmedCommand.equals("node")) {
+		if (isCommonMcpCommand(baseCommand)) {
 			logger.debug("Valid MCP command detected: {} for server: {}", trimmedCommand, serverName);
 		}
+		else if (isAbsolutePath(trimmedCommand)) {
+			// Allow absolute paths (e.g., Python venv scripts, custom executables)
+			logger.debug("Custom executable path detected: {} for server: {}", trimmedCommand, serverName);
+		}
+		else {
+			// Warn but don't fail - user might have custom commands
+			logger.debug("Custom command detected: {} for server: {} (not in common MCP commands list)", trimmedCommand,
+					serverName);
+		}
+	}
+
+	/**
+	 * Extract base command name from command string (handles paths)
+	 * @param command Full command string
+	 * @return Base command name
+	 */
+	private String extractBaseCommand(String command) {
+		if (command == null || command.isEmpty()) {
+			return command;
+		}
+
+		// Handle Windows paths (C:\...)
+		if (command.contains("\\")) {
+			String[] parts = command.split("\\\\");
+			return parts[parts.length - 1];
+		}
+
+		// Handle Unix paths (/...)
+		if (command.contains("/")) {
+			String[] parts = command.split("/");
+			return parts[parts.length - 1];
+		}
+
+		// No path separator, return as-is
+		return command;
+	}
+
+	/**
+	 * Check if command is a common MCP server command
+	 * @param baseCommand Base command name
+	 * @return true if common MCP command
+	 */
+	private boolean isCommonMcpCommand(String baseCommand) {
+		if (baseCommand == null) {
+			return false;
+		}
+
+		String lowerCommand = baseCommand.toLowerCase();
+
+		// Package managers
+		if (lowerCommand.equals("npx") || lowerCommand.equals("npm") || lowerCommand.equals("yarn")
+				|| lowerCommand.equals("uvx") || lowerCommand.equals("uv")) {
+			return true;
+		}
+
+		// Python interpreters
+		if (lowerCommand.equals("python") || lowerCommand.equals("python3") || lowerCommand.equals("python2")
+				|| lowerCommand.equals("python.exe") || lowerCommand.equals("python3.exe") || lowerCommand.equals("py")
+				|| lowerCommand.equals("py.exe")) {
+			return true;
+		}
+
+		// Node.js
+		if (lowerCommand.equals("node") || lowerCommand.equals("nodejs") || lowerCommand.equals("node.exe")) {
+			return true;
+		}
+
+		// Shell commands (for custom scripts)
+		if (lowerCommand.equals("sh") || lowerCommand.equals("bash") || lowerCommand.equals("zsh")
+				|| lowerCommand.equals("cmd.exe") || lowerCommand.equals("powershell.exe")
+				|| lowerCommand.equals("pwsh")) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if command is an absolute path
+	 * @param command Command string
+	 * @return true if absolute path
+	 */
+	private boolean isAbsolutePath(String command) {
+		if (command == null || command.isEmpty()) {
+			return false;
+		}
+
+		// Windows absolute path (C:\ or \\)
+		if (command.length() >= 3 && command.charAt(1) == ':' && command.charAt(2) == '\\') {
+			return true;
+		}
+		if (command.startsWith("\\\\")) {
+			return true;
+		}
+
+		// Unix absolute path
+		if (command.startsWith("/")) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
