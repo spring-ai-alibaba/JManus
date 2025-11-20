@@ -175,10 +175,28 @@ onMounted(() => {
           rightPanelRef.value.updateDisplayedPlanProgress(planId)
         }
 
-        // Handle completion - clear currentRootPlanId
-        if (planDetails.completed) {
-          console.log('[Direct] Plan completed, clearing currentRootPlanId')
-          currentRootPlanId.value = null
+        // Handle completion - only clear currentRootPlanId if this is the current plan
+        // and ALL plans are completed
+        if (planDetails.completed && planId === currentRootPlanId.value) {
+          // Check if there are any other running plans
+          const recordsArray = Array.from(records.entries())
+          const hasOtherRunningPlans = recordsArray.some(
+            ([otherPlanId, otherPlanDetails]) =>
+              otherPlanId !== planId &&
+              otherPlanDetails &&
+              !otherPlanDetails.completed &&
+              otherPlanDetails.status !== 'failed'
+          )
+
+          // Only clear currentRootPlanId if no other plans are running
+          if (!hasOtherRunningPlans) {
+            console.log('[Direct] All plans completed, clearing currentRootPlanId')
+            currentRootPlanId.value = null
+          } else {
+            console.log(
+              '[Direct] Current plan completed but other plans are still running, keeping currentRootPlanId'
+            )
+          }
         }
       }
     },
