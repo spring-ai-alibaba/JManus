@@ -97,7 +97,7 @@ public class ManusProperties implements IManusProperties {
 
 	// General Settings
 	// Begin---------------------------------------------------------------------------------------
-	@ConfigProperty(group = "manus", subGroup = "general", key = "openBrowser", path = "manus.openBrowserAuto",
+	@ConfigProperty(group = "manus", subGroup = "general", key = "openBrowser", path = "manus.general.openBrowser",
 			description = "manus.general.openBrowser.description", defaultValue = "true",
 			inputType = ConfigInputType.CHECKBOX,
 			options = { @ConfigOption(value = "true", label = "manus.general.openBrowser.option.true"),
@@ -105,16 +105,44 @@ public class ManusProperties implements IManusProperties {
 	private volatile Boolean openBrowserAuto;
 
 	public Boolean getOpenBrowserAuto() {
-		String configPath = "manus.openBrowserAuto";
+		String configPath = "manus.general.openBrowser";
 		String value = configService.getConfigValue(configPath);
 		if (value != null) {
 			openBrowserAuto = Boolean.valueOf(value);
+		}
+		// Default to true if not configured
+		if (openBrowserAuto == null) {
+			openBrowserAuto = true;
 		}
 		return openBrowserAuto;
 	}
 
 	public void setOpenBrowserAuto(Boolean openBrowserAuto) {
 		this.openBrowserAuto = openBrowserAuto;
+	}
+
+	@ConfigProperty(group = "manus", subGroup = "browser", key = "enableShortUrl",
+			path = "manus.browser.enableShortUrl", description = "manus.browser.enableShortUrl.description",
+			defaultValue = "true", inputType = ConfigInputType.CHECKBOX,
+			options = { @ConfigOption(value = "true", label = "manus.browser.enableShortUrl.option.true"),
+					@ConfigOption(value = "false", label = "manus.browser.enableShortUrl.option.false") })
+	private volatile Boolean enableShortUrl;
+
+	public Boolean getEnableShortUrl() {
+		String configPath = "manus.browser.enableShortUrl";
+		String value = configService.getConfigValue(configPath);
+		if (value != null) {
+			enableShortUrl = Boolean.valueOf(value);
+		}
+		// Default to true if not configured
+		if (enableShortUrl == null) {
+			enableShortUrl = true;
+		}
+		return enableShortUrl;
+	}
+
+	public void setEnableShortUrl(Boolean enableShortUrl) {
+		this.enableShortUrl = enableShortUrl;
 	}
 
 	// General Settings
@@ -184,6 +212,31 @@ public class ManusProperties implements IManusProperties {
 
 	public void setMaxMemory(Integer maxMemory) {
 		this.maxMemory = maxMemory;
+	}
+
+	@ConfigProperty(group = "manus", subGroup = "general", key = "enableConversationMemory",
+			path = "manus.general.enableConversationMemory",
+			description = "manus.general.enableConversationMemory.description", defaultValue = "true",
+			inputType = ConfigInputType.CHECKBOX,
+			options = { @ConfigOption(value = "true", label = "manus.general.enableConversationMemory.option.true"),
+					@ConfigOption(value = "false", label = "manus.general.enableConversationMemory.option.false") })
+	private volatile Boolean enableConversationMemory;
+
+	public Boolean getEnableConversationMemory() {
+		String configPath = "manus.general.enableConversationMemory";
+		String value = configService.getConfigValue(configPath);
+		if (value != null) {
+			enableConversationMemory = Boolean.valueOf(value);
+		}
+		// Default to true if not configured
+		if (enableConversationMemory == null) {
+			enableConversationMemory = true;
+		}
+		return enableConversationMemory;
+	}
+
+	public void setEnableConversationMemory(Boolean enableConversationMemory) {
+		this.enableConversationMemory = enableConversationMemory;
 	}
 
 	@ConfigProperty(group = "manus", subGroup = "agent", key = "conversationMemoryMaxChars",
@@ -281,49 +334,26 @@ public class ManusProperties implements IManusProperties {
 	// Normal Settings
 	// Begin--------------------------------------------------------------------------------------------
 
-	@ConfigProperty(group = "manus", subGroup = "general", key = "baseDir", path = "manus.baseDir",
-			description = "manus.general.baseDir.description", defaultValue = "", inputType = ConfigInputType.TEXT)
-	private volatile String baseDir = "";
-
-	public String getBaseDir() {
-		String configPath = "manus.baseDir";
-		String value = configService.getConfigValue(configPath);
-		if (value != null) {
-			baseDir = value;
-		}
-		return baseDir;
-	}
-
-	public void setBaseDir(String baseDir) {
-		this.baseDir = baseDir;
-	}
-
 	// Normal Settings
 	// End----------------------------------------------------------------------------------------------
 
 	// File System Security SubGroup
-	@ConfigProperty(group = "manus", subGroup = "filesystem", key = "allowExternalAccess",
-			path = "manus.filesystem.allowExternalAccess",
-			description = "Whether to allow file operations outside the working directory", defaultValue = "false",
-			inputType = ConfigInputType.CHECKBOX,
-			options = { @ConfigOption(value = "true", label = "Yes"), @ConfigOption(value = "false", label = "No") })
-	private volatile Boolean allowExternalAccess;
+	@ConfigProperty(group = "manus", subGroup = "general", key = "externalLinkedFolder",
+			path = "manus.general.externalLinkedFolder", description = "manus.general.externalLinkedFolder.description",
+			defaultValue = "", inputType = ConfigInputType.TEXT)
+	private volatile String externalLinkedFolder = "";
 
-	public Boolean getAllowExternalAccess() {
-		String configPath = "manus.filesystem.allowExternalAccess";
+	public String getExternalLinkedFolder() {
+		String configPath = "manus.general.externalLinkedFolder";
 		String value = configService.getConfigValue(configPath);
 		if (value != null) {
-			allowExternalAccess = Boolean.valueOf(value);
+			externalLinkedFolder = value;
 		}
-		// Default to false for security
-		if (allowExternalAccess == null) {
-			allowExternalAccess = false;
-		}
-		return allowExternalAccess;
+		return externalLinkedFolder;
 	}
 
-	public void setAllowExternalAccess(Boolean allowExternalAccess) {
-		this.allowExternalAccess = allowExternalAccess;
+	public void setExternalLinkedFolder(String externalLinkedFolder) {
+		this.externalLinkedFolder = externalLinkedFolder;
 	}
 
 	// MCP Service Loader Settings

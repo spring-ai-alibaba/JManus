@@ -73,6 +73,7 @@ import com.alibaba.cloud.ai.manus.tool.cron.CronTool;
 import com.alibaba.cloud.ai.manus.tool.database.DataSourceService;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseMetadataTool;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseReadTool;
+import com.alibaba.cloud.ai.manus.tool.database.DatabaseTableToExcelTool;
 import com.alibaba.cloud.ai.manus.tool.database.DatabaseWriteTool;
 import com.alibaba.cloud.ai.manus.tool.database.UuidGenerateTool;
 import com.alibaba.cloud.ai.manus.tool.dirOperator.DirectoryOperator;
@@ -80,6 +81,7 @@ import com.alibaba.cloud.ai.manus.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.manus.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.manus.tool.innerStorage.SmartContentSavingService;
 import com.alibaba.cloud.ai.manus.tool.jsxGenerator.JsxGeneratorOperator;
+import com.alibaba.cloud.ai.manus.tool.mapreduce.FileSplitterTool;
 import com.alibaba.cloud.ai.manus.tool.mapreduce.ParallelExecutionTool;
 import com.alibaba.cloud.ai.manus.tool.pptGenerator.PptGeneratorOperator;
 import com.alibaba.cloud.ai.manus.tool.tableProcessor.TableProcessingService;
@@ -113,6 +115,8 @@ public class PlanningFactory {
 
 	// private final TableProcessingService tableProcessingService; // Currently unused -
 	// commented out for future use
+
+	private final IExcelProcessingService excelProcessingService;
 
 	private final static Logger log = LoggerFactory.getLogger(PlanningFactory.class);
 
@@ -184,6 +188,7 @@ public class PlanningFactory {
 		this.unifiedDirectoryManager = unifiedDirectoryManager;
 		this.dataSourceService = dataSourceService;
 		// this.tableProcessingService = tableProcessingService; // Currently unused
+		this.excelProcessingService = excelProcessingService;
 	}
 
 	/**
@@ -236,14 +241,19 @@ public class PlanningFactory {
 			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
+			toolDefinitions.add(DatabaseTableToExcelTool.getInstance(manusProperties, dataSourceService,
+					excelProcessingService, unifiedDirectoryManager));
 			toolDefinitions.add(UuidGenerateTool.getInstance(objectMapper));
-			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper));
+			toolDefinitions
+				.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService, manusProperties));
 			toolDefinitions.add(new DebugTool());
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new DocLoaderTool());
 
-			toolDefinitions.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper));
+			toolDefinitions
+				.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper, shortUrlService));
 			toolDefinitions.add(new FileImportOperator(textFileService, null));
+			toolDefinitions.add(new FileSplitterTool(textFileService, objectMapper));
 			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper));
 			// toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager,
 			// applicationContext));
@@ -261,11 +271,13 @@ public class PlanningFactory {
 					new PdfOcrProcessor(unifiedDirectoryManager, llmService, manusProperties,
 							new ImageRecognitionExecutorPool(manusProperties)),
 					new ImageOcrProcessor(unifiedDirectoryManager, llmService, manusProperties,
-							new ImageRecognitionExecutorPool(manusProperties))));
+							new ImageRecognitionExecutorPool(manusProperties)),
+					excelProcessingService, objectMapper));
 			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
 		}
 		else {
-			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper));
+			toolDefinitions
+				.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService, manusProperties));
 		}
 
 		List<McpServiceEntity> functionCallbacks = mcpService.getFunctionCallbacks(planId);

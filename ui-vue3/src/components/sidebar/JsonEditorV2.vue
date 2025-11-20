@@ -85,14 +85,8 @@
                     e => {
                       step.stepRequirement = (e.target as HTMLTextAreaElement).value
                       autoResizeTextarea(e)
-                      // Sync to templateConfig and mark as modified
-                      templateConfig.setSteps(displayData.steps)
-                      if (templateConfig.currentPlanTemplateId.value) {
-                        templateStore.hasTaskRequirementModified = true
-                        console.log(
-                          '[JsonEditorV2] Step requirement modified, hasTaskRequirementModified set to true'
-                        )
-                      }
+                      // Only update displayData, don't sync to templateConfig or trigger any watchers
+                      // Sync will happen on save via syncDisplayDataToTemplateConfig()
                     }
                   "
                   class="form-textarea auto-resize"
@@ -111,14 +105,8 @@
                     e => {
                       step.terminateColumns = (e.target as HTMLTextAreaElement).value
                       autoResizeTextarea(e)
-                      // Sync to templateConfig and mark as modified
-                      templateConfig.setSteps(displayData.steps)
-                      if (templateConfig.currentPlanTemplateId.value) {
-                        templateStore.hasTaskRequirementModified = true
-                        console.log(
-                          '[JsonEditorV2] Terminate columns modified, hasTaskRequirementModified set to true'
-                        )
-                      }
+                      // Only update displayData, don't sync to templateConfig or trigger any watchers
+                      // Sync will happen on save via syncDisplayDataToTemplateConfig()
                     }
                   "
                   class="form-textarea auto-resize"
@@ -360,8 +348,8 @@
     />
 
     <!-- Copy Plan Modal -->
-    <div v-if="showCopyPlanModal" class="modal-overlay" @click="closeCopyPlanModal">
-      <div class="modal-content" @click.stop>
+    <div v-if="showCopyPlanModal" class="modal-overlay" @mousedown="handleModalOverlayClick">
+      <div class="modal-content" @mousedown.stop>
         <div class="modal-header">
           <h3>{{ $t('sidebar.copyPlan') }}</h3>
           <button class="close-btn" @click="closeCopyPlanModal">
@@ -476,29 +464,47 @@ const syncDisplayDataFromConfig = () => {
 }
 
 // Sync displayData changes back to templateConfig
-watch(
-  () => displayData,
-  () => {
-    // Skip if we're syncing from config (initial load)
-    if (isSyncingFromConfig.value) {
-      return
-    }
+// DISABLED: Only sync on save to prevent flickering during input
+// watch(
+//   () => displayData,
+//   () => {
+//     // Skip if we're syncing from config (initial load)
+//     if (isSyncingFromConfig.value) {
+//       return
+//     }
 
-    // Update templateConfig when displayData changes
+//     // Update templateConfig when displayData changes
+//     templateConfig.setTitle(displayData.title)
+//     templateConfig.setSteps(displayData.steps)
+
+//     // Mark task requirements as modified if there's a selected template
+//     // Note: This is a fallback - the @input handlers should handle most cases
+//     if (templateConfig.currentPlanTemplateId.value) {
+//       templateStore.hasTaskRequirementModified = true
+//       console.log(
+//         '[JsonEditorV2] Task requirements modified (via watch), hasTaskRequirementModified set to true'
+//       )
+//     }
+//   },
+//   { deep: true }
+// )
+
+// Manual sync function to be called on save
+const syncDisplayDataToTemplateConfig = () => {
+  // Set flag to prevent watcher from syncing back during this update
+  isSyncingFromConfig.value = true
+  try {
     templateConfig.setTitle(displayData.title)
     templateConfig.setSteps(displayData.steps)
-
-    // Mark task requirements as modified if there's a selected template
-    // Note: This is a fallback - the @input handlers should handle most cases
     if (templateConfig.currentPlanTemplateId.value) {
       templateStore.hasTaskRequirementModified = true
-      console.log(
-        '[JsonEditorV2] Task requirements modified (via watch), hasTaskRequirementModified set to true'
-      )
     }
-  },
-  { deep: true }
-)
+  } finally {
+    setTimeout(() => {
+      isSyncingFromConfig.value = false
+    }, 0)
+  }
+}
 
 // JSON preview functions
 const toggleJsonPreview = () => {
@@ -534,6 +540,10 @@ const handleSave = async () => {
       toast.error(t('sidebar.selectPlanFirst'))
       return
     }
+
+    // Sync displayData to templateConfig before validation and save
+    // This ensures all user input is synchronized before saving
+    syncDisplayDataToTemplateConfig()
 
     // Validate config
     const validation = templateConfig.validate()
@@ -593,8 +603,8 @@ const handleAddStep = () => {
     selectedToolKeys: [],
   }
   displayData.steps.push(newStep)
-  // Sync to templateConfig
-  templateConfig.setSteps(displayData.steps)
+  // Sync to templateConfig with guard to prevent circular update
+  templateConfig.setStepsWithGuard(displayData.steps)
   console.log('[JsonEditorV2] Added new step, total steps:', displayData.steps.length)
 }
 
@@ -852,6 +862,14 @@ const closeCopyPlanModal = () => {
   isCopyingPlan.value = false
 }
 
+// Handle modal overlay click - only close if clicking directly on overlay
+const handleModalOverlayClick = (event: MouseEvent) => {
+  // Only close if the click target is the overlay itself, not its children
+  if (event.target === event.currentTarget) {
+    closeCopyPlanModal()
+  }
+}
+
 const confirmCopyPlan = async () => {
   if (!newPlanTitle.value.trim()) {
     toast.error(t('sidebar.titleRequired'))
@@ -872,12 +890,17 @@ const confirmCopyPlan = async () => {
     // Generate a new planTemplateId in the format: planTemplate-{timestamp}
     const newPlanTemplateId = `planTemplate-${Date.now()}`
 
+    // Exclude toolConfig from the copy to avoid copying service configuration
+    const { toolConfig: _toolConfig, ...configWithoutToolConfig } = currentConfig
+
     // Create a new plan config with all fields copied, only changing the title and using new ID
     const newPlanConfig: PlanTemplateConfigVO = {
-      ...currentConfig,
+      ...configWithoutToolConfig,
       title: newPlanTitle.value.trim(),
       planTemplateId: newPlanTemplateId,
     }
+
+    console.log('[JsonEditorV2] Copying plan without toolConfig:', newPlanConfig)
 
     const result = await PlanTemplateApiService.createOrUpdatePlanTemplateWithTool(newPlanConfig)
 
@@ -929,7 +952,11 @@ const loadServiceGroup = () => {
 watch(
   () => templateConfig.config,
   () => {
-    syncDisplayDataFromConfig()
+    // Don't sync if we're already syncing (prevents circular updates)
+    // Also check isUserUpdating flag from composable (for updates from other components)
+    if (!isSyncingFromConfig.value && !templateConfig.isUserUpdating.value) {
+      syncDisplayDataFromConfig()
+    }
   },
   { deep: true, immediate: true }
 )
@@ -963,7 +990,16 @@ watch(
 watch(
   () => serviceGroup.value,
   newGroup => {
-    templateConfig.setServiceGroup(newGroup)
+    // Set a flag to prevent syncDisplayDataFromConfig from running
+    isSyncingFromConfig.value = true
+    try {
+      templateConfig.setServiceGroup(newGroup)
+    } finally {
+      // Reset the flag after a microtask to prevent the templateConfig watcher from syncing back
+      setTimeout(() => {
+        isSyncingFromConfig.value = false
+      }, 0)
+    }
   }
 )
 

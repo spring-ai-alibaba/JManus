@@ -44,6 +44,9 @@ export function usePlanTemplateConfig() {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
+  // Flag to prevent watchers from syncing when user is updating individual properties
+  const isUserUpdating = ref(false)
+
   // Version control state
   const planVersions = ref<string[]>([])
   const currentVersionIndex = ref(-1)
@@ -459,11 +462,62 @@ export function usePlanTemplateConfig() {
     return planTemplateList.value.some(template => template.toolConfig !== undefined)
   }
 
+  // Helper method to wrap updates with guard flag
+  const withUpdateGuard = <T>(callback: () => T): T => {
+    isUserUpdating.value = true
+    try {
+      return callback()
+    } finally {
+      // Use setTimeout to ensure the flag is reset after reactivity updates
+      setTimeout(() => {
+        isUserUpdating.value = false
+      }, 0)
+    }
+  }
+
+  // Wrapped setters that prevent watcher syncing
+  const setStepsWithGuard = (steps: StepConfig[]) => {
+    return withUpdateGuard(() => {
+      setSteps(steps)
+    })
+  }
+
+  const setToolConfigWithGuard = (toolConfig: ToolConfigVO | undefined) => {
+    return withUpdateGuard(() => {
+      setToolConfig(toolConfig)
+    })
+  }
+
+  const setToolDescriptionWithGuard = (toolDescription: string) => {
+    return withUpdateGuard(() => {
+      setToolDescription(toolDescription)
+    })
+  }
+
+  const setEnableInternalToolcallWithGuard = (enable: boolean) => {
+    return withUpdateGuard(() => {
+      setEnableInternalToolcall(enable)
+    })
+  }
+
+  const setEnableHttpServiceWithGuard = (enable: boolean) => {
+    return withUpdateGuard(() => {
+      setEnableHttpService(enable)
+    })
+  }
+
+  const setInputSchemaWithGuard = (inputSchema: InputSchemaParam[]) => {
+    return withUpdateGuard(() => {
+      setInputSchema(inputSchema)
+    })
+  }
+
   return {
     // State
     config,
     isLoading,
     error,
+    isUserUpdating,
     planVersions,
     currentVersionIndex,
     planTemplateList,
@@ -488,6 +542,15 @@ export function usePlanTemplateConfig() {
     setEnableHttpService,
     setInputSchema,
     setConfig,
+
+    // Guarded setters (prevent watcher syncing)
+    setStepsWithGuard,
+    setToolConfigWithGuard,
+    setToolDescriptionWithGuard,
+    setEnableInternalToolcallWithGuard,
+    setEnableHttpServiceWithGuard,
+    setInputSchemaWithGuard,
+    withUpdateGuard,
 
     // Actions
     reset,

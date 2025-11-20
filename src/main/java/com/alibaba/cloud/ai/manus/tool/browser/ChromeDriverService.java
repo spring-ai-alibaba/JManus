@@ -53,6 +53,8 @@ public class ChromeDriverService implements IChromeDriverService {
 
 	private final ConcurrentHashMap<String, DriverWrapper> drivers = new ConcurrentHashMap<>();
 
+	private final ConcurrentHashMap<String, Boolean> initialCleanupDone = new ConcurrentHashMap<>();
+
 	private final Lock driverLock = new ReentrantLock();
 
 	private ManusProperties manusProperties;
@@ -220,6 +222,9 @@ public class ChromeDriverService implements IChromeDriverService {
 		if (driver != null) {
 			driver.close();
 		}
+		// Remove cleanup flag when driver is closed, so next time it will do cleanup
+		// again
+		initialCleanupDone.remove(planId);
 	}
 
 	/**
@@ -232,7 +237,7 @@ public class ChromeDriverService implements IChromeDriverService {
 		for (int attempt = 1; attempt <= maxRetries; attempt++) {
 			try {
 				log.info("Creating new browser driver for planId: {} (attempt {}/{})", planId, attempt, maxRetries);
-				DriverWrapper driver = createDriverInstance();
+				DriverWrapper driver = createDriverInstance(planId);
 				if (driver != null && isDriverHealthy(driver)) {
 					log.info("Successfully created healthy driver for planId: {} on attempt {}", planId, attempt);
 					return driver;
@@ -321,8 +326,9 @@ public class ChromeDriverService implements IChromeDriverService {
 	/**
 	 * Create browser driver instance with comprehensive error handling Uses
 	 * browser.newContext() for better isolation and resource management
+	 * @param planId Plan ID to track initial cleanup per plan
 	 */
-	private DriverWrapper createDriverInstance() {
+	private DriverWrapper createDriverInstance(String planId) {
 		Playwright playwright = null;
 		Browser browser = null;
 		BrowserContext browserContext = null;
@@ -505,22 +511,39 @@ public class ChromeDriverService implements IChromeDriverService {
 				// validation
 
 				// Close any pages restored from storage state before creating new page
-				// Storage state may restore previous tabs, which we don't want to keep
+				// Only do this on the first initialization per planId to avoid closing
+				// pages unnecessarily
+				// Storage state may restore previous tabs, which we don't want to keep on
+				// first startup
 				try {
-					List<Page> existingPages = browserContext.pages();
-					if (!existingPages.isEmpty()) {
-						log.info("Found {} existing page(s) from storage state, closing them", existingPages.size());
-						for (Page existingPage : existingPages) {
-							try {
-								if (!existingPage.isClosed()) {
-									existingPage.close();
-									log.debug("Closed existing page from storage state: {}", existingPage.url());
+					// Check if we've already done the initial cleanup for this planId
+					boolean shouldCleanup = initialCleanupDone.putIfAbsent(planId, Boolean.TRUE) == null;
+
+					if (shouldCleanup) {
+						List<Page> existingPages = browserContext.pages();
+						if (!existingPages.isEmpty()) {
+							log.info(
+									"First initialization for planId {}: Found {} existing page(s) from storage state, closing them",
+									planId, existingPages.size());
+							for (Page existingPage : existingPages) {
+								try {
+									if (!existingPage.isClosed()) {
+										existingPage.close();
+										log.debug("Closed existing page from storage state: {}", existingPage.url());
+									}
+								}
+								catch (Exception e) {
+									log.warn("Failed to close existing page: {}", e.getMessage());
 								}
 							}
-							catch (Exception e) {
-								log.warn("Failed to close existing page: {}", e.getMessage());
-							}
 						}
+						else {
+							log.debug("First initialization for planId {}: No existing pages from storage state",
+									planId);
+						}
+					}
+					else {
+						log.debug("Skipping page cleanup for planId {}: already done on first initialization", planId);
 					}
 				}
 				catch (Exception e) {

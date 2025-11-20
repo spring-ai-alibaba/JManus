@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.cloud.ai.manus.config.IManusProperties;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.service.PlanFinalizer;
 import com.alibaba.cloud.ai.manus.runtime.entity.vo.ExecutionContext;
@@ -46,11 +47,14 @@ public class PlanningCoordinator {
 
 	private final MemoryService memoryService;
 
+	private final IManusProperties manusProperties;
+
 	public PlanningCoordinator(PlanningFactory planningFactory, PlanExecutorFactory planExecutorFactory,
-			PlanFinalizer planFinalizer, MemoryService memoryService) {
+			PlanFinalizer planFinalizer, MemoryService memoryService, IManusProperties manusProperties) {
 		this.planExecutorFactory = planExecutorFactory;
 		this.planFinalizer = planFinalizer;
 		this.memoryService = memoryService;
+		this.manusProperties = manusProperties;
 	}
 
 	/**
@@ -98,22 +102,40 @@ public class PlanningCoordinator {
 			// Set conversation ID (use provided or generate for VUE_DIALOG and
 			// VUE_SIDEBAR requests)
 			// Both VUE_DIALOG and VUE_SIDEBAR should use the same conversation memory
-			if (conversationId != null && !conversationId.trim().isEmpty()) {
-				context.setConversationId(conversationId);
-			}
-			else if (requestSource == RequestSource.VUE_DIALOG || requestSource == RequestSource.VUE_SIDEBAR) {
-				// Generate conversation ID for VUE_DIALOG and VUE_SIDEBAR requests
-				// Both should use the same conversation memory
-				String generatedConversationId = memoryService.generateConversationId();
-				context.setConversationId(generatedConversationId);
-				log.info("Generated conversation ID for {} request plan execution: {} (source: {})", requestSource,
-						generatedConversationId, requestSource);
+			// If conversation memory is disabled, always generate a new conversationId
+			if (manusProperties != null && !manusProperties.getEnableConversationMemory()) {
+				if (requestSource == RequestSource.VUE_DIALOG || requestSource == RequestSource.VUE_SIDEBAR) {
+					String generatedConversationId = memoryService.generateConversationId();
+					context.setConversationId(generatedConversationId);
+					log.info("Conversation memory disabled, generated new conversation ID for {} request: {}",
+							requestSource, generatedConversationId);
+				}
+				else {
+					// For non-Vue requests, do not set conversationId
+					log.debug("Conversation memory disabled, skipping conversationId for non-Vue request (source: {})",
+							requestSource);
+				}
 			}
 			else {
-				// For non-Vue requests (HTTP_REQUEST, internal calls), do not set
-				// conversationId
-				log.debug("No conversationId provided for non-Vue request, skipping conversationId (source: {})",
-						requestSource);
+				// Conversation memory is enabled, use provided conversationId or generate
+				// new one
+				if (conversationId != null && !conversationId.trim().isEmpty()) {
+					context.setConversationId(conversationId);
+				}
+				else if (requestSource == RequestSource.VUE_DIALOG || requestSource == RequestSource.VUE_SIDEBAR) {
+					// Generate conversation ID for VUE_DIALOG and VUE_SIDEBAR requests
+					// Both should use the same conversation memory
+					String generatedConversationId = memoryService.generateConversationId();
+					context.setConversationId(generatedConversationId);
+					log.info("Generated conversation ID for {} request plan execution: {} (source: {})", requestSource,
+							generatedConversationId, requestSource);
+				}
+				else {
+					// For non-Vue requests (HTTP_REQUEST, internal calls), do not set
+					// conversationId
+					log.debug("No conversationId provided for non-Vue request, skipping conversationId (source: {})",
+							requestSource);
+				}
 			}
 			context.setUseConversation(true);
 			context.setParentPlanId(parentPlanId);

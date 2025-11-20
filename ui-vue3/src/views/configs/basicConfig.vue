@@ -378,10 +378,12 @@ const CONFIG_DISPLAY_NAMES: Record<string, string> = {
   // Browser Settings
   headless: 'config.basicConfig.browserSettings.headless',
   requestTimeout: 'config.basicConfig.browserSettings.requestTimeout',
+  enableShortUrl: 'config.basicConfig.browserSettings.enableShortUrl',
 
   // General Settings
   debugDetail: 'config.basicConfig.general.debugDetail',
-  baseDir: 'config.basicConfig.general.baseDir',
+  externalLinkedFolder: 'config.basicConfig.general.externalLinkedFolder',
+  enableConversationMemory: 'config.basicConfig.general.enableConversationMemory',
 
   // Interaction Settings
   openBrowser: 'config.basicConfig.interactionSettings.openBrowser',

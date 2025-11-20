@@ -356,7 +356,16 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	private List<Map<String, Object>> getTabsInfo(Page page) {
 		try {
-			return page.context().pages().stream().map(p -> {
+			// Filter out closed pages to avoid including history
+			return page.context().pages().stream().filter(p -> {
+				try {
+					return !p.isClosed();
+				}
+				catch (Exception e) {
+					log.debug("Error checking if page is closed: {}", e.getMessage());
+					return false;
+				}
+			}).map(p -> {
 				Map<String, Object> tabInfo = new HashMap<>();
 				try {
 					tabInfo.put("url", p.url());
@@ -490,9 +499,13 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
 					.setTimeout(getBrowserTimeout() * 1000); // Convert to milliseconds
 
-				// Use compressUrl = true to enable URL compression
-				String snapshot = AriaElementHelper.parsePageAndAssignRefs(page, snapshotOptions, true, shortUrlService,
-						rootPlanId);
+				// Use compressUrl based on configuration
+				Boolean enableShortUrl = getManusProperties().getEnableShortUrl();
+				boolean compressUrl = enableShortUrl != null ? enableShortUrl : true; // Default
+																						// to
+																						// true
+				String snapshot = AriaElementHelper.parsePageAndAssignRefs(page, snapshotOptions, compressUrl,
+						shortUrlService, rootPlanId);
 				if (snapshot != null && !snapshot.trim().isEmpty()) {
 					state.put("interactive_elements", snapshot);
 				}
