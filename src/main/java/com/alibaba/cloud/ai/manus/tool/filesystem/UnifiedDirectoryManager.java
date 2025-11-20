@@ -323,17 +323,52 @@ public class UnifiedDirectoryManager {
 			return;
 		}
 
-		Path externalPath = Paths.get(externalFolder).toAbsolutePath().normalize();
-		Path linkPath = rootPlanDir.resolve(LINKED_EXTERNAL_DIR);
+		// Normalize the path: remove trailing slashes and resolve to absolute path
+		String normalizedFolder = externalFolder.trim();
+		// Remove trailing slashes (but keep root slash for Unix)
+		while (normalizedFolder.length() > 1 && normalizedFolder.endsWith("/")) {
+			normalizedFolder = normalizedFolder.substring(0, normalizedFolder.length() - 1);
+		}
 
-		// Check if external folder exists
-		if (!Files.exists(externalPath)) {
-			log.warn("External linked folder does not exist: {}, skipping link creation", externalPath);
+		Path externalPath;
+		try {
+			externalPath = Paths.get(normalizedFolder).toAbsolutePath().normalize();
+		}
+		catch (Exception e) {
+			log.error("Failed to resolve external folder path: '{}' (normalized: '{}')", externalFolder,
+					normalizedFolder, e);
 			return;
 		}
 
-		if (!Files.isDirectory(externalPath)) {
-			log.warn("External linked folder is not a directory: {}, skipping link creation", externalPath);
+		Path linkPath = rootPlanDir.resolve(LINKED_EXTERNAL_DIR);
+
+		// Check if external folder exists with detailed logging
+		boolean exists = Files.exists(externalPath);
+		boolean isDirectory = exists && Files.isDirectory(externalPath);
+		boolean isReadable = exists && Files.isReadable(externalPath);
+
+		log.debug("Checking external folder: path={}, exists={}, isDirectory={}, isReadable={}", externalPath, exists,
+				isDirectory, isReadable);
+
+		if (!exists) {
+			// Additional check: try to resolve parent if path might be a file
+			Path parentPath = externalPath.getParent();
+			boolean parentExists = parentPath != null && Files.exists(parentPath);
+			log.warn(
+					"External linked folder does not exist: {} (normalized from: '{}'), parent exists: {}, skipping link creation",
+					externalPath, externalFolder, parentExists);
+			return;
+		}
+
+		if (!isDirectory) {
+			log.warn(
+					"External linked folder is not a directory: {} (exists: {}, isDirectory: {}), skipping link creation",
+					externalPath, exists, isDirectory);
+			return;
+		}
+
+		if (!isReadable) {
+			log.warn("External linked folder is not readable: {}, skipping link creation", externalPath);
 			return;
 		}
 
