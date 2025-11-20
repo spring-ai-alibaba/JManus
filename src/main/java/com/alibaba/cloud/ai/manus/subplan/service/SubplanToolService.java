@@ -29,7 +29,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.alibaba.cloud.ai.manus.config.ManusProperties;
 import com.alibaba.cloud.ai.manus.planning.PlanningFactory;
 import com.alibaba.cloud.ai.manus.planning.model.po.FuncAgentToolEntity;
 import com.alibaba.cloud.ai.manus.planning.repository.FuncAgentToolRepository;
@@ -65,8 +64,6 @@ public class SubplanToolService {
 	@Lazy
 	private PlanningCoordinator planningCoordinator;
 
-	@Autowired
-	private ManusProperties manusProperties;
 
 	@Autowired
 	private PlanIdDispatcher planIdDispatcher;
@@ -109,14 +106,14 @@ public class SubplanToolService {
 
 			for (FuncAgentToolEntity coordinatorTool : coordinatorTools) {
 
-				// Get PlanTemplate for this coordinator tool
-				com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate planTemplate = planTemplateService
-					.getPlanTemplate(coordinatorTool.getPlanTemplateId());
-				if (planTemplate == null) {
-					logger.warn("PlanTemplate not found for planTemplateId: {}, skipping tool registration",
-							coordinatorTool.getPlanTemplateId());
-					continue;
-				}
+			// Get PlanTemplate for this coordinator tool
+			com.alibaba.cloud.ai.manus.planning.model.po.PlanTemplate planTemplate = planTemplateService
+				.getPlanTemplate(coordinatorTool.getPlanTemplateId());
+			if (planTemplate == null) {
+				logger.info("PlanTemplate not found for planTemplateId: {}, skipping tool registration",
+						coordinatorTool.getPlanTemplateId());
+				continue;
+			}
 
 				String toolName = planTemplate.getTitle() != null ? planTemplate.getTitle()
 						: coordinatorTool.getPlanTemplateId();

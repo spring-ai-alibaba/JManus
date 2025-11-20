@@ -36,6 +36,7 @@ import com.alibaba.cloud.ai.manus.runtime.entity.vo.RequestSource;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.manus.runtime.service.PlanningCoordinator;
 import com.alibaba.cloud.ai.manus.tool.AbstractBaseTool;
+import com.alibaba.cloud.ai.manus.tool.AsyncToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.manus.tool.code.ToolExecuteResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,9 +44,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Wrapper class that extends AbstractBaseTool for FuncAgentToolEntity
  *
- * This allows integration with the existing tool registry system
+ * This allows integration with the existing tool registry system. Implements
+ * AsyncToolCallBiFunctionDef to support non-blocking execution in parallel scenarios.
  */
-public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
+public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>>
+		implements AsyncToolCallBiFunctionDef<Map<String, Object>> {
 
 	public static final String PARENT_PLAN_ID_ARG_NAME = "PLAN_PARENT_ID_ARG_NAME";
 
@@ -179,23 +182,44 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 		return mapClass;
 	}
 
+	/**
+	 * Asynchronous execution - returns CompletableFuture to avoid blocking. This is the
+	 * preferred method for non-blocking execution in parallel scenarios.
+	 * @param input Tool input parameters
+	 * @param toolContext Tool execution context
+	 * @return CompletableFuture that completes with the tool execution result
+	 */
 	@Override
-	public ToolExecuteResult apply(Map<String, Object> input, ToolContext toolContext) {
+	public CompletableFuture<ToolExecuteResult> applyAsync(Map<String, Object> input, ToolContext toolContext) {
 		// Extract toolCallId from ToolContext
 		String toolCallId = extractToolCallIdFromContext(toolContext);
 		if (toolCallId != null) {
-			logger.info("Using provided toolCallId from context: {} for tool: {}", toolCallId, getName());
+			logger.info("Using provided toolCallId from context: {} for tool: {} (async mode)", toolCallId, getName());
 
 			// Extract planDepth from ToolContext and increment by 1 for subplan
 			int parentPlanDepth = extractPlanDepthFromContext(toolContext);
 			int subplanDepth = parentPlanDepth + 1;
-			logger.info("Parent plan depth: {}, subplan will have depth: {}", parentPlanDepth, subplanDepth);
+			logger.info("Parent plan depth: {}, subplan will have depth: {} (async)", parentPlanDepth, subplanDepth);
 
-			return executeSubplanWithToolCallId(input, toolCallId, subplanDepth);
+			return executeSubplanWithToolCallIdAsync(input, toolCallId, subplanDepth);
 		}
 		else {
-			throw new IllegalArgumentException("ToolCallId is required for coordinator tool: " + getName());
+			return CompletableFuture.completedFuture(
+					new ToolExecuteResult("Error: ToolCallId is required for coordinator tool: " + getName()));
 		}
+	}
+
+	/**
+	 * Synchronous execution - delegates to async version for compatibility. Note: This
+	 * will block until the subplan completes.
+	 * @param input Tool input parameters
+	 * @param toolContext Tool execution context
+	 * @return Tool execution result (blocks until async operation completes)
+	 */
+	@Override
+	public ToolExecuteResult apply(Map<String, Object> input, ToolContext toolContext) {
+		// Delegate to async version and wait for result
+		return applyAsync(input, toolContext).join();
 	}
 
 	@Override
@@ -260,8 +284,103 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>> {
 	}
 
 	/**
-	 * Execute subplan with the provided toolCallId. This method contains the main subplan
-	 * execution logic using the provided toolCallId.
+	 * Execute subplan asynchronously with the provided toolCallId. This method returns a
+	 * CompletableFuture to avoid blocking.
+	 * @param input The input parameters for the subplan
+	 * @param toolCallId The toolCallId to use for this execution
+	 * @param planDepth The depth of the subplan in the execution hierarchy
+	 * @return CompletableFuture that completes with the tool execution result
+	 */
+	private CompletableFuture<ToolExecuteResult> executeSubplanWithToolCallIdAsync(Map<String, Object> input,
+			String toolCallId, int planDepth) {
+		try {
+			logger.info("Executing coordinator tool (async): {} with template: {} and toolCallId: {}", getName(),
+					funcAgentToolEntity.getPlanTemplateId(), toolCallId);
+
+			// Get the plan template from PlanTemplateService
+			String planJson = planTemplateService.getLatestPlanVersion(funcAgentToolEntity.getPlanTemplateId());
+			if (planJson == null) {
+				String errorMsg = "Plan template not found: " + funcAgentToolEntity.getPlanTemplateId();
+				logger.error(errorMsg);
+				return CompletableFuture.completedFuture(new ToolExecuteResult(errorMsg));
+			}
+
+			// Execute the plan using PlanningCoordinator
+			// Generate a new plan ID for this subplan execution using PlanIdDispatcher
+			String newPlanId = planIdDispatcher.generateSubPlanId(rootPlanId);
+
+			// Prepare parameters for replacement - add planId to input parameters
+			Map<String, Object> parametersForReplacement = new HashMap<>();
+			if (input != null) {
+				parametersForReplacement.putAll(input);
+			}
+			// Add the generated planId to parameters
+			parametersForReplacement.put("planId", newPlanId);
+
+			// Replace parameter placeholders (<< >>) with actual input parameters
+			if (!parametersForReplacement.isEmpty()) {
+				try {
+					logger.info("Replacing parameter placeholders in plan template with input parameters: {}",
+							parametersForReplacement.keySet());
+					planJson = parameterMappingService.replaceParametersInJson(planJson, parametersForReplacement);
+					logger.debug("Parameter replacement completed successfully");
+				}
+				catch (Exception e) {
+					String errorMsg = "Failed to replace parameters in plan template: " + e.getMessage();
+					logger.error(errorMsg, e);
+					return CompletableFuture.completedFuture(new ToolExecuteResult(errorMsg));
+				}
+			}
+			else {
+				logger.debug("No parameter replacement needed - input: {}", input != null ? input.size() : 0);
+			}
+
+			// Parse the JSON to create a PlanInterface
+			PlanInterface plan = objectMapper.readValue(planJson, PlanInterface.class);
+
+			// Use the provided toolCallId instead of generating a new one
+			logger.info("Using provided toolCallId: {} for subplan execution: {} at depth: {} (async)", toolCallId,
+					newPlanId, planDepth);
+
+			// Sub-plans should use the same conversationId as parent, but it's not
+			// available in this context
+			// Use HTTP_REQUEST as subplans are internal calls
+			CompletableFuture<PlanExecutionResult> future = planningCoordinator.executeByPlan(plan, rootPlanId,
+					currentPlanId, newPlanId, toolCallId, RequestSource.HTTP_REQUEST, null, planDepth, null);
+
+			// Transform the future result into ToolExecuteResult without blocking
+			return future.thenApply(result -> {
+				if (result.isSuccess()) {
+					String output = result.getFinalResult();
+					if (output == null || output.trim().isEmpty()) {
+						output = "Subplan executed successfully but no output was generated";
+					}
+					logger.info("Subplan execution completed successfully (async): {}", output);
+					return new ToolExecuteResult(output);
+				}
+				else {
+					String errorMsg = result.getErrorMessage() != null ? result.getErrorMessage()
+							: "Subplan execution failed";
+					logger.error("Subplan execution failed (async): {}", errorMsg);
+					return new ToolExecuteResult("Subplan execution failed: " + errorMsg);
+				}
+			}).exceptionally(e -> {
+				String errorMsg = "Coordinator tool execution failed with exception: " + e.getMessage();
+				logger.error("{} for tool: {}", errorMsg, getName(), e);
+				return new ToolExecuteResult(errorMsg);
+			});
+
+		}
+		catch (Exception e) {
+			String errorMsg = "Error preparing subplan execution: " + e.getMessage();
+			logger.error("{} for tool: {}", errorMsg, getName(), e);
+			return CompletableFuture.completedFuture(new ToolExecuteResult(errorMsg));
+		}
+	}
+
+	/**
+	 * Execute subplan with the provided toolCallId (synchronous version for backward
+	 * compatibility). This method blocks until the subplan completes.
 	 * @param input The input parameters for the subplan
 	 * @param toolCallId The toolCallId to use for this execution
 	 * @param planDepth The depth of the subplan in the execution hierarchy

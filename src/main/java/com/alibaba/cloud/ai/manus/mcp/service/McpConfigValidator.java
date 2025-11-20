@@ -18,6 +18,7 @@ package com.alibaba.cloud.ai.manus.mcp.service;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -273,7 +274,7 @@ public class McpConfigValidator {
 		}
 
 		try {
-			URL parsedUrl = new URL(url.trim());
+			URL parsedUrl = URI.create(url.trim()).toURL();
 
 			// Validate URL format
 			if (parsedUrl.getHost() == null || parsedUrl.getHost().trim().isEmpty()) {
@@ -305,7 +306,7 @@ public class McpConfigValidator {
 		validateUrl(url, serverName);
 
 		try {
-			URL parsedUrl = new URL(url.trim());
+			URL parsedUrl = URI.create(url.trim()).toURL();
 			String path = parsedUrl.getPath();
 
 			// Check if path contains sse

@@ -38,11 +38,6 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 
 	private final String expectedReturnInfo;
 
-	private String lastTerminationMessage = "";
-
-	private boolean isTerminated = false;
-
-	private String terminationTimestamp = "";
 
 	private final ObjectMapper objectMapper;
 
@@ -215,10 +210,6 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 
 		// Extract message from the structured data
 		String message = formatStructuredData(processedInput);
-		this.lastTerminationMessage = message;
-		this.isTerminated = true;
-		this.terminationTimestamp = java.time.LocalDateTime.now().toString();
-
 		return new ToolExecuteResult(message);
 	}
 

@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.manus.mcp.service;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.util.List;
@@ -147,7 +148,7 @@ public class McpTransportBuilder {
 		String url = serverConfig.getUrl().trim();
 		configValidator.validateSseUrl(url, serverName);
 
-		URL parsedUrl = new URL(url);
+		URL parsedUrl = URI.create(url).toURL();
 		String baseUrl = parsedUrl.getProtocol() + "://" + parsedUrl.getHost()
 				+ (parsedUrl.getPort() == -1 ? "" : ":" + parsedUrl.getPort());
 
@@ -246,7 +247,7 @@ public class McpTransportBuilder {
 		String url = serverConfig.getUrl().trim();
 		configValidator.validateUrl(url, serverName);
 
-		URL parsedUrl = new URL(url);
+		URL parsedUrl = URI.create(url).toURL();
 		String baseUrl = parsedUrl.getProtocol() + "://" + parsedUrl.getHost()
 				+ (parsedUrl.getPort() == -1 ? "" : ":" + parsedUrl.getPort());
 
