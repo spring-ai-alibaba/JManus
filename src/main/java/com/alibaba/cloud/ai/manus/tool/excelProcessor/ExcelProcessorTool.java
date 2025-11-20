@@ -515,7 +515,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "create_file");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheets_created", worksheets.keySet());
 		result.put("status", "success");
 
@@ -551,7 +550,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "create_table");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("headers", headers);
 		result.put("data_rows", data.size());
@@ -566,7 +564,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "get_structure");
-		result.put("file_path", input.getFilePath());
 		result.put("structure", structure);
 		result.put("worksheet_count", structure.size());
 
@@ -584,7 +581,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "read_data");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("data", data);
 		result.put("rows_read", data.size());
@@ -612,7 +608,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "write_data");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("rows_written", data.size());
 		result.put("headers_included", headers != null && !headers.isEmpty());
@@ -637,7 +632,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "update_cells");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("cells_updated", cellUpdates.size());
 		result.put("status", "success");
@@ -661,7 +655,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "search_data");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("keywords", keywords);
 		result.put("search_results", searchResults);
@@ -685,7 +678,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "delete_rows");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("rows_deleted", rowIndices.size());
 		result.put("status", "success");
@@ -714,7 +706,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "format_cells");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("cell_range", cellRange);
 		result.put("formatting_applied", formatting.keySet());
@@ -738,7 +729,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "add_formulas");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("formulas_added", formulas.size());
 		result.put("status", "success");
@@ -925,7 +915,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 			result.put("total_batch_count", totalBatchCount);
 			result.put("batch_size", batchSize);
 			result.put("processing_time_ms", processingTime);
-			result.put("file_path", input.getFilePath());
 			result.put("worksheet_name", worksheetName);
 			result.put("processed_files", processedFiles);
 			result.put("failed_files", failedFiles);
@@ -1212,7 +1201,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "parallel_batch_process");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("batch_size", batchSize);
 		result.put("parallelism", parallelism);
@@ -1236,7 +1224,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "transform_aggregate");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("transformation_type", input.transformation_type);
 		result.put("transformation_config", input.transformation_config);
@@ -1256,7 +1243,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "stream_process");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("enable_streaming", input.enable_streaming);
 		result.put("status", "success");
@@ -1275,7 +1261,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "validate_clean");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("enable_validation", input.enable_validation);
 		result.put("validation_rules", input.validation_rules);
@@ -1303,7 +1288,6 @@ public class ExcelProcessorTool extends AbstractBaseTool<ExcelProcessorTool.Exce
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("action", "export_data");
-		result.put("file_path", input.getFilePath());
 		result.put("worksheet_name", worksheetName);
 		result.put("export_format", input.export_format);
 		result.put("output_path", input.output_path);
