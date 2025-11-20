@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.cloud.ai.lynxe.config.IManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.shortUrl.ShortUrlService;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -43,7 +43,7 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 
 	private final ShortUrlService shortUrlService;
 
-	private final IManusProperties manusProperties;
+	private final ManusProperties manusProperties;
 
 	private static String getDescriptions(String expectedReturnInfo) {
 		// Simple description to avoid generating overly long content
@@ -187,7 +187,7 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 	}
 
 	public TerminateTool(String planId, String expectedReturnInfo, ObjectMapper objectMapper,
-			ShortUrlService shortUrlService, IManusProperties manusProperties) {
+			ShortUrlService shortUrlService, ManusProperties manusProperties) {
 		this.currentPlanId = planId;
 		this.expectedReturnInfo = expectedReturnInfo;
 		if (objectMapper != null) {

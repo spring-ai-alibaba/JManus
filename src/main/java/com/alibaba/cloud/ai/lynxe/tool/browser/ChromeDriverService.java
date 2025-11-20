@@ -29,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.cloud.ai.lynxe.config.IManusProperties;
 import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
@@ -700,11 +699,11 @@ public class ChromeDriverService implements IChromeDriverService {
 		cleanupAllPlaywrightProcesses();
 	}
 
-	public void setManusProperties(IManusProperties manusProperties) {
-		this.manusProperties = (ManusProperties) manusProperties;
+	public void setManusProperties(ManusProperties manusProperties) {
+		this.manusProperties = manusProperties;
 	}
 
-	public IManusProperties getManusProperties() {
+	public ManusProperties getManusProperties() {
 		return manusProperties;
 	}
 

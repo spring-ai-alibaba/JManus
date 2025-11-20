@@ -25,7 +25,7 @@ import com.alibaba.cloud.ai.lynxe.config.entity.ConfigInputType;
 
 @Component
 @ConfigurationProperties(prefix = "manus")
-public class ManusProperties implements IManusProperties {
+public class ManusProperties{
 
 	@Lazy
 	@Autowired

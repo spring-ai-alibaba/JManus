@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.alibaba.cloud.ai.lynxe.config.IManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
 import com.alibaba.cloud.ai.lynxe.event.LynxeListener;
 import com.alibaba.cloud.ai.lynxe.event.PlanExceptionClearedEvent;
 import com.alibaba.cloud.ai.lynxe.event.PlanExceptionEvent;
@@ -119,7 +119,7 @@ public class ManusController implements LynxeListener<PlanExceptionEvent> {
 
 	@Autowired
 	@Lazy
-	private IManusProperties manusProperties;
+	private ManusProperties manusProperties;
 
 	public ManusController(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;

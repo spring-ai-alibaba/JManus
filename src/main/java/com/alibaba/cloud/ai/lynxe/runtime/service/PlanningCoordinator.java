@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.cloud.ai.lynxe.config.IManusProperties;
+import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
 import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory;
 import com.alibaba.cloud.ai.lynxe.planning.service.PlanFinalizer;
 import com.alibaba.cloud.ai.lynxe.runtime.entity.vo.ExecutionContext;
@@ -47,10 +47,10 @@ public class PlanningCoordinator {
 
 	private final MemoryService memoryService;
 
-	private final IManusProperties manusProperties;
+	private final ManusProperties manusProperties;
 
 	public PlanningCoordinator(PlanningFactory planningFactory, PlanExecutorFactory planExecutorFactory,
-			PlanFinalizer planFinalizer, MemoryService memoryService, IManusProperties manusProperties) {
+			PlanFinalizer planFinalizer, MemoryService memoryService, ManusProperties manusProperties) {
 		this.planExecutorFactory = planExecutorFactory;
 		this.planFinalizer = planFinalizer;
 		this.memoryService = memoryService;
