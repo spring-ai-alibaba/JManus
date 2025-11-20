@@ -48,9 +48,9 @@ public class InteractiveElement {
 	 */
 	public InteractiveElement(int index, Frame frame, Map<String, Object> elementMap) {
 		this.index = index;
-		if (elementMap.containsKey("jManusId")) {
-			String jManusId = (String) elementMap.get("jManusId");
-			this.locator = frame.locator("[jmanus-id=\"" + jManusId + "\"]");
+		if (elementMap.containsKey("lLynxeId")) {
+			String lLynxeId = (String) elementMap.get("lLynxeId");
+			this.locator = frame.locator("[lynxe-id=\"" + lLynxeId + "\"]");
 		}
 		else {
 			String xpath = (String) elementMap.get("xpath");
@@ -110,9 +110,9 @@ public class InteractiveElement {
 	public String toString() {
 		String content = text.isEmpty() ? outerHtml : text;
 
-		// If using outerHtml, remove jmanus-id attribute and style attribute
+		// If using outerHtml, remove lynxe-id attribute and style attribute
 		if (text.isEmpty() && content != null) {
-			content = content.replaceAll("\\s+jmanus-id=\"[^\"]*\"", "");
+			content = content.replaceAll("\\s+lynxe-id=\"[^\"]*\"", "");
 			content = content.replaceAll("\\s+style=\"[^\"]*\"", "");
 		}
 

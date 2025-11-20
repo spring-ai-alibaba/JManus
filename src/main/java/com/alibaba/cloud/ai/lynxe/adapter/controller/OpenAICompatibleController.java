@@ -44,7 +44,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * Provides OpenAI-compatible endpoints for external clients like Cherry Studio. Supports
  * both streaming and non-streaming responses.
  *
- * @author JManus Team
+ * @author Lynxe Team
  * @version 1.0
  */
 @RestController
@@ -58,9 +58,9 @@ public class OpenAICompatibleController {
 
 	private static final int POLLING_INTERVAL_MS = 100;
 
-	private static final String JMANUS_MODEL_ID = "jmanus-1.0";
+	private static final String LYNXE_MODEL_ID = "lynxe-1.0";
 
-	private static final String JMANUS_OWNER = "jmanus";
+	private static final String LYNXE_OWNER = "lynxe";
 
 	private static final String CHAT_COMPLETION_CHUNK = "chat.completion.chunk";
 
@@ -127,7 +127,7 @@ public class OpenAICompatibleController {
 			final boolean[] completed = { false };
 			final String[] error = { null };
 
-			// Process with JManus
+			// Process with Lynxe
 			adapterService.processChatCompletionStream(request, new OpenAIAdapterService.StreamResponseHandler() {
 				@Override
 				public void onResponse(OpenAIResponse response) {
@@ -145,7 +145,7 @@ public class OpenAICompatibleController {
 
 				@Override
 				public void onComplete() {
-					logger.info("[{}] JManus execution completed", requestId);
+					logger.info("[{}] Lynxe execution completed", requestId);
 					streamResponse.append(STREAMING_DONE_MARKER);
 					completed[0] = true;
 				}
@@ -232,7 +232,7 @@ public class OpenAICompatibleController {
 	private String createOpenAIErrorChunk(String error) {
 		try {
 			Map<String, Object> errorChunk = Map.of("id", "error-" + System.currentTimeMillis(), "object",
-					"chat.completion.chunk", "created", Instant.now().getEpochSecond(), "model", JMANUS_MODEL_ID,
+					"chat.completion.chunk", "created", Instant.now().getEpochSecond(), "model", LYNXE_MODEL_ID,
 					"choices", List.of(Map.of("index", 0, "delta", Map.of("content", "Error: " + error),
 							"finish_reason", "stop")));
 			return objectMapper.writeValueAsString(errorChunk);
@@ -293,8 +293,8 @@ public class OpenAICompatibleController {
 	@GetMapping("/v1/health")
 	public ResponseEntity<Map<String, Object>> health() {
 		logger.info("Health check requested");
-		return ResponseEntity.ok(Map.of("status", "healthy", "service", "JManus OpenAI Compatible API", "timestamp",
-				Instant.now().getEpochSecond(), "model", JMANUS_MODEL_ID));
+		return ResponseEntity.ok(Map.of("status", "healthy", "service", "Lynxe OpenAI Compatible API", "timestamp",
+				Instant.now().getEpochSecond(), "model", LYNXE_MODEL_ID));
 	}
 
 	// ==================== Helper Methods ====================
@@ -312,11 +312,11 @@ public class OpenAICompatibleController {
 		long currentTime = Instant.now().getEpochSecond();
 
 		Map<String, Object> modelData = new HashMap<>();
-		modelData.put("id", JMANUS_MODEL_ID);
+		modelData.put("id", LYNXE_MODEL_ID);
 		modelData.put("object", "model");
 		modelData.put("created", currentTime);
-		modelData.put("owned_by", JMANUS_OWNER);
-		modelData.put("root", JMANUS_MODEL_ID);
+		modelData.put("owned_by", LYNXE_OWNER);
+		modelData.put("root", LYNXE_MODEL_ID);
 		modelData.put("parent", null);
 
 		return Map.of("object", "list", "data", List.of(modelData));

@@ -1,4 +1,4 @@
-# Spring AI Alibaba JManus 开发者快速入门
+# Spring AI Alibaba Lynxe 开发者快速入门
 
 本项目是阿里巴巴 AI 计划执行与管理系统，采用 Spring Boot 架构，支持计划生成、异步执行、状态跟踪、配置管理等功能。以下为开发者调试和理解系统的核心入口与接口说明。
 

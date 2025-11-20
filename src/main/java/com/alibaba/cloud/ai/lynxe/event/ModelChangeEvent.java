@@ -20,9 +20,9 @@ import com.alibaba.cloud.ai.lynxe.model.entity.DynamicModelEntity;
 /**
  * @author dahua
  * @time 2025/7/15
- * @desc jmanus model change event class
+ * @desc lynxe model change event class
  */
-public class ModelChangeEvent implements JmanusEvent {
+public class ModelChangeEvent implements LynxeEvent {
 
 	private DynamicModelEntity dynamicModelEntity;
 

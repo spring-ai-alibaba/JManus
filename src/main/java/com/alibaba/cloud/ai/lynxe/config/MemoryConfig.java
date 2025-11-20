@@ -36,7 +36,7 @@ import com.alibaba.cloud.ai.lynxe.workspace.conversation.repository.PostgresChat
 public class MemoryConfig {
 
 	// import memory auto configuration
-	// jmanus only support memory for mysql and postgresql now
+	// lynxe only support memory for mysql and postgresql now
 	@Value("${spring.ai.memory.mysql.enabled:false}")
 	private boolean mysqlEnabled;
 

@@ -1,3 +1,3 @@
-# JManus Deploy
+# Lynxe Deploy
 
-Run jmanus by `make docker-run`.
+Run lynxe by `make docker-run`.

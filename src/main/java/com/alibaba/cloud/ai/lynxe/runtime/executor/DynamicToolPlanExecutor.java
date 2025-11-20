@@ -26,7 +26,7 @@ import com.alibaba.cloud.ai.lynxe.agent.ConfigurableDynaAgent;
 import com.alibaba.cloud.ai.lynxe.agent.ToolCallbackProvider;
 import com.alibaba.cloud.ai.lynxe.agent.entity.DynamicAgentEntity;
 import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
-import com.alibaba.cloud.ai.lynxe.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.lynxe.event.LynxeEventPublisher;
 import com.alibaba.cloud.ai.lynxe.llm.ConversationMemoryLimitService;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.llm.StreamingResponseHandler;
@@ -70,7 +70,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 
 	private final PlanIdDispatcher planIdDispatcher;
 
-	private final JmanusEventPublisher jmanusEventPublisher;
+	private final LynxeEventPublisher lynxeEventPublisher;
 
 	private final ObjectMapper objectMapper;
 
@@ -86,7 +86,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 			AgentInterruptionHelper agentInterruptionHelper, PlanningFactory planningFactory,
 			ToolCallingManager toolCallingManager, UserInputService userInputService,
 			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
-			JmanusEventPublisher jmanusEventPublisher, ObjectMapper objectMapper,
+			LynxeEventPublisher lynxeEventPublisher, ObjectMapper objectMapper,
 			ParallelToolExecutionService parallelToolExecutionService, MemoryService memoryService,
 			ConversationMemoryLimitService conversationMemoryLimitService) {
 		super(agents, recorder, llmService, manusProperties, levelBasedExecutorPool, fileUploadService,
@@ -96,7 +96,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 		this.userInputService = userInputService;
 		this.streamingResponseHandler = streamingResponseHandler;
 		this.planIdDispatcher = planIdDispatcher;
-		this.jmanusEventPublisher = jmanusEventPublisher;
+		this.lynxeEventPublisher = lynxeEventPublisher;
 		this.objectMapper = objectMapper;
 		this.parallelToolExecutionService = parallelToolExecutionService;
 		this.memoryService = memoryService;
@@ -152,7 +152,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 
 		ConfigurableDynaAgent agent = new ConfigurableDynaAgent(llmService, getRecorder(), manusProperties, name,
 				description, nextStepPrompt, selectedToolKeys, toolCallingManager, initialAgentSetting,
-				userInputService, modelName, streamingResponseHandler, step, planIdDispatcher, jmanusEventPublisher,
+				userInputService, modelName, streamingResponseHandler, step, planIdDispatcher, lynxeEventPublisher,
 				agentInterruptionHelper, objectMapper, parallelToolExecutionService, memoryService,
 				conversationMemoryLimitService);
 

@@ -53,8 +53,8 @@ public class UserDataInitializer implements CommandLineRunner {
 		logger.info("Starting user data initialization");
 
 		// Check if default user exists
-		if (!userRepository.existsByUsername("jmanus_user")) {
-			UserEntity defaultUser = new UserEntity("jmanus_user", "user@jmanus.ai", "JManus User");
+		if (!userRepository.existsByUsername("lynxe_user")) {
+			UserEntity defaultUser = new UserEntity("lynxe_user", "user@lynxe.ai", "Lynxe User");
 			defaultUser.setStatus("active");
 			defaultUser.setCreatedAt(LocalDateTime.now().minusDays(30));
 			defaultUser.setLastLogin(LocalDateTime.now().minusHours(2));

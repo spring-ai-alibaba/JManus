@@ -31,8 +31,8 @@
         </div>
         <div class="logo-container">
           <div class="logo">
-            <img src="/Java-AI.svg" alt="JManus" class="java-logo" />
-            <h1>JManus</h1>
+            <img src="/Java-AI.svg" alt="Lynxe" class="java-logo" />
+            <h1>Lynxe</h1>
           </div>
           <span class="tagline">{{ $t('home.tagline') }}</span>
         </div>

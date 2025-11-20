@@ -44,7 +44,7 @@ import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.tool.ToolCallback;
 
 import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
-import com.alibaba.cloud.ai.lynxe.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.lynxe.event.LynxeEventPublisher;
 import com.alibaba.cloud.ai.lynxe.event.PlanExceptionClearedEvent;
 import com.alibaba.cloud.ai.lynxe.llm.ConversationMemoryLimitService;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
@@ -107,7 +107,7 @@ public class DynamicAgent extends ReActAgent {
 
 	private final StreamingResponseHandler streamingResponseHandler;
 
-	private JmanusEventPublisher jmanusEventPublisher;
+	private LynxeEventPublisher lynxeEventPublisher;
 
 	private AgentInterruptionHelper agentInterruptionHelper;
 
@@ -158,7 +158,7 @@ public class DynamicAgent extends ReActAgent {
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
 			Map<String, Object> initialAgentSetting, UserInputService userInputService, String modelName,
 			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
-			JmanusEventPublisher jmanusEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
+			LynxeEventPublisher lynxeEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
 			ObjectMapper objectMapper, ParallelToolExecutionService parallelToolExecutionService,
 			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService) {
 		super(llmService, planExecutionRecorder, manusProperties, initialAgentSetting, step, planIdDispatcher);
@@ -177,7 +177,7 @@ public class DynamicAgent extends ReActAgent {
 		this.userInputService = userInputService;
 		this.modelName = modelName;
 		this.streamingResponseHandler = streamingResponseHandler;
-		this.jmanusEventPublisher = jmanusEventPublisher;
+		this.lynxeEventPublisher = lynxeEventPublisher;
 		this.agentInterruptionHelper = agentInterruptionHelper;
 		this.parallelToolExecutionService = parallelToolExecutionService;
 		this.memoryService = memoryService;
@@ -355,9 +355,9 @@ public class DynamicAgent extends ReActAgent {
 					planExecutionRecorder.recordThinkingAndAction(step, paramsN);
 
 					// Clear exception cache if this was a retry attempt
-					if (attempt > 1 && jmanusEventPublisher != null) {
+					if (attempt > 1 && lynxeEventPublisher != null) {
 						log.info("Retry successful for planId: {}, clearing exception cache", getCurrentPlanId());
-						jmanusEventPublisher.publish(new PlanExceptionClearedEvent(getCurrentPlanId()));
+						lynxeEventPublisher.publish(new PlanExceptionClearedEvent(getCurrentPlanId()));
 					}
 
 					return true;

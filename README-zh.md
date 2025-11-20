@@ -1,4 +1,4 @@
-# Spring AI Alibaba JManus
+# Spring AI Alibaba Lynxe
 
 <div align="center">
 
@@ -15,13 +15,13 @@
 
 </div>
 
-## ✨ JManus 简介
+## ✨ Lynxe 简介
 
-JManus 是 Manus 的一个 Java 实现，目前已经在阿里巴巴集团内的很多应用都有使用，主要用于处理需要有一定确定性要求的探索性任务，比如，快速从海量数据中找到数据并转换成数据库内的一行数据，或者分析日志并给出告警等。
+Lynxe 是 Manus 的一个 Java 实现，目前已经在阿里巴巴集团内的很多应用都有使用，主要用于处理需要有一定确定性要求的探索性任务，比如，快速从海量数据中找到数据并转换成数据库内的一行数据，或者分析日志并给出告警等。
 
-JManus 也提供了 http 的服务调用能力，适合被集成到既有的项目中。具体可以见[开发者快速入门 (中文)](./README-dev.md)
+Lynxe 也提供了 http 的服务调用能力，适合被集成到既有的项目中。具体可以见[开发者快速入门 (中文)](./README-dev.md)
 
-## 🎯 JManus 的产品特性
+## 🎯 Lynxe 的产品特性
 
 ### 🤖 **纯 Java 的 Manus 实现**：
 
@@ -30,7 +30,7 @@ JManus 也提供了 http 的服务调用能力，适合被集成到既有的项�
 
 ### 🛠️ **Func-Agent 模式**：
 
-精确控制每一步执行细节，提供极高的执行确定性并完成复杂的重复流程和功能。具体可以见 [JManus 案例集-Func-Agent 案例](https://github.com/talk-flow/public-usecase/blob/main/chn/query-plan.md)。
+精确控制每一步执行细节，提供极高的执行确定性并完成复杂的重复流程和功能。具体可以见 [Lynxe 案例集-Func-Agent 案例](https://github.com/talk-flow/public-usecase/blob/main/chn/query-plan.md)。
 ![Image](https://github.com/user-attachments/assets/00c8c292-a2d2-4c33-bab8-c4d45d1fa641)
 
 ### 🔗 **MCP 集成**：
@@ -40,7 +40,7 @@ JManus 也提供了 http 的服务调用能力，适合被集成到既有的项�
 
 ## 🚀 快速开始
 
-在 5 分钟内启动并运行 JManus：
+在 5 分钟内启动并运行 Lynxe：
 
 ### 先决条件
 
@@ -53,16 +53,16 @@ JManus 也提供了 http 的服务调用能力，适合被集成到既有的项�
 
 ```bash
 # 下载最新版本的 JAR 文件
-wget https://github.com/spring-ai-alibaba/JManus/releases/latest/download/jmanus.jar
+wget https://github.com/spring-ai-alibaba/Lynxe/releases/latest/download/lynxe.jar
 
 # 或者使用 curl
-curl -L -o jmanus.jar https://github.com/spring-ai-alibaba/JManus/releases/latest/download/jmanus.jar
+curl -L -o lynxe.jar https://github.com/spring-ai-alibaba/Lynxe/releases/latest/download/lynxe.jar
 
 # 运行 JAR 文件
-java -jar jmanus.jar
+java -jar lynxe.jar
 ```
 
-> 💡 **手动下载**: 您也可以直接访问 [JManus Releases 页面](https://github.com/spring-ai-alibaba/JManus/releases) 手动下载最新版本的 JAR 文件。
+> 💡 **手动下载**: 您也可以直接访问 [Lynxe Releases 页面](https://github.com/spring-ai-alibaba/Lynxe/releases) 手动下载最新版本的 JAR 文件。
 
 #### 🌐 访问应用
 
@@ -79,14 +79,14 @@ java -jar jmanus.jar
 #### 🐳 拉取并运行 Docker 镜像
 
 ```bash
-# 拉取最新版本的 JManus Docker 镜像
-docker pull ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+# 拉取最新版本的 Lynxe Docker 镜像
+docker pull ghcr.io/spring-ai-alibaba/lynxe:v4.7.0
 
 # 运行容器
 docker run -d \
-  --name jmanus \
+  --name lynxe \
   -p 18080:18080 \
-  ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+  ghcr.io/spring-ai-alibaba/lynxe:v4.7.0
 ```
 
 #### 🔧 高级 Docker 配置
@@ -95,27 +95,27 @@ docker run -d \
 
 ```bash
 # 创建数据持久化目录
-mkdir -p ./jmanus-data
+mkdir -p ./lynxe-data
 
 # 运行并挂载数据卷
 docker run -d \
-  --name jmanus \
+  --name lynxe \
   -p 18080:18080 \
-  -v $(pwd)/jmanus-data:/app/data \
-  ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+  -v $(pwd)/lynxe-data:/app/data \
+  ghcr.io/spring-ai-alibaba/lynxe:v4.7.0
 ```
 
 **使用自定义环境变量运行：**
 
 ```bash
 docker run -d \
-  --name jmanus \
+  --name lynxe \
   -p 18080:18080 \
   -e SPRING_PROFILES_ACTIVE=mysql \
-  -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/jmanus \
+  -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/lynxe \
   -e SPRING_DATASOURCE_USERNAME=your_username \
   -e SPRING_DATASOURCE_PASSWORD=your_password \
-  ghcr.io/spring-ai-alibaba/jmanus:v4.7.0
+  ghcr.io/spring-ai-alibaba/lynxe:v4.7.0
 ```
 
 #### 🌐 访问应用
@@ -128,16 +128,16 @@ docker run -d \
 
 ```bash
 # 查看容器日志
-docker logs -f jmanus
+docker logs -f lynxe
 
 # 停止容器
-docker stop jmanus
+docker stop lynxe
 
 # 启动容器
-docker start jmanus
+docker start lynxe
 
 # 删除容器
-docker rm jmanus
+docker rm lynxe
 ```
 
 🎉 **恭喜!** 您的多 Agent 系统现已通过 Docker 运行。 你可以访问https://github.com/talk-flow/public-usecase 去做一些我们认为比较有效的实践。
@@ -149,8 +149,8 @@ docker rm jmanus
 #### 1. 克隆并导航
 
 ```bash
-git clone https://github.com/spring-ai-alibaba/JManus.git
-cd JManus
+git clone https://github.com/spring-ai-alibaba/Lynxe.git
+cd Lynxe
 ```
 
 #### 2. 数据库配置（可选）
@@ -159,7 +159,7 @@ cd JManus
 >
 > **使用其他提供商?** 在 `src/main/resources/application.yml` 中更新配置，以使用您偏好的 AI 模型平台。
 
-JManus 支持 H2（默认）、MySQL 以及 PostgreSQL 数据库。
+Lynxe 支持 H2（默认）、MySQL 以及 PostgreSQL 数据库。
 
 **如何使用 MySQL/PostgreSQL**
 
@@ -211,7 +211,7 @@ JManus 支持 H2（默认）、MySQL 以及 PostgreSQL 数据库。
 ## 稳定版本的 Release
 
 如果你想要之前的稳定版本，可以在这里找到：
-[稳定 release 版](https://github.com/spring-ai-alibaba/JManus/releases)
+[稳定 release 版](https://github.com/spring-ai-alibaba/Lynxe/releases)
 
 ## 🤝 如何贡献
 
@@ -221,17 +221,17 @@ JManus 支持 H2（默认）、MySQL 以及 PostgreSQL 数据库。
 
 您可以在我们的 [项目看板](https://github.com/orgs/spring-ai-alibaba/projects/1) 上找到可用的任务。
 
-- 🐛 **报告 Bug**: [提交详细的问题报告](https://github.com/spring-ai-alibaba/JManus/issues)
-- 💡 **功能请求**: [提出创新的增强建议](https://github.com/spring-ai-alibaba/JManus/issues)
+- 🐛 **报告 Bug**: [提交详细的问题报告](https://github.com/spring-ai-alibaba/Lynxe/issues)
+- 💡 **功能请求**: [提出创新的增强建议](https://github.com/spring-ai-alibaba/Lynxe/issues)
 - 📝 **文档**: 帮助我们提高文档的清晰度和完整性
-- 🔧 **代码贡献**: [提交包含您改进的拉取请求](https://github.com/spring-ai-alibaba/JManus/pulls)
+- 🔧 **代码贡献**: [提交包含您改进的拉取请求](https://github.com/spring-ai-alibaba/Lynxe/pulls)
 
 ### 开发环境设置
 
 ```bash
 # Fork 并克隆仓库
-git clone git@github.com:spring-ai-alibaba/JManus.git
-cd JManus
+git clone git@github.com:spring-ai-alibaba/Lynxe.git
+cd Lynxe
 
 # 安装项目依赖
 mvn clean install
@@ -256,7 +256,7 @@ mvn spring-boot:run
 
 **由 Spring AI Alibaba 团队用心打造 ❤️**
 
-⭐ 如果 JManus 加速了您的开发之旅，请在 **GitHub 上给我们点亮一颗星**！
+⭐ 如果 Lynxe 加速了您的开发之旅，请在 **GitHub 上给我们点亮一颗星**！
 
 ## 交流讨论
 

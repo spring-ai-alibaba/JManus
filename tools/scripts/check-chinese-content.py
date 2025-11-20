@@ -18,7 +18,7 @@
 #
 
 """
-Spring AI Alibaba JManus Chinese Content Checker
+Spring AI Alibaba Lynxe Chinese Content Checker
 Unified tool for checking Chinese content in Java and frontend code for GitHub Actions
 """
 

@@ -36,7 +36,7 @@ import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
  * Service to automatically limit conversation memory size based on character count. Uses
  * LLM to summarize older dialog rounds while maintaining recent 5000 characters.
  *
- * @author jmanus
+ * @author lynxe
  */
 @Service
 public class ConversationMemoryLimitService {

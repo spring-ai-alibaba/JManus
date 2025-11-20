@@ -24,8 +24,8 @@ const words: I18nType = {
 
   // Initialization page
   init: {
-    welcome: 'Welcome to JManus',
-    welcomeStep: 'Welcome to JManus',
+    welcome: 'Welcome to Lynxe',
+    welcomeStep: 'Welcome to Lynxe',
     description:
       'To get started, you need to configure an LLM service to enable AI features. You can choose Alibaba Cloud DashScope or configure any OpenAI-compatible API service.',
     languageStepDescription:
@@ -691,8 +691,8 @@ const words: I18nType = {
 
   // Chat component
   chat: {
-    botName: 'JManus:',
-    thinkingLabel: 'JManus Thinking/Processing',
+    botName: 'Lynxe:',
+    thinkingLabel: 'Lynxe Thinking/Processing',
     processing: 'Processing...',
     step: 'Step',
     stepNumber: 'Step {number}',
@@ -760,7 +760,7 @@ const words: I18nType = {
 
   // Input component
   input: {
-    placeholder: 'Send a message to JManus',
+    placeholder: 'Send a message to Lynxe',
     send: 'Send',
     stop: 'Stop',
     planMode: 'Func-Agent Mode',
@@ -1102,7 +1102,7 @@ const words: I18nType = {
 
   // Home page
   home: {
-    welcomeTitle: 'Welcome to JManus!',
+    welcomeTitle: 'Welcome to Lynxe!',
     welcomeSubtitle:
       'Your Java AI intelligent assistant, helping you build and complete various tasks.',
     tagline: 'Java AI Agent',
@@ -1261,8 +1261,8 @@ const words: I18nType = {
     templateHelpText: 'After selection, the cron task will execute according to the defined plan',
     createTask: 'Create Cron Task',
     selectCreateMethod: 'Please select creation method',
-    createWithJmanus: 'Create with Jmanus',
-    createWithJmanusDesc: 'Create cron task with AI assistant guidance',
+    createWithLynxe: 'Create with Lynxe',
+    createWithLynxeDesc: 'Create cron task with AI assistant guidance',
     createManually: 'Create Manually',
     createManuallyDesc: 'Fill in task information yourself',
   },

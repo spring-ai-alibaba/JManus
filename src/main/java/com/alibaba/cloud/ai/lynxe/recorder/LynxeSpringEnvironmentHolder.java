@@ -20,12 +20,12 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 @Component
-public class JManusSpringEnvironmentHolder implements EnvironmentAware {
+public class LynxeSpringEnvironmentHolder implements EnvironmentAware {
 
 	private static Environment environment;
 
 	public void setEnvironment(Environment environment) {
-		JManusSpringEnvironmentHolder.environment = environment;
+		LynxeSpringEnvironmentHolder.environment = environment;
 	}
 
 	public static Environment getEnvironment() {
@@ -33,3 +33,4 @@ public class JManusSpringEnvironmentHolder implements EnvironmentAware {
 	}
 
 }
+

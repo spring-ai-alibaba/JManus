@@ -41,7 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * recommends the most appropriate tools for processing. Does NOT process file content
  * directly - only provides intelligent analysis and tool selection guidance.
  *
- * @author Jmanus Team
+ * @author Lynxe Team
  * @version 2.0
  * @since 1.0
  */

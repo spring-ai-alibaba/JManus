@@ -21,7 +21,7 @@ import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
-import com.alibaba.cloud.ai.lynxe.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.lynxe.event.LynxeEventPublisher;
 import com.alibaba.cloud.ai.lynxe.llm.ConversationMemoryLimitService;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.llm.StreamingResponseHandler;
@@ -76,7 +76,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 
 	private final PlanIdDispatcher planIdDispatcher;
 
-	private final JmanusEventPublisher jmanusEventPublisher;
+	private final LynxeEventPublisher lynxeEventPublisher;
 
 	private final ParallelToolExecutionService parallelToolExecutionService;
 
@@ -90,7 +90,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 			AgentInterruptionHelper agentInterruptionHelper, PlanningFactory planningFactory,
 			ToolCallingManager toolCallingManager, UserInputService userInputService,
 			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
-			JmanusEventPublisher jmanusEventPublisher, ParallelToolExecutionService parallelToolExecutionService,
+			LynxeEventPublisher lynxeEventPublisher, ParallelToolExecutionService parallelToolExecutionService,
 			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService) {
 		this.llmService = llmService;
 		this.recorder = recorder;
@@ -105,7 +105,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		this.userInputService = userInputService;
 		this.streamingResponseHandler = streamingResponseHandler;
 		this.planIdDispatcher = planIdDispatcher;
-		this.jmanusEventPublisher = jmanusEventPublisher;
+		this.lynxeEventPublisher = lynxeEventPublisher;
 		this.parallelToolExecutionService = parallelToolExecutionService;
 		this.memoryService = memoryService;
 		this.conversationMemoryLimitService = conversationMemoryLimitService;
@@ -119,7 +119,7 @@ public class PlanExecutorFactory implements IPlanExecutorFactory {
 		log.debug("Creating dynamic agent plan executor");
 		return new DynamicToolPlanExecutor(null, recorder, llmService, manusProperties, levelBasedExecutorPool,
 				dynamicModelRepository, fileUploadService, agentInterruptionHelper, planningFactory, toolCallingManager,
-				userInputService, streamingResponseHandler, planIdDispatcher, jmanusEventPublisher, objectMapper,
+				userInputService, streamingResponseHandler, planIdDispatcher, lynxeEventPublisher, objectMapper,
 				parallelToolExecutionService, memoryService, conversationMemoryLimitService);
 	}
 

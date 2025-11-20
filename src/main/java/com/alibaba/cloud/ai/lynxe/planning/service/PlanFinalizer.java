@@ -105,7 +105,7 @@ public class PlanFinalizer {
 		Map<String, Object> promptVariables = Map.of("title", title);
 
 		String directResponsePrompt = """
-				You are jmanus, an AI assistant capable of responding to user requests. Currently in direct feedback mode, you need to directly respond to the user's simple requests without complex planning and decomposition.
+				You are lynxe, an AI assistant capable of responding to user requests. Currently in direct feedback mode, you need to directly respond to the user's simple requests without complex planning and decomposition.
 
 				The current user request is:
 

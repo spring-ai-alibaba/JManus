@@ -18,10 +18,11 @@ package com.alibaba.cloud.ai.lynxe.event;
 /**
  * @author dahua
  * @time 2025/7/15
- * @desc jmanus event listener
+ * @desc lynxe event listener
  */
-public interface JmanusListener<T extends JmanusEvent> {
+public interface LynxeListener<T extends LynxeEvent> {
 
 	void onEvent(T event);
 
 }
+

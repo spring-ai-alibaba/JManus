@@ -18,9 +18,9 @@ package com.alibaba.cloud.ai.lynxe.event;
 /**
  * @author dahua
  * @time 2025/7/30
- * @desc jmanus plan execution exception event
+ * @desc lynxe plan execution exception event
  */
-public class PlanExceptionEvent implements JmanusEvent {
+public class PlanExceptionEvent implements LynxeEvent {
 
 	private String planId;
 

@@ -1,6 +1,6 @@
 # User Module
 
-This module provides simple user management functionality following the adapter pattern used in the JManus project.
+This module provides simple user management functionality following the adapter pattern used in the Lynxe project.
 
 ## Structure
 
@@ -52,9 +52,9 @@ user/
 
 The service comes with one predefined user:
 - **ID**: 1 (Long)
-- **Username**: jmanus_user
-- **Email**: user@jmanus.ai
-- **Display Name**: JManus User
+- **Username**: lynxe_user
+- **Email**: user@lynxe.ai
+- **Display Name**: Lynxe User
 - **Status**: active
 
 ## Database Schema

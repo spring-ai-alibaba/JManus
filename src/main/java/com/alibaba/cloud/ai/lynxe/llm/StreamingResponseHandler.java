@@ -40,7 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import com.alibaba.cloud.ai.lynxe.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.lynxe.event.LynxeEventPublisher;
 import com.alibaba.cloud.ai.lynxe.event.PlanExceptionEvent;
 
 import reactor.core.publisher.Flux;
@@ -60,7 +60,7 @@ public class StreamingResponseHandler {
 	private static final Logger streamingProgressLogger = LoggerFactory.getLogger("STREAMING_PROGRESS_LOGGER");
 
 	@Autowired
-	private JmanusEventPublisher jmanusEventPublisher;
+	private LynxeEventPublisher lynxeEventPublisher;
 
 	@Autowired
 	private LlmTraceRecorder llmTraceRecorder;
@@ -299,7 +299,7 @@ public class StreamingResponseHandler {
 				else {
 					log.error("Aggregation Error: {}", e.getMessage(), e);
 				}
-				jmanusEventPublisher.publish(new PlanExceptionEvent(planId, e));
+				lynxeEventPublisher.publish(new PlanExceptionEvent(planId, e));
 			}).doOnCancel(() -> {
 				if (shouldEarlyTerminate.get()) {
 					log.info("Stream cancelled due to early termination (thinking-only response detected)");

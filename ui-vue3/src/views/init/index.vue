@@ -19,7 +19,7 @@
       <!-- Header -->
       <div class="init-header">
         <div class="logo">
-          <h1><Icon icon="carbon:bot" class="logo-icon" /> JManus</h1>
+          <h1><Icon icon="carbon:bot" class="logo-icon" /> Lynxe</h1>
         </div>
         <h2>{{ currentStep === 1 ? $t('init.welcomeStep') : $t('init.welcome') }}</h2>
         <p class="description">

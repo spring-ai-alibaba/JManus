@@ -1,4 +1,4 @@
-# Spring AI Alibaba JManus Developer Quick Start
+# Spring AI Alibaba Lynxe Developer Quick Start
 
 This project is Alibaba's AI plan execution and management system, built with Spring Boot. It supports plan generation, asynchronous execution, status tracking, and configuration management. Below is a guide for developers to quickly debug and understand the core entry points and interfaces.
 

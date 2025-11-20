@@ -63,7 +63,7 @@
 //       let jManusId
 //       if (element.setAttribute) {
 //         jManusId = CURRENT_TIMESTAMP + "-" + index;
-//         element.setAttribute("jmanus-id", jManusId)
+//         element.setAttribute("lynxe-id", lLynxeId)
 //       }
 //       const text = element.innerText
 //       const outerHtml = element.outerHTML

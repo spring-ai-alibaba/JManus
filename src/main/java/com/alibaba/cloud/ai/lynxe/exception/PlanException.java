@@ -18,7 +18,7 @@ package com.alibaba.cloud.ai.lynxe.exception;
 /**
  * @author dahua
  * @time 2025/7/30
- * @desc jmanus execution event exception runtime
+ * @desc lynxe execution event exception runtime
  */
 public class PlanException extends RuntimeException {
 

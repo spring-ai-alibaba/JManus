@@ -15,30 +15,30 @@
  */
 package com.alibaba.cloud.ai.lynxe.event;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Component
-public class JmanusEventPublisher {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
-	private static final Logger logger = LoggerFactory.getLogger(JmanusEventPublisher.class);
+@Component
+public class LynxeEventPublisher {
+
+	private static final Logger logger = LoggerFactory.getLogger(LynxeEventPublisher.class);
 
 	// Listeners cannot be dynamically registered, no need for thread safety
-	private Map<Class<? extends JmanusEvent>, List<JmanusListener<? super JmanusEvent>>> listeners = new HashMap<>();
+	private Map<Class<? extends LynxeEvent>, List<LynxeListener<? super LynxeEvent>>> listeners = new HashMap<>();
 
-	public void publish(JmanusEvent event) {
-		Class<? extends JmanusEvent> eventClass = event.getClass();
-		for (Map.Entry<Class<? extends JmanusEvent>, List<JmanusListener<? super JmanusEvent>>> entry : listeners
+	public void publish(LynxeEvent event) {
+		Class<? extends LynxeEvent> eventClass = event.getClass();
+		for (Map.Entry<Class<? extends LynxeEvent>, List<LynxeListener<? super LynxeEvent>>> entry : listeners
 			.entrySet()) {
 			// Parent classes can also be notified here
 			if (entry.getKey().isAssignableFrom(eventClass)) {
-				for (JmanusListener<? super JmanusEvent> listener : entry.getValue()) {
+				for (LynxeListener<? super LynxeEvent> listener : entry.getValue()) {
 					try {
 						listener.onEvent(event);
 					}
@@ -50,16 +50,17 @@ public class JmanusEventPublisher {
 		}
 	}
 
-	void registerListener(Class<? extends JmanusEvent> eventClass, JmanusListener<? super JmanusEvent> listener) {
-		List<JmanusListener<? super JmanusEvent>> jmanusListeners = listeners.get(eventClass);
-		if (jmanusListeners == null) {
-			List<JmanusListener<? super JmanusEvent>> list = new ArrayList<>();
+	void registerListener(Class<? extends LynxeEvent> eventClass, LynxeListener<? super LynxeEvent> listener) {
+		List<LynxeListener<? super LynxeEvent>> lynxeListeners = listeners.get(eventClass);
+		if (lynxeListeners == null) {
+			List<LynxeListener<? super LynxeEvent>> list = new ArrayList<>();
 			list.add(listener);
 			listeners.put(eventClass, list);
 		}
 		else {
-			jmanusListeners.add(listener);
+			lynxeListeners.add(listener);
 		}
 	}
 
 }
+

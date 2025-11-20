@@ -46,7 +46,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.alibaba.cloud.ai.lynxe.event.JmanusListener;
+import com.alibaba.cloud.ai.lynxe.event.LynxeListener;
 import com.alibaba.cloud.ai.lynxe.event.ModelChangeEvent;
 import com.alibaba.cloud.ai.lynxe.model.entity.DynamicModelEntity;
 import com.alibaba.cloud.ai.lynxe.model.repository.DynamicModelRepository;
@@ -55,7 +55,7 @@ import io.micrometer.observation.ObservationRegistry;
 import reactor.core.publisher.Flux;
 
 @Service
-public class LlmService implements JmanusListener<ModelChangeEvent> {
+public class LlmService implements LynxeListener<ModelChangeEvent> {
 
 	private static final Logger log = LoggerFactory.getLogger(LlmService.class);
 

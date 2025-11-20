@@ -1,7 +1,7 @@
-# JManus UI
+# Lynxe UI
 
 <p align="center">
-  <img src="./public/logo.png" alt="JManus UI Logo" width="200"/>
+  <img src="./public/logo.png" alt="Lynxe UI Logo" width="200"/>
 </p>
 
 <p align="center">
@@ -13,7 +13,7 @@
 
 [English](./README.md) | 中文
 
-[Spring AI Alibaba JManus](../README.md) 的现代化 Web 管理界面。
+[Spring AI Alibaba Lynxe](../README.md) 的现代化 Web 管理界面。
 
 ## 🚀 快速开始
 
@@ -105,7 +105,7 @@ cp -r ui-vue3/ui src/main/resources/static/
 
 详细文档请参考：
 
-- [JManus 文档](../README-zh.md)
+- [Lynxe 文档](../README-zh.md)
 - [API 文档](./docs/api.md)
 - [配置指南](./docs/configuration.md)
 

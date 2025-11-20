@@ -18,8 +18,9 @@ package com.alibaba.cloud.ai.lynxe.event;
 /**
  * @author dahua
  * @time 2025/7/15
- * @desc jmanus event interface
+ * @desc lynxe event interface
  */
-public interface JmanusEvent {
+public interface LynxeEvent {
 
 }
+

@@ -25,7 +25,7 @@ import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.tool.ToolCallback;
 
 import com.alibaba.cloud.ai.lynxe.config.ManusProperties;
-import com.alibaba.cloud.ai.lynxe.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.lynxe.event.LynxeEventPublisher;
 import com.alibaba.cloud.ai.lynxe.llm.ConversationMemoryLimitService;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.llm.StreamingResponseHandler;
@@ -74,12 +74,12 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 			List<String> availableToolKeys, ToolCallingManager toolCallingManager,
 			Map<String, Object> initialAgentSetting, UserInputService userInputService, String modelName,
 			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
-			JmanusEventPublisher jmanusEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
+			LynxeEventPublisher lynxeEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
 			ObjectMapper objectMapper, ParallelToolExecutionService parallelToolExecutionService,
 			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService) {
 		super(llmService, planExecutionRecorder, manusProperties, name, description, nextStepPrompt, availableToolKeys,
 				toolCallingManager, initialAgentSetting, userInputService, modelName, streamingResponseHandler, step,
-				planIdDispatcher, jmanusEventPublisher, agentInterruptionHelper, objectMapper,
+				planIdDispatcher, lynxeEventPublisher, agentInterruptionHelper, objectMapper,
 				parallelToolExecutionService, memoryService, conversationMemoryLimitService);
 	}
 

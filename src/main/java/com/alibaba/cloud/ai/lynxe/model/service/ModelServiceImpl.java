@@ -36,7 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
-import com.alibaba.cloud.ai.lynxe.event.JmanusEventPublisher;
+import com.alibaba.cloud.ai.lynxe.event.LynxeEventPublisher;
 import com.alibaba.cloud.ai.lynxe.event.ModelChangeEvent;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.model.entity.DynamicModelEntity;
@@ -58,7 +58,7 @@ public class ModelServiceImpl implements ModelService {
 	private final DynamicModelRepository repository;
 
 	@Autowired
-	private JmanusEventPublisher publisher;
+	private LynxeEventPublisher publisher;
 
 	@Autowired
 	private LlmService llmService;

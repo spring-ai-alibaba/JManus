@@ -24,31 +24,32 @@ import org.springframework.stereotype.Component;
 /**
  * @author dahua
  * @time 2025/7/15
- * @desc jmanus event listener registration
+ * @desc lynxe event listener registration
  */
 @Component
-public class JmanusListenerRegister implements BeanPostProcessor {
+public class LynxeListenerRegister implements BeanPostProcessor {
 
 	@Autowired
-	private JmanusEventPublisher jmanusEventPublisher;
+	private LynxeEventPublisher lynxeEventPublisher;
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-		if (bean instanceof JmanusListener) {
-			ResolvableType resolvableType = ResolvableType.forClass(bean.getClass()).as(JmanusListener.class);
+		if (bean instanceof LynxeListener) {
+			ResolvableType resolvableType = ResolvableType.forClass(bean.getClass()).as(LynxeListener.class);
 			ResolvableType eventType = resolvableType.getGeneric(0);
 			Class<?> eventClass = eventType.resolve();
-			Class<? extends JmanusEvent> jmanusEventClass;
+			Class<? extends LynxeEvent> lynxeEventClass;
 			try {
-				jmanusEventClass = (Class<? extends JmanusEvent>) eventClass;
+				lynxeEventClass = (Class<? extends LynxeEvent>) eventClass;
 			}
 			catch (Exception e) {
-				throw new IllegalArgumentException("The listener can only listen to JmanusEvent type");
+				throw new IllegalArgumentException("The listener can only listen to LynxeEvent type");
 			}
-			jmanusEventPublisher.registerListener(jmanusEventClass, (JmanusListener) bean);
+			lynxeEventPublisher.registerListener(lynxeEventClass, (LynxeListener) bean);
 		}
 		return bean;
 	}
 
 }
+

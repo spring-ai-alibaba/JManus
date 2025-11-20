@@ -30,7 +30,7 @@ import com.alibaba.cloud.ai.lynxe.runtime.entity.vo.ExecutionContext;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
 
 /**
- * OpenAI Adapter Service Converts OpenAI format requests to JManus execution flow and
+ * OpenAI Adapter Service Converts OpenAI format requests to Lynxe execution flow and
  * formats responses back to OpenAI format
  */
 @Service
@@ -39,7 +39,7 @@ public class OpenAIAdapterService {
 	private static final Logger logger = LoggerFactory.getLogger(OpenAIAdapterService.class);
 
 	// Constants
-	private static final String DEFAULT_MODEL = "jmanus-1.0";
+	private static final String DEFAULT_MODEL = "lynxe-1.0";
 
 	private static final String CHAT_COMPLETION_OBJECT = "chat.completion";
 
@@ -83,7 +83,7 @@ public class OpenAIAdapterService {
 				return createErrorResponse("Failed to prepare execution context");
 			}
 
-			// Execute JManus plan synchronously
+			// Execute Lynxe plan synchronously
 			String result = executePlan(context);
 
 			// Convert result to OpenAI response format
@@ -185,7 +185,7 @@ public class OpenAIAdapterService {
 	}
 
 	/**
-	 * Create execution context for JManus
+	 * Create execution context for Lynxe
 	 */
 	private ExecutionContext createExecutionContext(String title, String planId) {
 		try {
@@ -205,7 +205,7 @@ public class OpenAIAdapterService {
 	}
 
 	/**
-	 * Execute JManus plan synchronously
+	 * Execute Lynxe plan synchronously
 	 */
 	private String executePlan(ExecutionContext context) throws Exception {
 
@@ -252,7 +252,7 @@ public class OpenAIAdapterService {
 		// }
 		// catch (Exception e) {
 		// String planId = context.getCurrentPlanId();
-		// logger.error("JManus execution failed for planId {}: {}", planId,
+		// logger.error("Lynxe execution failed for planId {}: {}", planId,
 		// e.getMessage(), e);
 
 		// // Log additional context for debugging
@@ -530,16 +530,16 @@ public class OpenAIAdapterService {
 		String lowerMessage = userMessage.toLowerCase().trim();
 
 		if (lowerMessage.contains("health") || lowerMessage.equals("ping")) {
-			return "✅ JManus is healthy and ready to assist! All systems operational.";
+			return "✅ Lynxe is healthy and ready to assist! All systems operational.";
 		}
 		else if (lowerMessage.equals("hi") || lowerMessage.equals("hello")) {
-			return "👋 Hello! I'm JManus, your AI assistant. I'm ready to help you with tasks, planning, and more. How can I assist you today?";
+			return "👋 Hello! I'm Lynxe, your AI assistant. I'm ready to help you with tasks, planning, and more. How can I assist you today?";
 		}
 		else if (lowerMessage.equals("test")) {
-			return "✅ Test successful! JManus is working properly and ready for complex tasks.";
+			return "✅ Test successful! Lynxe is working properly and ready for complex tasks.";
 		}
 		else {
-			return "👋 Hello! I'm JManus, your intelligent assistant. I can help you with various tasks including planning, analysis, and problem-solving. What would you like to work on?";
+			return "👋 Hello! I'm Lynxe, your intelligent assistant. I can help you with various tasks including planning, analysis, and problem-solving. What would you like to work on?";
 		}
 	}
 

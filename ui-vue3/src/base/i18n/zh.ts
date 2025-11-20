@@ -24,8 +24,8 @@ const words: I18nType = {
 
   // 初始化页面
   init: {
-    welcome: '欢迎使用 JManus',
-    welcomeStep: '欢迎使用 JManus',
+    welcome: '欢迎使用 Lynxe',
+    welcomeStep: '欢迎使用 Lynxe',
     description:
       '首次使用需要配置 LLM 服务来启用 AI 功能。您可以选择使用阿里云百炼服务或自定义 OpenAI 兼容的 API 服务。',
     languageStepDescription: '请选择您的语言偏好，这将作为默认界面语言。',
@@ -644,8 +644,8 @@ const words: I18nType = {
 
   // 聊天组件
   chat: {
-    botName: 'JManus:',
-    thinkingLabel: 'JManus 思考/处理',
+    botName: 'Lynxe:',
+    thinkingLabel: 'Lynxe 思考/处理',
     processing: '处理中...',
     step: '步骤',
     stepNumber: '步骤 {number}',
@@ -713,7 +713,7 @@ const words: I18nType = {
 
   // 输入组件
   input: {
-    placeholder: '向 JManus 发送消息',
+    placeholder: '向 Lynxe 发送消息',
     send: '发送',
     stop: '停止',
     planMode: 'Func-Agent模式',
@@ -1048,7 +1048,7 @@ const words: I18nType = {
 
   // 首页
   home: {
-    welcomeTitle: '欢迎使用 JManus！',
+    welcomeTitle: '欢迎使用 Lynxe！',
     welcomeSubtitle: '您的 Java AI 智能助手，帮助您构建和完成各种任务。',
     tagline: 'Java AI 智能体',
     inputPlaceholder: '描述您想构建或完成的内容...',
@@ -1200,8 +1200,8 @@ const words: I18nType = {
     templateHelpText: '选择后，定时任务将按照制定好的计划执行',
     createTask: '创建定时任务',
     selectCreateMethod: '请选择创建方式',
-    createWithJmanus: '让Jmanus帮忙创建',
-    createWithJmanusDesc: '通过AI助手引导创建定时任务',
+    createWithLynxe: '让Lynxe帮忙创建',
+    createWithLynxeDesc: '通过AI助手引导创建定时任务',
     createManually: '手动创建',
     createManuallyDesc: '自己填写定时任务信息',
   },

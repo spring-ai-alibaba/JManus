@@ -82,7 +82,7 @@ echo -e "${CYAN}  ├─${RESET} JVM Options  : ${GREEN}${JAVA_OPTS}${RESET}"
 echo -e "${CYAN}  └─${RESET} Working Dir  : ${GREEN}/app/extracted${RESET}"
 echo ""
 echo -e "${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${YELLOW}${BOLD}⏳ Launching JManus...${RESET}"
+echo -e "${YELLOW}${BOLD}⏳ Launching Lynxe...${RESET}"
 echo -e "${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo ""
 

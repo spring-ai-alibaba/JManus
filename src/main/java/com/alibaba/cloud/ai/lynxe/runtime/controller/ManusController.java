@@ -40,7 +40,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.cloud.ai.lynxe.config.IManusProperties;
-import com.alibaba.cloud.ai.lynxe.event.JmanusListener;
+import com.alibaba.cloud.ai.lynxe.event.LynxeListener;
 import com.alibaba.cloud.ai.lynxe.event.PlanExceptionClearedEvent;
 import com.alibaba.cloud.ai.lynxe.event.PlanExceptionEvent;
 import com.alibaba.cloud.ai.lynxe.exception.PlanException;
@@ -75,7 +75,7 @@ import com.google.common.cache.CacheBuilder;
 
 @RestController
 @RequestMapping("/api/executor")
-public class ManusController implements JmanusListener<PlanExceptionEvent> {
+public class ManusController implements LynxeListener<PlanExceptionEvent> {
 
 	private static final Logger logger = LoggerFactory.getLogger(ManusController.class);
 

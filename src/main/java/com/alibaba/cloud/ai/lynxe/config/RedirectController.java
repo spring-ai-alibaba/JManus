@@ -23,7 +23,7 @@ import com.alibaba.cloud.ai.lynxe.config.startUp.AppStartupListener;
 /**
  * @author dahua
  * @time 2025/7/31
- * @desc jmanus homepage redirect controller
+ * @desc lynxe homepage redirect controller
  */
 @Controller
 public class RedirectController {
