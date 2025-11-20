@@ -125,10 +125,19 @@
         </dependency>
         
         <!-- MacOS DNS resolver for better DNS resolution on MacOS -->
+        <!-- Optional: improves DNS resolution performance on macOS, but not required -->
+        <!-- The application will fallback to system defaults if native library fails to load -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <classifier>osx-aarch_64</classifier>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-resolver-dns-native-macos</artifactId>
             <classifier>osx-x86_64</classifier>
+            <optional>true</optional>
         </dependency>
         
         <!-- Spring WebFlux -->

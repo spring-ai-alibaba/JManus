@@ -31,6 +31,7 @@
             class="form-input"
             :class="{ error: titleError }"
             :placeholder="$t('sidebar.titlePlaceholder')"
+            @input="handleTitleInput"
           />
           <!-- Inline validation message for title -->
           <div v-if="titleError" class="field-error-message">
@@ -46,7 +47,7 @@
             <input
               type="text"
               v-model="serviceGroup"
-              @input="handleServiceGroupInput"
+              @input="handleServiceGroupInputWithEditing"
               @focus="showGroupSuggestions = true"
               @blur="handleServiceGroupBlur"
               :placeholder="$t('mcpService.serviceGroupPlaceholder')"
@@ -81,14 +82,7 @@
                 <label class="form-label">{{ $t('sidebar.stepRequirement') }}</label>
                 <textarea
                   :value="step.stepRequirement || ''"
-                  @input="
-                    e => {
-                      step.stepRequirement = (e.target as HTMLTextAreaElement).value
-                      autoResizeTextarea(e)
-                      // Only update displayData, don't sync to templateConfig or trigger any watchers
-                      // Sync will happen on save via syncDisplayDataToTemplateConfig()
-                    }
-                  "
+                  @input="e => handleStepRequirementInput(e, index)"
                   class="form-textarea auto-resize"
                   :placeholder="$t('sidebar.stepRequirementPlaceholder')"
                   rows="4"
@@ -101,14 +95,7 @@
 
                 <textarea
                   :value="step.terminateColumns || ''"
-                  @input="
-                    e => {
-                      step.terminateColumns = (e.target as HTMLTextAreaElement).value
-                      autoResizeTextarea(e)
-                      // Only update displayData, don't sync to templateConfig or trigger any watchers
-                      // Sync will happen on save via syncDisplayDataToTemplateConfig()
-                    }
-                  "
+                  @input="e => handleTerminateColumnsInput(e, index)"
                   class="form-textarea auto-resize"
                   :placeholder="$t('sidebar.terminateColumnsPlaceholder')"
                   rows="4"
@@ -446,8 +433,31 @@ const generatedJsonOutput = computed(() => {
 // Flag to track if we're syncing from config (to avoid setting modification flag during load)
 const isSyncingFromConfig = ref(false)
 
+// Flag to track if user is actively editing (typing in fields)
+const isUserEditing = ref(false)
+
+// Timeout for resetting editing flag (debounce)
+let editingTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Helper to set editing flag with debounce
+const setEditingFlag = () => {
+  isUserEditing.value = true
+  if (editingTimeout) {
+    clearTimeout(editingTimeout)
+  }
+  editingTimeout = setTimeout(() => {
+    isUserEditing.value = false
+    editingTimeout = null
+  }, 500)
+}
+
 // Sync displayData with templateConfig
 const syncDisplayDataFromConfig = () => {
+  // Don't sync if user is actively editing to prevent losing unsaved changes
+  if (isUserEditing.value) {
+    return
+  }
+
   isSyncingFromConfig.value = true
   try {
     const config = templateConfig.getConfig()
@@ -458,7 +468,8 @@ const syncDisplayDataFromConfig = () => {
     if (config.title?.trim() || !displayData.title?.trim()) {
       displayData.title = config.title || ''
     }
-    displayData.steps = config.steps || []
+    // Deep copy steps to avoid reference issues
+    displayData.steps = (config.steps || []).map(step => ({ ...step }))
     // Sync service group
     serviceGroup.value = config.serviceGroup || ''
   } finally {
@@ -524,6 +535,12 @@ const closeJsonPreview = () => {
 // Action handlers (moved from json-editor-logic.ts to usePlanTemplateConfig)
 const handleRollback = () => {
   try {
+    // Clear editing flag and timeout to allow sync
+    if (editingTimeout) {
+      clearTimeout(editingTimeout)
+      editingTimeout = null
+    }
+    isUserEditing.value = false
     templateConfig.rollbackVersion()
   } catch (error) {
     console.error('Error during rollback operation:', error)
@@ -533,6 +550,12 @@ const handleRollback = () => {
 
 const handleRestore = () => {
   try {
+    // Clear editing flag and timeout to allow sync
+    if (editingTimeout) {
+      clearTimeout(editingTimeout)
+      editingTimeout = null
+    }
+    isUserEditing.value = false
     templateConfig.restoreVersion()
   } catch (error) {
     console.error('Error during restore operation:', error)
@@ -546,6 +569,13 @@ const handleSave = async () => {
       toast.error(t('sidebar.selectPlanFirst'))
       return
     }
+
+    // Clear editing flag and timeout before saving to ensure proper sync
+    if (editingTimeout) {
+      clearTimeout(editingTimeout)
+      editingTimeout = null
+    }
+    isUserEditing.value = false
 
     // Sync displayData to templateConfig before validation and save
     // This ensures all user input is synchronized before saving
@@ -598,6 +628,30 @@ const handleSave = async () => {
 
 // Error state
 const titleError = ref<string>('')
+
+// Handle step requirement input
+const handleStepRequirementInput = (e: Event, stepIndex: number) => {
+  setEditingFlag()
+  const step = displayData.steps[stepIndex]
+  if (step) {
+    step.stepRequirement = (e.target as HTMLTextAreaElement).value
+  }
+  autoResizeTextarea(e)
+  // Only update displayData, don't sync to templateConfig or trigger any watchers
+  // Sync will happen on save via syncDisplayDataToTemplateConfig()
+}
+
+// Handle terminate columns input
+const handleTerminateColumnsInput = (e: Event, stepIndex: number) => {
+  setEditingFlag()
+  const step = displayData.steps[stepIndex]
+  if (step) {
+    step.terminateColumns = (e.target as HTMLTextAreaElement).value
+  }
+  autoResizeTextarea(e)
+  // Only update displayData, don't sync to templateConfig or trigger any watchers
+  // Sync will happen on save via syncDisplayDataToTemplateConfig()
+}
 
 // Add step handler
 const handleAddStep = () => {
@@ -702,6 +756,7 @@ const toggleModelDropdown = (stepIndex: number) => {
 }
 
 const selectModelForStep = (modelName: string, stepIndex: number) => {
+  setEditingFlag()
   const step = displayData.steps[stepIndex]
   step.modelName = modelName
   setSearchFilter(stepIndex, modelName)
@@ -710,6 +765,7 @@ const selectModelForStep = (modelName: string, stepIndex: number) => {
 
 // Handle search input
 const handleModelSearchInput = (event: Event, stepIndex: number) => {
+  setEditingFlag()
   const target = event.target as HTMLInputElement
   setSearchFilter(stepIndex, target.value)
   openModelDropdown(stepIndex)
@@ -826,6 +882,11 @@ const showToolSelectionModal = (stepIndex: number) => {
 }
 
 const handleToolSelectionConfirm = (selectedToolIds: string[]) => {
+  console.log('[JsonEditorV2] 🔧 handleToolSelectionConfirm called:', { 
+    stepIndex: currentStepIndex.value, 
+    toolCount: selectedToolIds.length 
+  })
+  setEditingFlag()
   if (currentStepIndex.value >= 0 && currentStepIndex.value < displayData.steps.length) {
     // Update the specific step's selected tool keys
     displayData.steps[currentStepIndex.value].selectedToolKeys = [...selectedToolIds]
@@ -835,6 +896,7 @@ const handleToolSelectionConfirm = (selectedToolIds: string[]) => {
 }
 
 const handleToolsFiltered = (stepIndex: number, filteredTools: string[]) => {
+  setEditingFlag()
   if (stepIndex >= 0 && stepIndex < displayData.steps.length) {
     // Update the step's selected tool keys with filtered tools
     displayData.steps[stepIndex].selectedToolKeys = [...filteredTools]
@@ -959,8 +1021,9 @@ watch(
   () => templateConfig.config,
   () => {
     // Don't sync if we're already syncing (prevents circular updates)
+    // Don't sync if user is actively editing (prevents losing user input)
     // Also check isUserUpdating flag from composable (for updates from other components)
-    if (!isSyncingFromConfig.value && !templateConfig.isUserUpdating.value) {
+    if (!isSyncingFromConfig.value && !templateConfig.isUserUpdating.value && !isUserEditing.value) {
       syncDisplayDataFromConfig()
     }
   },
@@ -1044,9 +1107,22 @@ const filteredServiceGroups = computed(() => {
   return availableServiceGroups.value.filter(group => group.toLowerCase().includes(query))
 })
 
+// Handle title input
+const handleTitleInput = () => {
+  console.log('[JsonEditorV2] 📝 handleTitleInput called')
+  setEditingFlag()
+}
+
 // Handle service group input
 const handleServiceGroupInput = () => {
   showGroupSuggestions.value = true
+}
+
+// Handle service group input with editing flag
+const handleServiceGroupInputWithEditing = () => {
+  console.log('[JsonEditorV2] 📝 handleServiceGroupInputWithEditing called')
+  setEditingFlag()
+  handleServiceGroupInput()
 }
 
 // Handle service group blur
@@ -1082,6 +1158,12 @@ onMounted(() => {
 onUnmounted(() => {
   // Remove click outside listener
   document.removeEventListener('click', handleClickOutside)
+  
+  // Clean up editing timeout
+  if (editingTimeout) {
+    clearTimeout(editingTimeout)
+    editingTimeout = null
+  }
 })
 
 // Expose save method for parent component to call

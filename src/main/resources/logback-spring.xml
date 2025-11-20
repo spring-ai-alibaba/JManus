@@ -168,9 +168,13 @@
 
     <!-- Block logs from specific classes -->
     <logger name="org.docx4j.convert.in.xhtml.XHTMLImporterImp" level="OFF" additivity="false"/>
+    
+    <!-- Suppress netty DNS native library warning - fallback to system defaults works fine -->
+    <logger name="io.netty.resolver.dns.DnsServerAddressStreamProviders" level="INFO" additivity="false"/>
 
     <!-- Root logger, all log appenders must be included in root/logger, otherwise they won't work -->
-    <root level="INFO">
+    <!-- Root level is set to DEBUG to allow DEBUG logs from application.yml to be processed -->
+    <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="DEBUG"/>
         <appender-ref ref="INFO"/>
