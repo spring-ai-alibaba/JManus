@@ -82,7 +82,7 @@ public class PlanFinalizer {
 				context.getPlan().getPlanExecutionStateStringFormat(false), "title", context.getTitle());
 
 		String summaryPrompt = """
-				You are jmanus, an AI assistant capable of responding to user requests. You need to respond to the user's request based on the execution results of this step-by-step execution plan.
+				You are lynxe, an AI assistant capable of responding to user requests. You need to respond to the user's request based on the execution results of this step-by-step execution plan.
 
 
 				Step-by-step plan execution details:

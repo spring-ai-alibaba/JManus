@@ -60,15 +60,15 @@
 //         continue
 //       }
 //       const index = ID.count++
-//       let jManusId
+//       let lynxeId
 //       if (element.setAttribute) {
-//         jManusId = CURRENT_TIMESTAMP + "-" + index;
+//         lynxeId = CURRENT_TIMESTAMP + "-" + index;
 //         element.setAttribute("lynxe-id", lLynxeId)
 //       }
 //       const text = element.innerText
 //       const outerHtml = element.outerHTML
 //       const xpath = getXPathTree(element)
-//       RES.push({tagName, text, outerHtml, index, xpath, jManusId})
+//       RES.push({tagName, text, outerHtml, index, xpath, lynxeId})
 //     }
 //     return RES
 //   }

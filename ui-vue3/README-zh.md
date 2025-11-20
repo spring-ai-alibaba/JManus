@@ -76,7 +76,7 @@ pnpm -v
 # git clone https://github.com/spring-ai-alibaba/spring-ai-alibaba.git
 
 # 进入 UI 目录
-# cd spring-ai-alibaba-jmanus/ui-vue3
+# cd ui-vue3
 
 # 使用 pnpm 安装依赖
 pnpm install
@@ -92,7 +92,7 @@ pnpm run dev
 pnpm run build
 
 然后复制build后的文件到 resources目录（有可能需要先删除老的所有文件）
-例如 mac下，在spring-ai-alibaba-jmanus 下运行：
+例如 mac下，在spring-ai-alibaba-lynxe 下运行：
 
 cp -r ui-vue3/ui src/main/resources/static/
 

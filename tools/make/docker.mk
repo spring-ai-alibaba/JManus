@@ -18,8 +18,8 @@
 
 DOCKER_REGISTRY := ghcr.io
 DOCKER_ORG := spring-ai-alibaba
-DOCKER_IMAGE_NAME := jmanus
-DOCKER_CONTAINER_NAME := jmanus-container
+DOCKER_IMAGE_NAME := lynxe
+DOCKER_CONTAINER_NAME := lynxe-container
 
 # Build the Docker image
 .PHONY: docker-build
@@ -32,7 +32,7 @@ docker-build: ## Build Docker image
 docker-build-run: ## Build and run Docker container
 docker-build-run: docker-build docker-run
 
-# Run default image (ghcr.io/spring-ai-aliabba/jmanus:latest)
+# Run default image (ghcr.io/spring-ai-aliabba/lynxe:latest)
 .PHONY: docker-run
 docker-run: ## Run Docker container
 	@$(LOG_TARGET)

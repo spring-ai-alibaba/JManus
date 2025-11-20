@@ -76,7 +76,7 @@ pnpm -v
 # git clone https://github.com/spring-ai-alibaba/spring-ai-alibaba.git
 
 # Navigate to UI directory
-# cd spring-ai-alibaba-jmanus/ui-vue3
+# cd ui-vue3
 
 # Install dependencies
 pnpm install
