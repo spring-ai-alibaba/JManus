@@ -451,7 +451,13 @@ const syncDisplayDataFromConfig = () => {
   isSyncingFromConfig.value = true
   try {
     const config = templateConfig.getConfig()
-    displayData.title = config.title || ''
+    // Only update title if:
+    // 1. config.title has a value (not empty), OR
+    // 2. displayData.title is empty (user hasn't started typing)
+    // This prevents resetting the title input when user is typing
+    if (config.title?.trim() || !displayData.title?.trim()) {
+      displayData.title = config.title || ''
+    }
     displayData.steps = config.steps || []
     // Sync service group
     serviceGroup.value = config.serviceGroup || ''

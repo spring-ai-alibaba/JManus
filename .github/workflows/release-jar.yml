@@ -1,0 +1,96 @@
+#
+# Copyright 2024-2025 the original author or authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+name: 📦 Release JAR
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., 4.7.3)"
+        required: true
+        default: "latest"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload-jar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: ./tools/github-actions/setup-deps
+
+      - name: Install tools
+        run: make tools
+
+      - name: Build UI
+        run: make ui-build
+
+      - name: Build JAR
+        run: mvn clean package -DskipTests
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            # Remove 'v' prefix if present
+            VERSION=${VERSION#v}
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "BUILD_VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Building JAR version: $VERSION"
+
+      - name: Rename JAR with version
+        run: |
+          if [ -f target/jmanus.jar ]; then
+            cp target/jmanus.jar "target/jmanus-${BUILD_VERSION}.jar"
+            echo "✅ JAR renamed to jmanus-${BUILD_VERSION}.jar"
+          else
+            echo "❌ Error: target/jmanus.jar not found"
+            exit 1
+          fi
+        env:
+          BUILD_VERSION: ${{ steps.version.outputs.BUILD_VERSION }}
+
+      - name: Upload JAR to Release
+        if: github.event_name == 'release'
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: |
+            target/jmanus.jar
+            target/jmanus-${{ steps.version.outputs.BUILD_VERSION }}.jar
+          tag: ${{ github.event.release.tag_name }}
+          allowUpdates: true
+          makeLatest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release summary
+        run: |
+          echo "🎉 JAR file released successfully!"
+          echo "📦 Version: ${{ steps.version.outputs.BUILD_VERSION }}"
+          echo "📁 Files:"
+          echo "  - target/jmanus.jar"
+          echo "  - target/jmanus-${{ steps.version.outputs.BUILD_VERSION }}.jar"
+          ls -lh target/jmanus*.jar
+

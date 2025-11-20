@@ -354,17 +354,26 @@ onMounted(() => {
   loadHistory()
 
   // Watch for plan completion to reset session (reactive approach)
+  // Only reset when ALL plans are completed, not when any single plan completes
   watch(
     () => planExecution.planExecutionRecords,
     records => {
-      // Check if any tracked plan is completed
-      for (const planDetails of records.values()) {
-        if (planDetails.completed) {
-          console.log('[InputArea] Plan completed, resetting session')
-          resetSession()
-          // Only reset once per completion
-          break
-        }
+      // Check if ALL tracked plans are completed
+      const recordsArray = Array.from(records.entries())
+      if (recordsArray.length === 0) {
+        return // No plans to check
+      }
+
+      // Check if there are any running plans
+      const hasRunningPlans = recordsArray.some(
+        ([, planDetails]) =>
+          planDetails && !planDetails.completed && planDetails.status !== 'failed'
+      )
+
+      // Only reset session when ALL plans are completed
+      if (!hasRunningPlans) {
+        console.log('[InputArea] All plans completed, resetting session')
+        resetSession()
       }
     },
     { deep: true }
