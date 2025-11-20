@@ -882,10 +882,6 @@ const showToolSelectionModal = (stepIndex: number) => {
 }
 
 const handleToolSelectionConfirm = (selectedToolIds: string[]) => {
-  console.log('[JsonEditorV2] 🔧 handleToolSelectionConfirm called:', { 
-    stepIndex: currentStepIndex.value, 
-    toolCount: selectedToolIds.length 
-  })
   setEditingFlag()
   if (currentStepIndex.value >= 0 && currentStepIndex.value < displayData.steps.length) {
     // Update the specific step's selected tool keys
@@ -1109,7 +1105,6 @@ const filteredServiceGroups = computed(() => {
 
 // Handle title input
 const handleTitleInput = () => {
-  console.log('[JsonEditorV2] 📝 handleTitleInput called')
   setEditingFlag()
 }
 
@@ -1120,7 +1115,6 @@ const handleServiceGroupInput = () => {
 
 // Handle service group input with editing flag
 const handleServiceGroupInputWithEditing = () => {
-  console.log('[JsonEditorV2] 📝 handleServiceGroupInputWithEditing called')
   setEditingFlag()
   handleServiceGroupInput()
 }
