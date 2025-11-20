@@ -205,7 +205,9 @@ public class McpConnectionFactory {
 	}
 
 	/**
-	 * Clean up MCP client resources
+	 * Clean up MCP client resources. Uses graceful shutdown first, then falls back to
+	 * force close. This is especially important for STDIO transport to allow child
+	 * processes to terminate cleanly.
 	 * @param mcpAsyncClient Client to clean up
 	 * @param mcpServerName Server name for logging
 	 */
@@ -213,7 +215,17 @@ public class McpConnectionFactory {
 		if (mcpAsyncClient != null) {
 			try {
 				logger.debug("Cleaning up MCP client for server: {}", mcpServerName);
-				mcpAsyncClient.close();
+				// Try graceful shutdown first (important for STDIO processes)
+				try {
+					mcpAsyncClient.closeGracefully().timeout(java.time.Duration.ofSeconds(3)).block();
+					// Wait a bit for process cleanup (especially for STDIO)
+					Thread.sleep(100);
+				}
+				catch (Exception gracefulEx) {
+					logger.debug("Graceful shutdown failed for server: {}, forcing close: {}", mcpServerName,
+							gracefulEx.getMessage());
+					mcpAsyncClient.close();
+				}
 			}
 			catch (Exception closeEx) {
 				logger.debug("Failed to close MCP client during cleanup for server: {}: {}", mcpServerName,

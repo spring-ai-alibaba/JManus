@@ -131,7 +131,8 @@ public class McpTransportBuilder {
 	}
 
 	/**
-	 * Build STUDIO transport
+	 * Build STUDIO transport (STDIO). Sets up error handler for server stderr output to
+	 * improve debugging and monitoring.
 	 * @param serverConfig Server configuration
 	 * @param serverName Server name
 	 * @return STUDIO transport
@@ -161,7 +162,27 @@ public class McpTransportBuilder {
 
 		ServerParameters serverParameters = builder.build();
 		JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(objectMapper);
-		return new StdioClientTransport(serverParameters, jsonMapper);
+		StdioClientTransport transport = new StdioClientTransport(serverParameters, jsonMapper);
+
+		// Set up error handler for server stderr output
+		// This helps with debugging and monitoring server errors
+		transport.setStdErrorHandler(error -> {
+			if (error != null && !error.trim().isEmpty()) {
+				// Log server stderr output for debugging
+				// Filter out common non-error messages if needed
+				if (error.contains("ERROR") || error.contains("FATAL") || error.contains("Exception")) {
+					logger.error("MCP server stderr [{}]: {}", serverName, error);
+				}
+				else if (error.contains("WARN") || error.contains("WARNING")) {
+					logger.warn("MCP server stderr [{}]: {}", serverName, error);
+				}
+				else {
+					logger.debug("MCP server stderr [{}]: {}", serverName, error);
+				}
+			}
+		});
+
+		return transport;
 	}
 
 	/**

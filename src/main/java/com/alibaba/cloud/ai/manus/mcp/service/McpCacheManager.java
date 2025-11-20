@@ -114,7 +114,7 @@ public class McpCacheManager {
 	/**
 	 * Double cache wrapper - implements seamless updates
 	 */
-	private static class DoubleCacheWrapper {
+	private class DoubleCacheWrapper {
 
 		private volatile Map<String, McpServiceEntity> activeCache = new ConcurrentHashMap<>();
 
@@ -123,10 +123,13 @@ public class McpCacheManager {
 		private final Object switchLock = new Object();
 
 		/**
-		 * Atomically switch cache
+		 * Atomically switch cache and close old clients to prevent resource leaks
 		 */
 		public void switchCache() {
 			synchronized (switchLock) {
+				// Close all clients in the old active cache before switching
+				closeAllClients(activeCache);
+
 				Map<String, McpServiceEntity> temp = activeCache;
 				activeCache = backgroundCache;
 				backgroundCache = temp;
@@ -141,9 +144,18 @@ public class McpCacheManager {
 		}
 
 		/**
+		 * Get background cache (for cleanup purposes)
+		 */
+		public Map<String, McpServiceEntity> getBackgroundCache() {
+			return backgroundCache;
+		}
+
+		/**
 		 * Update background cache
 		 */
 		public void updateBackgroundCache(Map<String, McpServiceEntity> newCache) {
+			// Close old background cache clients before replacing
+			closeAllClients(backgroundCache);
 			backgroundCache = new ConcurrentHashMap<>(newCache);
 		}
 
@@ -157,6 +169,28 @@ public class McpCacheManager {
 
 	// Double cache wrapper
 	private final DoubleCacheWrapper doubleCache = new DoubleCacheWrapper();
+
+	/**
+	 * Close all MCP clients in a cache map to prevent resource leaks. This method handles
+	 * all transport types (SSE, STDIO, STREAMING) and ensures proper cleanup of:
+	 * <ul>
+	 * <li>SSE: HttpClient instances and SelectorManager threads</li>
+	 * <li>STDIO: Child processes and their resources</li>
+	 * <li>STREAMING: HTTP connections and streams</li>
+	 * </ul>
+	 */
+	private void closeAllClients(Map<String, McpServiceEntity> cache) {
+		if (cache == null || cache.isEmpty()) {
+			return;
+		}
+
+		for (Map.Entry<String, McpServiceEntity> entry : cache.entrySet()) {
+			McpServiceEntity serviceEntity = entry.getValue();
+			if (serviceEntity != null && serviceEntity.getMcpAsyncClient() != null) {
+				closeClientSafely(serviceEntity, entry.getKey());
+			}
+		}
+	}
 
 	// Thread pool management
 	private final AtomicReference<ExecutorService> connectionExecutorRef = new AtomicReference<>();
@@ -227,7 +261,8 @@ public class McpCacheManager {
 	}
 
 	/**
-	 * Scheduled cache update task
+	 * Scheduled cache update task. Closes old clients before creating new ones to prevent
+	 * resource leaks (HttpClient SelectorManager threads).
 	 */
 	private void updateCacheTask() {
 		try {
@@ -237,15 +272,20 @@ public class McpCacheManager {
 			List<McpConfigEntity> configs = mcpConfigRepository.findByStatus(McpConfigStatus.ENABLE);
 
 			// Build new data in background cache
+			// Note: This creates new McpAsyncClient instances with new HttpClient
+			// connections
 			Map<String, McpServiceEntity> newCache = loadMcpServices(configs);
 
-			// Update background cache
+			// Update background cache (this will close old background cache clients)
 			doubleCache.updateBackgroundCache(newCache);
 
-			// Atomically switch cache
+			// Atomically switch cache (this will close old active cache clients)
+			// Old clients are closed before switching to prevent resource leaks
 			doubleCache.switchCache();
 
-			logger.info("Cache updated successfully via scheduled task, services count: {}", newCache.size());
+			logger.info(
+					"Cache updated successfully via scheduled task, services count: {}. Old clients have been closed.",
+					newCache.size());
 
 		}
 		catch (Exception e) {
@@ -509,7 +549,8 @@ public class McpCacheManager {
 	}
 
 	/**
-	 * Manually trigger cache reload
+	 * Manually trigger cache reload. Closes old clients before creating new ones to
+	 * prevent resource leaks.
 	 */
 	public void triggerCacheReload() {
 		try {
@@ -519,15 +560,19 @@ public class McpCacheManager {
 			List<McpConfigEntity> configs = mcpConfigRepository.findByStatus(McpConfigStatus.ENABLE);
 
 			// Build new data in background cache
+			// Note: This creates new McpAsyncClient instances with new HttpClient
+			// connections
 			Map<String, McpServiceEntity> newCache = loadMcpServices(configs);
 
-			// Update background cache
+			// Update background cache (this will close old background cache clients)
 			doubleCache.updateBackgroundCache(newCache);
 
-			// Atomically switch cache
+			// Atomically switch cache (this will close old active cache clients)
+			// Old clients are closed before switching to prevent resource leaks
 			doubleCache.switchCache();
 
-			logger.info("Manual cache reload completed, services count: {}", newCache.size());
+			logger.info("Manual cache reload completed, services count: {}. Old clients have been closed.",
+					newCache.size());
 
 		}
 		catch (Exception e) {
@@ -601,7 +646,8 @@ public class McpCacheManager {
 	}
 
 	/**
-	 * Close resources (called when application shuts down)
+	 * Close resources (called when application shuts down). Closes all MCP clients from
+	 * both active and background caches to prevent resource leaks.
 	 */
 	@PreDestroy
 	public void shutdown() {
@@ -632,18 +678,115 @@ public class McpCacheManager {
 			shutdownExecutor(executor);
 		}
 
-		// Close all MCP client connections
+		// Close all MCP client connections from both active and background caches
+		// This ensures all resources are properly closed:
+		// - SSE: HttpClient instances and SelectorManager threads
+		// - STDIO: Child processes and their resources
+		// - STREAMING: HTTP connections and streams
 		Map<String, McpServiceEntity> activeCache = doubleCache.getActiveCache();
-		for (McpServiceEntity serviceEntity : activeCache.values()) {
-			try {
-				serviceEntity.getMcpAsyncClient().close();
-			}
-			catch (Throwable t) {
-				logger.error("Failed to close MCP client", t);
+		Map<String, McpServiceEntity> backgroundCache = doubleCache.getBackgroundCache();
+
+		int closedCount = 0;
+
+		// Close active cache clients
+		for (Map.Entry<String, McpServiceEntity> entry : activeCache.entrySet()) {
+			if (closeClientSafely(entry.getValue(), entry.getKey())) {
+				closedCount++;
 			}
 		}
 
-		logger.info("MCP cache manager shutdown completed");
+		// Close background cache clients
+		for (Map.Entry<String, McpServiceEntity> entry : backgroundCache.entrySet()) {
+			if (closeClientSafely(entry.getValue(), entry.getKey())) {
+				closedCount++;
+			}
+		}
+
+		logger.info("MCP cache manager shutdown completed. Closed {} MCP clients (including STDIO processes).",
+				closedCount);
+	}
+
+	/**
+	 * Safely close a single MCP client. This method handles all transport types:
+	 * <ul>
+	 * <li>SSE: Closes HttpClient and releases SelectorManager threads</li>
+	 * <li>STDIO: Closes child process gracefully and releases process resources</li>
+	 * <li>STREAMING: Closes HTTP connections and streams</li>
+	 * </ul>
+	 * For STDIO transport, this method uses graceful shutdown to allow the child process
+	 * to terminate cleanly. The underlying transport (including STDIO child processes) is
+	 * automatically closed when the client is closed.
+	 * @param serviceEntity Service entity containing the client
+	 * @param serverName Server name for logging (can be null, will use serviceGroup)
+	 * @return true if client was closed successfully, false otherwise
+	 */
+	private boolean closeClientSafely(McpServiceEntity serviceEntity, String serverName) {
+		if (serviceEntity == null) {
+			return false;
+		}
+
+		io.modelcontextprotocol.client.McpAsyncClient client = serviceEntity.getMcpAsyncClient();
+		if (client == null) {
+			return false;
+		}
+
+		String logName = serverName != null ? serverName : serviceEntity.getServiceGroup();
+
+		try {
+			logger.debug("Closing MCP client for server: {} (this will close transport and any child processes)",
+					logName);
+
+			// Step 1: Try graceful shutdown first (especially important for STDIO
+			// processes)
+			// For async client, closeGracefully() returns a Mono<Void>
+			try {
+				client.closeGracefully()
+					.timeout(java.time.Duration.ofSeconds(5))
+					.doOnSuccess(v -> logger.debug("MCP client closed gracefully for server: {}", logName))
+					.doOnError(e -> logger.warn("Error during graceful close for server: {}, will force close", logName,
+							e))
+					.block(); // Block to wait for graceful shutdown
+
+				// Step 2: Additional wait for STDIO process cleanup
+				// The process.destroy() in closeGracefully() sends TERM signal
+				// but process might need a moment to clean up
+				Thread.sleep(200);
+
+				logger.debug("Successfully closed MCP client for server: {}", logName);
+				return true;
+			}
+			catch (Exception gracefulEx) {
+				logger.warn("Graceful shutdown failed or timed out for server: {}, forcing close", logName, gracefulEx);
+				// Step 3: Fallback to force close
+				client.close();
+				// Still wait a bit for cleanup
+				Thread.sleep(100);
+				return true;
+			}
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			logger.warn("Interrupted during client shutdown for server: {}, forcing close", logName);
+			try {
+				client.close();
+			}
+			catch (Exception ex) {
+				logger.error("Error during force close after interruption for server: {}", logName, ex);
+			}
+			return false;
+		}
+		catch (Exception e) {
+			logger.warn("Error closing MCP client for server: {} (transport and processes may not be fully cleaned up)",
+					logName, e);
+			// Last resort: try force close
+			try {
+				client.close();
+			}
+			catch (Exception ex) {
+				logger.error("Error during final force close for server: {}", logName, ex);
+			}
+			return false;
+		}
 	}
 
 	private String formatTime(long time) {
