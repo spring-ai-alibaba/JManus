@@ -268,6 +268,9 @@ export function usePlanTemplateConfig() {
       const loadedConfig = await PlanTemplateApiService.getPlanTemplateConfigVO(planTemplateId)
       setConfig(loadedConfig)
 
+      // Update currentPlanTemplateId to ensure watchers can detect the change
+      currentPlanTemplateId.value = planTemplateId
+
       // Load versions for version control
       try {
         const versionsResponse = await PlanActApiService.getPlanVersions(planTemplateId)
