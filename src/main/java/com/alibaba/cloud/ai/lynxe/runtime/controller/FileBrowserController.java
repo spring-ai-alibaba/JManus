@@ -15,6 +15,14 @@
  */
 package com.alibaba.cloud.ai.lynxe.runtime.controller;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,17 +31,14 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/file-browser")
@@ -256,6 +261,12 @@ public class FileBrowserController {
 				return a.getFileName().toString().compareToIgnoreCase(b.getFileName().toString());
 			}).forEach(child -> {
 				try {
+					// Skip symbolic links to prevent infinite loops and security issues
+					if (Files.isSymbolicLink(child)) {
+						logger.debug("Skipping symbolic link: {}", child);
+						return;
+					}
+
 					if (Files.isDirectory(child)) {
 						node.getChildren().add(buildFileTree(child, planId));
 					}

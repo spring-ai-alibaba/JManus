@@ -170,4 +170,31 @@ public class RootTaskManagerService {
 		}
 	}
 
+	/**
+	 * Complete a task by setting its result, state to STOP, and end time
+	 * @param rootPlanId The root plan ID
+	 * @param taskResult The task result
+	 * @param isSuccess Whether the task completed successfully (true) or with failure (false)
+	 * @return The updated RootTaskManagerEntity
+	 */
+	public RootTaskManagerEntity completeTask(String rootPlanId, String taskResult, boolean isSuccess) {
+		Optional<RootTaskManagerEntity> existingTask = rootTaskManagerRepository.findByRootPlanId(rootPlanId);
+
+		if (existingTask.isPresent()) {
+			RootTaskManagerEntity task = existingTask.get();
+			task.setTaskResult(taskResult);
+			task.setDesiredTaskState(isSuccess ? RootTaskManagerEntity.DesiredTaskState.STOP 
+												: RootTaskManagerEntity.DesiredTaskState.CANCEL);
+			task.setEndTime(LocalDateTime.now());
+			task.setLastUpdated(LocalDateTime.now());
+			logger.info("Completed task for planId {} with state {}", rootPlanId, 
+						isSuccess ? "STOP (success)" : "CANCEL (failed)");
+			return rootTaskManagerRepository.save(task);
+		}
+		else {
+			logger.warn("Task not found for planId {} when completing task", rootPlanId);
+			return null;
+		}
+	}
+
 }

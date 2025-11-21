@@ -261,15 +261,15 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 			wrapper.getResult().whenComplete((result, throwable) -> {
 				if (throwable != null) {
 					logger.error("Async plan execution failed for planId: {}", wrapper.getRootPlanId(), throwable);
-					// Update task state to indicate failure
-					rootTaskManagerService.updateTaskResult(wrapper.getRootPlanId(),
-							"Execution failed: " + throwable.getMessage());
+					// Complete task with failure state
+					rootTaskManagerService.completeTask(wrapper.getRootPlanId(),
+							"Execution failed: " + throwable.getMessage(), false);
 				}
 				else {
 					logger.info("Async plan execution completed for planId: {}", wrapper.getRootPlanId());
-					// Update task state to indicate completion
-					rootTaskManagerService.updateTaskResult(wrapper.getRootPlanId(),
-							result != null ? result.getFinalResult() : "Execution completed");
+					// Complete task with success state
+					rootTaskManagerService.completeTask(wrapper.getRootPlanId(),
+							result != null ? result.getFinalResult() : "Execution completed", true);
 				}
 			});
 
@@ -501,9 +501,9 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 
 			PlanExecutionResult planExecutionResult = wrapper.getResult().get();
 
-			// Update task result with execution result
+			// Complete task with success state and execution result
 			if (planExecutionResult != null) {
-				rootTaskManagerService.updateTaskResult(wrapper.getRootPlanId(), planExecutionResult.getFinalResult());
+				rootTaskManagerService.completeTask(wrapper.getRootPlanId(), planExecutionResult.getFinalResult(), true);
 			}
 
 			// Return success with execution result
@@ -518,9 +518,9 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 		catch (Exception e) {
 			logger.error("Failed to execute plan template synchronously: {}", planTemplateId, e);
 
-			// Update task result to indicate failure
+			// Complete task with failure state
 			if (wrapper != null && wrapper.getRootPlanId() != null) {
-				rootTaskManagerService.updateTaskResult(wrapper.getRootPlanId(), "Execution failed: " + e.getMessage());
+				rootTaskManagerService.completeTask(wrapper.getRootPlanId(), "Execution failed: " + e.getMessage(), false);
 			}
 
 			Map<String, Object> errorResponse = new HashMap<>();
@@ -806,7 +806,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 			// Mark task for stop in database (database-driven interruption)
 			boolean taskMarkedForStop = taskInterruptionManager.stopTask(planId);
 
-			// Update task result to indicate manual stop
+			// Note: taskInterruptionManager.stopTask() already sets state to STOP and end_time
+			// We just update the result message here
 			if (taskMarkedForStop) {
 				rootTaskManagerService.updateTaskResult(planId, "Task manually stopped by user");
 			}

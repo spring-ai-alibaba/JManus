@@ -134,6 +134,12 @@ public class DynamicAgent extends ReActAgent {
 
 	private final List<String> recentToolResults = new ArrayList<>();
 
+	/**
+	 * Flag to track if user request has been saved to conversation memory
+	 * This prevents duplicate saves during retry attempts
+	 */
+	private boolean userRequestSavedToConversationMemory = false;
+
 	public void clearUp(String planId) {
 		Map<String, ToolCallBackContext> toolCallBackContext = toolCallbackProvider.getToolCallBackContext();
 		for (ToolCallBackContext toolCallBack : toolCallBackContext.values()) {
@@ -1312,6 +1318,12 @@ public class DynamicAgent extends ReActAgent {
 	 * Save user request (stepText) to conversation memory
 	 */
 	private void saveUserRequestToConversationMemory() {
+		// Skip if already saved (prevents duplicate saves during retries)
+		if (userRequestSavedToConversationMemory) {
+			log.debug("User request already saved to conversation memory, skipping");
+			return;
+		}
+
 		// Skip if conversation memory is disabled
 		if (!lynxeProperties.getEnableConversationMemory()) {
 			log.debug("Conversation memory is disabled, skipping user request save");
@@ -1340,6 +1352,7 @@ public class DynamicAgent extends ReActAgent {
 			UserMessage userMessage = new UserMessage(stepText);
 			llmService.addToConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), getConversationId(),
 					userMessage);
+			userRequestSavedToConversationMemory = true; // Mark as saved
 			log.info("Saved user request to conversation memory for conversationId: {}, request length: {}",
 					getConversationId(), stepText.length());
 		}
