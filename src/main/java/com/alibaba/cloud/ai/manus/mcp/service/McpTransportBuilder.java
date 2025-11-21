@@ -118,7 +118,8 @@ public class McpTransportBuilder {
 		logger.info("Building SSE transport for server: {} with baseUrl: {}, endpoint: {}", serverName, baseUrl,
 				sseEndpoint);
 
-		WebClient.Builder webClientBuilder = createWebClientBuilder(baseUrl);
+		Map<String, String> headers = serverConfig.getHeaders();
+		WebClient.Builder webClientBuilder = createWebClientBuilder(baseUrl, headers);
 
 		JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(objectMapper);
 
@@ -216,7 +217,8 @@ public class McpTransportBuilder {
 		logger.info("Building Streamable HTTP transport for server: {} with Url: {} and Endpoint: {}", serverName,
 				baseUrl, streamEndpoint);
 
-		WebClient.Builder webClientBuilder = createWebClientBuilder(baseUrl);
+		Map<String, String> headers = serverConfig.getHeaders();
+		WebClient.Builder webClientBuilder = createWebClientBuilder(baseUrl, headers);
 
 		logger.debug("Using WebClientStreamableHttpTransport with endpoint: {} for STREAMING mode", streamEndpoint);
 		JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(objectMapper);
@@ -232,10 +234,11 @@ public class McpTransportBuilder {
 	/**
 	 * Create WebClient builder (with baseUrl)
 	 * @param baseUrl Base URL
+	 * @param customHeaders Custom headers from configuration (can be null or empty)
 	 * @return WebClient builder
 	 */
-	private WebClient.Builder createWebClientBuilder(String baseUrl) {
-		return WebClient.builder()
+	private WebClient.Builder createWebClientBuilder(String baseUrl, Map<String, String> customHeaders) {
+		WebClient.Builder builder = WebClient.builder()
 			.baseUrl(baseUrl)
 			.defaultHeader("Accept", "text/event-stream")
 			.defaultHeader("Content-Type", "application/json")
@@ -250,6 +253,18 @@ public class McpTransportBuilder {
 						}
 						return ex;
 					}));
+
+		// Add custom headers from configuration
+		if (customHeaders != null && !customHeaders.isEmpty()) {
+			customHeaders.forEach((name, value) -> {
+				if (name != null && value != null) {
+					builder.defaultHeader(name, value);
+					logger.debug("Added custom header: {} for baseUrl: {}", name, baseUrl);
+				}
+			});
+		}
+
+		return builder;
 	}
 
 }

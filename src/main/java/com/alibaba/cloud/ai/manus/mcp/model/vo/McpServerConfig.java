@@ -57,6 +57,9 @@ public class McpServerConfig {
 	@JsonProperty("env")
 	private Map<String, String> env;
 
+	@JsonProperty("headers")
+	private Map<String, String> headers;
+
 	@JsonProperty("status")
 	private McpConfigStatus status = McpConfigStatus.ENABLE; // Default to enabled status
 
@@ -96,6 +99,17 @@ public class McpServerConfig {
 
 	public void setEnv(Map<String, String> env) {
 		this.env = env != null ? env : new HashMap<>();
+	}
+
+	public Map<String, String> getHeaders() {
+		if (headers == null) {
+			this.headers = new HashMap<>();
+		}
+		return headers;
+	}
+
+	public void setHeaders(Map<String, String> headers) {
+		this.headers = headers != null ? headers : new HashMap<>();
 	}
 
 	public McpConfigStatus getStatus() {
@@ -198,6 +212,21 @@ public class McpServerConfig {
 				sb.append("\"env\":{");
 				boolean first = true;
 				for (Map.Entry<String, String> entry : env.entrySet()) {
+					if (!first)
+						sb.append(",");
+					sb.append("\"").append(entry.getKey()).append("\":\"").append(entry.getValue()).append("\"");
+					first = false;
+				}
+				sb.append("}");
+			}
+
+			// Add headers (if they exist)
+			if (headers != null && !headers.isEmpty()) {
+				if (sb.length() > 1)
+					sb.append(",");
+				sb.append("\"headers\":{");
+				boolean first = true;
+				for (Map.Entry<String, String> entry : headers.entrySet()) {
 					if (!first)
 						sb.append(",");
 					sb.append("\"").append(entry.getKey()).append("\":\"").append(entry.getValue()).append("\"");
