@@ -116,7 +116,7 @@ COPY src/main/resources/application-docker.yml /app/extracted/BOOT-INF/classes/
 ENV DISPLAY=:99 \
     PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright \
     DOCKER_ENV=true \
-    JAVA_OPTS="-Xmx2g -Xms1g -XX:+UseG1GC -XX:+UseContainerSupport"
+    JAVA_OPTS="-Xmx2g -Xms1g -XX:+UseG1GC -XX:+UseContainerSupport --enable-native-access=ALL-UNNAMED -Dio.netty.noUnsafe=true"
 
 # Copy startup script
 COPY deploy/start.sh /app/start.sh

@@ -15,15 +15,15 @@
  */
 package com.alibaba.cloud.ai.lynxe.recorder.repository;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.alibaba.cloud.ai.lynxe.recorder.entity.po.ThinkActRecordEntity;
-
-import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface ThinkActRecordRepository extends JpaRepository<ThinkActRecordEntity, Long> {
@@ -43,5 +43,11 @@ public interface ThinkActRecordRepository extends JpaRepository<ThinkActRecordEn
 	 */
 	@Query("SELECT t FROM ThinkActRecordEntity t JOIN t.actToolInfoList a WHERE a.toolCallId = :toolCallId")
 	Optional<ThinkActRecordEntity> findByActToolInfoToolCallId(@Param("toolCallId") String toolCallId);
+
+	/**
+	 * Find think-act records by parent execution ID with eagerly fetched actToolInfoList
+	 */
+	@Query("SELECT t FROM ThinkActRecordEntity t LEFT JOIN FETCH t.actToolInfoList WHERE t.parentExecutionId = :parentExecutionId")
+	List<ThinkActRecordEntity> findByParentExecutionIdWithActToolInfo(@Param("parentExecutionId") Long parentExecutionId);
 
 }

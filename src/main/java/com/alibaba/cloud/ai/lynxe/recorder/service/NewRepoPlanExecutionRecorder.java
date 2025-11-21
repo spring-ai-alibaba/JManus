@@ -647,6 +647,7 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 	 * @param stepId The step ID to query
 	 * @return Detailed agent execution record with ThinkActRecord details
 	 */
+	@Transactional(readOnly = true)
 	public AgentExecutionRecord getAgentExecutionDetail(String stepId) {
 		try {
 			if (stepId == null || stepId.trim().isEmpty()) {
@@ -700,9 +701,9 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 	 */
 	private List<ThinkActRecord> fetchThinkActRecords(Long agentExecutionId) {
 		try {
-			// Find all ThinkActRecordEntity by parentExecutionId
+			// Find all ThinkActRecordEntity by parentExecutionId with eagerly fetched actToolInfoList
 			List<ThinkActRecordEntity> thinkActEntities = thinkActRecordRepository
-				.findByParentExecutionId(agentExecutionId);
+				.findByParentExecutionIdWithActToolInfo(agentExecutionId);
 
 			List<ThinkActRecord> thinkActRecords = new ArrayList<>();
 

@@ -225,6 +225,10 @@ public class PlanningFactory {
 			String expectedReturnInfo) {
 
 		Map<String, ToolCallBackContext> toolCallbackMap = new HashMap<>();
+		// Map to store serviceGroup -> index mapping, ensuring same serviceGroup gets same index
+		Map<String, Integer> serviceGroupIndexMap = new HashMap<>();
+		// Use array wrapper to allow pass-by-reference for nextIndex
+		int[] nextIndexRef = new int[] { 1 }; // Start index from 1
 		List<ToolCallBiFunctionDef<?>> toolDefinitions = new ArrayList<>();
 		if (chromeDriverService == null) {
 			log.error("ChromeDriverService is null, skipping BrowserUseTool registration");
@@ -293,22 +297,31 @@ public class PlanningFactory {
 		for (ToolCallBiFunctionDef<?> toolDefinition : toolDefinitions) {
 
 			try {
+				toolDefinition.setCurrentPlanId(planId);
+				toolDefinition.setRootPlanId(rootPlanId);
+				
+				// Use qualified key format: index : toolName
+				String serviceGroup = toolDefinition.getServiceGroup();
+				String toolName = toolDefinition.getName();
+				String qualifiedKey;
+				
+				if (serviceGroup != null && !serviceGroup.isEmpty()) {
+					// Get or assign index for this serviceGroup
+					Integer index = serviceGroupIndexMap.computeIfAbsent(serviceGroup, k -> nextIndexRef[0]++);
+					qualifiedKey = index + " : " + toolName;
+				}
+				else {
+					qualifiedKey = toolName;
+				}
+				
+				// Build FunctionToolCallback with qualified name so LLM calls tools with qualified names
 				FunctionToolCallback<?, ToolExecuteResult> functionToolcallback = FunctionToolCallback
-					.builder(toolDefinition.getName(), toolDefinition)
+					.builder(qualifiedKey, toolDefinition)
 					.description(toolDefinition.getDescription())
 					.inputSchema(toolDefinition.getParameters())
 					.inputType(toolDefinition.getInputType())
 					.toolMetadata(ToolMetadata.builder().returnDirect(toolDefinition.isReturnDirect()).build())
 					.build();
-				toolDefinition.setCurrentPlanId(planId);
-				toolDefinition.setRootPlanId(rootPlanId);
-				
-				// Use qualified key format: serviceGroup.toolName
-				String serviceGroup = toolDefinition.getServiceGroup();
-				String toolName = toolDefinition.getName();
-				String qualifiedKey = (serviceGroup != null && !serviceGroup.isEmpty()) 
-						? serviceGroup + "." + toolName 
-						: toolName;
 				
 				log.info("Registering tool: {} with qualified key: {}", toolName, qualifiedKey);
 				ToolCallBackContext functionToolcallbackContext = new ToolCallBackContext(functionToolcallback,
@@ -324,7 +337,7 @@ public class PlanningFactory {
 		if (subplanToolService != null) {
 			try {
 				Map<String, PlanningFactory.ToolCallBackContext> subplanToolCallbacks = subplanToolService
-					.createSubplanToolCallbacks(planId, rootPlanId, expectedReturnInfo);
+					.createSubplanToolCallbacks(planId, rootPlanId, expectedReturnInfo, serviceGroupIndexMap, nextIndexRef);
 				toolCallbackMap.putAll(subplanToolCallbacks);
 				log.info("Registered {} subplan tools", subplanToolCallbacks.size());
 			}

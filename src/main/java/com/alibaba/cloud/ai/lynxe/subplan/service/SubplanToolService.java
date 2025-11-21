@@ -87,7 +87,7 @@ public class SubplanToolService {
 	}
 
 	public Map<String, PlanningFactory.ToolCallBackContext> createSubplanToolCallbacks(String planId, String rootPlanId,
-			String expectedReturnInfo) {
+			String expectedReturnInfo, Map<String, Integer> serviceGroupIndexMap, int[] nextIndexRef) {
 
 		logger.info("Creating subplan tool callbacks for planId: {}, rootPlanId: {}", planId, rootPlanId);
 
@@ -148,9 +148,22 @@ public class SubplanToolService {
 						description = coordinatorToolConfig.getToolConfig().getToolDescription();
 					}
 
-					// Create FunctionToolCallback
+					// Use qualified key format: index : toolName
+					String serviceGroup = coordinatorTool.getServiceGroup();
+					String qualifiedKey;
+					
+					if (serviceGroup != null && !serviceGroup.isEmpty()) {
+						// Get or assign index for this serviceGroup
+						Integer index = serviceGroupIndexMap.computeIfAbsent(serviceGroup, k -> nextIndexRef[0]++);
+						qualifiedKey = index + " : " + toolName;
+					}
+					else {
+						qualifiedKey = toolName;
+					}
+
+					// Create FunctionToolCallback with qualified name so LLM calls tools with qualified names
 					FunctionToolCallback<Map<String, Object>, ToolExecuteResult> functionToolCallback = FunctionToolCallback
-						.builder(toolName, toolWrapper)
+						.builder(qualifiedKey, toolWrapper)
 						.description(description)
 						.inputSchema(toolWrapper.getParameters())
 						.inputType(Map.class) // Map input type for coordinator tools
@@ -160,12 +173,6 @@ public class SubplanToolService {
 					// Create ToolCallBackContext
 					PlanningFactory.ToolCallBackContext context = new PlanningFactory.ToolCallBackContext(
 							functionToolCallback, toolWrapper);
-
-					// Use qualified key format: serviceGroup.toolName
-					String serviceGroup = coordinatorTool.getServiceGroup();
-					String qualifiedKey = (serviceGroup != null && !serviceGroup.isEmpty()) 
-							? serviceGroup + "." + toolName 
-							: toolName;
 
 					toolCallbackMap.put(qualifiedKey, context);
 

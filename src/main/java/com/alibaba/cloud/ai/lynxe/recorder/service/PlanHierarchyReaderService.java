@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.cloud.ai.lynxe.recorder.entity.po.ActToolInfoEntity;
 import com.alibaba.cloud.ai.lynxe.recorder.entity.po.AgentExecutionRecordEntity;
@@ -78,6 +79,7 @@ public class PlanHierarchyReaderService {
 	 * @param rootPlanId The root plan ID to search for
 	 * @return Root PlanExecutionRecord with hierarchy relationships, or null if not found
 	 */
+	@Transactional(readOnly = true)
 	public PlanExecutionRecord readPlanTreeByRootId(String rootPlanId) {
 		try {
 			if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
@@ -148,6 +150,7 @@ public class PlanHierarchyReaderService {
 	 * @param currentPlanId The current plan ID to search for
 	 * @return PlanExecutionRecord VO object, or null if not found
 	 */
+	@Transactional(readOnly = true)
 	public PlanExecutionRecord readSinglePlanById(String currentPlanId) {
 		try {
 			if (currentPlanId == null || currentPlanId.trim().isEmpty()) {

@@ -595,7 +595,20 @@ public class DynamicAgent extends ReActAgent {
 			ToolResponseMessage.ToolResponse toolCallResponse = toolResponseMessage.getResponses().get(0);
 			String toolName = toolCall.name();
 			ActToolParam param = actToolInfoList.get(0);
-			ToolCallBiFunctionDef<?> toolInstance = getToolCallBackContext(toolName).getFunctionInstance();
+				
+			// Check if tool callback context exists
+			ToolCallBackContext toolCallBackContext = getToolCallBackContext(toolName);
+			if (toolCallBackContext == null) {
+				String errorMessage = String.format("Tool callback context not found for tool: %s", toolName);
+				log.error(errorMessage);
+				// Process tool result even if callback context is missing
+				String result = processToolResult(toolCallResponse.responseData());
+				param.setResult(result);
+				// Return error result but continue execution
+				return new AgentExecResult(errorMessage + ". Tool response: " + result, AgentState.IN_PROGRESS);
+			}
+			
+			ToolCallBiFunctionDef<?> toolInstance = toolCallBackContext.getFunctionInstance();
 
 			String result;
 			boolean shouldTerminate = false;
