@@ -302,10 +302,18 @@ public class PlanningFactory {
 					.build();
 				toolDefinition.setCurrentPlanId(planId);
 				toolDefinition.setRootPlanId(rootPlanId);
-				log.info("Registering tool: {}", toolDefinition.getName());
+				
+				// Use qualified key format: serviceGroup.toolName
+				String serviceGroup = toolDefinition.getServiceGroup();
+				String toolName = toolDefinition.getName();
+				String qualifiedKey = (serviceGroup != null && !serviceGroup.isEmpty()) 
+						? serviceGroup + "." + toolName 
+						: toolName;
+				
+				log.info("Registering tool: {} with qualified key: {}", toolName, qualifiedKey);
 				ToolCallBackContext functionToolcallbackContext = new ToolCallBackContext(functionToolcallback,
 						toolDefinition);
-				toolCallbackMap.put(toolDefinition.getName(), functionToolcallbackContext);
+				toolCallbackMap.put(qualifiedKey, functionToolcallbackContext);
 			}
 			catch (Exception e) {
 				log.error("Failed to register tool: {} - {}", toolDefinition.getName(), e.getMessage(), e);

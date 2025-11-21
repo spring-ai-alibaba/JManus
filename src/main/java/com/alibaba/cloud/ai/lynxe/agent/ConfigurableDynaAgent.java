@@ -104,9 +104,18 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 		// Check if any TerminableTool is already included
 		boolean hasTerminableTool = false;
 		for (String toolKey : availableToolKeys) {
+			// Try to find the tool with the given key (supports both qualified and unqualified keys)
 			if (toolCallBackContext.containsKey(toolKey)) {
 				ToolCallBackContext toolCallback = toolCallBackContext.get(toolKey);
 				if (toolCallback != null && toolCallback.getFunctionInstance() instanceof TerminableTool) {
+					hasTerminableTool = true;
+					break;
+				}
+			}
+			else {
+				// Backward compatibility: try to find by unqualified tool name
+				ToolCallBackContext foundCallback = findToolByUnqualifiedName(toolCallBackContext, toolKey);
+				if (foundCallback != null && foundCallback.getFunctionInstance() instanceof TerminableTool) {
 					hasTerminableTool = true;
 					break;
 				}
@@ -115,8 +124,22 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 
 		// Add TerminateTool if no TerminableTool is present
 		if (!hasTerminableTool) {
-			availableToolKeys.add(TerminateTool.name);
-			log.debug("No TerminableTool found, added TerminateTool to tool list for agent {}", getName());
+			// Construct qualified key for TerminateTool using its serviceGroup
+			String terminateToolServiceGroup = TerminateTool.SERVICE_GROUP;// TerminateTool's serviceGroup
+			String qualifiedTerminateKey = terminateToolServiceGroup + "." + TerminateTool.name;
+			
+			// Check if the qualified key exists, otherwise try unqualified
+			if (toolCallBackContext.containsKey(qualifiedTerminateKey)) {
+				availableToolKeys.add(qualifiedTerminateKey);
+				log.debug("Added TerminateTool with qualified key: {}", qualifiedTerminateKey);
+			}
+			else if (toolCallBackContext.containsKey(TerminateTool.name)) {
+				availableToolKeys.add(TerminateTool.name);
+				log.debug("Added TerminateTool with unqualified key: {}", TerminateTool.name);
+			}
+			else {
+				log.warn("TerminateTool not found in toolCallBackContext");
+			}
 		}
 		else {
 			log.debug("Found existing TerminableTool in tool list for agent {}", getName());
@@ -124,19 +147,61 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 
 		// Build the tool callbacks list
 		for (String toolKey : availableToolKeys) {
+			ToolCallBackContext toolCallback = null;
+			
+			// First try exact match (supports new qualified keys)
 			if (toolCallBackContext.containsKey(toolKey)) {
-				ToolCallBackContext toolCallback = toolCallBackContext.get(toolKey);
-				if (toolCallback != null) {
-					toolCallbacks.add(toolCallback.getToolCallback());
-				}
+				toolCallback = toolCallBackContext.get(toolKey);
 			}
 			else {
-				log.warn("Tool callback for {} not found in the map.", toolKey);
+				// Backward compatibility: try to find by unqualified tool name
+				toolCallback = findToolByUnqualifiedName(toolCallBackContext, toolKey);
+				if (toolCallback != null) {
+					log.info("Found tool '{}' using backward compatibility lookup", toolKey);
+				}
+			}
+			
+			if (toolCallback != null) {
+				toolCallbacks.add(toolCallback.getToolCallback());
+			}
+			else {
+				log.warn("Tool callback for '{}' not found in the map.", toolKey);
 			}
 		}
 
 		log.info("Agent {} configured with {} tools: {}", getName(), toolCallbacks.size(), availableToolKeys);
 		return toolCallbacks;
 	}
+
+	/**
+	 * Find a tool by unqualified name (backward compatibility helper)
+	 * Searches for tools where the qualified key ends with ".toolName"
+	 * @param toolCallBackContext Map of all available tools
+	 * @param unqualifiedName The tool name without serviceGroup prefix
+	 * @return The matching ToolCallBackContext or null if not found
+	 */
+	private ToolCallBackContext findToolByUnqualifiedName(Map<String, ToolCallBackContext> toolCallBackContext,
+			String unqualifiedName) {
+		// First try exact match (for tools that don't have serviceGroup prefix)
+		if (toolCallBackContext.containsKey(unqualifiedName)) {
+			return toolCallBackContext.get(unqualifiedName);
+		}
+		
+		// Then try to find by matching the tool name part after the last dot
+		for (Map.Entry<String, ToolCallBackContext> entry : toolCallBackContext.entrySet()) {
+			String qualifiedKey = entry.getKey();
+			int lastDotIndex = qualifiedKey.lastIndexOf('.');
+			if (lastDotIndex > 0) {
+				String toolNamePart = qualifiedKey.substring(lastDotIndex + 1);
+				if (toolNamePart.equals(unqualifiedName)) {
+					log.debug("Backward compatibility: Matched unqualified tool '{}' to qualified key '{}'",
+							unqualifiedName, qualifiedKey);
+					return entry.getValue();
+				}
+			}
+		}
+		return null;
+	}
+
 
 }

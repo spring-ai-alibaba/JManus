@@ -33,6 +33,7 @@ import com.alibaba.cloud.ai.lynxe.agent.model.Tool;
 import com.alibaba.cloud.ai.lynxe.mcp.service.McpService;
 import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory;
 import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory.ToolCallBackContext;
+import com.alibaba.cloud.ai.lynxe.tool.ToolCallBiFunctionDef;
 
 /**
  * Tool Controller - Provides API endpoints for tool management
@@ -66,13 +67,17 @@ public class ToolController {
 
 			List<Tool> tools = toolCallbackContext.entrySet().stream().map(entry -> {
 				Tool tool = new Tool();
+				ToolCallBiFunctionDef<?> functionInstance = entry.getValue().getFunctionInstance();
+				String serviceGroup = functionInstance.getServiceGroup();
+				String toolName = functionInstance.getName();
+				
+				// Use the qualified key from the map (which now includes serviceGroup.toolName)
 				tool.setKey(entry.getKey());
-				tool.setName(entry.getKey()); // You might want to provide a more friendly
-												// name
-				tool.setDescription(entry.getValue().getFunctionInstance().getDescription());
+				tool.setName(toolName); // Keep just the tool name for display
+				tool.setDescription(functionInstance.getDescription());
 				tool.setEnabled(true);
-				tool.setServiceGroup(entry.getValue().getFunctionInstance().getServiceGroup());
-				tool.setSelectable(entry.getValue().getFunctionInstance().isSelectable());
+				tool.setServiceGroup(serviceGroup);
+				tool.setSelectable(functionInstance.isSelectable());
 				return tool;
 			}).collect(Collectors.toList());
 

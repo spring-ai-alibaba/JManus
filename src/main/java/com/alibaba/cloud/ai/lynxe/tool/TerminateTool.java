@@ -370,8 +370,10 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 
 	@Override
 	public String getServiceGroup() {
-		return "default-service-group";
+		return SERVICE_GROUP;
 	}
+
+	public static String SERVICE_GROUP = "default-service-group";
 
 	// ==================== TerminableTool interface implementation ====================
 

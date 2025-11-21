@@ -571,15 +571,36 @@ public class PlanTemplateConfigService {
 
 			// Use title as toolName
 			String toolName = configVO.getTitle() != null ? configVO.getTitle() : "";
+			String serviceGroup = configVO.getServiceGroup();
 
-			// Check if a tool with the same toolName already exists
-			// If it exists but with different planTemplateId or null planTemplateId,
-			// delete it first
+			// Check if a tool with the same toolName and serviceGroup already exists
+			// If it exists but with different planTemplateId, delete it first
+			if (serviceGroup != null && !serviceGroup.isEmpty()) {
+				// Use the new repository method that respects the unique constraint
+				Optional<FuncAgentToolEntity> existingTool = funcAgentToolRepository
+					.findByServiceGroupAndToolName(serviceGroup, toolName);
+				if (existingTool.isPresent()) {
+					FuncAgentToolEntity existing = existingTool.get();
+					if (existing.getPlanTemplateId() == null
+							|| !existing.getPlanTemplateId().equals(configVO.getPlanTemplateId())) {
+						log.warn(
+								"Found existing coordinator tool with same serviceGroup '{}' and toolName '{}' but different planTemplateId (existing: {}, new: {}). Deleting old tool.",
+								serviceGroup, toolName, existing.getPlanTemplateId(), configVO.getPlanTemplateId());
+						funcAgentToolRepository.deleteById(existing.getId());
+					}
+					else {
+						log.warn(
+								"Found existing coordinator tool with same serviceGroup '{}', toolName '{}' and planTemplateId '{}'. This should have been handled by update logic.",
+								serviceGroup, toolName, configVO.getPlanTemplateId());
+					}
+				}
+			}
+			else {
+				// Fallback to old behavior for backward compatibility
 			List<FuncAgentToolEntity> existingToolsWithSameName = funcAgentToolRepository.findByToolName(toolName);
 			if (!existingToolsWithSameName.isEmpty()) {
 				for (FuncAgentToolEntity existingTool : existingToolsWithSameName) {
-					// If the existing tool has a different planTemplateId or null
-					// planTemplateId, delete it
+						// If the existing tool has a different planTemplateId or null planTemplateId, delete it
 					if (existingTool.getPlanTemplateId() == null
 							|| !existingTool.getPlanTemplateId().equals(configVO.getPlanTemplateId())) {
 						log.warn(
@@ -588,11 +609,10 @@ public class PlanTemplateConfigService {
 						funcAgentToolRepository.deleteById(existingTool.getId());
 					}
 					else {
-						// Same toolName and same planTemplateId - this should not happen
-						// as we check by planTemplateId first
 						log.warn(
 								"Found existing coordinator tool with same toolName '{}' and planTemplateId '{}'. This should have been handled by update logic.",
 								toolName, configVO.getPlanTemplateId());
+						}
 					}
 				}
 			}
@@ -600,6 +620,7 @@ public class PlanTemplateConfigService {
 			// Convert PlanTemplateConfigVO to Entity and save
 			FuncAgentToolEntity entity = new FuncAgentToolEntity();
 			entity.setToolName(toolName);
+			entity.setServiceGroup(serviceGroup != null && !serviceGroup.isEmpty() ? serviceGroup : "ungrouped");
 			entity.setToolDescription(toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
 			entity.setInputSchema(convertInputSchemaListToJson(toolConfig.getInputSchema()));
 			entity.setPlanTemplateId(configVO.getPlanTemplateId());

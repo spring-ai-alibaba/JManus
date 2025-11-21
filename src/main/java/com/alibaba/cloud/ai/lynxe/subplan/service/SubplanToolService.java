@@ -161,9 +161,16 @@ public class SubplanToolService {
 					PlanningFactory.ToolCallBackContext context = new PlanningFactory.ToolCallBackContext(
 							functionToolCallback, toolWrapper);
 
-					toolCallbackMap.put(toolName, context);
+					// Use qualified key format: serviceGroup.toolName
+					String serviceGroup = coordinatorTool.getServiceGroup();
+					String qualifiedKey = (serviceGroup != null && !serviceGroup.isEmpty()) 
+							? serviceGroup + "." + toolName 
+							: toolName;
 
-					logger.info("Successfully registered coordinator tool: {} -> {}", toolName, planTemplateId);
+					toolCallbackMap.put(qualifiedKey, context);
+
+					logger.info("Successfully registered coordinator tool: {} with qualified key: {} -> {}", 
+							toolName, qualifiedKey, planTemplateId);
 
 				}
 				catch (Exception e) {

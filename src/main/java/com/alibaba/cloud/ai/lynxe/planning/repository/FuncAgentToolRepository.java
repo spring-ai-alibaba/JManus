@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.lynxe.planning.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -37,6 +38,11 @@ public interface FuncAgentToolRepository extends JpaRepository<FuncAgentToolEnti
 	 * Find by tool name
 	 */
 	List<FuncAgentToolEntity> findByToolName(String toolName);
+
+	/**
+	 * Find by service group and tool name (respects unique constraint)
+	 */
+	Optional<FuncAgentToolEntity> findByServiceGroupAndToolName(String serviceGroup, String toolName);
 
 	/**
 	 * Delete by plan template ID
