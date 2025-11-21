@@ -15,10 +15,8 @@
  */
 package com.alibaba.cloud.ai.lynxe.planning.service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,12 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.alibaba.cloud.ai.lynxe.planning.model.po.PlanTemplate;
 import com.alibaba.cloud.ai.lynxe.planning.model.po.PlanTemplateVersion;
-import com.alibaba.cloud.ai.lynxe.planning.repository.PlanTemplateRepository;
 import com.alibaba.cloud.ai.lynxe.planning.repository.PlanTemplateVersionRepository;
-import com.alibaba.cloud.ai.lynxe.runtime.executor.factory.PlanExecutorFactory;
-import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -44,89 +38,13 @@ public class PlanTemplateService implements IPlanTemplateService {
 	private static final Logger logger = LoggerFactory.getLogger(PlanTemplateService.class);
 
 	@Autowired
-	private PlanTemplateRepository planTemplateRepository;
-
-	@Autowired
 	private PlanTemplateVersionRepository versionRepository;
 
-	@Autowired(required = false)
-	private PlanTemplateConfigService planTemplateConfigService;
 
-	@SuppressWarnings("unused")
-	@Autowired
-	private PlanExecutorFactory planExecutorFactory;
 
 	@Autowired
 	private ObjectMapper objectMapper;
 
-	@SuppressWarnings("unused")
-	@Autowired
-	private PlanIdDispatcher planIdDispatcher;
-
-	@SuppressWarnings("unused")
-	@Autowired(required = false)
-	private IPlanParameterMappingService parameterMappingService;
-
-	/**
-	 * Save plan template and its first version
-	 * @param planTemplateId Plan template ID
-	 * @param title Plan title
-	 * @param planJson Plan JSON data
-	 */
-	@Transactional
-	public void savePlanTemplate(String planTemplateId, String title, String planJson, boolean isInternalToolcall) {
-		// Check if plan template already exists
-		Optional<PlanTemplate> existingTemplateOpt = planTemplateRepository.findByPlanTemplateId(planTemplateId);
-		PlanTemplate template;
-
-		if (existingTemplateOpt.isPresent()) {
-			// Update existing template
-			template = existingTemplateOpt.get();
-			template.setTitle(title);
-			template.setUpdateTime(LocalDateTime.now());
-			planTemplateRepository.save(template);
-			logger.debug("Updated existing plan template: {}", planTemplateId);
-		}
-		else {
-			// Create new plan template
-			template = new PlanTemplate(planTemplateId, title, isInternalToolcall);
-			planTemplateRepository.save(template);
-			logger.debug("Created new plan template: {}", planTemplateId);
-		}
-
-		// Save the first version (or new version if template already existed)
-		saveToVersionHistory(planTemplateId, planJson);
-
-		logger.info("Saved plan template {} and its version", planTemplateId);
-	}
-
-	/**
-	 * Update plan template information
-	 * @param planTemplateId Plan template ID
-	 * @param title Plan title
-	 * @param planJson Plan JSON data
-	 * @return Whether the update was successful
-	 */
-	@Transactional
-	public boolean updatePlanTemplate(String planTemplateId, String title, String planJson,
-			boolean isInternalToolcall) {
-		Optional<PlanTemplate> templateOpt = planTemplateRepository.findByPlanTemplateId(planTemplateId);
-		if (templateOpt.isPresent()) {
-			PlanTemplate template = templateOpt.get();
-			if (title != null && !title.isEmpty()) {
-				template.setTitle(title);
-			}
-			template.setUpdateTime(LocalDateTime.now());
-			planTemplateRepository.save(template);
-
-			// Save new version
-			saveToVersionHistory(planTemplateId, planJson);
-
-			logger.info("Updated plan template {} and saved new version", planTemplateId);
-			return true;
-		}
-		return false;
-	}
 
 	/**
 	 * Version save result class
@@ -202,15 +120,6 @@ public class PlanTemplateService implements IPlanTemplateService {
 	@Transactional
 	public void saveVersionToHistory(String planTemplateId, String planJson) {
 		saveToVersionHistory(planTemplateId, planJson);
-	}
-
-	/**
-	 * Get plan template
-	 * @param planTemplateId Plan template ID
-	 * @return Plan template entity, returns null if not exists
-	 */
-	public PlanTemplate getPlanTemplate(String planTemplateId) {
-		return planTemplateRepository.findByPlanTemplateId(planTemplateId).orElse(null);
 	}
 
 	/**
@@ -293,60 +202,6 @@ public class PlanTemplateService implements IPlanTemplateService {
 			logger.warn("Failed to parse JSON content during comparison, falling back to string comparison", e);
 			// If JSON parsing fails, fall back to string comparison
 			return json1.equals(json2);
-		}
-	}
-
-	/**
-	 * Extract title from ExecutionPlan object
-	 * @param planJson Plan JSON string
-	 * @return Plan title, returns default title if extraction fails
-	 */
-	public String extractTitleFromPlan(String planJson) {
-		try {
-			JsonNode rootNode = objectMapper.readTree(planJson);
-			if (rootNode.has("title")) {
-				return rootNode.get("title").asText("Untitled Plan");
-			}
-		}
-		catch (Exception e) {
-			logger.warn("Failed to extract title from plan JSON", e);
-		}
-		return "Untitled Plan";
-	}
-
-	/**
-	 * Get all plan templates
-	 * @return List of all plan templates
-	 */
-	public List<PlanTemplate> getAllPlanTemplates() {
-		return planTemplateRepository.findAll();
-	}
-
-	/**
-	 * Delete plan template
-	 * @param planTemplateId Plan template ID
-	 * @return Whether deletion was successful
-	 */
-	@Transactional
-	public boolean deletePlanTemplate(String planTemplateId) {
-		try {
-			// First delete all related versions
-			versionRepository.deleteByPlanTemplateId(planTemplateId);
-
-			// Delete related coordinator tools if PlanTemplateConfigService is available
-			if (planTemplateConfigService != null) {
-				planTemplateConfigService.deleteCoordinatorToolByPlanTemplateId(planTemplateId);
-			}
-
-			// Then delete the template itself
-			planTemplateRepository.deleteByPlanTemplateId(planTemplateId);
-
-			logger.info("Deleted plan template {} and all its versions and coordinator tools", planTemplateId);
-			return true;
-		}
-		catch (Exception e) {
-			logger.error("Failed to delete plan template {}", planTemplateId, e);
-			return false;
 		}
 	}
 

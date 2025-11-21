@@ -36,7 +36,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory;
 import com.alibaba.cloud.ai.lynxe.planning.exception.PlanTemplateConfigException;
-import com.alibaba.cloud.ai.lynxe.planning.model.po.PlanTemplate;
 import com.alibaba.cloud.ai.lynxe.planning.model.vo.PlanTemplateConfigVO;
 import com.alibaba.cloud.ai.lynxe.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.lynxe.planning.service.PlanTemplateConfigService;
@@ -80,6 +79,7 @@ public class PlanTemplateController {
 	 * @param planId Plan template ID (already generated)
 	 * @return Save result
 	 */
+	@Transactional
 	private PlanTemplateService.VersionSaveResult saveToVersionHistory(String planJson, String planId) {
 		try {
 			// Parse JSON to extract title
@@ -98,33 +98,38 @@ public class PlanTemplateController {
 			}
 
 			// Check if the plan exists
-			PlanTemplate template = planTemplateService.getPlanTemplate(planTemplateId);
-			if (template == null) {
-				// If it doesn't exist, create a new plan
-				planTemplateService.savePlanTemplate(planTemplateId, title, planJson, false);
+			Optional<PlanTemplateConfigVO> templateOpt = planTemplateConfigService.getPlanTemplate(planTemplateId);
+			if (templateOpt.isEmpty()) {
+				// If it doesn't exist, create a new plan template using PlanTemplateConfigService
+				PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
+				configVO.setPlanTemplateId(planTemplateId);
+				configVO.setTitle(title);
+				planTemplateConfigService.createPlanTemplateFromConfig(configVO);
 				logger.info("New plan created: {}", planTemplateId);
-				return new PlanTemplateService.VersionSaveResult(true, false, "New plan created", 0);
+				// Save version history
+				PlanTemplateService.VersionSaveResult result = planTemplateService
+					.saveToVersionHistory(planTemplateId, planJson);
+				return new PlanTemplateService.VersionSaveResult(result.isSaved(), result.isDuplicate(),
+						"New plan created", result.getVersionIndex());
 			}
 			else {
-				// If it exists, update the template with new title and save a new version
-				boolean updated = planTemplateService.updatePlanTemplate(planTemplateId, title, planJson, false);
-				if (updated) {
+				// If it exists, update the template with new title using PlanTemplateConfigService
+				PlanTemplateConfigVO existingConfig = templateOpt.get();
+				existingConfig.setTitle(title);
+				planTemplateConfigService.ensurePlanTemplateExists(existingConfig);
+
+				// Save new version
+				PlanTemplateService.VersionSaveResult result = planTemplateService
+					.saveToVersionHistory(planTemplateId, planJson);
+				if (result.isSaved()) {
 					logger.info("Updated plan template {} with new title and saved new version", planTemplateId);
 					// Get the latest version index after update
 					Integer maxVersionIndex = planTemplateService.getPlanVersions(planTemplateId).size() - 1;
 					return new PlanTemplateService.VersionSaveResult(true, false,
 							"Plan template updated and new version saved", maxVersionIndex);
-				}
-				else {
-					// Fallback to just saving version if update failed
-					PlanTemplateService.VersionSaveResult result = planTemplateService
-						.saveToVersionHistory(planTemplateId, planJson);
-					if (result.isSaved()) {
-						logger.info("New version of plan {} saved", planTemplateId, result.getVersionIndex());
 					}
 					else {
 						logger.info("Plan {} is the same, no new version saved", planTemplateId);
-					}
 					return result;
 				}
 			}
@@ -281,14 +286,12 @@ public class PlanTemplateController {
 	@GetMapping("/list")
 	public ResponseEntity<Map<String, Object>> getAllPlanTemplates() {
 		try {
-			// Use PlanTemplateService to get all plan templates
-			// Since there is no direct method to get all templates, we use the findAll
-			// method of PlanTemplateRepository
-			List<PlanTemplate> templates = planTemplateService.getAllPlanTemplates();
+			// Use PlanTemplateConfigService to get all plan templates
+			List<PlanTemplateConfigVO> templates = planTemplateConfigService.getAllPlanTemplates();
 
 			// Build response data
 			List<Map<String, Object>> templateList = new ArrayList<>();
-			for (PlanTemplate template : templates) {
+			for (PlanTemplateConfigVO template : templates) {
 				Map<String, Object> templateData = new HashMap<>();
 
 				templateData.put("id", template.getPlanTemplateId());
@@ -327,13 +330,13 @@ public class PlanTemplateController {
 
 		try {
 			// Check if the plan template exists
-			PlanTemplate template = planTemplateService.getPlanTemplate(planId);
-			if (template == null) {
+			Optional<PlanTemplateConfigVO> templateOpt = planTemplateConfigService.getPlanTemplate(planId);
+			if (templateOpt.isEmpty()) {
 				return ResponseEntity.notFound().build();
 			}
 
 			// Delete the plan template and all versions
-			boolean deleted = planTemplateService.deletePlanTemplate(planId);
+			boolean deleted = planTemplateConfigService.deletePlanTemplate(planId);
 
 			if (deleted) {
 				logger.info("Plan template deleted successfully: {}", planId);
@@ -360,8 +363,8 @@ public class PlanTemplateController {
 	@GetMapping("/{planTemplateId}/parameters")
 	public ResponseEntity<Map<String, Object>> getParameterRequirements(@PathVariable String planTemplateId) {
 		try {
-			PlanTemplate planTemplate = planTemplateService.getPlanTemplate(planTemplateId);
-			if (planTemplate == null) {
+			Optional<PlanTemplateConfigVO> planTemplateOpt = planTemplateConfigService.getPlanTemplate(planTemplateId);
+			if (planTemplateOpt.isEmpty()) {
 				return ResponseEntity.notFound().build();
 			}
 
@@ -390,7 +393,7 @@ public class PlanTemplateController {
 	 * Create or update plan template and register as coordinator tool This method
 	 * combines the functionality of both "Save Plan Template" and "Register Plan
 	 * Templates as Toolcalls" by using PlanTemplateConfigVO. It will: 1. Create or update
-	 * the PlanTemplate in the database 2. Create or update the CoordinatorTool (if
+	 * the plan template in the database 2. Create or update the CoordinatorTool (if
 	 * toolConfig is provided)
 	 * @param configVO Plan template configuration VO containing plan template data and
 	 * optional toolConfig
@@ -452,10 +455,10 @@ public class PlanTemplateController {
 			logger.info("Getting all plan template configurations");
 
 			// Get all plan templates
-			List<PlanTemplate> templates = planTemplateService.getAllPlanTemplates();
+			List<PlanTemplateConfigVO> templates = planTemplateConfigService.getAllPlanTemplates();
 			List<PlanTemplateConfigVO> configVOs = new ArrayList<>();
 
-			for (PlanTemplate planTemplate : templates) {
+			for (PlanTemplateConfigVO planTemplate : templates) {
 
 				String planTemplateId = planTemplate.getPlanTemplateId();
 
@@ -477,15 +480,11 @@ public class PlanTemplateController {
 					configVO.setPlanType(planInterface.getPlanType());
 					configVO.setServiceGroup(planTemplate.getServiceGroup());
 					configVO.setDirectResponse(planInterface.isDirectResponse());
-					configVO.setReadOnly(false); // Default to false, can be set based on
-													// business logic
-					// Set createTime and updateTime from PlanTemplate entity
-					if (planTemplate.getCreateTime() != null) {
-						configVO.setCreateTime(planTemplate.getCreateTime().toString());
-					}
-					if (planTemplate.getUpdateTime() != null) {
-						configVO.setUpdateTime(planTemplate.getUpdateTime().toString());
-					}
+				configVO.setReadOnly(false); // Default to false, can be set based on
+												// business logic
+				// Set createTime and updateTime from PlanTemplateConfigVO
+				configVO.setCreateTime(planTemplate.getCreateTime());
+				configVO.setUpdateTime(planTemplate.getUpdateTime());
 
 					// Convert ExecutionStep list to StepConfig list
 					if (planInterface.getAllSteps() != null) {
@@ -547,11 +546,12 @@ public class PlanTemplateController {
 			logger.info("Getting plan template configuration for planTemplateId: {}", planTemplateId);
 
 			// Get plan template from database
-			PlanTemplate planTemplate = planTemplateService.getPlanTemplate(planTemplateId);
-			if (planTemplate == null) {
+			Optional<PlanTemplateConfigVO> planTemplateOpt = planTemplateConfigService.getPlanTemplate(planTemplateId);
+			if (planTemplateOpt.isEmpty()) {
 				logger.warn("Plan template not found for planTemplateId: {}", planTemplateId);
 				return ResponseEntity.notFound().build();
 			}
+			PlanTemplateConfigVO planTemplate = planTemplateOpt.get();
 
 			// Get latest plan JSON version
 			String planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
@@ -572,13 +572,9 @@ public class PlanTemplateController {
 			configVO.setDirectResponse(planInterface.isDirectResponse());
 			configVO.setReadOnly(false); // Default to false, can be set based on business
 											// logic
-			// Set createTime and updateTime from PlanTemplate entity
-			if (planTemplate.getCreateTime() != null) {
-				configVO.setCreateTime(planTemplate.getCreateTime().toString());
-			}
-			if (planTemplate.getUpdateTime() != null) {
-				configVO.setUpdateTime(planTemplate.getUpdateTime().toString());
-			}
+			// Set createTime and updateTime from PlanTemplateConfigVO
+			configVO.setCreateTime(planTemplate.getCreateTime());
+			configVO.setUpdateTime(planTemplate.getUpdateTime());
 
 			// Convert ExecutionStep list to StepConfig list
 			if (planInterface.getAllSteps() != null) {

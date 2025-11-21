@@ -17,30 +17,10 @@ package com.alibaba.cloud.ai.lynxe.planning.service;
 
 import java.util.List;
 
-import com.alibaba.cloud.ai.lynxe.planning.model.po.PlanTemplate;
-
 /**
  * Plan template service interface providing business logic related to plan templates
  */
 public interface IPlanTemplateService {
-
-	/**
-	 * Save plan template
-	 * @param planTemplateId Template ID
-	 * @param title Title
-	 * @param planJson Plan JSON
-	 * @param isInternalToolcall Whether is internal toolcall
-	 */
-	void savePlanTemplate(String planTemplateId, String title, String planJson, boolean isInternalToolcall);
-
-	/**
-	 * Update plan template
-	 * @param planTemplateId Template ID
-	 * @param title Title
-	 * @param planJson Plan JSON
-	 * @return Whether update was successful
-	 */
-	boolean updatePlanTemplate(String planTemplateId, String title, String planJson, boolean isInternalToolcall);
 
 	/**
 	 * Save to version history
@@ -56,13 +36,6 @@ public interface IPlanTemplateService {
 	 * @param planJson Plan JSON
 	 */
 	void saveVersionToHistory(String planTemplateId, String planJson);
-
-	/**
-	 * Get plan template
-	 * @param planTemplateId Template ID
-	 * @return Plan template
-	 */
-	PlanTemplate getPlanTemplate(String planTemplateId);
 
 	/**
 	 * Get plan version list
@@ -101,25 +74,5 @@ public interface IPlanTemplateService {
 	 * @return Whether equivalent
 	 */
 	boolean isJsonContentEquivalent(String json1, String json2);
-
-	/**
-	 * Extract title from plan
-	 * @param planJson Plan JSON
-	 * @return Title
-	 */
-	String extractTitleFromPlan(String planJson);
-
-	/**
-	 * Get all plan templates
-	 * @return Plan template list
-	 */
-	List<PlanTemplate> getAllPlanTemplates();
-
-	/**
-	 * Delete plan template
-	 * @param planTemplateId Template ID
-	 * @return Whether deletion was successful
-	 */
-	boolean deletePlanTemplate(String planTemplateId);
 
 }

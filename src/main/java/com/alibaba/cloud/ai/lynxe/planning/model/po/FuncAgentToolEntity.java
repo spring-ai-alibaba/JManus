@@ -27,41 +27,48 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 /**
- * Coordinator Tool Entity Class
+ * Coordinator Tool Entity Class (merged with PlanTemplate)
+ * This entity now contains both coordinator tool and plan template data
  */
 @Entity
-@Table(name = "coordinator_tools", uniqueConstraints = @UniqueConstraint(columnNames = { "tool_name" }))
+@Table(name = "coordinator_tools", uniqueConstraints = {
+	@UniqueConstraint(columnNames = { "service_group", "tool_name" }),
+	@UniqueConstraint(columnNames = { "plan_template_id" })
+})
 public class FuncAgentToolEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false, length = 3000)
-	private String toolName;
-
-	@Column(nullable = false, length = 200)
-	private String toolDescription;
-
-	@Column(columnDefinition = "VARCHAR(2048)")
-	private String inputSchema;
-
-	@Column(nullable = false, length = 50)
+	@Column(name = "plan_template_id", nullable = false, length = 50, unique = true)
 	private String planTemplateId;
 
-	@Column(nullable = false)
+	@Column(name = "tool_name", nullable = false, length = 3000)
+	private String toolName;
+
+	@Column(name = "tool_description", nullable = false, length = 200)
+	private String toolDescription;
+
+	@Column(name = "input_schema", columnDefinition = "VARCHAR(2048)")
+	private String inputSchema;
+
+	@Column(name = "enable_internal_toolcall", nullable = false)
 	private Boolean enableInternalToolcall = false;
 
-	@Column(nullable = false)
+	@Column(name = "enable_http_service", nullable = false)
 	private Boolean enableHttpService = false;
 
-	@Column(nullable = false)
+	@Column(name = "enable_mcp_service", nullable = false)
 	private Boolean enableMcpService = false;
 
-	@Column(nullable = false)
+	@Column(name = "service_group", length = 100)
+	private String serviceGroup;
+
+	@Column(name = "create_time", nullable = false)
 	private LocalDateTime createTime;
 
-	@Column(nullable = false)
+	@Column(name = "update_time", nullable = false)
 	private LocalDateTime updateTime;
 
 	public FuncAgentToolEntity() {
@@ -153,6 +160,14 @@ public class FuncAgentToolEntity {
 		this.updateTime = updateTime;
 	}
 
+	public String getServiceGroup() {
+		return serviceGroup;
+	}
+
+	public void setServiceGroup(String serviceGroup) {
+		this.serviceGroup = serviceGroup;
+	}
+
 	/**
 	 * Automatically set update time when updating
 	 */
@@ -163,10 +178,11 @@ public class FuncAgentToolEntity {
 
 	@Override
 	public String toString() {
-		return "CoordinatorToolEntity{" + "id=" + id + ", toolName='" + toolName + '\'' + ", toolDescription='"
-				+ toolDescription + '\'' + ", planTemplateId='" + planTemplateId + '\'' + ", enableInternalToolcall="
-				+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableMcpService="
-				+ enableMcpService + ", createTime=" + createTime + ", updateTime=" + updateTime + '}';
+		return "FuncAgentToolEntity{" + "id=" + id + ", planTemplateId='" + planTemplateId + '\''
+				+ ", toolName='" + toolName + '\'' + ", toolDescription='" + toolDescription + '\''
+				+ ", enableInternalToolcall=" + enableInternalToolcall + ", enableHttpService=" + enableHttpService
+				+ ", enableMcpService=" + enableMcpService + ", serviceGroup='" + serviceGroup + '\''
+				+ ", createTime=" + createTime + ", updateTime=" + updateTime + '}';
 	}
 
 }

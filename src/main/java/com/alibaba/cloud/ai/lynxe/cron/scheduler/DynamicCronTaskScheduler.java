@@ -35,7 +35,7 @@ import com.alibaba.cloud.ai.lynxe.cron.entity.CronEntity;
 import com.alibaba.cloud.ai.lynxe.cron.enums.TaskStatus;
 import com.alibaba.cloud.ai.lynxe.cron.repository.CronRepository;
 import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory;
-import com.alibaba.cloud.ai.lynxe.planning.model.po.PlanTemplate;
+import com.alibaba.cloud.ai.lynxe.planning.service.PlanTemplateConfigService;
 import com.alibaba.cloud.ai.lynxe.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.lynxe.runtime.entity.vo.PlanExecutionResult;
 import com.alibaba.cloud.ai.lynxe.runtime.entity.vo.PlanInterface;
@@ -66,6 +66,9 @@ public class DynamicCronTaskScheduler {
 
 	@Autowired
 	private PlanTemplateService planTemplateService;
+
+	@Autowired
+	private PlanTemplateConfigService planTemplateConfigService;
 
 	@Autowired
 	private PlanningCoordinator planningCoordinator;
@@ -128,11 +131,21 @@ public class DynamicCronTaskScheduler {
 		try {
 			log.info("Executing plan template: {}", planTemplateId);
 
-			// Get the plan template to check if it exists
-			PlanTemplate template = planTemplateService.getPlanTemplate(planTemplateId);
-			if (template == null) {
-				log.error("Plan template not found: {}", planTemplateId);
+			// Check if the plan template exists using PlanTemplateConfigService
+			// First check if coordinator tool exists (optional check)
+			boolean coordinatorToolExists = planTemplateConfigService
+				.getCoordinatorToolByPlanTemplateId(planTemplateId)
+				.isPresent();
+
+			// Verify plan JSON exists (required for execution)
+			String planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
+			if (planJson == null || planJson.trim().isEmpty()) {
+				log.error("Plan template not found or has no plan version: {}", planTemplateId);
 				return;
+			}
+
+			if (!coordinatorToolExists) {
+				log.debug("Plan template {} exists but coordinator tool is not registered", planTemplateId);
 			}
 
 			// Execute the plan template using the new method

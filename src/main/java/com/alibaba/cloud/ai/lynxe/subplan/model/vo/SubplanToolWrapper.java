@@ -25,8 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ToolContext;
 
-import com.alibaba.cloud.ai.lynxe.planning.model.po.FuncAgentToolEntity;
-import com.alibaba.cloud.ai.lynxe.planning.model.po.PlanTemplate;
+import com.alibaba.cloud.ai.lynxe.planning.model.vo.PlanTemplateConfigVO;
 import com.alibaba.cloud.ai.lynxe.planning.service.IPlanParameterMappingService;
 import com.alibaba.cloud.ai.lynxe.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.lynxe.runtime.entity.vo.PlanExecutionResult;
@@ -37,7 +36,6 @@ import com.alibaba.cloud.ai.lynxe.runtime.service.PlanningCoordinator;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.AsyncToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -53,9 +51,9 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>>
 
 	private static final Logger logger = LoggerFactory.getLogger(SubplanToolWrapper.class);
 
-	private final FuncAgentToolEntity funcAgentToolEntity;
+	private final PlanTemplateConfigVO coordinatorToolConfig;
 
-	private final PlanTemplate planTemplate;
+	private final PlanTemplateConfigVO planTemplateConfig;
 
 	private final String currentPlanId;
 
@@ -71,12 +69,12 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>>
 
 	private final IPlanParameterMappingService parameterMappingService;
 
-	public SubplanToolWrapper(FuncAgentToolEntity funcAgentToolEntity, PlanTemplate planTemplate, String currentPlanId,
-			String rootPlanId, PlanTemplateService planTemplateService, PlanningCoordinator planningCoordinator,
-			PlanIdDispatcher planIdDispatcher, ObjectMapper objectMapper,
+	public SubplanToolWrapper(PlanTemplateConfigVO coordinatorToolConfig, PlanTemplateConfigVO planTemplateConfig,
+			String currentPlanId, String rootPlanId, PlanTemplateService planTemplateService,
+			PlanningCoordinator planningCoordinator, PlanIdDispatcher planIdDispatcher, ObjectMapper objectMapper,
 			IPlanParameterMappingService parameterMappingService) {
-		this.funcAgentToolEntity = funcAgentToolEntity;
-		this.planTemplate = planTemplate;
+		this.coordinatorToolConfig = coordinatorToolConfig;
+		this.planTemplateConfig = planTemplateConfig;
 		this.currentPlanId = currentPlanId;
 		this.rootPlanId = rootPlanId;
 		this.planTemplateService = planTemplateService;
@@ -88,10 +86,10 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>>
 
 	@Override
 	public String getServiceGroup() {
-		// Get serviceGroup from PlanTemplate
-		if (planTemplate != null && planTemplate.getServiceGroup() != null
-				&& !planTemplate.getServiceGroup().trim().isEmpty()) {
-			return planTemplate.getServiceGroup();
+		// Get serviceGroup from PlanTemplateConfigVO
+		if (planTemplateConfig != null && planTemplateConfig.getServiceGroup() != null
+				&& !planTemplateConfig.getServiceGroup().trim().isEmpty()) {
+			return planTemplateConfig.getServiceGroup();
 		}
 		// Fallback to default value if serviceGroup is null/empty
 		return "coordinator-tools";
@@ -99,64 +97,62 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>>
 
 	@Override
 	public String getName() {
-		// Use PlanTemplate title as tool name
-		if (planTemplate != null && planTemplate.getTitle() != null && !planTemplate.getTitle().trim().isEmpty()) {
-			return planTemplate.getTitle();
+		// Use PlanTemplateConfigVO title as tool name
+		if (planTemplateConfig != null && planTemplateConfig.getTitle() != null
+				&& !planTemplateConfig.getTitle().trim().isEmpty()) {
+			return planTemplateConfig.getTitle();
 		}
 		// Fallback to planTemplateId if title is not available
-		return funcAgentToolEntity.getPlanTemplateId();
+		return coordinatorToolConfig != null && coordinatorToolConfig.getPlanTemplateId() != null
+				? coordinatorToolConfig.getPlanTemplateId()
+				: "Unknown Tool";
 	}
 
 	@Override
 	public String getDescription() {
-		return funcAgentToolEntity.getToolDescription();
+		if (coordinatorToolConfig != null && coordinatorToolConfig.getToolConfig() != null) {
+			return coordinatorToolConfig.getToolConfig().getToolDescription();
+		}
+		return "";
 	}
 
 	@Override
 	public String getParameters() {
-		// Convert FuncAgentToolEntity inputSchema (JSON array) to JSON schema format
+		// Convert PlanTemplateConfigVO inputSchema to JSON schema format
 		try {
-			String inputSchemaJson = funcAgentToolEntity.getInputSchema();
-			if (inputSchemaJson == null || inputSchemaJson.trim().isEmpty()) {
+			List<PlanTemplateConfigVO.InputSchemaParam> inputSchemaParams = null;
+			if (coordinatorToolConfig != null && coordinatorToolConfig.getToolConfig() != null) {
+				inputSchemaParams = coordinatorToolConfig.getToolConfig().getInputSchema();
+			}
+
+			if (inputSchemaParams == null || inputSchemaParams.isEmpty()) {
 				return "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}";
 			}
 
-			// Parse the inputSchema JSON string
-			JsonNode inputSchemaNode = objectMapper.readTree(inputSchemaJson);
-			if (!inputSchemaNode.isArray()) {
-				logger.warn("InputSchema for tool {} is not an array, using empty schema", getName());
-				return "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}";
-			}
-
-			// Convert array of parameters to JSON schema format
+			// Convert list of InputSchemaParam to JSON schema format
 			Map<String, Object> schema = new HashMap<>();
 			schema.put("type", "object");
 
 			Map<String, Object> properties = new HashMap<>();
 			List<String> required = new ArrayList<>();
 
-			for (JsonNode paramNode : inputSchemaNode) {
-				if (!paramNode.isObject()) {
-					continue;
-				}
-
-				String paramName = paramNode.has("name") ? paramNode.get("name").asText() : null;
-				if (paramName == null || paramName.trim().isEmpty()) {
+			for (PlanTemplateConfigVO.InputSchemaParam param : inputSchemaParams) {
+				if (param == null || param.getName() == null || param.getName().trim().isEmpty()) {
 					continue;
 				}
 
 				Map<String, Object> paramSchema = new HashMap<>();
-				String paramType = paramNode.has("type") ? paramNode.get("type").asText().toLowerCase() : "string";
+				String paramType = param.getType() != null ? param.getType().toLowerCase() : "string";
 				paramSchema.put("type", paramType);
 
-				if (paramNode.has("description")) {
-					paramSchema.put("description", paramNode.get("description").asText());
+				if (param.getDescription() != null && !param.getDescription().trim().isEmpty()) {
+					paramSchema.put("description", param.getDescription());
 				}
 
-				properties.put(paramName, paramSchema);
+				properties.put(param.getName(), paramSchema);
 
-				if (paramNode.has("required") && paramNode.get("required").asBoolean()) {
-					required.add(paramName);
+				if (param.getRequired() != null && param.getRequired()) {
+					required.add(param.getName());
 				}
 			}
 
@@ -237,9 +233,9 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>>
 		return "Ready";
 	}
 
-	// Getter for the wrapped coordinator tool
-	public FuncAgentToolEntity getFuncAgentToolEntity() {
-		return funcAgentToolEntity;
+	// Getter for the wrapped coordinator tool config
+	public PlanTemplateConfigVO getCoordinatorToolConfig() {
+		return coordinatorToolConfig;
 	}
 
 	/**
@@ -293,13 +289,20 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>>
 	private CompletableFuture<ToolExecuteResult> executeSubplanWithToolCallIdAsync(Map<String, Object> input,
 			String toolCallId, int planDepth) {
 		try {
+			String planTemplateId = coordinatorToolConfig != null ? coordinatorToolConfig.getPlanTemplateId() : null;
+			if (planTemplateId == null) {
+				String errorMsg = "Plan template ID is null in coordinator tool config";
+				logger.error(errorMsg);
+				return CompletableFuture.completedFuture(new ToolExecuteResult(errorMsg));
+			}
+
 			logger.info("Executing coordinator tool (async): {} with template: {} and toolCallId: {}", getName(),
-					funcAgentToolEntity.getPlanTemplateId(), toolCallId);
+					planTemplateId, toolCallId);
 
 			// Get the plan template from PlanTemplateService
-			String planJson = planTemplateService.getLatestPlanVersion(funcAgentToolEntity.getPlanTemplateId());
+			String planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
 			if (planJson == null) {
-				String errorMsg = "Plan template not found: " + funcAgentToolEntity.getPlanTemplateId();
+				String errorMsg = "Plan template not found: " + planTemplateId;
 				logger.error(errorMsg);
 				return CompletableFuture.completedFuture(new ToolExecuteResult(errorMsg));
 			}
@@ -380,8 +383,11 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>>
 	@Override
 	public boolean isSelectable() {
 		// Only selectable if enableInternalToolcall is true
-		return funcAgentToolEntity.getEnableInternalToolcall() != null
-				&& funcAgentToolEntity.getEnableInternalToolcall();
+		if (coordinatorToolConfig != null && coordinatorToolConfig.getToolConfig() != null) {
+			Boolean enableInternalToolcall = coordinatorToolConfig.getToolConfig().getEnableInternalToolcall();
+			return enableInternalToolcall != null && enableInternalToolcall;
+		}
+		return false;
 	}
 
 }

@@ -31,8 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory;
 import com.alibaba.cloud.ai.lynxe.planning.model.po.FuncAgentToolEntity;
+import com.alibaba.cloud.ai.lynxe.planning.model.vo.PlanTemplateConfigVO;
 import com.alibaba.cloud.ai.lynxe.planning.repository.FuncAgentToolRepository;
 import com.alibaba.cloud.ai.lynxe.planning.service.IPlanParameterMappingService;
+import com.alibaba.cloud.ai.lynxe.planning.service.PlanTemplateConfigService;
 import com.alibaba.cloud.ai.lynxe.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanningCoordinator;
@@ -59,6 +61,9 @@ public class SubplanToolService {
 
 	@Autowired
 	private PlanTemplateService planTemplateService;
+
+	@Autowired
+	private PlanTemplateConfigService planTemplateConfigService;
 
 	@Autowired
 	@Lazy
@@ -104,32 +109,49 @@ public class SubplanToolService {
 
 			logger.info("Found {} coordinator tools to register", coordinatorTools.size());
 
-			for (FuncAgentToolEntity coordinatorTool : coordinatorTools) {
+		for (FuncAgentToolEntity coordinatorTool : coordinatorTools) {
 
-			// Get PlanTemplate for this coordinator tool
-			com.alibaba.cloud.ai.lynxe.planning.model.po.PlanTemplate planTemplate = planTemplateService
-				.getPlanTemplate(coordinatorTool.getPlanTemplateId());
-			if (planTemplate == null) {
+			// Get plan template config VO for this coordinator tool
+			String planTemplateId = coordinatorTool.getPlanTemplateId();
+			Optional<PlanTemplateConfigVO> planTemplateOpt = planTemplateConfigService.getPlanTemplate(planTemplateId);
+			if (planTemplateOpt.isEmpty()) {
 				logger.info("PlanTemplate not found for planTemplateId: {}, skipping tool registration",
-						coordinatorTool.getPlanTemplateId());
+						planTemplateId);
 				continue;
 			}
+			PlanTemplateConfigVO planTemplateConfig = planTemplateOpt.get();
 
-				String toolName = planTemplate.getTitle() != null ? planTemplate.getTitle()
-						: coordinatorTool.getPlanTemplateId();
+			// Get coordinator tool config VO
+			Optional<PlanTemplateConfigVO> coordinatorToolOpt = planTemplateConfigService
+				.getCoordinatorToolByPlanTemplateId(planTemplateId);
+			if (coordinatorToolOpt.isEmpty()) {
+				logger.info("Coordinator tool config not found for planTemplateId: {}, skipping tool registration",
+						planTemplateId);
+				continue;
+			}
+			PlanTemplateConfigVO coordinatorToolConfig = coordinatorToolOpt.get();
+
+			String toolName = planTemplateConfig.getTitle() != null ? planTemplateConfig.getTitle()
+					: planTemplateId;
 				try {
 					// Create a SubplanToolWrapper that extends AbstractBaseTool
-					SubplanToolWrapper toolWrapper = new SubplanToolWrapper(coordinatorTool, planTemplate, planId,
-							rootPlanId, planTemplateService, planningCoordinator, planIdDispatcher, objectMapper,
-							parameterMappingService);
+					SubplanToolWrapper toolWrapper = new SubplanToolWrapper(coordinatorToolConfig, planTemplateConfig,
+							planId, rootPlanId, planTemplateService, planningCoordinator, planIdDispatcher,
+							objectMapper, parameterMappingService);
 
-					// Get tool name from wrapper (uses PlanTemplate title)
+					// Get tool name from wrapper (uses PlanTemplateConfigVO title)
 					toolName = toolWrapper.getName();
+
+					// Get description from coordinator tool config
+					String description = "";
+					if (coordinatorToolConfig.getToolConfig() != null) {
+						description = coordinatorToolConfig.getToolConfig().getToolDescription();
+					}
 
 					// Create FunctionToolCallback
 					FunctionToolCallback<Map<String, Object>, ToolExecuteResult> functionToolCallback = FunctionToolCallback
 						.builder(toolName, toolWrapper)
-						.description(coordinatorTool.getToolDescription())
+						.description(description)
 						.inputSchema(toolWrapper.getParameters())
 						.inputType(Map.class) // Map input type for coordinator tools
 						.toolMetadata(ToolMetadata.builder().returnDirect(false).build())
@@ -141,13 +163,11 @@ public class SubplanToolService {
 
 					toolCallbackMap.put(toolName, context);
 
-					logger.info("Successfully registered coordinator tool: {} -> {}", toolName,
-							coordinatorTool.getPlanTemplateId());
+					logger.info("Successfully registered coordinator tool: {} -> {}", toolName, planTemplateId);
 
 				}
 				catch (Exception e) {
-					logger.error("Failed to register coordinator tool for planTemplateId: {}",
-							coordinatorTool.getPlanTemplateId(), e);
+					logger.error("Failed to register coordinator tool for planTemplateId: {}", planTemplateId, e);
 				}
 			}
 

@@ -30,10 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.cloud.ai.lynxe.planning.exception.PlanTemplateConfigException;
 import com.alibaba.cloud.ai.lynxe.planning.model.po.FuncAgentToolEntity;
-import com.alibaba.cloud.ai.lynxe.planning.model.po.PlanTemplate;
 import com.alibaba.cloud.ai.lynxe.planning.model.vo.PlanTemplateConfigVO;
 import com.alibaba.cloud.ai.lynxe.planning.repository.FuncAgentToolRepository;
-import com.alibaba.cloud.ai.lynxe.planning.repository.PlanTemplateRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -47,9 +45,6 @@ public class PlanTemplateConfigService {
 	private static final Logger log = LoggerFactory.getLogger(PlanTemplateConfigService.class);
 
 	@Autowired
-	private PlanTemplateRepository planTemplateRepository;
-
-	@Autowired
 	private FuncAgentToolRepository funcAgentToolRepository;
 
 	@Autowired
@@ -60,6 +55,9 @@ public class PlanTemplateConfigService {
 
 	@Autowired
 	private ObjectMapper objectMapper;
+
+	@Autowired(required = false)
+	private com.alibaba.cloud.ai.lynxe.planning.repository.PlanTemplateVersionRepository planTemplateVersionRepository;
 
 	/**
 	 * Prepare PlanTemplateConfigVO with toolConfig This method ensures toolConfig is
@@ -148,25 +146,36 @@ public class PlanTemplateConfigService {
 	/**
 	 * Ensure PlanTemplate exists, create or update it if needed
 	 * @param configVO Plan template configuration VO
-	 * @return Existing or newly created PlanTemplate
+	 * @return Existing or newly created PlanTemplateConfigVO
 	 * @throws PlanTemplateConfigException if creation fails
 	 */
 	@Transactional
-	public PlanTemplate ensurePlanTemplateExists(PlanTemplateConfigVO configVO) throws PlanTemplateConfigException {
+	public PlanTemplateConfigVO ensurePlanTemplateExists(PlanTemplateConfigVO configVO) throws PlanTemplateConfigException {
 		String planTemplateId = configVO.getPlanTemplateId();
-		Optional<PlanTemplate> existingTemplateOpt = planTemplateRepository.findByPlanTemplateId(planTemplateId);
+		List<FuncAgentToolEntity> existingTemplates = funcAgentToolRepository.findByPlanTemplateId(planTemplateId);
 
-		if (existingTemplateOpt.isPresent()) {
-			PlanTemplate planTemplate = existingTemplateOpt.get();
+		if (!existingTemplates.isEmpty()) {
+			FuncAgentToolEntity planTemplate = existingTemplates.get(0);
 			// Update serviceGroup on existing PlanTemplate if provided in configVO
 			String serviceGroup = configVO.getServiceGroup();
 			if (serviceGroup != null && !serviceGroup.trim().isEmpty()
 					&& !serviceGroup.equals(planTemplate.getServiceGroup())) {
 				planTemplate.setServiceGroup(serviceGroup);
-				planTemplateRepository.save(planTemplate);
+				funcAgentToolRepository.save(planTemplate);
 				log.info("Updated serviceGroup to '{}' on PlanTemplate with ID: {}", serviceGroup, planTemplateId);
 			}
-			return planTemplate;
+			// Convert entity to VO
+			PlanTemplateConfigVO result = new PlanTemplateConfigVO();
+			result.setPlanTemplateId(planTemplate.getPlanTemplateId());
+			result.setTitle(planTemplate.getToolName());
+			result.setServiceGroup(planTemplate.getServiceGroup());
+			if (planTemplate.getCreateTime() != null) {
+				result.setCreateTime(planTemplate.getCreateTime().toString());
+			}
+			if (planTemplate.getUpdateTime() != null) {
+				result.setUpdateTime(planTemplate.getUpdateTime().toString());
+			}
+			return result;
 		}
 		else {
 			log.info("Plan template not found for planTemplateId: {}, creating new PlanTemplate", planTemplateId);
@@ -249,10 +258,10 @@ public class PlanTemplateConfigService {
 	/**
 	 * Create PlanTemplate from PlanTemplateConfigVO and save it to database
 	 * @param configVO Plan template configuration VO
-	 * @return Created PlanTemplate
+	 * @return Created PlanTemplateConfigVO
 	 */
 	@Transactional
-	public PlanTemplate createPlanTemplateFromConfig(PlanTemplateConfigVO configVO) {
+	public PlanTemplateConfigVO createPlanTemplateFromConfig(PlanTemplateConfigVO configVO) {
 		try {
 			String planTemplateId = configVO.getPlanTemplateId();
 			String title = configVO.getTitle() != null ? configVO.getTitle() : "Untitled Plan";
@@ -260,22 +269,29 @@ public class PlanTemplateConfigService {
 			String planJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(configVO);
 
 			// Check if PlanTemplate already exists
-			Optional<PlanTemplate> existingTemplateOpt = planTemplateRepository.findByPlanTemplateId(planTemplateId);
-			boolean isNewTemplate = existingTemplateOpt.isEmpty();
+			List<FuncAgentToolEntity> existingTemplates = funcAgentToolRepository.findByPlanTemplateId(planTemplateId);
+			boolean isNewTemplate = existingTemplates.isEmpty();
 
 			// Save plan template
 			if (isNewTemplate) {
 				// Create new plan template
-				PlanTemplate template = new PlanTemplate(planTemplateId, title, false);
-				planTemplateRepository.save(template);
+				FuncAgentToolEntity template = new FuncAgentToolEntity();
+				template.setPlanTemplateId(planTemplateId);
+				template.setToolName(title);
+				template.setToolDescription("");
+				template.setInputSchema("[]");
+				template.setEnableInternalToolcall(false);
+				template.setEnableHttpService(false);
+				template.setEnableMcpService(false);
+				funcAgentToolRepository.save(template);
 				log.debug("Created new plan template: {}", planTemplateId);
 			}
 			else {
 				// Update existing plan template
-				PlanTemplate template = existingTemplateOpt.get();
-				template.setTitle(title);
+				FuncAgentToolEntity template = existingTemplates.get(0);
+				template.setToolName(title);
 				template.setUpdateTime(java.time.LocalDateTime.now());
-				planTemplateRepository.save(template);
+				funcAgentToolRepository.save(template);
 				log.debug("Updated existing plan template: {}", planTemplateId);
 			}
 
@@ -295,26 +311,41 @@ public class PlanTemplateConfigService {
 			}
 
 			// Retrieve the saved plan template
-			PlanTemplate savedTemplate = planTemplateRepository.findByPlanTemplateId(planTemplateId)
-				.orElseThrow(() -> new PlanTemplateConfigException("INTERNAL_ERROR",
-						"Failed to retrieve created PlanTemplate with ID: " + planTemplateId));
+			List<FuncAgentToolEntity> savedTemplates = funcAgentToolRepository.findByPlanTemplateId(planTemplateId);
+			FuncAgentToolEntity savedTemplate = savedTemplates.isEmpty() ? null : savedTemplates.get(0);
+			if (savedTemplate == null) {
+				throw new PlanTemplateConfigException("INTERNAL_ERROR",
+						"Failed to retrieve created PlanTemplate with ID: " + planTemplateId);
+			}
 
 			// Set serviceGroup on PlanTemplate from configVO
 			String serviceGroup = configVO.getServiceGroup();
 			if (serviceGroup != null && !serviceGroup.trim().isEmpty()) {
 				savedTemplate.setServiceGroup(serviceGroup);
-				planTemplateRepository.save(savedTemplate);
+				funcAgentToolRepository.save(savedTemplate);
 				log.info("Set serviceGroup '{}' on PlanTemplate with ID: {}", serviceGroup, planTemplateId);
 			}
 			else {
 				// Set default serviceGroup if not provided
 				savedTemplate.setServiceGroup("ungrouped");
-				planTemplateRepository.save(savedTemplate);
+				funcAgentToolRepository.save(savedTemplate);
 				log.info("Set default serviceGroup 'ungrouped' on PlanTemplate with ID: {}", planTemplateId);
 			}
 
+			// Convert entity to VO
+			PlanTemplateConfigVO resultVO = new PlanTemplateConfigVO();
+			resultVO.setPlanTemplateId(savedTemplate.getPlanTemplateId());
+			resultVO.setTitle(savedTemplate.getToolName());
+			resultVO.setServiceGroup(savedTemplate.getServiceGroup());
+			if (savedTemplate.getCreateTime() != null) {
+				resultVO.setCreateTime(savedTemplate.getCreateTime().toString());
+			}
+			if (savedTemplate.getUpdateTime() != null) {
+				resultVO.setUpdateTime(savedTemplate.getUpdateTime().toString());
+			}
+
 			log.info("Successfully created PlanTemplate with ID: {}", planTemplateId);
-			return savedTemplate;
+			return resultVO;
 
 		}
 		catch (PlanTemplateConfigException e) {
@@ -614,23 +645,14 @@ public class PlanTemplateConfigService {
 
 	/**
 	 * Get plan template ID from tool name Only returns plan template ID if HTTP service
-	 * is enabled for the tool Tool name is matched against PlanTemplate.title
-	 * @param toolName Tool name (PlanTemplate.title)
+	 * is enabled for the tool Tool name is matched against FuncAgentToolEntity.toolName
+	 * @param toolName Tool name (FuncAgentToolEntity.toolName)
 	 * @return Plan template ID if found and HTTP service is enabled, null otherwise
 	 */
 	public String getPlanTemplateIdFromToolName(String toolName) {
 		try {
-			// Find PlanTemplate by title (tool name)
-			Optional<PlanTemplate> planTemplateOpt = planTemplateRepository.findByTitle(toolName);
-			if (planTemplateOpt.isEmpty()) {
-				return null;
-			}
-
-			PlanTemplate planTemplate = planTemplateOpt.get();
-			String planTemplateId = planTemplate.getPlanTemplateId();
-
-			// Find FuncAgentToolEntity by planTemplateId
-			List<FuncAgentToolEntity> toolEntities = funcAgentToolRepository.findByPlanTemplateId(planTemplateId);
+			// Find FuncAgentToolEntity by tool name
+			List<FuncAgentToolEntity> toolEntities = funcAgentToolRepository.findByToolName(toolName);
 			if (toolEntities.isEmpty()) {
 				return null;
 			}
@@ -641,7 +663,7 @@ public class PlanTemplateConfigService {
 			if (isHttpEnabled == null || !isHttpEnabled) {
 				return null;
 			}
-			return planTemplateId;
+			return toolEntity.getPlanTemplateId();
 		}
 		catch (Exception e) {
 			log.error("Error getting plan template ID from tool name: {}", e.getMessage(), e);
@@ -667,6 +689,93 @@ public class PlanTemplateConfigService {
 	}
 
 	/**
+	 * Get plan template by plan template ID
+	 * @param planTemplateId Plan template ID
+	 * @return Optional PlanTemplateConfigVO, empty if not found
+	 */
+	public Optional<PlanTemplateConfigVO> getPlanTemplate(String planTemplateId) {
+		try {
+			List<FuncAgentToolEntity> entities = funcAgentToolRepository.findByPlanTemplateId(planTemplateId);
+			if (!entities.isEmpty()) {
+				FuncAgentToolEntity entity = entities.get(0);
+				PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
+				configVO.setPlanTemplateId(entity.getPlanTemplateId());
+				configVO.setTitle(entity.getToolName());
+				configVO.setServiceGroup(entity.getServiceGroup());
+				if (entity.getCreateTime() != null) {
+					configVO.setCreateTime(entity.getCreateTime().toString());
+				}
+				if (entity.getUpdateTime() != null) {
+					configVO.setUpdateTime(entity.getUpdateTime().toString());
+				}
+				return Optional.of(configVO);
+			}
+			return Optional.empty();
+		}
+		catch (Exception e) {
+			log.error("Error getting plan template by ID: {}", e.getMessage(), e);
+			return Optional.empty();
+		}
+	}
+
+	/**
+	 * Get all plan templates
+	 * @return List of all PlanTemplateConfigVO
+	 */
+	public List<PlanTemplateConfigVO> getAllPlanTemplates() {
+		try {
+			return funcAgentToolRepository.findAll()
+				.stream()
+				.map(entity -> {
+					PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
+					configVO.setPlanTemplateId(entity.getPlanTemplateId());
+					configVO.setTitle(entity.getToolName());
+					configVO.setServiceGroup(entity.getServiceGroup());
+					if (entity.getCreateTime() != null) {
+						configVO.setCreateTime(entity.getCreateTime().toString());
+					}
+					if (entity.getUpdateTime() != null) {
+						configVO.setUpdateTime(entity.getUpdateTime().toString());
+					}
+					return configVO;
+				})
+				.collect(Collectors.toList());
+		}
+		catch (Exception e) {
+			log.error("Error getting all plan templates: {}", e.getMessage(), e);
+			return new ArrayList<>();
+		}
+	}
+
+	/**
+	 * Delete plan template and all its versions
+	 * @param planTemplateId Plan template ID
+	 * @return Whether deletion was successful
+	 */
+	@Transactional
+	public boolean deletePlanTemplate(String planTemplateId) {
+		try {
+			// First delete all related versions
+			if (planTemplateVersionRepository != null) {
+				planTemplateVersionRepository.deleteByPlanTemplateId(planTemplateId);
+			}
+
+			// Delete related coordinator tools
+			deleteCoordinatorToolByPlanTemplateId(planTemplateId);
+
+			// Then delete the template itself
+			funcAgentToolRepository.deleteByPlanTemplateId(planTemplateId);
+
+			log.info("Deleted plan template {} and all its versions and coordinator tools", planTemplateId);
+			return true;
+		}
+		catch (Exception e) {
+			log.error("Failed to delete plan template {}", planTemplateId, e);
+			return false;
+		}
+	}
+
+	/**
 	 * Convert FuncAgentToolEntity to PlanTemplateConfigVO
 	 * @param entity FuncAgentToolEntity
 	 * @return PlanTemplateConfigVO with toolConfig populated
@@ -675,12 +784,8 @@ public class PlanTemplateConfigService {
 		PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
 		configVO.setPlanTemplateId(entity.getPlanTemplateId());
 
-		// Get PlanTemplate for additional info
-		PlanTemplate planTemplate = planTemplateRepository.findByPlanTemplateId(entity.getPlanTemplateId())
-			.orElse(null);
-		if (planTemplate != null) {
-			configVO.setServiceGroup(planTemplate.getServiceGroup());
-		}
+		// Get additional info from entity
+		configVO.setServiceGroup(entity.getServiceGroup());
 
 		// Create ToolConfigVO from entity
 		PlanTemplateConfigVO.ToolConfigVO toolConfig = new PlanTemplateConfigVO.ToolConfigVO();
