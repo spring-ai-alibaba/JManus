@@ -47,6 +47,9 @@ export function usePlanTemplateConfig() {
   // Flag to prevent watchers from syncing when user is updating individual properties
   const isUserUpdating = ref(false)
 
+  // Flag to indicate that a full refresh is needed (for load, setConfig, fromJsonString, reset, version control)
+  const needsFullRefresh = ref(false)
+
   // Version control state
   const planVersions = ref<string[]>([])
   const currentVersionIndex = ref(-1)
@@ -128,6 +131,7 @@ export function usePlanTemplateConfig() {
 
   // Set full config
   const setConfig = (newConfig: PlanTemplateConfigVO) => {
+    needsFullRefresh.value = true
     const updatedConfig: PlanTemplateConfigVO = {
       title: newConfig.title || '',
       // Deep copy steps to preserve all properties including selectedToolKeys
@@ -146,10 +150,15 @@ export function usePlanTemplateConfig() {
       updatedConfig.toolConfig = { ...newConfig.toolConfig }
     }
     Object.assign(config, updatedConfig)
+    // Reset flag after reactivity update
+    setTimeout(() => {
+      needsFullRefresh.value = false
+    }, 0)
   }
 
   // Reset to default
   const reset = () => {
+    needsFullRefresh.value = true
     Object.assign(config, {
       title: '',
       steps: [],
@@ -166,6 +175,10 @@ export function usePlanTemplateConfig() {
     planVersions.value = []
     currentVersionIndex.value = -1
     error.value = null
+    // Reset flag after reactivity update
+    setTimeout(() => {
+      needsFullRefresh.value = false
+    }, 0)
   }
 
   // Dynamically generate JSON from current config state (not cached, regenerated each time)
@@ -518,6 +531,7 @@ export function usePlanTemplateConfig() {
     isLoading,
     error,
     isUserUpdating,
+    needsFullRefresh,
     planVersions,
     currentVersionIndex,
     planTemplateList,

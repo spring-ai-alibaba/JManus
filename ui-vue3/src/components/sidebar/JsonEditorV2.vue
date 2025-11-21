@@ -433,20 +433,17 @@ const generatedJsonOutput = computed(() => {
 // Flag to track if we're syncing from config (to avoid setting modification flag during load)
 const isSyncingFromConfig = ref(false)
 
-// Flag to track if user is actively editing (typing in fields)
-const isUserEditing = ref(false)
-
 // Timeout for resetting editing flag (debounce)
 let editingTimeout: ReturnType<typeof setTimeout> | null = null
 
-// Helper to set editing flag with debounce
+// Helper to set editing flag with debounce (uses templateConfig.isUserUpdating)
 const setEditingFlag = () => {
-  isUserEditing.value = true
+  templateConfig.isUserUpdating.value = true
   if (editingTimeout) {
     clearTimeout(editingTimeout)
   }
   editingTimeout = setTimeout(() => {
-    isUserEditing.value = false
+    templateConfig.isUserUpdating.value = false
     editingTimeout = null
   }, 500)
 }
@@ -454,7 +451,7 @@ const setEditingFlag = () => {
 // Sync displayData with templateConfig
 const syncDisplayDataFromConfig = () => {
   // Don't sync if user is actively editing to prevent losing unsaved changes
-  if (isUserEditing.value) {
+  if (templateConfig.isUserUpdating.value) {
     return
   }
 
@@ -540,7 +537,7 @@ const handleRollback = () => {
       clearTimeout(editingTimeout)
       editingTimeout = null
     }
-    isUserEditing.value = false
+    templateConfig.isUserUpdating.value = false
     templateConfig.rollbackVersion()
   } catch (error) {
     console.error('Error during rollback operation:', error)
@@ -555,7 +552,7 @@ const handleRestore = () => {
       clearTimeout(editingTimeout)
       editingTimeout = null
     }
-    isUserEditing.value = false
+    templateConfig.isUserUpdating.value = false
     templateConfig.restoreVersion()
   } catch (error) {
     console.error('Error during restore operation:', error)
@@ -575,7 +572,7 @@ const handleSave = async () => {
       clearTimeout(editingTimeout)
       editingTimeout = null
     }
-    isUserEditing.value = false
+    templateConfig.isUserUpdating.value = false
 
     // Sync displayData to templateConfig before validation and save
     // This ensures all user input is synchronized before saving
@@ -663,8 +660,8 @@ const handleAddStep = () => {
     selectedToolKeys: [],
   }
   displayData.steps.push(newStep)
-  // Sync to templateConfig with guard to prevent circular update
-  templateConfig.setStepsWithGuard(displayData.steps)
+  // Sync to templateConfig - no guard needed since setSteps() doesn't trigger watcher (needsFullRefresh is false)
+  templateConfig.setSteps(displayData.steps)
   console.log('[JsonEditorV2] Added new step, total steps:', displayData.steps.length)
 }
 
@@ -1016,13 +1013,14 @@ const loadServiceGroup = () => {
 watch(
   () => templateConfig.config,
   () => {
+    // Only sync when a full refresh is needed (load, setConfig, fromJsonString, reset, version control)
+    // Skip sync for partial updates (setTitle, setSteps, etc.) to avoid unnecessary refreshes
     // Don't sync if we're already syncing (prevents circular updates)
-    // Don't sync if user is actively editing (prevents losing user input)
-    // Also check isUserUpdating flag from composable (for updates from other components)
+    // Don't sync if user is actively editing or programmatic updates are in progress
     if (
+      templateConfig.needsFullRefresh.value &&
       !isSyncingFromConfig.value &&
-      !templateConfig.isUserUpdating.value &&
-      !isUserEditing.value
+      !templateConfig.isUserUpdating.value
     ) {
       syncDisplayDataFromConfig()
     }
