@@ -533,6 +533,52 @@ public class PlanTemplateController {
 	}
 
 	/**
+	 * Export all plan templates as JSON array
+	 * @return List of PlanTemplateConfigVO containing all plan templates with their
+	 * configurations
+	 */
+	@GetMapping("/export-all")
+	public ResponseEntity<List<PlanTemplateConfigVO>> exportAllPlanTemplates() {
+		try {
+			logger.info("Exporting all plan templates");
+			List<PlanTemplateConfigVO> exportedTemplates = planTemplateConfigService.exportAllPlanTemplates();
+			logger.info("Successfully exported {} plan templates", exportedTemplates.size());
+			return ResponseEntity.ok(exportedTemplates);
+		}
+		catch (Exception e) {
+			logger.error("Failed to export all plan templates", e);
+			return ResponseEntity.internalServerError().build();
+		}
+	}
+
+	/**
+	 * Import plan templates from JSON array
+	 * @param templates List of PlanTemplateConfigVO to import
+	 * @return Import result with success/failure counts
+	 */
+	@PostMapping("/import-all")
+	@Transactional
+	public ResponseEntity<Map<String, Object>> importPlanTemplates(
+			@RequestBody List<PlanTemplateConfigVO> templates) {
+		try {
+			if (templates == null || templates.isEmpty()) {
+				return ResponseEntity.badRequest()
+					.body(Map.of("error", "Template list cannot be null or empty", "success", false));
+			}
+
+			logger.info("Importing {} plan templates", templates.size());
+			Map<String, Object> result = planTemplateConfigService.importPlanTemplates(templates);
+			logger.info("Import completed: {}", result);
+			return ResponseEntity.ok(result);
+		}
+		catch (Exception e) {
+			logger.error("Failed to import plan templates", e);
+			return ResponseEntity.internalServerError()
+				.body(Map.of("error", "Failed to import plan templates: " + e.getMessage(), "success", false));
+		}
+	}
+
+	/**
 	 * Get plan template configuration VO by plan template ID
 	 * @param planTemplateId The plan template ID
 	 * @return PlanTemplateConfigVO containing plan template and tool configuration

@@ -199,6 +199,7 @@ const words: I18nType = {
       mcp: 'Tools/MCP配置',
       database: '数据库配置',
       namespace: '命名空间配置',
+      planTemplate: '计划模板管理',
     },
     subGroupDisplayNames: {
       agent: 'Agent',
@@ -547,6 +548,25 @@ const words: I18nType = {
         selectNamespace: '请选择命名空间',
         namespace: '命名空间',
       },
+    },
+    // 计划模板管理页面
+    planTemplate: {
+      title: '计划模板管理',
+      totalTemplates: '模板总数',
+      export: '导出',
+      import: '导入',
+      noTemplates: '暂无计划模板',
+      untitled: '未命名',
+      serviceGroup: '服务组',
+      planType: '计划类型',
+      steps: '步骤数',
+      exportSuccess: '计划模板导出成功',
+      exportFailed: '导出计划模板失败',
+      importSuccess: '导入完成：共 {total} 个，成功 {success} 个，失败 {failed} 个',
+      importFailed: '导入计划模板失败',
+      importConfirm: '这将覆盖具有相同 planTemplateId 的现有模板。是否继续？',
+      invalidFormat: '文件格式无效。应为计划模板的 JSON 数组。',
+      loadFailed: '加载计划模板失败',
     },
   },
 

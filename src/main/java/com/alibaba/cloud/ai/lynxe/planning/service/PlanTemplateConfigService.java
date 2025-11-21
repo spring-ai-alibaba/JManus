@@ -795,6 +795,162 @@ public class PlanTemplateConfigService {
 	}
 
 	/**
+	 * Export all plan templates with their configurations
+	 * @return List of PlanTemplateConfigVO containing all plan templates ready for export
+	 */
+	public List<PlanTemplateConfigVO> exportAllPlanTemplates() {
+		try {
+			log.info("Exporting all plan templates");
+			// Get all plan templates using the same logic as getAllPlanTemplateConfigVOs in controller
+			List<PlanTemplateConfigVO> templates = getAllPlanTemplates();
+			List<PlanTemplateConfigVO> configVOs = new ArrayList<>();
+
+			for (PlanTemplateConfigVO planTemplate : templates) {
+				String planTemplateId = planTemplate.getPlanTemplateId();
+				if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
+					continue;
+				}
+
+				// Get latest plan JSON version
+				String planJson = planTemplateService.getLatestPlanVersion(planTemplateId);
+				if (planJson == null || planJson.trim().isEmpty()) {
+					log.warn("Plan JSON not found for planTemplateId: {}, skipping", planTemplateId);
+					continue;
+				}
+
+				try {
+					// Parse plan JSON to PlanInterface
+					com.alibaba.cloud.ai.lynxe.runtime.entity.vo.PlanInterface planInterface = objectMapper
+						.readValue(planJson, com.alibaba.cloud.ai.lynxe.runtime.entity.vo.PlanInterface.class);
+
+					// Create PlanTemplateConfigVO from plan template and plan JSON
+					PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
+					configVO.setPlanTemplateId(planTemplate.getPlanTemplateId());
+					configVO.setTitle(planTemplate.getTitle());
+					configVO.setPlanType(planInterface.getPlanType());
+					configVO.setServiceGroup(planTemplate.getServiceGroup());
+					configVO.setDirectResponse(planInterface.isDirectResponse());
+					configVO.setReadOnly(planTemplate.getReadOnly());
+
+					// Convert ExecutionStep list to StepConfig list
+					if (planInterface.getAllSteps() != null) {
+						List<PlanTemplateConfigVO.StepConfig> stepConfigs = new ArrayList<>();
+						for (com.alibaba.cloud.ai.lynxe.runtime.entity.vo.ExecutionStep step : planInterface
+							.getAllSteps()) {
+							PlanTemplateConfigVO.StepConfig stepConfig = new PlanTemplateConfigVO.StepConfig();
+							stepConfig.setStepRequirement(step.getStepRequirement());
+							stepConfig.setAgentName(step.getAgentName());
+							stepConfig.setModelName(step.getModelName());
+							stepConfig.setTerminateColumns(step.getTerminateColumns());
+							stepConfig.setSelectedToolKeys(step.getSelectedToolKeys());
+							stepConfigs.add(stepConfig);
+						}
+						configVO.setSteps(stepConfigs);
+					}
+
+					// Get coordinator tool if exists to populate toolConfig
+					Optional<PlanTemplateConfigVO> coordinatorToolOpt = getCoordinatorToolByPlanTemplateId(
+							planTemplateId);
+					if (coordinatorToolOpt.isPresent()) {
+						PlanTemplateConfigVO toolConfigVO = coordinatorToolOpt.get();
+						if (toolConfigVO.getToolConfig() != null) {
+							configVO.setToolConfig(toolConfigVO.getToolConfig());
+						}
+					}
+					else {
+						// If no toolConfig exists, create an empty one to match export format
+						PlanTemplateConfigVO.ToolConfigVO toolConfig = new PlanTemplateConfigVO.ToolConfigVO();
+						configVO.setToolConfig(toolConfig);
+					}
+
+					configVOs.add(configVO);
+				}
+				catch (Exception e) {
+					log.warn("Failed to process plan template {} for export: {}", planTemplateId, e.getMessage());
+					// Continue processing other templates even if one fails
+				}
+			}
+
+			log.info("Successfully exported {} plan templates", configVOs.size());
+			return configVOs;
+		}
+		catch (Exception e) {
+			log.error("Failed to export all plan templates", e);
+			throw new PlanTemplateConfigException("EXPORT_ERROR",
+					"Failed to export plan templates: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Import plan templates from a list, overwriting existing ones
+	 * @param templates List of PlanTemplateConfigVO to import
+	 * @return Map containing import statistics (successCount, failureCount, errors)
+	 */
+	@Transactional
+	public Map<String, Object> importPlanTemplates(List<PlanTemplateConfigVO> templates) {
+		int successCount = 0;
+		int failureCount = 0;
+		List<Map<String, String>> errors = new ArrayList<>();
+
+		log.info("Starting import of {} plan templates", templates.size());
+
+		for (PlanTemplateConfigVO template : templates) {
+			try {
+				// Validate required fields
+				String planTemplateId = template.getPlanTemplateId();
+				if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
+					Map<String, String> error = new HashMap<>();
+					error.put("planTemplateId", "missing");
+					error.put("message", "planTemplateId is required");
+					errors.add(error);
+					failureCount++;
+					continue;
+				}
+
+				// Check if template exists
+				Optional<PlanTemplateConfigVO> existingTemplateOpt = getPlanTemplate(planTemplateId);
+				if (existingTemplateOpt.isPresent()) {
+					// Delete existing template and all its versions
+					log.info("Template {} already exists, deleting before import", planTemplateId);
+					deletePlanTemplate(planTemplateId);
+				}
+
+				// Create plan template from config (this saves the plan JSON to version history)
+				createPlanTemplateFromConfig(template);
+
+				// If toolConfig is provided, create or update coordinator tool
+				if (template.getToolConfig() != null) {
+					// Prepare config with toolConfig
+					PlanTemplateConfigVO preparedConfig = preparePlanTemplateConfigWithToolConfig(template);
+					createOrUpdateCoordinatorToolFromPlanTemplateConfig(preparedConfig);
+				}
+
+				successCount++;
+				log.info("Successfully imported plan template: {}", planTemplateId);
+			}
+			catch (Exception e) {
+				failureCount++;
+				Map<String, String> error = new HashMap<>();
+				error.put("planTemplateId", template.getPlanTemplateId() != null ? template.getPlanTemplateId() : "unknown");
+				error.put("message", e.getMessage());
+				errors.add(error);
+				log.error("Failed to import plan template {}: {}", template.getPlanTemplateId(), e.getMessage(), e);
+			}
+		}
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("success", true);
+		result.put("total", templates.size());
+		result.put("successCount", successCount);
+		result.put("failureCount", failureCount);
+		result.put("errors", errors);
+
+		log.info("Import completed: {} successful, {} failed out of {} total", successCount, failureCount,
+				templates.size());
+		return result;
+	}
+
+	/**
 	 * Convert FuncAgentToolEntity to PlanTemplateConfigVO
 	 * @param entity FuncAgentToolEntity
 	 * @return PlanTemplateConfigVO with toolConfig populated

@@ -203,6 +203,7 @@ const words: I18nType = {
       mcp: 'Tools/MCP Configuration',
       database: 'Database Configuration',
       namespace: 'Namespace Configuration',
+      planTemplate: 'Plan Template Management',
     },
     subGroupDisplayNames: {
       agent: 'Agent',
@@ -562,6 +563,25 @@ const words: I18nType = {
         selectNamespace: 'Please select a namespace',
         namespace: 'Namespace',
       },
+    },
+    // Plan Template Management page
+    planTemplate: {
+      title: 'Plan Template Management',
+      totalTemplates: 'Total Templates',
+      export: 'Export',
+      import: 'Import',
+      noTemplates: 'No plan templates available',
+      untitled: 'Untitled',
+      serviceGroup: 'Service Group',
+      planType: 'Plan Type',
+      steps: 'Steps',
+      exportSuccess: 'Plan templates exported successfully',
+      exportFailed: 'Failed to export plan templates',
+      importSuccess: 'Import completed: {total} total, {success} successful, {failed} failed',
+      importFailed: 'Failed to import plan templates',
+      importConfirm: 'This will overwrite existing templates with the same planTemplateId. Continue?',
+      invalidFormat: 'Invalid file format. Expected a JSON array of plan templates.',
+      loadFailed: 'Failed to load plan templates',
     },
   },
 
