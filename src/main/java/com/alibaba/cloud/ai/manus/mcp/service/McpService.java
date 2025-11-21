@@ -161,6 +161,7 @@ public class McpService implements IMcpService {
 		serverConfig.setUrl(requestVO.getUrl());
 		serverConfig.setArgs(requestVO.getArgs());
 		serverConfig.setEnv(requestVO.getEnv());
+		serverConfig.setHeaders(requestVO.getHeaders());
 
 		// Set status
 		if (requestVO.getStatus() != null) {
