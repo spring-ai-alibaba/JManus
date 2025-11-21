@@ -52,9 +52,10 @@ export function useRightPanel() {
   // Active tab state
   const activeTab = ref<'details' | 'files'>('details')
 
-  // Current root plan ID - reactively derived from useMessageDialog's rootPlanId
+  // Current root plan ID - reactively derived from useMessageDialog's activeRootPlanId
+  // This gets the planId from the active dialog, ensuring each dialog maintains its own execution tracking
   const currentRootPlanId = computed(() => {
-    return messageDialog.rootPlanId.value
+    return messageDialog.activeRootPlanId.value
   })
 
   /**
