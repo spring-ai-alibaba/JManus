@@ -34,7 +34,6 @@
             <img src="/Java-AI.svg" alt="Lynxe" class="java-logo" />
             <h1>Lynxe</h1>
           </div>
-          <span class="tagline">{{ $t('home.tagline') }}</span>
         </div>
       </header>
 
@@ -506,17 +505,11 @@ const selectPlan = async (plan: PlanItem) => {
   h1 {
     font-size: 48px;
     font-weight: 700;
-    margin: 0 0 8px 0;
+    margin: 0;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-  }
-
-  .tagline {
-    color: #888888;
-    font-size: 16px;
-    font-weight: 400;
   }
 }
 

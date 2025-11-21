@@ -85,7 +85,7 @@
                   @input="e => handleStepRequirementInput(e, index)"
                   class="form-textarea auto-resize"
                   :placeholder="$t('sidebar.stepRequirementPlaceholder')"
-                  rows="4"
+                  rows="8"
                 ></textarea>
               </div>
 
@@ -98,7 +98,7 @@
                   @input="e => handleTerminateColumnsInput(e, index)"
                   class="form-textarea auto-resize"
                   :placeholder="$t('sidebar.terminateColumnsPlaceholder')"
-                  rows="4"
+                  rows="1"
                 ></textarea>
 
                 <!-- Preview Section -->
@@ -1019,7 +1019,11 @@ watch(
     // Don't sync if we're already syncing (prevents circular updates)
     // Don't sync if user is actively editing (prevents losing user input)
     // Also check isUserUpdating flag from composable (for updates from other components)
-    if (!isSyncingFromConfig.value && !templateConfig.isUserUpdating.value && !isUserEditing.value) {
+    if (
+      !isSyncingFromConfig.value &&
+      !templateConfig.isUserUpdating.value &&
+      !isUserEditing.value
+    ) {
       syncDisplayDataFromConfig()
     }
   },
@@ -1152,7 +1156,7 @@ onMounted(() => {
 onUnmounted(() => {
   // Remove click outside listener
   document.removeEventListener('click', handleClickOutside)
-  
+
   // Clean up editing timeout
   if (editingTimeout) {
     clearTimeout(editingTimeout)
@@ -1355,7 +1359,7 @@ const formatTableHeader = (terminateColumns: string): string => {
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 20px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   line-height: 1.4;
 }

@@ -881,7 +881,7 @@ const words: I18nType = {
     stepRequirementPlaceholder: '请输入任务的具体需求和描述...',
     terminateColumns: '任务输出要求描述',
     terminateColumnsPlaceholder:
-      '指定结构化返回值，如果指定，则返回为一个json 列表 ，每一行都是你指定的col。 例如： col1,col2 ，最后会输出 [(col1:val1,col2:val2), (col1:val3,col2:val4)]',
+      '要求模型结构化返回一个列表，你可以在这里指定表头 例如： col1,col2',
     preview: '预览',
     systemWillReturnListWithTableHeaderFormat: '系统将以json格式返回一个多行列表，表头为',
     titlePlaceholder: '请输入计划标题...',
@@ -1050,7 +1050,6 @@ const words: I18nType = {
   home: {
     welcomeTitle: '欢迎使用 Lynxe！',
     welcomeSubtitle: '您的 Java AI 智能助手，帮助您构建和完成各种任务。',
-    tagline: 'Java AI 智能体',
     inputPlaceholder: '描述您想构建或完成的内容...',
     directButton: '直接进入工作台',
     examples: {
