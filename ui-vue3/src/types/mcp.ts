@@ -13,6 +13,7 @@ export interface McpServer {
 export interface ExtendedMcpServer extends McpServer {
   args?: string // Frontend display as JSON string
   env?: string // Frontend display as JSON string
+  headers?: string // Frontend display as JSON string
   url?: string
   command?: string
 }
@@ -26,6 +27,7 @@ export interface McpServerFieldRequest {
   url?: string
   args?: string[]
   env?: Record<string, string>
+  headers?: Record<string, string>
 }
 
 // MCP server save request interface (merge create and update)
@@ -84,6 +86,7 @@ export interface McpServerJsonConfig {
   command?: string
   args?: string[]
   env?: Record<string, string> | string[] | null
+  headers?: Record<string, string> | null
   url?: string
   baseUrl?: string
 }
