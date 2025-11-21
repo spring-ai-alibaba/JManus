@@ -168,7 +168,7 @@ public class McpTransportBuilder {
 		logger.info("Building SSE transport for server: {} with baseUrl: {}, endpoint: {}", serverName, baseUrl,
 				sseEndpoint);
 
-		WebClient.Builder webClientBuilder = createWebClientBuilder(baseUrl);
+		WebClient.Builder webClientBuilder = createWebClientBuilder(baseUrl, serverConfig);
 
 		JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(objectMapper);
 
@@ -266,7 +266,7 @@ public class McpTransportBuilder {
 		logger.info("Building Streamable HTTP transport for server: {} with Url: {} and Endpoint: {}", serverName,
 				baseUrl, streamEndpoint);
 
-		WebClient.Builder webClientBuilder = createWebClientBuilder(baseUrl);
+		WebClient.Builder webClientBuilder = createWebClientBuilder(baseUrl, serverConfig);
 
 		logger.debug("Using WebClientStreamableHttpTransport with endpoint: {} for STREAMING mode", streamEndpoint);
 		JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(objectMapper);
@@ -282,10 +282,11 @@ public class McpTransportBuilder {
 	/**
 	 * Create WebClient builder (with baseUrl) using shared HttpClient instance
 	 * @param baseUrl Base URL
+	 * @param serverConfig Server configuration (may contain custom headers)
 	 * @return WebClient builder
 	 */
-	private WebClient.Builder createWebClientBuilder(String baseUrl) {
-		return WebClient.builder()
+	private WebClient.Builder createWebClientBuilder(String baseUrl, McpServerConfig serverConfig) {
+		WebClient.Builder builder = WebClient.builder()
 			.clientConnector(sharedConnector) // Use shared HttpClient connector
 			.baseUrl(baseUrl)
 			.defaultHeader("Accept", "text/event-stream")
@@ -301,6 +302,19 @@ public class McpTransportBuilder {
 						}
 						return ex;
 					}));
+
+		// Apply custom headers from server configuration
+		if (serverConfig != null && serverConfig.getHeaders() != null && !serverConfig.getHeaders().isEmpty()) {
+			Map<String, String> headers = serverConfig.getHeaders();
+			for (Map.Entry<String, String> header : headers.entrySet()) {
+				builder.defaultHeader(header.getKey(), header.getValue());
+				logger.debug("Added custom header: {} = {}", header.getKey(),
+						header.getKey().toLowerCase().contains("token") ? "***" : header.getValue());
+			}
+			logger.info("Applied {} custom headers from server configuration", headers.size());
+		}
+
+		return builder;
 	}
 
 	/**
