@@ -852,12 +852,94 @@ export function useMessageDialog() {
         continue
       }
 
-      // Find the record for this dialog's planId
-      const recordEntry = recordsArray.find(([planId]) => planId === dialog.planId)
+      // Find the assistant message with this planId
+      // Try multiple matching strategies: dialog.planId, message.planExecution.rootPlanId, message.planExecution.currentPlanId
+      const message = dialog.messages.find(
+        m =>
+          m.planExecution?.rootPlanId === dialog.planId ||
+          m.planExecution?.currentPlanId === dialog.planId
+      )
+      if (!message) {
+        console.log('[useMessageDialog] watchEffect: No message found for planId:', dialog.planId, {
+          dialogMessages: dialog.messages.map(m => ({
+            id: m.id,
+            type: m.type,
+            planExecutionRootPlanId: m.planExecution?.rootPlanId,
+            planExecutionCurrentPlanId: m.planExecution?.currentPlanId,
+            hasPlanExecution: !!m.planExecution,
+          })),
+        })
+        continue
+      }
+
+      // Enhanced matching: try to find record by multiple keys
+      // 1. Try dialog.planId (primary key)
+      // 2. Try message.planExecution.rootPlanId
+      // 3. Try message.planExecution.currentPlanId
+      // 4. Try all record keys to find matching rootPlanId or currentPlanId
+      let recordEntry = recordsArray.find(([planId]) => planId === dialog.planId)
+
+      if (!recordEntry && message.planExecution?.rootPlanId) {
+        recordEntry = recordsArray.find(([planId]) => planId === message.planExecution.rootPlanId)
+      }
+
+      if (!recordEntry && message.planExecution?.currentPlanId) {
+        recordEntry = recordsArray.find(([planId]) => planId === message.planExecution.currentPlanId)
+      }
+
+      // If still not found, try to match by checking all records' rootPlanId/currentPlanId
       if (!recordEntry) {
-        // Debug: log when record is not found
-        console.log('[useMessageDialog] watchEffect: No record found for planId:', dialog.planId, {
+        for (const [recordKey, recordValue] of recordsArray) {
+          if (
+            recordValue &&
+            (recordValue.rootPlanId === dialog.planId ||
+              recordValue.currentPlanId === dialog.planId ||
+              (message.planExecution?.rootPlanId &&
+                (recordValue.rootPlanId === message.planExecution.rootPlanId ||
+                  recordValue.currentPlanId === message.planExecution.rootPlanId)) ||
+              (message.planExecution?.currentPlanId &&
+                (recordValue.rootPlanId === message.planExecution.currentPlanId ||
+                  recordValue.currentPlanId === message.planExecution.currentPlanId)))
+          ) {
+            recordEntry = [recordKey, recordValue]
+            console.log('[useMessageDialog] watchEffect: Found record by value matching:', {
+              dialogPlanId: dialog.planId,
+              recordKey,
+              recordRootPlanId: recordValue.rootPlanId,
+              recordCurrentPlanId: recordValue.currentPlanId,
+            })
+            break
+          }
+        }
+      }
+
+      // Handle case where message has planExecution but record not found yet
+      // This is the initial state gap - keep showing the initial state
+      if (!recordEntry) {
+        // If message has planExecution with status 'running', keep it visible
+        // Don't skip - this ensures the execution chain displays immediately
+        if (message.planExecution && message.planExecution.status === 'running') {
+          console.log(
+            '[useMessageDialog] watchEffect: Message has planExecution but record not found yet, keeping initial state:',
+            {
+              dialogId: dialog.id,
+              messageId: message.id,
+              planId: dialog.planId,
+              messagePlanExecution: message.planExecution,
+              availableRecordKeys: recordsArray.map(([key]) => key),
+              trackedPlanIds: Array.from(planExecution.trackedPlanIds.value),
+            }
+          )
+          // Keep the initial state visible - don't update, just ensure it's displayed
+          // The message already has planExecution with status 'running', which is correct
+          continue
+        }
+        // If message doesn't have planExecution or status is not 'running', skip
+        console.log('[useMessageDialog] watchEffect: No record found and message has no running planExecution:', {
           dialogId: dialog.id,
+          planId: dialog.planId,
+          hasPlanExecution: !!message.planExecution,
+          planExecutionStatus: message.planExecution?.status,
           availableRecordKeys: recordsArray.map(([key]) => key),
         })
         continue
@@ -872,24 +954,11 @@ export function useMessageDialog() {
         readonlyRecord as unknown as PlanExecutionRecord
       ) as PlanExecutionRecord
 
-      // Find the assistant message with this planId
-      const message = dialog.messages.find(m => m.planExecution?.rootPlanId === dialog.planId)
-      if (!message) {
-        console.log('[useMessageDialog] watchEffect: No message found for planId:', dialog.planId, {
-          dialogMessages: dialog.messages.map(m => ({
-            id: m.id,
-            type: m.type,
-            planExecutionRootPlanId: m.planExecution?.rootPlanId,
-            hasPlanExecution: !!m.planExecution,
-          })),
-        })
-        continue
-      }
-
       console.log('[useMessageDialog] watchEffect: Updating message with plan record:', {
         dialogId: dialog.id,
         messageId: message.id,
         planId: dialog.planId,
+        recordKey: recordEntry[0],
         recordCompleted: record.completed,
         recordStatus: record.status,
       })
