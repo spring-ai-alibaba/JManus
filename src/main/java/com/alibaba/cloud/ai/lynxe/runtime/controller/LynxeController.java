@@ -503,7 +503,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 
 			// Complete task with success state and execution result
 			if (planExecutionResult != null) {
-				rootTaskManagerService.completeTask(wrapper.getRootPlanId(), planExecutionResult.getFinalResult(), true);
+				rootTaskManagerService.completeTask(wrapper.getRootPlanId(), planExecutionResult.getFinalResult(),
+						true);
 			}
 
 			// Return success with execution result
@@ -520,7 +521,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 
 			// Complete task with failure state
 			if (wrapper != null && wrapper.getRootPlanId() != null) {
-				rootTaskManagerService.completeTask(wrapper.getRootPlanId(), "Execution failed: " + e.getMessage(), false);
+				rootTaskManagerService.completeTask(wrapper.getRootPlanId(), "Execution failed: " + e.getMessage(),
+						false);
 			}
 
 			Map<String, Object> errorResponse = new HashMap<>();
@@ -806,7 +808,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 			// Mark task for stop in database (database-driven interruption)
 			boolean taskMarkedForStop = taskInterruptionManager.stopTask(planId);
 
-			// Note: taskInterruptionManager.stopTask() already sets state to STOP and end_time
+			// Note: taskInterruptionManager.stopTask() already sets state to STOP and
+			// end_time
 			// We just update the result message here
 			if (taskMarkedForStop) {
 				rootTaskManagerService.updateTaskResult(planId, "Task manually stopped by user");

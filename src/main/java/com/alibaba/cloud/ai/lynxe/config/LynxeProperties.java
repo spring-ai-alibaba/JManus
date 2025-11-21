@@ -25,7 +25,7 @@ import com.alibaba.cloud.ai.lynxe.config.entity.ConfigInputType;
 
 @Component
 @ConfigurationProperties(prefix = "lynxe")
-public class LynxeProperties{
+public class LynxeProperties {
 
 	@Lazy
 	@Autowired

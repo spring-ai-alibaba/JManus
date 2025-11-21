@@ -27,14 +27,13 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 /**
- * Coordinator Tool Entity Class (merged with PlanTemplate)
- * This entity now contains both coordinator tool and plan template data
+ * Coordinator Tool Entity Class (merged with PlanTemplate) This entity now contains both
+ * coordinator tool and plan template data
  */
 @Entity
-@Table(name = "coordinator_tools", uniqueConstraints = {
-	@UniqueConstraint(columnNames = { "service_group", "tool_name" }),
-	@UniqueConstraint(columnNames = { "plan_template_id" })
-})
+@Table(name = "coordinator_tools",
+		uniqueConstraints = { @UniqueConstraint(columnNames = { "service_group", "tool_name" }),
+				@UniqueConstraint(columnNames = { "plan_template_id" }) })
 public class FuncAgentToolEntity {
 
 	@Id
@@ -178,11 +177,11 @@ public class FuncAgentToolEntity {
 
 	@Override
 	public String toString() {
-		return "FuncAgentToolEntity{" + "id=" + id + ", planTemplateId='" + planTemplateId + '\''
-				+ ", toolName='" + toolName + '\'' + ", toolDescription='" + toolDescription + '\''
-				+ ", enableInternalToolcall=" + enableInternalToolcall + ", enableHttpService=" + enableHttpService
-				+ ", enableMcpService=" + enableMcpService + ", serviceGroup='" + serviceGroup + '\''
-				+ ", createTime=" + createTime + ", updateTime=" + updateTime + '}';
+		return "FuncAgentToolEntity{" + "id=" + id + ", planTemplateId='" + planTemplateId + '\'' + ", toolName='"
+				+ toolName + '\'' + ", toolDescription='" + toolDescription + '\'' + ", enableInternalToolcall="
+				+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableMcpService="
+				+ enableMcpService + ", serviceGroup='" + serviceGroup + '\'' + ", createTime=" + createTime
+				+ ", updateTime=" + updateTime + '}';
 	}
 
 }

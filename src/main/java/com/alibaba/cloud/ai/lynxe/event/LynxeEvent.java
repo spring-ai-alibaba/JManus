@@ -23,4 +23,3 @@ package com.alibaba.cloud.ai.lynxe.event;
 public interface LynxeEvent {
 
 }
-

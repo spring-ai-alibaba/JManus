@@ -100,36 +100,38 @@ public class PlanTemplateController {
 			// Check if the plan exists
 			Optional<PlanTemplateConfigVO> templateOpt = planTemplateConfigService.getPlanTemplate(planTemplateId);
 			if (templateOpt.isEmpty()) {
-				// If it doesn't exist, create a new plan template using PlanTemplateConfigService
+				// If it doesn't exist, create a new plan template using
+				// PlanTemplateConfigService
 				PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
 				configVO.setPlanTemplateId(planTemplateId);
 				configVO.setTitle(title);
 				planTemplateConfigService.createPlanTemplateFromConfig(configVO);
 				logger.info("New plan created: {}", planTemplateId);
 				// Save version history
-				PlanTemplateService.VersionSaveResult result = planTemplateService
-					.saveToVersionHistory(planTemplateId, planJson);
+				PlanTemplateService.VersionSaveResult result = planTemplateService.saveToVersionHistory(planTemplateId,
+						planJson);
 				return new PlanTemplateService.VersionSaveResult(result.isSaved(), result.isDuplicate(),
 						"New plan created", result.getVersionIndex());
 			}
 			else {
-				// If it exists, update the template with new title using PlanTemplateConfigService
+				// If it exists, update the template with new title using
+				// PlanTemplateConfigService
 				PlanTemplateConfigVO existingConfig = templateOpt.get();
 				existingConfig.setTitle(title);
 				planTemplateConfigService.ensurePlanTemplateExists(existingConfig);
 
 				// Save new version
-				PlanTemplateService.VersionSaveResult result = planTemplateService
-					.saveToVersionHistory(planTemplateId, planJson);
+				PlanTemplateService.VersionSaveResult result = planTemplateService.saveToVersionHistory(planTemplateId,
+						planJson);
 				if (result.isSaved()) {
 					logger.info("Updated plan template {} with new title and saved new version", planTemplateId);
 					// Get the latest version index after update
 					Integer maxVersionIndex = planTemplateService.getPlanVersions(planTemplateId).size() - 1;
 					return new PlanTemplateService.VersionSaveResult(true, false,
 							"Plan template updated and new version saved", maxVersionIndex);
-					}
-					else {
-						logger.info("Plan {} is the same, no new version saved", planTemplateId);
+				}
+				else {
+					logger.info("Plan {} is the same, no new version saved", planTemplateId);
 					return result;
 				}
 			}
@@ -480,11 +482,11 @@ public class PlanTemplateController {
 					configVO.setPlanType(planInterface.getPlanType());
 					configVO.setServiceGroup(planTemplate.getServiceGroup());
 					configVO.setDirectResponse(planInterface.isDirectResponse());
-				configVO.setReadOnly(false); // Default to false, can be set based on
-												// business logic
-				// Set createTime and updateTime from PlanTemplateConfigVO
-				configVO.setCreateTime(planTemplate.getCreateTime());
-				configVO.setUpdateTime(planTemplate.getUpdateTime());
+					configVO.setReadOnly(false); // Default to false, can be set based on
+													// business logic
+					// Set createTime and updateTime from PlanTemplateConfigVO
+					configVO.setCreateTime(planTemplate.getCreateTime());
+					configVO.setUpdateTime(planTemplate.getUpdateTime());
 
 					// Convert ExecutionStep list to StepConfig list
 					if (planInterface.getAllSteps() != null) {

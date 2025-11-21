@@ -38,7 +38,6 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 
 	private final String expectedReturnInfo;
 
-
 	private final ObjectMapper objectMapper;
 
 	private final ShortUrlService shortUrlService;

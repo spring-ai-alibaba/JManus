@@ -43,7 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * This class provides functionality to: 1. Batch register executable functions 2. Execute
  * all registered functions in parallel using a 'start' function 3. Track function
  * execution status and get pending functions
- * 
+ *
  * Uses asynchronous non-blocking execution by default to prevent thread pool starvation.
  */
 public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
@@ -395,9 +395,9 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 
 	/**
 	 * Execute registered functions in parallel (following DefaultToolCallingManager
-	 * pattern) Asynchronous version - does NOT block on .join() Returns
-	 * CompletableFuture instead of blocking for results. This prevents thread pool
-	 * starvation in nested parallel execution scenarios.
+	 * pattern) Asynchronous version - does NOT block on .join() Returns CompletableFuture
+	 * instead of blocking for results. This prevents thread pool starvation in nested
+	 * parallel execution scenarios.
 	 * @param parentToolContext Tool execution context
 	 * @return CompletableFuture that completes with the execution result
 	 */
@@ -482,7 +482,7 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 					if (isAsyncTool) {
 						// For async tools, call applyAsync directly in a non-blocking way
 						logger.debug("Executing async-capable function: {} at depth level: {}", toolName, depthLevel);
-						
+
 						// Get the expected input type for this tool
 						Class<?> inputType = functionInstance.getInputType();
 
@@ -505,18 +505,19 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 							continue;
 						}
 
-						// Call applyAsync for async tools - this returns a future that resolves without blocking
+						// Call applyAsync for async tools - this returns a future that
+						// resolves without blocking
 						@SuppressWarnings("unchecked")
 						AsyncToolCallBiFunctionDef<Object> asyncTool = (AsyncToolCallBiFunctionDef<Object>) functionInstance;
-						ToolContext context = new ToolContext(propagatedPlanDepth == null
-								? Map.of("toolcallId", toolCallId)
-								: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth));
+						ToolContext context = new ToolContext(
+								propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
+										: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth));
 
 						// Convert the result future to Void future for consistency
 						future = asyncTool.applyAsync(convertedInput, context).thenAccept(result -> {
 							function.setResult(result);
-							logger.debug("Completed async execution for function: {} at depth level: {}",
-									toolName, depthLevel);
+							logger.debug("Completed async execution for function: {} at depth level: {}", toolName,
+									depthLevel);
 						}).exceptionally(e -> {
 							logger.error("Error executing async function {} at depth level {}: {}", toolName,
 									depthLevel, e.getMessage(), e);
@@ -588,7 +589,8 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 							}
 						}
 						catch (Exception e) {
-							logger.error("Error converting input for async function {}: {}", toolName, e.getMessage(), e);
+							logger.error("Error converting input for async function {}: {}", toolName, e.getMessage(),
+									e);
 							function.setResult(new ToolExecuteResult("Error: " + e.getMessage()));
 							future = CompletableFuture.completedFuture(null);
 							futures.add(future);
@@ -598,9 +600,9 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 						// Call applyAsync for async tools - no blocking
 						@SuppressWarnings("unchecked")
 						AsyncToolCallBiFunctionDef<Object> asyncTool = (AsyncToolCallBiFunctionDef<Object>) functionInstance;
-						ToolContext context = new ToolContext(propagatedPlanDepth == null
-								? Map.of("toolcallId", toolCallId)
-								: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth));
+						ToolContext context = new ToolContext(
+								propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
+										: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth));
 
 						// Convert to Void future for consistency
 						future = asyncTool.applyAsync(convertedInput, context).thenAccept(result -> {
@@ -709,7 +711,8 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 		}
 		catch (Exception e) {
 			logger.error("Error starting async execution: {}", e.getMessage(), e);
-			return CompletableFuture.completedFuture(new ToolExecuteResult("Error starting execution: " + e.getMessage()));
+			return CompletableFuture
+				.completedFuture(new ToolExecuteResult("Error starting execution: " + e.getMessage()));
 		}
 	}
 

@@ -23,18 +23,17 @@ import org.springframework.ai.chat.model.ToolContext;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 
 /**
- * Async version of ToolCallBiFunctionDef that supports non-blocking execution.
- * This interface allows tools to return CompletableFuture for better resource
- * utilization and prevents thread pool starvation in nested parallel execution
- * scenarios.
+ * Async version of ToolCallBiFunctionDef that supports non-blocking execution. This
+ * interface allows tools to return CompletableFuture for better resource utilization and
+ * prevents thread pool starvation in nested parallel execution scenarios.
  *
  * @param <T> The input type for the tool
  */
 public interface AsyncToolCallBiFunctionDef<T> extends ToolCallBiFunctionDef<T> {
 
 	/**
-	 * Asynchronous version of apply that returns a CompletableFuture. This method
-	 * allows the tool to execute without blocking the calling thread.
+	 * Asynchronous version of apply that returns a CompletableFuture. This method allows
+	 * the tool to execute without blocking the calling thread.
 	 * @param input Tool input parameters
 	 * @param context Tool execution context
 	 * @return CompletableFuture that completes with the tool execution result
@@ -56,4 +55,3 @@ public interface AsyncToolCallBiFunctionDef<T> extends ToolCallBiFunctionDef<T> 
 	}
 
 }
-

@@ -25,4 +25,3 @@ public interface LynxeListener<T extends LynxeEvent> {
 	void onEvent(T event);
 
 }
-

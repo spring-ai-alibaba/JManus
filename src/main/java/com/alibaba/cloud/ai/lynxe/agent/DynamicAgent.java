@@ -135,8 +135,8 @@ public class DynamicAgent extends ReActAgent {
 	private final List<String> recentToolResults = new ArrayList<>();
 
 	/**
-	 * Flag to track if user request has been saved to conversation memory
-	 * This prevents duplicate saves during retry attempts
+	 * Flag to track if user request has been saved to conversation memory This prevents
+	 * duplicate saves during retry attempts
 	 */
 	private boolean userRequestSavedToConversationMemory = false;
 

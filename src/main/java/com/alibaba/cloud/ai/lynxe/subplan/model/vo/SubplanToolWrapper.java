@@ -104,8 +104,7 @@ public class SubplanToolWrapper extends AbstractBaseTool<Map<String, Object>>
 		}
 		// Fallback to planTemplateId if title is not available
 		return coordinatorToolConfig != null && coordinatorToolConfig.getPlanTemplateId() != null
-				? coordinatorToolConfig.getPlanTemplateId()
-				: "Unknown Tool";
+				? coordinatorToolConfig.getPlanTemplateId() : "Unknown Tool";
 	}
 
 	@Override

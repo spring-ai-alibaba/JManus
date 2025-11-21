@@ -40,11 +40,8 @@ public class PlanTemplateService implements IPlanTemplateService {
 	@Autowired
 	private PlanTemplateVersionRepository versionRepository;
 
-
-
 	@Autowired
 	private ObjectMapper objectMapper;
-
 
 	/**
 	 * Version save result class

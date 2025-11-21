@@ -150,7 +150,8 @@ public class PlanTemplateConfigService {
 	 * @throws PlanTemplateConfigException if creation fails
 	 */
 	@Transactional
-	public PlanTemplateConfigVO ensurePlanTemplateExists(PlanTemplateConfigVO configVO) throws PlanTemplateConfigException {
+	public PlanTemplateConfigVO ensurePlanTemplateExists(PlanTemplateConfigVO configVO)
+			throws PlanTemplateConfigException {
 		String planTemplateId = configVO.getPlanTemplateId();
 		List<FuncAgentToolEntity> existingTemplates = funcAgentToolRepository.findByPlanTemplateId(planTemplateId);
 
@@ -724,22 +725,19 @@ public class PlanTemplateConfigService {
 	 */
 	public List<PlanTemplateConfigVO> getAllPlanTemplates() {
 		try {
-			return funcAgentToolRepository.findAll()
-				.stream()
-				.map(entity -> {
-					PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
-					configVO.setPlanTemplateId(entity.getPlanTemplateId());
-					configVO.setTitle(entity.getToolName());
-					configVO.setServiceGroup(entity.getServiceGroup());
-					if (entity.getCreateTime() != null) {
-						configVO.setCreateTime(entity.getCreateTime().toString());
-					}
-					if (entity.getUpdateTime() != null) {
-						configVO.setUpdateTime(entity.getUpdateTime().toString());
-					}
-					return configVO;
-				})
-				.collect(Collectors.toList());
+			return funcAgentToolRepository.findAll().stream().map(entity -> {
+				PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
+				configVO.setPlanTemplateId(entity.getPlanTemplateId());
+				configVO.setTitle(entity.getToolName());
+				configVO.setServiceGroup(entity.getServiceGroup());
+				if (entity.getCreateTime() != null) {
+					configVO.setCreateTime(entity.getCreateTime().toString());
+				}
+				if (entity.getUpdateTime() != null) {
+					configVO.setUpdateTime(entity.getUpdateTime().toString());
+				}
+				return configVO;
+			}).collect(Collectors.toList());
 		}
 		catch (Exception e) {
 			log.error("Error getting all plan templates: {}", e.getMessage(), e);

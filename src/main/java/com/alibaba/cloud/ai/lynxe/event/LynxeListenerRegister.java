@@ -54,4 +54,3 @@ public class LynxeListenerRegister implements BeanPostProcessor {
 	}
 
 }
-

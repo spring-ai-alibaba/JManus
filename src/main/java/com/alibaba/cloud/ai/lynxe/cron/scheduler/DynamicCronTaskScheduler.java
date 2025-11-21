@@ -133,8 +133,7 @@ public class DynamicCronTaskScheduler {
 
 			// Check if the plan template exists using PlanTemplateConfigService
 			// First check if coordinator tool exists (optional check)
-			boolean coordinatorToolExists = planTemplateConfigService
-				.getCoordinatorToolByPlanTemplateId(planTemplateId)
+			boolean coordinatorToolExists = planTemplateConfigService.getCoordinatorToolByPlanTemplateId(planTemplateId)
 				.isPresent();
 
 			// Verify plan JSON exists (required for execution)

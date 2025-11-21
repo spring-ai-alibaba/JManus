@@ -69,7 +69,6 @@ public class SubplanToolService {
 	@Lazy
 	private PlanningCoordinator planningCoordinator;
 
-
 	@Autowired
 	private PlanIdDispatcher planIdDispatcher;
 
@@ -109,30 +108,31 @@ public class SubplanToolService {
 
 			logger.info("Found {} coordinator tools to register", coordinatorTools.size());
 
-		for (FuncAgentToolEntity coordinatorTool : coordinatorTools) {
+			for (FuncAgentToolEntity coordinatorTool : coordinatorTools) {
 
-			// Get plan template config VO for this coordinator tool
-			String planTemplateId = coordinatorTool.getPlanTemplateId();
-			Optional<PlanTemplateConfigVO> planTemplateOpt = planTemplateConfigService.getPlanTemplate(planTemplateId);
-			if (planTemplateOpt.isEmpty()) {
-				logger.info("PlanTemplate not found for planTemplateId: {}, skipping tool registration",
-						planTemplateId);
-				continue;
-			}
-			PlanTemplateConfigVO planTemplateConfig = planTemplateOpt.get();
+				// Get plan template config VO for this coordinator tool
+				String planTemplateId = coordinatorTool.getPlanTemplateId();
+				Optional<PlanTemplateConfigVO> planTemplateOpt = planTemplateConfigService
+					.getPlanTemplate(planTemplateId);
+				if (planTemplateOpt.isEmpty()) {
+					logger.info("PlanTemplate not found for planTemplateId: {}, skipping tool registration",
+							planTemplateId);
+					continue;
+				}
+				PlanTemplateConfigVO planTemplateConfig = planTemplateOpt.get();
 
-			// Get coordinator tool config VO
-			Optional<PlanTemplateConfigVO> coordinatorToolOpt = planTemplateConfigService
-				.getCoordinatorToolByPlanTemplateId(planTemplateId);
-			if (coordinatorToolOpt.isEmpty()) {
-				logger.info("Coordinator tool config not found for planTemplateId: {}, skipping tool registration",
-						planTemplateId);
-				continue;
-			}
-			PlanTemplateConfigVO coordinatorToolConfig = coordinatorToolOpt.get();
+				// Get coordinator tool config VO
+				Optional<PlanTemplateConfigVO> coordinatorToolOpt = planTemplateConfigService
+					.getCoordinatorToolByPlanTemplateId(planTemplateId);
+				if (coordinatorToolOpt.isEmpty()) {
+					logger.info("Coordinator tool config not found for planTemplateId: {}, skipping tool registration",
+							planTemplateId);
+					continue;
+				}
+				PlanTemplateConfigVO coordinatorToolConfig = coordinatorToolOpt.get();
 
-			String toolName = planTemplateConfig.getTitle() != null ? planTemplateConfig.getTitle()
-					: planTemplateId;
+				String toolName = planTemplateConfig.getTitle() != null ? planTemplateConfig.getTitle()
+						: planTemplateId;
 				try {
 					// Create a SubplanToolWrapper that extends AbstractBaseTool
 					SubplanToolWrapper toolWrapper = new SubplanToolWrapper(coordinatorToolConfig, planTemplateConfig,
