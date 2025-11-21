@@ -15,311 +15,203 @@
  */
 package com.alibaba.cloud.ai.lynxe.tool.browser;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
-import com.microsoft.playwright.options.Cookie;
-import com.microsoft.playwright.options.SameSiteAttribute; // Import for SameSiteAttribute
 
+/**
+ * Wrapper for Playwright browser resources following best practices.
+ * Uses Storage State for persistence (cookies, localStorage, sessionStorage).
+ * Ensures proper cleanup order: BrowserContext -> Browser -> Playwright
+ */
 public class DriverWrapper {
-
-	private final ObjectMapper objectMapper;
 
 	private static final Logger log = LoggerFactory.getLogger(DriverWrapper.class);
 
-	private Playwright playwright;
+	private final Playwright playwright;
+
+	private final Browser browser;
+
+	private final BrowserContext browserContext;
 
 	private Page currentPage;
 
-	private Browser browser;
+	private final Path storageStatePath;
 
-	private final Path cookiePath;
-
-	// Mixin class for Playwright Cookie deserialization
-	abstract static class PlaywrightCookieMixin {
-
-		@JsonCreator
-		PlaywrightCookieMixin(@JsonProperty("name") String name, @JsonProperty("value") String value) {
-		}
-
-		@JsonProperty("domain")
-		abstract Cookie setDomain(String domain);
-
-		@JsonProperty("path")
-		abstract Cookie setPath(String path);
-
-		@JsonProperty("expires")
-		abstract Cookie setExpires(Number expires);
-
-		@JsonProperty("httpOnly")
-		abstract Cookie setHttpOnly(boolean httpOnly);
-
-		@JsonProperty("secure")
-		abstract Cookie setSecure(boolean secure);
-
-		@JsonProperty("sameSite")
-		abstract Cookie setSameSite(SameSiteAttribute sameSite);
-
-	}
-
-	// Move ObjectMapper configuration to constructor
-
-	public DriverWrapper(Playwright playwright, Browser browser, Page currentPage, String cookieDir,
-			ObjectMapper objectMapper) {
+	/**
+	 * Create a new DriverWrapper with Playwright resources.
+	 * Following best practices: Browser -> BrowserContext -> Page
+	 *
+	 * @param playwright Playwright instance
+	 * @param browser Browser instance
+	 * @param browserContext Browser context instance
+	 * @param currentPage Current page instance
+	 * @param storageStateDir Directory for storing storage state
+	 */
+	public DriverWrapper(Playwright playwright, Browser browser, BrowserContext browserContext, Page currentPage,
+			String storageStateDir) {
 		this.playwright = playwright;
-		this.currentPage = currentPage;
 		this.browser = browser;
+		this.browserContext = browserContext;
+		this.currentPage = currentPage;
 
-		this.objectMapper = objectMapper;
-		// Configure ObjectMapper
-		this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-		this.objectMapper.addMixIn(Cookie.class, PlaywrightCookieMixin.class);
-
-		if (cookieDir == null || cookieDir.trim().isEmpty()) {
-			this.cookiePath = Paths.get("playwright-cookies-default.json");
-			log.warn("Warning: cookieDir was not provided or was empty. Using default cookie path: {}",
-					this.cookiePath.toAbsolutePath());
+		// Set storage state path
+		if (storageStateDir == null || storageStateDir.trim().isEmpty()) {
+			this.storageStatePath = Paths.get("storage-state.json");
+			log.warn("Storage state directory not provided, using default: {}", this.storageStatePath.toAbsolutePath());
 		}
 		else {
-			this.cookiePath = Paths.get(cookieDir, "playwright-cookies.json");
+			this.storageStatePath = Paths.get(storageStateDir, "storage-state.json");
 		}
-		loadCookies();
-	}
 
-	private void loadCookies() {
-		if (this.currentPage == null) {
-			log.info("Cannot load cookies: currentPage is null.");
-			return;
-		}
-		if (!Files.exists(this.cookiePath)) {
-			log.info("Cookie file not found, skipping cookie loading: {}", this.cookiePath.toAbsolutePath());
-			return;
-		}
-		try {
-			byte[] jsonData = Files.readAllBytes(this.cookiePath);
-			if (jsonData.length == 0) {
-				log.info("Cookie file is empty, skipping cookie loading: {}", this.cookiePath.toAbsolutePath());
-				return;
-			}
-			List<Cookie> cookies = objectMapper.readValue(jsonData, new TypeReference<List<Cookie>>() {
-			});
-			if (cookies != null && !cookies.isEmpty()) {
-				// Filter out expired cookies before loading
-				List<Cookie> validCookies = filterExpiredCookies(cookies);
-				if (!validCookies.isEmpty()) {
-					this.currentPage.context().addCookies(validCookies);
-					log.info("Loaded {} valid cookies (filtered {} expired) from: {}", validCookies.size(),
-							cookies.size() - validCookies.size(), this.cookiePath.toAbsolutePath());
-				}
-				else {
-					log.info("All cookies in file are expired, skipping cookie loading: {}",
-							this.cookiePath.toAbsolutePath());
-				}
-			}
-			else {
-				log.info("No cookies found in file or cookies list was empty: {}", this.cookiePath.toAbsolutePath());
-			}
-		}
-		catch (IOException e) {
-			log.info("Failed to load cookies from {}: {}", this.cookiePath.toAbsolutePath(), e.getMessage());
-		}
-		catch (Exception e) {
-			log.info("An unexpected error occurred while loading cookies from {}: {}", this.cookiePath.toAbsolutePath(),
-					e.getMessage());
-		}
+		log.info("DriverWrapper created with storage state path: {}", this.storageStatePath.toAbsolutePath());
 	}
 
 	/**
-	 * Filter out expired cookies
-	 * @param cookies List of cookies to filter
-	 * @return List of valid (non-expired) cookies
+	 * Get the current page
 	 */
-	private List<Cookie> filterExpiredCookies(List<Cookie> cookies) {
-		if (cookies == null || cookies.isEmpty()) {
-			return Collections.emptyList();
-		}
-
-		long currentTimeSeconds = System.currentTimeMillis() / 1000;
-
-		return cookies.stream().filter(cookie -> {
-			// Cookies without expiration (session cookies) are always valid
-			if (cookie.expires == null || cookie.expires == -1) {
-				return true;
-			}
-
-			// Check if cookie expiration time is in the future
-			// expires is in seconds since epoch
-			double expiresValue = cookie.expires.doubleValue();
-			return expiresValue > currentTimeSeconds;
-		}).toList();
-	}
-
-	private void saveCookies() {
-		if (this.currentPage == null) {
-			log.info("Cannot save cookies: currentPage is null.");
-			return;
-		}
-		try {
-			List<Cookie> cookies = this.currentPage.context().cookies();
-			if (cookies == null) {
-				cookies = Collections.emptyList();
-			}
-
-			// Filter out expired cookies before saving
-			List<Cookie> validCookies = filterExpiredCookies(cookies);
-
-			Path parentDir = this.cookiePath.getParent();
-			if (parentDir != null && !Files.exists(parentDir)) {
-				Files.createDirectories(parentDir);
-			}
-
-			byte[] jsonData = objectMapper.writeValueAsBytes(validCookies);
-			Files.write(this.cookiePath, jsonData);
-			log.info("Saved {} valid cookies (filtered {} expired) to: {}", validCookies.size(),
-					cookies.size() - validCookies.size(), this.cookiePath.toAbsolutePath());
-		}
-		catch (IOException e) {
-			log.info("Failed to save cookies to {}: {}", this.cookiePath.toAbsolutePath(), e.getMessage());
-		}
-		catch (Exception e) {
-			log.info("An unexpected error occurred while saving cookies to {}: {}", this.cookiePath.toAbsolutePath(),
-					e.getMessage());
-		}
-	}
-
-	/**
-	 * Public method to save cookies (can be called after operations) Also saves storage
-	 * state for better persistence (includes cookies, localStorage, etc.)
-	 */
-	public void persistCookies() {
-		saveCookies();
-		// Also save storage state for better persistence (includes cookies, localStorage,
-		// etc.)
-		saveStorageState();
-	}
-
-	/**
-	 * Save browser context storage state (cookies, localStorage, sessionStorage, etc.)
-	 * This provides better persistence than just saving cookies
-	 */
-	private void saveStorageState() {
-		if (this.currentPage == null) {
-			log.debug("Cannot save storage state: currentPage is null.");
-			return;
-		}
-		try {
-			com.microsoft.playwright.BrowserContext context = this.currentPage.context();
-			if (context == null) {
-				log.debug("Cannot save storage state: browser context is null.");
-				return;
-			}
-
-			// Save storage state to file (includes cookies, localStorage, sessionStorage)
-			java.nio.file.Path storageStatePath = this.cookiePath.getParent().resolve("storage-state.json");
-			// Playwright storageState method uses StorageStateOptions
-			context.storageState(
-					new com.microsoft.playwright.BrowserContext.StorageStateOptions().setPath(storageStatePath));
-			log.debug("Storage state saved successfully to: {}", storageStatePath.toAbsolutePath());
-		}
-		catch (Exception e) {
-			log.debug("Failed to save storage state: {}", e.getMessage());
-		}
-	}
-
-	public Playwright getPlaywright() {
-		return playwright;
-	}
-
-	public void setPlaywright(Playwright playwright) {
-		this.playwright = playwright;
-	}
-
 	public Page getCurrentPage() {
 		return currentPage;
 	}
 
+	/**
+	 * Set the current page
+	 */
 	public void setCurrentPage(Page currentPage) {
 		this.currentPage = currentPage;
-		// Refresh ARIA element holder when page changes
-		// Potentially load cookies if page context changes and it's desired
-		// loadCookies();
 	}
 
+	/**
+	 * Get the browser context
+	 */
+	public BrowserContext getBrowserContext() {
+		return browserContext;
+	}
+
+	/**
+	 * Get the browser
+	 */
 	public Browser getBrowser() {
 		return browser;
 	}
 
-	public void setBrowser(Browser browser) {
-		this.browser = browser;
+	/**
+	 * Get the Playwright instance
+	 */
+	public Playwright getPlaywright() {
+		return playwright;
 	}
 
+	/**
+	 * Get the storage state path
+	 */
+	public Path getStorageStatePath() {
+		return storageStatePath;
+	}
+
+	/**
+	 * Save storage state (cookies, localStorage, sessionStorage) asynchronously with timeout.
+	 * This is the recommended way to persist browser state according to Playwright best practices.
+	 */
+	public void saveStorageState() {
+		if (browserContext == null) {
+			log.debug("Cannot save storage state: browser context is null");
+			return;
+		}
+
+		try {
+			// Save storage state asynchronously with timeout to prevent blocking during shutdown
+			CompletableFuture<Void> saveFuture = CompletableFuture.runAsync(() -> {
+				try {
+					browserContext.storageState(
+							new BrowserContext.StorageStateOptions().setPath(storageStatePath));
+					log.info("Storage state saved successfully to: {}", storageStatePath.toAbsolutePath());
+				}
+				catch (Exception e) {
+					log.warn("Failed to save storage state: {}", e.getMessage());
+				}
+			});
+
+			// Wait up to 5 seconds for storage state to save
+			try {
+				saveFuture.get(5, TimeUnit.SECONDS);
+			}
+			catch (TimeoutException e) {
+				log.warn("Storage state save timed out after 5 seconds, continuing with shutdown");
+				saveFuture.cancel(true);
+			}
+			catch (Exception e) {
+				log.warn("Error waiting for storage state save: {}", e.getMessage());
+			}
+		}
+		catch (Exception e) {
+			log.warn("Failed to save storage state: {}", e.getMessage());
+		}
+	}
+
+	/**
+	 * Close all resources following Playwright best practices.
+	 * 
+	 * <p>According to Playwright documentation, BrowserContext should be explicitly closed
+	 * before calling Browser.close() to ensure graceful cleanup and proper event handling.
+	 * 
+	 * <p>Cleanup order:
+	 * <ol>
+	 *   <li>Save storage state (preserves cookies, localStorage, sessionStorage)</li>
+	 *   <li>Close BrowserContext (closes all pages and ensures artifacts are flushed)</li>
+	 *   <li>Close Browser (after all contexts are closed)</li>
+	 *   <li>Close Playwright (terminates I/O threads)</li>
+	 * </ol>
+	 * 
+	 * <p>Reference: {@link com.microsoft.playwright.Browser#newContext() Browser.newContext()}
+	 * documentation recommends: "explicitly close the returned context via 
+	 * BrowserContext.close() when your code is done with the BrowserContext, and before 
+	 * calling Browser.close()"
+	 */
 	public void close() {
 		log.info("Closing DriverWrapper and all associated resources");
 
-		// Save cookies first, before closing anything
+		// Step 1: Save storage state before closing anything
+		// This preserves cookies, localStorage, sessionStorage, and other browser state
 		try {
-			saveCookies();
+			saveStorageState();
 		}
 		catch (Exception e) {
-			log.warn("Failed to save cookies during close: {}", e.getMessage());
+			log.warn("Failed to save storage state during close: {}", e.getMessage());
 		}
 
-		// Close current page first
-		if (this.currentPage != null) {
+		// Step 2: Close BrowserContext first (best practice)
+		// This will close all pages in the context and ensure proper event handling
+		if (browserContext != null) {
 			try {
-				if (!this.currentPage.isClosed()) {
-					this.currentPage.close();
-					log.debug("Successfully closed current page");
+				if (!browserContext.browser().isConnected()) {
+					log.debug("Browser already disconnected, skipping context close");
 				}
 				else {
-					log.debug("Current page was already closed");
+					browserContext.close();
+					log.debug("Successfully closed browser context");
 				}
 			}
 			catch (Exception e) {
-				log.warn("Error closing current page: {}", e.getMessage());
-			}
-			finally {
-				this.currentPage = null;
+				log.warn("Error closing browser context: {}", e.getMessage());
 			}
 		}
 
-		// Close browser context (if using browser.newContext())
-		// Get context from page if available, or close all contexts from browser
-		if (this.browser != null) {
+		// Step 3: Close Browser (after contexts are closed)
+		if (browser != null) {
 			try {
-				// If we have a page, try to get its context and close it
-				// Otherwise, close all contexts from the browser
-				if (this.currentPage != null && !this.currentPage.isClosed()) {
-					try {
-						com.microsoft.playwright.BrowserContext context = this.currentPage.context();
-						if (context != null) {
-							context.close();
-							log.debug("Successfully closed browser context");
-						}
-					}
-					catch (Exception e) {
-						log.warn("Error closing browser context from page: {}", e.getMessage());
-					}
-				}
-
-				// Close browser if still connected
-				if (this.browser.isConnected()) {
-					this.browser.close();
+				if (browser.isConnected()) {
+					browser.close();
 					log.debug("Successfully closed browser");
 				}
 				else {
@@ -329,17 +221,23 @@ public class DriverWrapper {
 			catch (Exception e) {
 				log.warn("Error closing browser: {}", e.getMessage());
 			}
-			finally {
-				this.browser = null;
+		}
+
+		// Step 4: Close Playwright instance (terminates I/O threads)
+		if (playwright != null) {
+			try {
+				playwright.close();
+				log.debug("Successfully closed Playwright instance");
+			}
+			catch (Exception e) {
+				log.warn("Error closing Playwright instance: {}", e.getMessage());
 			}
 		}
 
-		log.info("DriverWrapper close operation completed");
+		// Clear current page reference
+		currentPage = null;
 
-		// Note: Playwright instance itself is usually managed by the service that created
-		// it.
-		// Closing it here might be premature if other DriverWrappers use the same
-		// Playwright instance, so we leave it to the service to manage.
+		log.info("DriverWrapper close operation completed");
 	}
 
 }

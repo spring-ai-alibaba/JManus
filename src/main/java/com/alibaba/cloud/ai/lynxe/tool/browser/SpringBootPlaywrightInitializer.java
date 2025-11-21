@@ -55,34 +55,15 @@ public class SpringBootPlaywrightInitializer {
 				Playwright playwright = Playwright.create();
 				log.info("Playwright.create() successful! Instance: {}", playwright.getClass().getName());
 
-				// Check what was actually downloaded after creation
-				log.info("=== Post-Creation Directory Check ===");
-				String browserPath = System.getProperty("playwright.browsers.path");
-				String tempDir = System.getProperty("playwright.driver.tmpdir");
-
-				try {
-					Path browsersPath = Paths.get(browserPath);
-					if (Files.exists(browsersPath)) {
-						log.info("Browsers directory content:");
-						Files.walk(browsersPath, 2).forEach(path -> {
-							if (!path.equals(browsersPath)) {
-								log.info("  - {}", browsersPath.relativize(path));
-							}
-						});
-					}
-
-					// Check temp directory for playwright files
-					Path tempPath = Paths.get(tempDir);
-					if (Files.exists(tempPath)) {
-						Files.list(tempPath)
-							.filter(path -> path.getFileName().toString().contains("playwright"))
-							.forEach(path -> log.info("Temp playwright file: {}", path));
-					}
+				// Skip directory traversal for performance - only log basic info
+				// Detailed directory checks are only needed for debugging
+				if (log.isDebugEnabled()) {
+					log.debug("=== Post-Creation Directory Check (DEBUG only) ===");
+					String browserPath = System.getProperty("playwright.browsers.path");
+					String tempDir = System.getProperty("playwright.driver.tmpdir");
+					log.debug("Browser path: {}, Temp dir: {}", browserPath, tempDir);
+					log.debug("=====================================");
 				}
-				catch (Exception e) {
-					log.warn("Could not list post-creation directories: {}", e.getMessage());
-				}
-				log.info("=====================================");
 
 				return playwright;
 			}
@@ -149,25 +130,27 @@ public class SpringBootPlaywrightInitializer {
 		log.info("  - PLAYWRIGHT_BROWSERS_PATH env: {}", System.getenv("PLAYWRIGHT_BROWSERS_PATH"));
 		log.info("  - PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: {}", System.getProperty("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"));
 
-		// Check actual directories
-		String[] checkPaths = { browserPath, browserPath + "/chromium-*", browserPath + "/firefox-*",
-				browserPath + "/webkit-*", tempDir + "/playwright-java-*" };
+		// Check actual directories - only in debug mode to avoid slow directory traversal
+		if (log.isDebugEnabled()) {
+			String[] checkPaths = { browserPath, browserPath + "/chromium-*", browserPath + "/firefox-*",
+					browserPath + "/webkit-*", tempDir + "/playwright-java-*" };
 
-		for (String path : checkPaths) {
-			try {
-				Path p = Paths.get(path.replace("*", ""));
-				if (Files.exists(p)) {
-					log.info("  ✓ Directory exists: {}", path);
-					if (Files.isDirectory(p)) {
-						Files.list(p).forEach(subPath -> log.info("    - {}", subPath.getFileName()));
+			for (String path : checkPaths) {
+				try {
+					Path p = Paths.get(path.replace("*", ""));
+					if (Files.exists(p)) {
+						log.debug("  ✓ Directory exists: {}", path);
+						if (Files.isDirectory(p)) {
+							Files.list(p).forEach(subPath -> log.debug("    - {}", subPath.getFileName()));
+						}
+					}
+					else {
+						log.debug("  ✗ Directory not found: {}", path);
 					}
 				}
-				else {
-					log.info("  ✗ Directory not found: {}", path);
+				catch (Exception e) {
+					log.debug("  ? Could not check path {}: {}", path, e.getMessage());
 				}
-			}
-			catch (Exception e) {
-				log.warn("  ? Could not check path {}: {}", path, e.getMessage());
 			}
 		}
 

@@ -31,16 +31,6 @@ public interface IChromeDriverService {
 	String getSharedDir();
 
 	/**
-	 * Save cookies from all drivers to global shared directory
-	 */
-	void saveCookiesToSharedDir();
-
-	/**
-	 * Load cookies from global shared directory to all drivers
-	 */
-	void loadCookiesFromSharedDir();
-
-	/**
 	 * Get driver wrapper for specified plan ID
 	 * @param planId Plan ID
 	 * @return Driver wrapper

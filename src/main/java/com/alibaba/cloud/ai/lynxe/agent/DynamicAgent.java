@@ -225,6 +225,9 @@ public class DynamicAgent extends ReActAgent {
 	private boolean executeWithRetry(int maxRetries) throws Exception {
 		int attempt = 0;
 		Exception lastException = null;
+		// Track early termination count to prevent infinite loops
+		int earlyTerminationCount = 0;
+		final int EARLY_TERMINATION_THRESHOLD = 3; // Fail after 3 early terminations
 		// Clear exception list at the start of retry cycle
 		llmCallExceptions.clear();
 		latestLlmException = null;
@@ -247,6 +250,25 @@ public class DynamicAgent extends ReActAgent {
 				Message systemMessage = getThinkMessage();
 				// Use current env as user message
 				Message currentStepEnvMessage = currentStepEnvMessage();
+				
+				// If early termination occurred in previous attempt, add explicit tool call requirement
+				if (earlyTerminationCount > 0) {
+					String toolCallRequirement = String.format(
+							"\n\n⚠️ IMPORTANT: You must call at least one tool to proceed. " +
+							"Previous attempt returned only text without tool calls (early termination detected %d time(s)). " +
+							"Do not provide explanations or reasoning - call a tool immediately.",
+							earlyTerminationCount);
+					// Append requirement to current step env message
+					String enhancedEnvText = currentStepEnvMessage.getText() + toolCallRequirement;
+					// Create new UserMessage with enhanced text, preserving metadata
+					UserMessage enhancedMessage = new UserMessage(enhancedEnvText);
+					if (currentStepEnvMessage.getMetadata() != null) {
+						enhancedMessage.getMetadata().putAll(currentStepEnvMessage.getMetadata());
+					}
+					currentStepEnvMessage = enhancedMessage;
+					log.info("Added explicit tool call requirement to retry message (early termination count: {})",
+							earlyTerminationCount);
+				}
 				// Record think message
 				List<Message> thinkMessages = Arrays.asList(systemMessage, currentStepEnvMessage);
 				String thinkInput = thinkMessages.toString();
@@ -340,10 +362,31 @@ public class DynamicAgent extends ReActAgent {
 				List<ToolCall> toolCalls = streamResult.getEffectiveToolCalls();
 				String responseByLLm = streamResult.getEffectiveText();
 
+				// Check for early termination
+				boolean isEarlyTerminated = streamResult.isEarlyTerminated();
+				if (isEarlyTerminated) {
+					earlyTerminationCount++;
+					log.warn("Early termination detected (attempt {}): thinking-only response with no tool calls. Count: {}/{}",
+							attempt, earlyTerminationCount, EARLY_TERMINATION_THRESHOLD);
+					
+					// If early termination threshold reached, fail gracefully
+					if (earlyTerminationCount >= EARLY_TERMINATION_THRESHOLD) {
+						log.error("Early termination threshold ({}) reached. LLM repeatedly returned thinking-only responses without tool calls. Failing gracefully.",
+								EARLY_TERMINATION_THRESHOLD);
+						// Store a special exception to indicate early termination failure
+						latestLlmException = new Exception(
+								"Early termination threshold reached: LLM returned thinking-only responses without tool calls " 
+								+ earlyTerminationCount + " times. The model must call tools to proceed.");
+						return false; // Return false to trigger failure handling in step()
+					}
+				}
+
 				log.info(String.format("✨ %s's thoughts: %s", getName(), responseByLLm));
 				log.info(String.format("🛠️ %s selected %d tools to use", getName(), toolCalls.size()));
 
 				if (!toolCalls.isEmpty()) {
+					// Reset early termination count on successful tool call
+					earlyTerminationCount = 0;
 					log.info(String.format("🧰 Tools being prepared: %s",
 							toolCalls.stream().map(ToolCall::name).collect(Collectors.toList())));
 
@@ -368,7 +411,14 @@ public class DynamicAgent extends ReActAgent {
 
 					return true;
 				}
-				log.warn("Attempt {}: No tools selected. Retrying...", attempt);
+				
+				// No tool calls - check if this is due to early termination
+				if (isEarlyTerminated) {
+					log.warn("Attempt {}: Early termination - no tools selected (thinking-only response). Retrying with explicit tool call requirement...", attempt);
+				}
+				else {
+					log.warn("Attempt {}: No tools selected. Retrying...", attempt);
+				}
 
 			}
 			catch (Exception e) {
@@ -446,6 +496,20 @@ public class DynamicAgent extends ReActAgent {
 				// Check if we have a latest exception from LLM calls (max retries
 				// reached)
 				if (latestLlmException != null) {
+					// Check if failure was due to early termination threshold
+					if (latestLlmException.getMessage() != null 
+							&& latestLlmException.getMessage().contains("Early termination threshold reached")) {
+						log.error(
+								"Agent {} failed due to early termination threshold. LLM repeatedly returned thinking-only responses without tool calls.",
+								getName());
+						// Return FAILED state to stop infinite retry loop
+						return new AgentExecResult(
+								"Agent failed: LLM repeatedly returned thinking-only responses without tool calls. " +
+								"Please ensure the model is configured to call tools. " +
+								latestLlmException.getMessage(),
+								AgentState.FAILED);
+					}
+					
 					log.error(
 							"Agent {} thinking failed after all retries. Simulating full flow with SystemErrorReportTool",
 							getName());

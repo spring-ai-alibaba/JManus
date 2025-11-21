@@ -72,12 +72,28 @@ public class StreamingResponseHandler {
 
 		private final ChatResponse lastResponse;
 
+		private final boolean earlyTerminated;
+
 		public StreamingResult(ChatResponse lastResponse) {
 			this.lastResponse = lastResponse;
+			this.earlyTerminated = false;
+		}
+
+		public StreamingResult(ChatResponse lastResponse, boolean earlyTerminated) {
+			this.lastResponse = lastResponse;
+			this.earlyTerminated = earlyTerminated;
 		}
 
 		public ChatResponse getLastResponse() {
 			return lastResponse;
+		}
+
+		/**
+		 * Check if the stream was terminated early due to thinking-only response
+		 * @return true if early termination was detected
+		 */
+		public boolean isEarlyTerminated() {
+			return earlyTerminated;
 		}
 
 		/**
@@ -303,6 +319,30 @@ public class StreamingResponseHandler {
 			}).doOnCancel(() -> {
 				if (shouldEarlyTerminate.get()) {
 					log.info("Stream cancelled due to early termination (thinking-only response detected)");
+					// Construct ChatResponse with accumulated content when early termination is detected
+					// This ensures finalChatResponseRef is set even when stream is cancelled
+					if (finalChatResponseRef.get() == null) {
+						var usage = new MessageAggregator.DefaultUsage(metadataUsagePromptTokensRef.get(),
+								metadataUsageGenerationTokensRef.get(), metadataUsageTotalTokensRef.get());
+
+						var chatResponseMetadata = ChatResponseMetadata.builder()
+							.id(metadataIdRef.get())
+							.model(metadataModelRef.get())
+							.rateLimit(metadataRateLimitRef.get())
+							.usage(usage)
+							.promptMetadata(metadataPromptMetadataRef.get())
+							.build();
+						
+						// Create ChatResponse with accumulated text and empty tool calls
+						finalChatResponseRef.set(
+								new ChatResponse(List.of(new Generation(
+										new AssistantMessage(messageTextContentRef.get().toString(),
+												messageMetadataMapRef.get(), messageToolCallRef.get()),
+										generationMetadataRef.get())), chatResponseMetadata));
+						
+						log.info("Constructed ChatResponse from early termination: {} characters, {} tool calls",
+								messageTextContentRef.get().length(), messageToolCallRef.get().size());
+					}
 				}
 			});
 
@@ -331,7 +371,9 @@ public class StreamingResponseHandler {
 			}
 
 			llmTraceRecorder.recordResponse(finalChatResponseRef.get());
-			return new StreamingResult(finalChatResponseRef.get());
+			// Check if early termination occurred and pass the flag to StreamingResult
+			boolean wasEarlyTerminated = shouldEarlyTerminate.get();
+			return new StreamingResult(finalChatResponseRef.get(), wasEarlyTerminated);
 		}
 		catch (Exception e) {
 			// Final error handling - log and re-throw

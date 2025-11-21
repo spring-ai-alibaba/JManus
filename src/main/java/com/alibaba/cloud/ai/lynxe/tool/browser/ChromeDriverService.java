@@ -32,8 +32,6 @@ import org.springframework.stereotype.Service;
 import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
@@ -41,6 +39,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.TimeoutError;
+import com.microsoft.playwright.options.ServiceWorkerPolicy;
 
 import jakarta.annotation.PreDestroy;
 
@@ -62,7 +61,6 @@ public class ChromeDriverService implements IChromeDriverService {
 
 	private UnifiedDirectoryManager unifiedDirectoryManager;
 
-	private final ObjectMapper objectMapper;
 
 	@Autowired(required = false)
 	private SpringBootPlaywrightInitializer playwrightInitializer;
@@ -82,60 +80,11 @@ public class ChromeDriverService implements IChromeDriverService {
 		return sharedDir;
 	}
 
-	/**
-	 * Save all cookies from drivers to global shared directory (cookies.json)
-	 */
-	public void saveCookiesToSharedDir() {
-		// Get the first available driver
-		DriverWrapper driver = drivers.values().stream().findFirst().orElse(null);
-		if (driver == null) {
-			log.warn("No driver found for saving cookies");
-			return;
-		}
-		try {
-			List<com.microsoft.playwright.options.Cookie> cookies = driver.getCurrentPage().context().cookies();
-			String cookieFile = sharedDir + "/cookies.json";
-			try (java.io.FileWriter writer = new java.io.FileWriter(cookieFile)) {
-				writer.write(objectMapper.writeValueAsString(cookies));
-			}
-			log.info("Cookies saved to {}", cookieFile);
-		}
-		catch (Exception e) {
-			log.error("Failed to save cookies", e);
-		}
-	}
-
-	/**
-	 * Load cookies from global shared directory to all drivers
-	 */
-	public void loadCookiesFromSharedDir() {
-		String cookieFile = sharedDir + "/cookies.json";
-		java.io.File file = new java.io.File(cookieFile);
-		if (!file.exists()) {
-			log.warn("Cookie file does not exist: {}", cookieFile);
-			return;
-		}
-		try (java.io.FileReader reader = new java.io.FileReader(cookieFile)) {
-			// Replace FastJSON's JSON.parseArray with Jackson's objectMapper.readValue
-			List<com.microsoft.playwright.options.Cookie> cookies = objectMapper.readValue(reader,
-					new TypeReference<List<com.microsoft.playwright.options.Cookie>>() {
-					});
-			for (DriverWrapper driver : drivers.values()) {
-				driver.getCurrentPage().context().addCookies(cookies);
-			}
-			log.info("Cookies loaded from {} to all drivers", cookieFile);
-		}
-		catch (Exception e) {
-			log.error("Failed to load cookies for all drivers", e);
-		}
-	}
-
 	public ChromeDriverService(LynxeProperties lynxeProperties, SmartContentSavingService innerStorageService,
-			UnifiedDirectoryManager unifiedDirectoryManager, ObjectMapper objectMapper) {
+			UnifiedDirectoryManager unifiedDirectoryManager) {
 		this.lynxeProperties = lynxeProperties;
 		this.innerStorageService = innerStorageService;
 		this.unifiedDirectoryManager = unifiedDirectoryManager;
-		this.objectMapper = objectMapper;
 		// Use UnifiedDirectoryManager to get the shared directory for playwright
 		try {
 			java.nio.file.Path playwrightDir = unifiedDirectoryManager.getWorkingDirectory().resolve("playwright");
@@ -207,9 +156,28 @@ public class ChromeDriverService implements IChromeDriverService {
 	}
 
 	private void cleanupAllPlaywrightProcesses() {
+		log.info("Starting cleanup of all Playwright processes and drivers");
 		try {
+			// Close all drivers first before clearing the map
+			// This ensures browser processes and I/O threads are properly terminated
+			// DriverWrapper.close() will handle closing pages, browsers, contexts, and Playwright instances
+			for (String planId : drivers.keySet()) {
+				DriverWrapper driver = drivers.get(planId);
+				if (driver != null) {
+					try {
+						log.info("Closing driver for planId: {}", planId);
+						driver.close();
+					}
+					catch (Exception e) {
+						log.warn("Error closing driver for planId {}: {}", planId, e.getMessage());
+					}
+				}
+			}
+
+			// Now clear the map after all resources are closed
 			drivers.clear();
-			log.info("Successfully cleaned up all Playwright processes	");
+			initialCleanupDone.clear();
+			log.info("Successfully cleaned up all Playwright processes and drivers");
 		}
 		catch (Exception e) {
 			log.error("Error cleaning up Browser processes", e);
@@ -294,6 +262,13 @@ public class ChromeDriverService implements IChromeDriverService {
 				return false;
 			}
 
+			// Check if browser context is still valid
+			BrowserContext context = driver.getBrowserContext();
+			if (context == null) {
+				log.debug("Driver health check failed: browser context is null");
+				return false;
+			}
+
 			// Check if current page is accessible
 			Page page = driver.getCurrentPage();
 			if (page == null || page.isClosed()) {
@@ -371,7 +346,7 @@ public class ChromeDriverService implements IChromeDriverService {
 				throw new RuntimeException("Failed to get browser type", e);
 			}
 
-			// Configure browser launch options
+			// Configure browser launch options with optimizations for faster startup
 			BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions();
 			try {
 				// Basic configuration with error handling for user agent
@@ -384,14 +359,49 @@ public class ChromeDriverService implements IChromeDriverService {
 					userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 				}
 
-				launchOptions
-					.setArgs(Arrays.asList("--remote-allow-origins=*", "--disable-blink-features=AutomationControlled",
-							"--disable-infobars", "--disable-notifications", "--disable-dev-shm-usage", "--no-sandbox", // Add
-																														// for
-																														// better
-																														// stability
-							"--disable-gpu", // Add for headless stability
-							"--lang=zh-CN,zh,en-US,en", "--user-agent=" + userAgent, "--window-size=1920,1080"));
+				// Build optimized arguments list for faster startup
+				// Critical: disable background networking to prevent unnecessary network requests
+				// Note: Browser runs in normal mode (not incognito) to preserve cookies and history
+				List<String> args = new java.util.ArrayList<>(Arrays.asList(
+						// Essential arguments
+						"--remote-allow-origins=*",
+						"--disable-blink-features=AutomationControlled",
+						"--disable-infobars",
+						"--disable-notifications",
+						"--disable-dev-shm-usage",
+						"--no-sandbox",
+						"--disable-gpu",
+						"--lang=zh-CN,zh,en-US,en",
+						"--user-agent=" + userAgent,
+						"--window-size=1920,1080",
+						// Ensure normal mode (not incognito) - do not add --incognito flag
+						// Performance optimizations - disable background network requests
+						"--disable-background-networking", // Critical: prevents background network requests
+						"--disable-background-timer-throttling",
+						"--disable-backgrounding-occluded-windows",
+						"--disable-breakpad",
+						"--disable-client-side-phishing-detection",
+						"--disable-component-extensions-with-background-pages",
+						"--disable-component-update", // Disables component updates
+						"--disable-default-apps", // Disables default apps
+						"--disable-domain-reliability", // Disables domain reliability service
+						"--disable-extensions", // Disables extensions
+						"--disable-features=TranslateUI", // Disables translate UI
+						"--disable-hang-monitor",
+						"--disable-ipc-flooding-protection",
+						"--disable-popup-blocking",
+						"--disable-prompt-on-repost",
+						"--disable-renderer-backgrounding",
+						"--disable-sync", // Disables sync service
+						"--disable-translate",
+						"--metrics-recording-only",
+						"--no-first-run", // Skips first run tasks
+						"--safebrowsing-disable-auto-update", // Disables safe browsing updates
+						"--enable-automation",
+						"--password-store=basic",
+						"--use-mock-keychain"));
+
+				launchOptions.setArgs(args);
 
 				// Set headless mode based on configuration
 				if (lynxeProperties.getBrowserHeadless()) {
@@ -435,13 +445,26 @@ public class ChromeDriverService implements IChromeDriverService {
 			// Create browser context with error handling
 			// Using browser.newContext() provides better isolation and resource
 			// management
+			// Note: BrowserContext is created in normal mode (not incognito) to preserve cookies and history
+			// Cache storage state check outside try block for reuse in page creation
+			java.nio.file.Path storageStatePath = null;
+			boolean hasStorageState = false;
+			try {
+				storageStatePath = java.nio.file.Paths.get(sharedDir, "storage-state.json");
+				hasStorageState = java.nio.file.Files.exists(storageStatePath);
+			}
+			catch (Exception e) {
+				log.warn("Failed to check storage state path: {}", e.getMessage());
+			}
+
 			try {
 				// Check browser is still connected before creating context
 				if (!browser.isConnected()) {
 					throw new RuntimeException("Browser is not connected, cannot create context");
 				}
 
-				// Configure context options
+				// Configure context options with optimizations for faster startup
+				// BrowserContext runs in normal mode (not incognito) by default in Playwright
 				Browser.NewContextOptions contextOptions = new Browser.NewContextOptions();
 
 				// Set viewport size
@@ -462,24 +485,36 @@ public class ChromeDriverService implements IChromeDriverService {
 				// Set timezone if needed
 				// contextOptions.setTimezoneId("Asia/Shanghai");
 
+				// Disable service workers to prevent network requests during startup
+				// Service workers can make network requests that slow down context creation
+				try {
+					contextOptions.setServiceWorkers(ServiceWorkerPolicy.BLOCK);
+					log.debug("Service workers disabled for faster startup");
+				}
+				catch (Exception e) {
+					log.warn("Failed to disable service workers: {}", e.getMessage());
+				}
+
 				// Try to load storage state (cookies, localStorage, etc.) for persistence
 				// This provides better cookie persistence than manual cookie loading
-				try {
-					java.nio.file.Path storageStatePath = java.nio.file.Paths.get(sharedDir, "storage-state.json");
-					if (java.nio.file.Files.exists(storageStatePath)) {
+				// Use cached hasStorageState flag to avoid duplicate file system operations
+				if (hasStorageState && storageStatePath != null) {
+					try {
 						contextOptions.setStorageStatePath(storageStatePath);
 						log.info("Loading browser storage state from: {}", storageStatePath);
 					}
-					else {
-						log.debug("Storage state file not found, creating new context without storage state: {}",
-								storageStatePath);
+					catch (Exception e) {
+						log.warn("Failed to set storage state path, continuing without it: {}", e.getMessage());
 					}
 				}
-				catch (Exception e) {
-					log.warn("Failed to set storage state path, continuing without it: {}", e.getMessage());
+				else {
+					log.debug("Storage state file not found, creating new context without storage state: {}",
+							storageStatePath);
 				}
 
 				// Create context with timeout
+				// According to Playwright call tree: browser.newContext() -> sendMessage("newContext")
+				// -> [driver process] creates context and applies all options including storageState
 				browserContext = browser.newContext(contextOptions);
 				log.info("Successfully created browser context");
 
@@ -505,52 +540,47 @@ public class ChromeDriverService implements IChromeDriverService {
 			}
 
 			// Create new page from context with error handling
+			// According to Playwright call tree: context.newPage() -> sendMessage("newPage")
+			// -> [driver process] creates new page and initializes page environment
 			try {
-				// browserContext is guaranteed to be non-null here due to previous
-				// validation
+				// browserContext is guaranteed to be non-null here due to previous validation
 
-				// Close any pages restored from storage state before creating new page
-				// Only do this on the first initialization per planId to avoid closing
-				// pages unnecessarily
-				// Storage state may restore previous tabs, which we don't want to keep on
-				// first startup
-				try {
-					// Check if we've already done the initial cleanup for this planId
-					boolean shouldCleanup = initialCleanupDone.putIfAbsent(planId, Boolean.TRUE) == null;
-
-					if (shouldCleanup) {
+				// Check if there are existing pages from storage state
+				// When storage state is loaded, context.newContext() may restore existing pages
+				// We preserve them instead of closing, as they may contain important state
+				// Use cached hasStorageState flag to avoid duplicate file system check
+				if (hasStorageState) {
+					try {
+						// Check for existing pages restored from storage state
 						List<Page> existingPages = browserContext.pages();
 						if (!existingPages.isEmpty()) {
 							log.info(
-									"First initialization for planId {}: Found {} existing page(s) from storage state, closing them",
-									planId, existingPages.size());
-							for (Page existingPage : existingPages) {
-								try {
-									if (!existingPage.isClosed()) {
-										existingPage.close();
-										log.debug("Closed existing page from storage state: {}", existingPage.url());
-									}
-								}
-								catch (Exception e) {
-									log.warn("Failed to close existing page: {}", e.getMessage());
-								}
-							}
+									"Found {} existing page(s) from storage state for planId {}, preserving them",
+									existingPages.size(), planId);
+							// Use the first existing page if available
+							page = existingPages.get(0);
+							log.info("Using existing page from storage state: {}", page.url());
 						}
 						else {
-							log.debug("First initialization for planId {}: No existing pages from storage state",
-									planId);
+							// No existing pages restored, create a new one
+							page = browserContext.newPage();
+							log.info("Successfully created new page from context");
 						}
 					}
-					else {
-						log.debug("Skipping page cleanup for planId {}: already done on first initialization", planId);
+					catch (Exception e) {
+						log.warn("Failed to check existing pages from storage state, creating new page: {}",
+								e.getMessage());
+						// Fallback: create new page if we can't check existing pages
+						page = browserContext.newPage();
+						log.info("Successfully created new page from context (fallback)");
 					}
 				}
-				catch (Exception e) {
-					log.warn("Failed to check/close existing pages from storage state: {}", e.getMessage());
+				else {
+					// No storage state, directly create new page without checking existing pages
+					// This avoids unnecessary browserContext.pages() call when we know there are no pages
+					page = browserContext.newPage();
+					log.info("Successfully created new page from context (no storage state)");
 				}
-
-				page = browserContext.newPage();
-				log.info("Successfully created new page from context");
 
 				// Verify page is not closed
 				if (page.isClosed()) {
@@ -597,8 +627,9 @@ public class ChromeDriverService implements IChromeDriverService {
 			}
 
 			// Create and return DriverWrapper with error handling
+			// Following best practices: Browser -> BrowserContext -> Page
 			try {
-				DriverWrapper wrapper = new DriverWrapper(playwright, browser, page, this.sharedDir, objectMapper);
+				DriverWrapper wrapper = new DriverWrapper(playwright, browser, browserContext, page, this.sharedDir);
 				log.info("Successfully created DriverWrapper instance with browser context");
 				return wrapper;
 			}
@@ -610,31 +641,32 @@ public class ChromeDriverService implements IChromeDriverService {
 		}
 		catch (Exception e) {
 			// Comprehensive cleanup on any error
+			// Follow Playwright best practices: Context -> Browser -> Playwright
+			// According to call tree: context.close() automatically closes all pages
 			log.error("Driver creation failed, performing cleanup: {}", e.getMessage(), e);
 
-			// Close page if created
-			if (page != null && !page.isClosed()) {
-				try {
-					page.close();
-					log.debug("Cleaned up page after error");
-				}
-				catch (Exception ex) {
-					log.warn("Failed to close page during cleanup: {}", ex.getMessage());
-				}
-			}
-
-			// Close browser context if created
+			// Step 1: Close browser context first (best practice)
+			// This will automatically close all pages in the context
+			// According to call tree: context.close() -> sendMessage("close")
+			// -> [driver process] closes all pages and cleans up all resources
 			if (browserContext != null) {
 				try {
-					browserContext.close();
-					log.debug("Cleaned up browser context after error");
+					// Check if browser is still connected before closing context
+					if (browser != null && browser.isConnected()) {
+						browserContext.close();
+						log.debug("Cleaned up browser context after error (pages closed automatically)");
+					}
+					else {
+						log.debug("Browser disconnected, skipping context close");
+					}
 				}
 				catch (Exception ex) {
 					log.warn("Failed to close browser context during cleanup: {}", ex.getMessage());
 				}
 			}
+			// Note: No need to close page separately - context.close() handles it
 
-			// Close browser if created
+			// Step 2: Close browser (after contexts are closed)
 			if (browser != null && browser.isConnected()) {
 				try {
 					browser.close();
@@ -645,7 +677,7 @@ public class ChromeDriverService implements IChromeDriverService {
 				}
 			}
 
-			// Close playwright if created
+			// Step 3: Close Playwright instance (terminates I/O threads)
 			if (playwright != null) {
 				try {
 					playwright.close();

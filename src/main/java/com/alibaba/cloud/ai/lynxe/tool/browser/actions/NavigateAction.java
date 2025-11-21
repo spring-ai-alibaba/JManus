@@ -59,14 +59,15 @@ public class NavigateAction extends BrowserAction {
 		// Before calling page.content(), ensure the page is fully loaded
 		page.waitForLoadState(LoadState.DOMCONTENTLOADED, new WaitForLoadStateOptions().setTimeout(timeoutMs));
 
-		// Save cookies after navigation to persist them
+		// Save storage state after navigation to persist cookies, localStorage, etc.
+		// Following Playwright best practices: use storage state instead of manual cookie management
 		try {
-			getBrowserUseTool().getDriver().persistCookies();
+			getBrowserUseTool().getDriver().saveStorageState();
 		}
 		catch (Exception e) {
-			// Log but don't fail the navigation if cookie saving fails
+			// Log but don't fail the navigation if storage state saving fails
 			org.slf4j.LoggerFactory.getLogger(NavigateAction.class)
-				.debug("Failed to save cookies after navigation: {}", e.getMessage());
+				.debug("Failed to save storage state after navigation: {}", e.getMessage());
 		}
 
 		return new ToolExecuteResult("successfully navigated to " + url);
