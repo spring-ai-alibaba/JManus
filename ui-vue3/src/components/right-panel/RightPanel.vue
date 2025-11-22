@@ -17,6 +17,15 @@
   <div class="right-panel">
     <div class="preview-header">
       <div class="preview-tabs">
+        <!-- Func-Agent Config tab -->
+        <div
+          class="tab-item"
+          :class="{ active: activeTab === 'config' }"
+          @click="activeTab = 'config'"
+        >
+          <Icon icon="carbon:settings" />
+          <span>{{ t('sidebar.configuration') }}</span>
+        </div>
         <!-- Step Execution Details tab -->
         <div
           class="tab-item"
@@ -39,6 +48,37 @@
     </div>
 
     <div class="preview-content">
+      <!-- Func-Agent Config -->
+      <div v-if="activeTab === 'config'" class="config-tab-content">
+        <div v-if="templateConfig.selectedTemplate.value" class="config-container">
+          <!-- Template Info Header -->
+          <div class="template-info-header">
+            <div class="template-info">
+              <h3>
+                {{ templateConfig.selectedTemplate.value.title || t('sidebar.unnamedPlan') }}
+              </h3>
+              <span class="template-id"
+                >ID: {{ templateConfig.selectedTemplate.value.planTemplateId }}</span
+              >
+            </div>
+            <button class="back-to-list-btn" @click="sidebarStore.switchToTab('list')">
+              <Icon icon="carbon:arrow-left" width="16" />
+            </button>
+          </div>
+
+          <!-- JSON Editor -->
+          <JsonEditorV2 />
+
+          <!-- Execution Controller -->
+          <ExecutionController />
+        </div>
+        <div v-else class="no-template-selected">
+          <Icon icon="carbon:settings" class="empty-icon" />
+          <h3>{{ t('rightPanel.noTemplateSelected') }}</h3>
+          <p>{{ t('rightPanel.selectTemplateHint') }}</p>
+        </div>
+      </div>
+
       <!-- Step Execution Details -->
       <div v-if="activeTab === 'details'" class="step-details">
         <!-- Step basic information -->
@@ -317,7 +357,11 @@
 
 <script setup lang="ts">
 import FileBrowser from '@/components/file-browser/index.vue'
+import ExecutionController from '@/components/sidebar/ExecutionController.vue'
+import JsonEditorV2 from '@/components/sidebar/JsonEditorV2.vue'
 import { useRightPanelSingleton } from '@/composables/useRightPanel'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import { sidebarStore } from '@/stores/sidebar'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -335,6 +379,9 @@ const { t } = useI18n()
 // Use singleton composable for right panel state
 const rightPanel = useRightPanelSingleton()
 
+// Template config for Func-Agent Config tab
+const templateConfig = usePlanTemplateConfigSingleton()
+
 // DOM element reference
 const scrollContainer = ref<HTMLElement>()
 
@@ -347,7 +394,7 @@ const shouldAutoScrollToBottom = ref(true)
 const selectedStep = computed(() => rightPanel.selectedStep.value)
 const activeTab = computed({
   get: () => rightPanel.activeTab.value,
-  set: (value: 'details' | 'files') => rightPanel.setActiveTab(value),
+  set: (value: 'config' | 'details' | 'files') => rightPanel.setActiveTab(value),
 })
 const fileBrowserPlanId = computed(() => rightPanel.fileBrowserPlanId.value)
 const shouldShowNoTaskMessage = computed(() => rightPanel.shouldShowNoTaskMessage.value)
@@ -1234,5 +1281,103 @@ defineExpose({
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Config Tab Styles */
+.config-tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.config-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+  gap: 16px;
+}
+
+.template-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+
+  .template-info {
+    flex: 1;
+    min-width: 0;
+
+    h3 {
+      margin: 0 0 4px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .template-id {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  .back-to-list-btn {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+  }
+}
+
+.no-template-selected {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #666666;
+  padding: 40px 20px;
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #444444;
+  }
+
+  h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    color: #888888;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    text-align: center;
+    max-width: 300px;
+    line-height: 1.5;
+  }
 }
 </style>

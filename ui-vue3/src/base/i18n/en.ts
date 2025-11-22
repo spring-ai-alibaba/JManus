@@ -1171,6 +1171,8 @@ const words: I18nType = {
     stepExecutionDetails: 'Step Execution Details',
     noStepSelected: 'No Step Selected',
     selectStepHint: 'Please select an execution step in the left chat area to view details',
+    noTemplateSelected: 'No Template Selected',
+    selectTemplateHint: 'Please select a template from the left sidebar to configure',
     stepExecuting: 'Step is executing, please wait...',
     step: 'Step',
     executingAgent: 'Executing Agent',

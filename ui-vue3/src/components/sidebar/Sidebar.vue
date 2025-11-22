@@ -24,57 +24,9 @@
         <div class="sidebar-content-title">{{ $t('sidebar.title') }}</div>
       </div>
 
-      <!-- Tab Switcher -->
-      <div class="tab-switcher">
-        <button
-          class="tab-button"
-          :class="{ active: sidebarStore.currentTab === 'list' }"
-          @click="sidebarStore.switchToTab('list')"
-        >
-          <Icon icon="carbon:list" width="16" />
-          {{ $t('sidebar.templateList') }}
-        </button>
-        <button
-          class="tab-button"
-          :class="{ active: sidebarStore.currentTab === 'config' }"
-          @click="sidebarStore.switchToTab('config')"
-          :disabled="!templateConfig.selectedTemplate.value"
-        >
-          <Icon icon="carbon:settings" width="16" />
-          {{ $t('sidebar.configuration') }}
-        </button>
-      </div>
-
-      <!-- List Tab Content -->
-      <div v-if="sidebarStore.currentTab === 'list'" class="tab-content">
+      <!-- Template List Content -->
+      <div class="tab-content">
         <TemplateList />
-      </div>
-
-      <!-- Config Tab Content -->
-      <div v-else-if="sidebarStore.currentTab === 'config'" class="tab-content config-tab">
-        <div v-if="templateConfig.selectedTemplate.value" class="config-container">
-          <!-- Template Info Header -->
-          <div class="template-info-header">
-            <div class="template-info">
-              <h3>
-                {{ templateConfig.selectedTemplate.value.title || $t('sidebar.unnamedPlan') }}
-              </h3>
-              <span class="template-id"
-                >ID: {{ templateConfig.selectedTemplate.value.planTemplateId }}</span
-              >
-            </div>
-            <button class="back-to-list-btn" @click="sidebarStore.switchToTab('list')">
-              <Icon icon="carbon:arrow-left" width="16" />
-            </button>
-          </div>
-
-          <!-- Section 2: JSON Editor (Conditional based on plan type) -->
-          <!-- Use JsonEditorV2 for all plan types -->
-          <JsonEditorV2 />
-
-          <!-- Section 3: Execution Controller -->
-          <ExecutionController />
-        </div>
       </div>
     </div>
 
@@ -97,20 +49,13 @@ defineOptions({
 })
 
 import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
-import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { sidebarStore } from '@/stores/sidebar'
 import { templateStore } from '@/stores/templateStore'
-import { Icon } from '@iconify/vue'
 import { onMounted, onUnmounted, ref } from 'vue'
-import ExecutionController from './ExecutionController.vue'
-import JsonEditorV2 from './JsonEditorV2.vue'
 import TemplateList from './TemplateList.vue'
 
 // Available tools management
 const availableToolsStore = useAvailableToolsSingleton()
-
-// Template config management
-const templateConfig = usePlanTemplateConfigSingleton()
 
 // Sidebar width management
 const sidebarWidth = ref(80) // Default width percentage
@@ -185,7 +130,6 @@ onUnmounted(() => {
 defineExpose({
   loadPlanTemplateList: templateStore.loadPlanTemplateList,
   toggleSidebar: sidebarStore.toggleSidebar,
-  currentPlanTemplateId: templateConfig.currentPlanTemplateId,
 })
 </script>
 
@@ -241,146 +185,11 @@ defineExpose({
     }
   }
 
-  .tab-switcher {
-    display: flex;
-    margin-bottom: 16px;
-    padding-right: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 4px;
-
-    .tab-button {
-      flex: 1;
-      padding: 8px 12px;
-      background: transparent;
-      border: none;
-      border-radius: 6px;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: all 0.2s ease;
-
-      &:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.1);
-        color: rgba(255, 255, 255, 0.9);
-      }
-
-      &.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
-      }
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-    }
-  }
-
   .tab-content {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
-  }
-
-  .config-tab {
-    .config-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      overflow-y: auto;
-      padding-right: 12px;
-
-      .template-info-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-        padding: 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 8px;
-
-        .template-info {
-          flex: 1;
-          min-width: 0;
-
-          h3 {
-            margin: 0 0 4px 0;
-            font-size: 14px;
-            font-weight: 600;
-            color: white;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
-
-          .template-id {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.5);
-          }
-        }
-
-        .back-to-list-btn {
-          width: 28px;
-          height: 28px;
-          background: transparent;
-          border: none;
-          border-radius: 4px;
-          color: rgba(255, 255, 255, 0.7);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-
-          &:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-          }
-        }
-      }
-
-      .json-editor {
-        width: 100%;
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 6px;
-        color: white;
-        font-size: 12px;
-        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-        padding: 8px;
-        resize: vertical;
-        min-height: 100px;
-
-        &:focus {
-          outline: none;
-          border-color: #667eea;
-          box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-        }
-
-        &::placeholder {
-          color: rgba(255, 255, 255, 0.4);
-        }
-      }
-
-      .json-editor {
-        min-height: 200px;
-        font-size: 11px;
-        line-height: 1.5;
-        white-space: pre-wrap;
-        overflow-wrap: break-word;
-        word-break: break-word;
-        tab-size: 2;
-        font-variant-ligatures: none;
-      }
-    }
   }
 }
 

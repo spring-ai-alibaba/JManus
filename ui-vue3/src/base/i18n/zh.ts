@@ -1111,6 +1111,8 @@ const words: I18nType = {
     stepExecutionDetails: '步骤执行详情',
     noStepSelected: '未选择执行步骤',
     selectStepHint: '请在左侧聊天区域选择一个执行步骤查看详情',
+    noTemplateSelected: '未选择模板',
+    selectTemplateHint: '请从左侧边栏选择一个模板进行配置',
     stepExecuting: '步骤正在执行中，请稍候...',
     step: '步骤',
     executingAgent: '执行智能体',

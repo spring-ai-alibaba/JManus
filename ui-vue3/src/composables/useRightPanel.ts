@@ -50,7 +50,7 @@ export function useRightPanel() {
   const selectedRootPlanId = ref<string | null>(null)
 
   // Active tab state
-  const activeTab = ref<'details' | 'files'>('details')
+  const activeTab = ref<'config' | 'details' | 'files'>('config')
 
   // Current root plan ID - reactively derived from useMessageDialog's rootPlanId
   const currentRootPlanId = computed(() => {
@@ -236,9 +236,9 @@ export function useRightPanel() {
 
   /**
    * Set active tab
-   * @param tab - The tab to activate ('details' or 'files')
+   * @param tab - The tab to activate ('config', 'details', or 'files')
    */
-  const setActiveTab = (tab: 'details' | 'files'): void => {
+  const setActiveTab = (tab: 'config' | 'details' | 'files'): void => {
     activeTab.value = tab
     console.log('[useRightPanel] Active tab set to:', tab)
   }
@@ -311,7 +311,7 @@ export function useRightPanel() {
   const reset = (): void => {
     selectedStep.value = null
     selectedRootPlanId.value = null
-    activeTab.value = 'details'
+    activeTab.value = 'config'
     // Note: currentRootPlanId is computed from useMessageDialog, so no need to reset it
     console.log('[useRightPanel] State reset')
   }
