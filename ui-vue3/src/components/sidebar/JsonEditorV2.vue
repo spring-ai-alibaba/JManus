@@ -1078,13 +1078,32 @@ const loadAvailableServiceGroups = async () => {
 
   isLoadingGroups.value = true
   try {
-    const tools = await ToolApiService.getAvailableTools()
     const groupsSet = new Set<string>()
-    tools.forEach(tool => {
-      if (tool.serviceGroup) {
-        groupsSet.add(tool.serviceGroup)
-      }
-    })
+
+    // Load service groups from tools
+    try {
+      const tools = await ToolApiService.getAvailableTools()
+      tools.forEach(tool => {
+        if (tool.serviceGroup) {
+          groupsSet.add(tool.serviceGroup)
+        }
+      })
+    } catch (error) {
+      console.error('[JsonEditorV2] Failed to load service groups from tools:', error)
+    }
+
+    // Load service groups from plan templates
+    try {
+      const planTemplates = await PlanTemplateApiService.getAllPlanTemplateConfigVOs()
+      planTemplates.forEach(template => {
+        if (template.serviceGroup) {
+          groupsSet.add(template.serviceGroup)
+        }
+      })
+    } catch (error) {
+      console.error('[JsonEditorV2] Failed to load service groups from plan templates:', error)
+    }
+
     availableServiceGroups.value = Array.from(groupsSet).sort()
   } catch (error) {
     console.error('[JsonEditorV2] Failed to load service groups:', error)
