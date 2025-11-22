@@ -30,10 +30,10 @@
           <button
             @click="handleExport"
             class="action-btn"
-            :title="$t('config.planTemplate.export')"
+            :title="$t('config.planTemplate.exportAll')"
             :disabled="loading || planTemplates.length === 0"
           >
-            📤 {{ $t('config.planTemplate.export') }}
+            📤 {{ $t('config.planTemplate.exportAll') }}
           </button>
           <label class="action-btn" :title="$t('config.planTemplate.import')">
             📥 {{ $t('config.planTemplate.import') }}
@@ -55,33 +55,66 @@
       <p>{{ $t('config.loading') }}</p>
     </div>
 
-    <!-- Plan Templates List -->
+    <!-- Plan Templates List (Grouped) -->
     <div v-else-if="planTemplates.length > 0" class="templates-list">
       <div
-        v-for="template in planTemplates"
-        :key="template.planTemplateId"
-        class="template-item"
+        v-for="group in groupedTemplates"
+        :key="group.key || '__ungrouped__'"
+        class="template-group"
       >
-        <div class="template-info">
-          <div class="template-header">
-            <h3 class="template-title">{{ template.title || $t('config.planTemplate.untitled') }}</h3>
-            <span class="template-id">ID: {{ template.planTemplateId }}</span>
-          </div>
-          <div class="template-meta">
-            <span v-if="template.serviceGroup" class="meta-item">
-              <span class="meta-label">{{ $t('config.planTemplate.serviceGroup') }}:</span>
-              <span class="meta-value">{{ template.serviceGroup }}</span>
-            </span>
-            <span v-if="template.planType" class="meta-item">
-              <span class="meta-label">{{ $t('config.planTemplate.planType') }}:</span>
-              <span class="meta-value">{{ template.planType }}</span>
-            </span>
-            <span v-if="template.steps && template.steps.length > 0" class="meta-item">
-              <span class="meta-label">{{ $t('config.planTemplate.steps') }}:</span>
-              <span class="meta-value">{{ template.steps.length }}</span>
+        <!-- Group Header -->
+        <div class="group-header" @click="toggleGroup(group.key)">
+          <div class="group-header-left">
+            <Icon
+              :icon="isGroupCollapsed(group.key) ? 'carbon:chevron-right' : 'carbon:chevron-down'"
+              class="collapse-icon"
+            />
+            <h3 class="group-title">
+              {{ group.key || $t('config.planTemplate.noServiceGroup') }}
+            </h3>
+            <span class="group-count">
+              {{ $t('config.planTemplate.groupCount', { count: group.templates.length }) }}
             </span>
           </div>
+          <button
+            class="group-export-btn"
+            @click.stop="handleExportGroup(group.key)"
+            :title="$t('config.planTemplate.exportGroup')"
+            :disabled="loading || group.templates.length === 0"
+          >
+            📤 {{ $t('config.planTemplate.exportGroup') }}
+          </button>
         </div>
+
+        <!-- Group Content (Collapsible) -->
+        <transition name="group-content">
+          <div v-show="!isGroupCollapsed(group.key)" class="group-content">
+            <div
+              v-for="template in group.templates"
+              :key="template.planTemplateId"
+              class="template-item"
+            >
+              <div class="template-info">
+                <div class="template-header">
+                  <h3 class="template-title">
+                    {{ template.title || $t('config.planTemplate.untitled') }}
+                  </h3>
+                  <span class="template-id">ID: {{ template.planTemplateId }}</span>
+                </div>
+                <div class="template-meta">
+                  <span v-if="template.planType" class="meta-item">
+                    <span class="meta-label">{{ $t('config.planTemplate.planType') }}:</span>
+                    <span class="meta-value">{{ template.planType }}</span>
+                  </span>
+                  <span v-if="template.steps && template.steps.length > 0" class="meta-item">
+                    <span class="meta-label">{{ $t('config.planTemplate.steps') }}:</span>
+                    <span class="meta-value">{{ template.steps.length }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
       </div>
     </div>
 
@@ -101,17 +134,25 @@
 
 <script setup lang="ts">
 import { PlanTemplateApiService } from '@/api/plan-template-with-tool-api-service'
+import { usePlanTemplateImport } from '@/composables/usePlanTemplateImport'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
+import { Icon } from '@iconify/vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 // Initialize i18n
 const { t } = useI18n()
 
+// Plan template import composable
+const { handleImport: handleImportPlanTemplate } = usePlanTemplateImport()
+
 // Reactive data
 const initialLoading = ref(true)
 const loading = ref(false)
 const planTemplates = ref<PlanTemplateConfigVO[]>([])
+
+// Collapse state for each group
+const groupCollapsedState = ref<Map<string, boolean>>(new Map())
 
 // Message Prompt
 const message = reactive({
@@ -131,6 +172,67 @@ const showMessage = (text: string, type: 'success' | 'error' = 'success') => {
   }, 3000)
 }
 
+// Group templates by serviceGroup
+const groupedTemplates = computed(() => {
+  const groups = new Map<string | null, PlanTemplateConfigVO[]>()
+
+  for (const template of planTemplates.value) {
+    const groupKey = template.serviceGroup || null
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, [])
+    }
+    groups.get(groupKey)!.push(template)
+  }
+
+  // Sort templates within each group
+  for (const templates of groups.values()) {
+    templates.sort((a, b) => {
+      const titleA = (a.title || '').toLowerCase()
+      const titleB = (b.title || '').toLowerCase()
+      return titleA.localeCompare(titleB)
+    })
+  }
+
+  // Convert to array and sort groups (null/ungrouped at the end)
+  const sortedGroups: Array<{ key: string | null; templates: PlanTemplateConfigVO[] }> = []
+
+  // Add grouped items first (sorted alphabetically)
+  const groupedEntries = Array.from(groups.entries())
+    .filter(([key]) => key !== null)
+    .sort(([keyA], [keyB]) => (keyA || '').localeCompare(keyB || ''))
+
+  for (const [key, templates] of groupedEntries) {
+    sortedGroups.push({ key, templates })
+    // Initialize collapse state if not exists (default to expanded)
+    if (!groupCollapsedState.value.has(key!)) {
+      groupCollapsedState.value.set(key!, false)
+    }
+  }
+
+  // Add ungrouped items at the end
+  if (groups.has(null)) {
+    sortedGroups.push({ key: null, templates: groups.get(null)! })
+    if (!groupCollapsedState.value.has('__ungrouped__')) {
+      groupCollapsedState.value.set('__ungrouped__', false)
+    }
+  }
+
+  return sortedGroups
+})
+
+// Toggle group collapse state
+const toggleGroup = (groupKey: string | null) => {
+  const stateKey = groupKey || '__ungrouped__'
+  const currentState = groupCollapsedState.value.get(stateKey) || false
+  groupCollapsedState.value.set(stateKey, !currentState)
+}
+
+// Check if group is collapsed
+const isGroupCollapsed = (groupKey: string | null): boolean => {
+  const stateKey = groupKey || '__ungrouped__'
+  return groupCollapsedState.value.get(stateKey) || false
+}
+
 // Load all plan templates
 const loadPlanTemplates = async () => {
   try {
@@ -147,7 +249,7 @@ const loadPlanTemplates = async () => {
   }
 }
 
-// Handle export
+// Handle export all
 const handleExport = async () => {
   if (loading.value || planTemplates.value.length === 0) {
     return
@@ -181,59 +283,76 @@ const handleExport = async () => {
   }
 }
 
-// Handle import
-const handleImport = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-
-  if (!file) {
+// Handle export group
+const handleExportGroup = async (groupKey: string | null) => {
+  if (loading.value) {
     return
   }
 
   try {
     loading.value = true
 
-    // Read file content
-    const fileContent = await file.text()
-    const templates = JSON.parse(fileContent) as PlanTemplateConfigVO[]
-
-    // Validate that it's an array
-    if (!Array.isArray(templates)) {
-      throw new Error(t('config.planTemplate.invalidFormat'))
-    }
-
-    // Confirm import
-    const confirmed = confirm(t('config.planTemplate.importConfirm'))
-    if (!confirmed) {
-      input.value = ''
+    // Get templates for this group
+    const group = groupedTemplates.value.find(g => g.key === groupKey)
+    if (!group || group.templates.length === 0) {
+      showMessage(t('config.planTemplate.exportFailed'), 'error')
       return
     }
 
-    // Import templates
-    const result = await PlanTemplateApiService.importPlanTemplates(templates)
+    // Create JSON string
+    const dataStr = JSON.stringify(group.templates, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
 
-    if (result.success) {
-      const successMsg = t('config.planTemplate.importSuccess', {
-        total: result.total,
-        success: result.successCount,
-        failed: result.failureCount,
-      })
-      showMessage(successMsg, result.failureCount > 0 ? 'error' : 'success')
+    // Create download link with group name in filename
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(dataBlob)
 
-      // Reload templates
-      await loadPlanTemplates()
-    } else {
-      showMessage(t('config.planTemplate.importFailed'), 'error')
-    }
+    const groupName = groupKey || 'ungrouped'
+    const sanitizedGroupName = groupName.replace(/[^a-zA-Z0-9-_]/g, '_')
+    link.download = `plan-templates-${sanitizedGroupName}-export-${new Date().toISOString().split('T')[0]}.json`
+    link.click()
+
+    // Clean up
+    URL.revokeObjectURL(link.href)
+
+    showMessage(t('config.planTemplate.exportSuccess'))
   } catch (error) {
-    console.error('Failed to import plan templates:', error)
+    console.error('Failed to export group templates:', error)
     const errorMessage =
-      error instanceof Error ? error.message : t('config.planTemplate.importFailed')
+      error instanceof Error ? error.message : t('config.planTemplate.exportFailed')
     showMessage(errorMessage, 'error')
   } finally {
     loading.value = false
-    // Clear the input
-    input.value = ''
+  }
+}
+
+// Handle import
+const handleImport = async (event: Event) => {
+  loading.value = true
+  try {
+    await handleImportPlanTemplate(event, {
+      showConfirm: true,
+      confirmMessage: t('config.planTemplate.importConfirm'),
+      onSuccess: async result => {
+        const successMsg = t('config.planTemplate.importSuccess', {
+          total: result.total,
+          success: result.successCount,
+          failed: result.failureCount,
+        })
+        showMessage(successMsg, result.failureCount > 0 ? 'error' : 'success')
+      },
+      onError: error => {
+        const errorMessage =
+          error instanceof Error ? error.message : t('config.planTemplate.importFailed')
+        showMessage(errorMessage, 'error')
+      },
+      onReload: async () => {
+        // Reload templates
+        await loadPlanTemplates()
+      },
+    })
+  } finally {
+    loading.value = false
   }
 }
 
@@ -354,15 +473,118 @@ onMounted(() => {
 .templates-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+}
+
+.template-group {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.group-header:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.group-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.collapse-icon {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: transform 0.2s ease;
+}
+
+.group-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.group-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.group-export-btn {
+  background: rgba(102, 126, 234, 0.15);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.group-export-btn:hover:not(:disabled) {
+  background: rgba(102, 126, 234, 0.25);
+  border-color: rgba(102, 126, 234, 0.4);
+  color: white;
+}
+
+.group-export-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.group-content {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.group-content-enter-active,
+.group-content-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.group-content-enter-from,
+.group-content-leave-to {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.group-content-enter-to,
+.group-content-leave-from {
+  max-height: 5000px;
+  opacity: 1;
 }
 
 .template-item {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 6px;
+  padding: 12px 16px;
   transition: all 0.3s ease;
+  margin: 0 8px;
 }
 
 .template-item:hover {
@@ -478,4 +700,3 @@ onMounted(() => {
   }
 }
 </style>
-

@@ -160,6 +160,10 @@ export function useRightPanel() {
       return
     }
 
+    // Switch to 'details' tab when a step is selected
+    setActiveTab('details')
+    console.log('[useRightPanel] Switched to details tab')
+
     try {
       // Find the rootPlanId for this step first
       const rootPlanId = findRootPlanIdForStep(stepId)

@@ -372,6 +372,8 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .organization-section {
@@ -386,6 +388,7 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .organization-selector {

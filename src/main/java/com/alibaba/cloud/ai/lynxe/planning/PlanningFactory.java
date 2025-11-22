@@ -300,7 +300,7 @@ public class PlanningFactory {
 				toolDefinition.setCurrentPlanId(planId);
 				toolDefinition.setRootPlanId(rootPlanId);
 				
-				// Use qualified key format: index : toolName
+				// Use qualified key format: toolName[index]
 				String serviceGroup = toolDefinition.getServiceGroup();
 				String toolName = toolDefinition.getName();
 				String qualifiedKey;
@@ -308,7 +308,7 @@ public class PlanningFactory {
 				if (serviceGroup != null && !serviceGroup.isEmpty()) {
 					// Get or assign index for this serviceGroup
 					Integer index = serviceGroupIndexMap.computeIfAbsent(serviceGroup, k -> nextIndexRef[0]++);
-					qualifiedKey = index + " : " + toolName;
+					qualifiedKey = toolName + "[" + index + "]";
 				}
 				else {
 					qualifiedKey = toolName;

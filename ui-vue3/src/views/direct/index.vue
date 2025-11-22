@@ -20,7 +20,24 @@
   <div class="direct-page">
     <div class="direct-chat">
       <Sidebar ref="sidebarRef" />
-      <!-- Left Panel - Chat -->
+      <!-- Left Panel - Config/Preview (RightPanel component) -->
+      <RightPanel
+        ref="rightPanelRef"
+        :style="{ width: 100 - leftPanelWidth + '%' }"
+        :current-root-plan-id="currentRootPlanId"
+      />
+
+      <!-- Resizer -->
+      <div
+        class="panel-resizer"
+        @mousedown="startResize"
+        @dblclick="resetPanelSize"
+        :title="$t('direct.panelResizeHint')"
+      >
+        <div class="resizer-line"></div>
+      </div>
+
+      <!-- Right Panel - Chat -->
       <div class="left-panel" :style="{ width: computedLeftPanelWidth + '%' }">
         <div class="chat-header">
           <button class="back-button" @click="goBack">
@@ -53,23 +70,6 @@
         <!-- Input Area -->
         <InputArea :key="$i18n.locale" :initial-value="prompt" />
       </div>
-
-      <!-- Resizer -->
-      <div
-        class="panel-resizer"
-        @mousedown="startResize"
-        @dblclick="resetPanelSize"
-        :title="$t('direct.panelResizeHint')"
-      >
-        <div class="resizer-line"></div>
-      </div>
-
-      <!-- Right Panel - Preview -->
-      <RightPanel
-        ref="rightPanelRef"
-        :style="{ width: 100 - leftPanelWidth + '%' }"
-        :current-root-plan-id="currentRootPlanId"
-      />
     </div>
 
     <!-- Memory Modal -->
@@ -122,18 +122,20 @@ const sidebarRef = ref()
 const currentRootPlanId = ref<string | null>(null)
 
 // Related to panel width
-const leftPanelWidth = ref(50) // Left panel width percentage
+// Note: leftPanelWidth variable name is kept for backward compatibility
+// It actually controls the chat panel width (which is now on the right side)
+const leftPanelWidth = ref(50) // Chat panel width percentage
 const isResizing = ref(false)
 const startX = ref(0)
 const startLeftWidth = ref(0)
 
-// Computed left panel width that adjusts based on sidebar width
+// Computed chat panel width that adjusts based on sidebar width
 const computedLeftPanelWidth = computed(() => {
   if (sidebarStore.isCollapsed) {
     return leftPanelWidth.value
   }
 
-  // When sidebar is expanded, calculate available width for left panel
+  // When sidebar is expanded, calculate available width for chat panel
   // Get sidebar width from the sidebar component if available
   let sidebarWidth = 26 // Default sidebar width
 
@@ -142,11 +144,11 @@ const computedLeftPanelWidth = computed(() => {
     sidebarWidth = sidebarRef.value.sidebarWidth
   }
 
-  // Calculate maximum available width for left panel
-  // Total width is 100%, so left panel max = 100% - sidebar width
+  // Calculate maximum available width for chat panel
+  // Total width is 100%, so chat panel max = 100% - sidebar width
   const maxAvailableWidth = 100 - sidebarWidth
 
-  // Ensure left panel width doesn't exceed available space
+  // Ensure chat panel width doesn't exceed available space
   // Also maintain minimum width of 20%
   return Math.max(20, Math.min(maxAvailableWidth, leftPanelWidth.value))
 })
@@ -167,7 +169,7 @@ onMounted(() => {
           continue
         }
 
-        // Update right panel progress
+        // Update config/preview panel progress
         if (
           rightPanelRef.value &&
           typeof rightPanelRef.value.updateDisplayedPlanProgress === 'function'
@@ -418,9 +420,9 @@ const shouldProcessEventForCurrentPlan = (
 const handleStepSelected = (stepId: string) => {
   console.log('[DirectView] Step selected:', stepId)
 
-  // Forward step selection to right panel
+  // Forward step selection to config/preview panel
   if (rightPanelRef.value && typeof rightPanelRef.value.handleStepSelected === 'function') {
-    console.log('[DirectView] Forwarding step selection to right panel:', stepId)
+    console.log('[DirectView] Forwarding step selection to config/preview panel:', stepId)
     rightPanelRef.value.handleStepSelected(stepId)
   } else {
     console.warn('[DirectView] rightPanelRef.handleStepSelected method not available')
@@ -515,7 +517,7 @@ const newChat = () => {
   transition: all 0.2s ease;
 }
 
-/* Adjust right panel styles */
+/* Adjust config/preview panel styles */
 :deep(.right-panel) {
   transition: width 0.1s ease;
 }

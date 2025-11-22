@@ -73,9 +73,22 @@
           <ExecutionController />
         </div>
         <div v-else class="no-template-selected">
-          <Icon icon="carbon:settings" class="empty-icon" />
-          <h3>{{ t('rightPanel.noTemplateSelected') }}</h3>
-          <p>{{ t('rightPanel.selectTemplateHint') }}</p>
+          <div class="action-buttons">
+            <button class="new-task-btn" @click="handleCreateNewPlan">
+              <Icon icon="carbon:add" width="16" />
+              {{ t('rightPanel.newFuncAgentPlan') }}
+            </button>
+            <label class="new-task-btn" :title="t('rightPanel.importExistingPlan')">
+              <Icon icon="carbon:import" width="16" />
+              {{ t('rightPanel.importExistingPlan') }}
+              <input
+                type="file"
+                accept=".json"
+                @change="handleImportExistingPlan"
+                style="display: none"
+              />
+            </label>
+          </div>
         </div>
       </div>
 
@@ -359,9 +372,13 @@
 import FileBrowser from '@/components/file-browser/index.vue'
 import ExecutionController from '@/components/sidebar/ExecutionController.vue'
 import JsonEditorV2 from '@/components/sidebar/JsonEditorV2.vue'
-import { useRightPanelSingleton } from '@/composables/useRightPanel'
+import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import { usePlanTemplateImport } from '@/composables/usePlanTemplateImport'
+import { useRightPanelSingleton } from '@/composables/useRightPanel'
+import { useToast } from '@/plugins/useToast'
 import { sidebarStore } from '@/stores/sidebar'
+import { templateStore } from '@/stores/templateStore'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -375,12 +392,19 @@ interface Props {
 const props = defineProps<Props>()
 
 const { t } = useI18n()
+const toast = useToast()
 
 // Use singleton composable for right panel state
 const rightPanel = useRightPanelSingleton()
 
 // Template config for Func-Agent Config tab
 const templateConfig = usePlanTemplateConfigSingleton()
+
+// Available tools management
+const availableToolsStore = useAvailableToolsSingleton()
+
+// Plan template import composable
+const { handleImport: handleImportPlanTemplate } = usePlanTemplateImport()
 
 // DOM element reference
 const scrollContainer = ref<HTMLElement>()
@@ -405,6 +429,68 @@ const stepStatusText = computed(() => {
   if (selectedStep.value.current) return t('rightPanel.status.executing')
   return t('rightPanel.status.waiting')
 })
+
+// Actions - Template creation and import
+/**
+ * Handle creating a new Func-Agent plan
+ */
+const handleCreateNewPlan = async () => {
+  try {
+    // Use default plan type or get from templateConfig
+    const planType = templateConfig.getPlanType() || 'dynamic_agent'
+    await templateStore.createNewTemplate(planType)
+
+    // Load template config for new template
+    const newTemplate = templateConfig.selectedTemplate.value
+    if (newTemplate) {
+      templateConfig.reset()
+      templateConfig.setPlanType(newTemplate.planType || 'dynamic_agent')
+      if (newTemplate.planTemplateId) {
+        templateConfig.setPlanTemplateId(newTemplate.planTemplateId)
+      }
+      templateConfig.setTitle(newTemplate.title || '')
+    }
+
+    // Reload available tools to ensure fresh tool list
+    console.log('[RightPanel] 🔄 Reloading available tools for new template')
+    await availableToolsStore.loadAvailableTools()
+  } catch (error) {
+    console.error('[RightPanel] Failed to create new plan:', error)
+    const message = error instanceof Error ? error.message : t('rightPanel.createPlanFailed')
+    toast.error(message)
+  }
+}
+
+/**
+ * Handle importing an existing plan
+ */
+const handleImportExistingPlan = async (event: Event) => {
+  await handleImportPlanTemplate(event, {
+    onSuccess: async result => {
+      const successMsg = t('rightPanel.importSuccess', {
+        total: result.total,
+        success: result.successCount,
+        failed: result.failureCount,
+      })
+      toast.success(successMsg)
+    },
+    onError: error => {
+      const errorMessage = error instanceof Error ? error.message : t('rightPanel.importFailed')
+      toast.error(errorMessage)
+    },
+    onReload: async () => {
+      // Reload template list
+      await templateStore.loadPlanTemplateList()
+    },
+    onSingleTemplateImported: async template => {
+      // If only one template was imported, select it
+      if (template.planTemplateId) {
+        templateConfig.setPlanTemplateId(template.planTemplateId)
+        await templateConfig.load(template.planTemplateId)
+      }
+    },
+  })
+}
 
 // Actions - Step selection and refresh control
 
@@ -1360,24 +1446,35 @@ defineExpose({
   color: #666666;
   padding: 40px 20px;
 
-  .empty-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    color: #444444;
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 400px;
   }
 
-  h3 {
-    margin: 0 0 8px 0;
-    font-size: 18px;
-    color: #888888;
-  }
+  .new-task-btn {
+    width: 100%;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 
-  p {
-    margin: 0;
-    font-size: 14px;
-    text-align: center;
-    max-width: 300px;
-    line-height: 1.5;
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
   }
 }
 </style>

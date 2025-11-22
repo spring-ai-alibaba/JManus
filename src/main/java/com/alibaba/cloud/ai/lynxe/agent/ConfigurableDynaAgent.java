@@ -124,14 +124,18 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 
 		// Add TerminateTool if no TerminableTool is present
 		if (!hasTerminableTool) {
-			// Construct qualified key for TerminateTool using its serviceGroup
-			String terminateToolServiceGroup = TerminateTool.SERVICE_GROUP;// TerminateTool's serviceGroup
-			String qualifiedTerminateKey = terminateToolServiceGroup + "." + TerminateTool.name;
-			
-			// Check if the qualified key exists, otherwise try unqualified
-			if (toolCallBackContext.containsKey(qualifiedTerminateKey)) {
-				availableToolKeys.add(qualifiedTerminateKey);
-				log.debug("Added TerminateTool with qualified key: {}", qualifiedTerminateKey);
+			// Try to find TerminateTool by unqualified name first
+			// The qualified key format is now toolName[index], so we search for it
+			ToolCallBackContext terminateToolContext = findToolByUnqualifiedName(toolCallBackContext, TerminateTool.name);
+			if (terminateToolContext != null) {
+				// Find the qualified key for this tool
+				for (Map.Entry<String, ToolCallBackContext> entry : toolCallBackContext.entrySet()) {
+					if (entry.getValue() == terminateToolContext) {
+						availableToolKeys.add(entry.getKey());
+						log.debug("Added TerminateTool with qualified key: {}", entry.getKey());
+						break;
+					}
+				}
 			}
 			else if (toolCallBackContext.containsKey(TerminateTool.name)) {
 				availableToolKeys.add(TerminateTool.name);
@@ -175,24 +179,32 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 
 	/**
 	 * Find a tool by unqualified name (backward compatibility helper)
-	 * Searches for tools where the qualified key ends with ".toolName"
+	 * Searches for tools where the qualified key is "toolName" or "toolName[index]"
 	 * @param toolCallBackContext Map of all available tools
-	 * @param unqualifiedName The tool name without serviceGroup prefix
+	 * @param unqualifiedName The tool name without index suffix
 	 * @return The matching ToolCallBackContext or null if not found
 	 */
 	private ToolCallBackContext findToolByUnqualifiedName(Map<String, ToolCallBackContext> toolCallBackContext,
 			String unqualifiedName) {
-		// First try exact match (for tools that don't have serviceGroup prefix)
+		// First try exact match (for tools that don't have index suffix)
 		if (toolCallBackContext.containsKey(unqualifiedName)) {
 			return toolCallBackContext.get(unqualifiedName);
 		}
 		
-		// Then try to find by matching the tool name part after the last dot
+		// Then try to find by matching the tool name part before the index bracket
+		// Format: toolName[index] or just toolName
 		for (Map.Entry<String, ToolCallBackContext> entry : toolCallBackContext.entrySet()) {
 			String qualifiedKey = entry.getKey();
-			int lastDotIndex = qualifiedKey.lastIndexOf('.');
-			if (lastDotIndex > 0) {
-				String toolNamePart = qualifiedKey.substring(lastDotIndex + 1);
+			
+			// Check if the qualified key matches the unqualified name exactly
+			if (qualifiedKey.equals(unqualifiedName)) {
+				return entry.getValue();
+			}
+			
+			// Check if the qualified key is in format "toolName[index]"
+			int bracketIndex = qualifiedKey.lastIndexOf('[');
+			if (bracketIndex > 0) {
+				String toolNamePart = qualifiedKey.substring(0, bracketIndex);
 				if (toolNamePart.equals(unqualifiedName)) {
 					log.debug("Backward compatibility: Matched unqualified tool '{}' to qualified key '{}'",
 							unqualifiedName, qualifiedKey);
