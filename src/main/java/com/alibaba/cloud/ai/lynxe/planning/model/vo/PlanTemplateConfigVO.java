@@ -18,6 +18,7 @@ package com.alibaba.cloud.ai.lynxe.planning.model.vo;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.alibaba.cloud.ai.lynxe.planning.model.enums.PlanTemplateAccessLevel;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -39,7 +40,11 @@ public class PlanTemplateConfigVO {
 	@JsonProperty("planTemplateId")
 	private String planTemplateId;
 
-	private Boolean readOnly;
+	@JsonProperty("accessLevel")
+	private PlanTemplateAccessLevel accessLevel;
+
+	@JsonProperty("readOnly")
+	private Boolean readOnly; // Deprecated: kept for backward compatibility, use accessLevel instead
 
 	private String serviceGroup;
 
@@ -56,6 +61,7 @@ public class PlanTemplateConfigVO {
 		this.steps = new ArrayList<>();
 		this.directResponse = false;
 		this.planType = "dynamic_agent";
+		this.accessLevel = PlanTemplateAccessLevel.EDITABLE;
 		this.readOnly = false;
 	}
 
@@ -101,12 +107,50 @@ public class PlanTemplateConfigVO {
 		this.planTemplateId = planTemplateId;
 	}
 
-	public Boolean getReadOnly() {
-		return readOnly;
+	public PlanTemplateAccessLevel getAccessLevel() {
+		// If accessLevel is not set but readOnly is set, convert it
+		if (accessLevel == null && readOnly != null) {
+			return readOnly ? PlanTemplateAccessLevel.READ_ONLY : PlanTemplateAccessLevel.EDITABLE;
+		}
+		return accessLevel != null ? accessLevel : PlanTemplateAccessLevel.EDITABLE;
 	}
 
+	public void setAccessLevel(PlanTemplateAccessLevel accessLevel) {
+		this.accessLevel = accessLevel != null ? accessLevel : PlanTemplateAccessLevel.EDITABLE;
+		// Also update readOnly for backward compatibility
+		this.readOnly = accessLevel == PlanTemplateAccessLevel.READ_ONLY;
+	}
+
+	/**
+	 * Convenience method to set access level from string value
+	 * @param accessLevelString String value of access level
+	 */
+	public void setAccessLevel(String accessLevelString) {
+		this.accessLevel = PlanTemplateAccessLevel.fromValue(accessLevelString);
+		// Also update readOnly for backward compatibility
+		this.readOnly = this.accessLevel == PlanTemplateAccessLevel.READ_ONLY;
+	}
+
+	/**
+	 * @deprecated Use getAccessLevel() instead. This method is kept for backward compatibility.
+	 */
+	@Deprecated
+	public Boolean getReadOnly() {
+		// If readOnly is not set but accessLevel is set, convert it
+		if (readOnly == null && accessLevel != null) {
+			return accessLevel == PlanTemplateAccessLevel.READ_ONLY;
+		}
+		return readOnly != null ? readOnly : false;
+	}
+
+	/**
+	 * @deprecated Use setAccessLevel() instead. This method is kept for backward compatibility.
+	 */
+	@Deprecated
 	public void setReadOnly(Boolean readOnly) {
 		this.readOnly = readOnly != null ? readOnly : false;
+		// Also update accessLevel
+		this.accessLevel = readOnly ? PlanTemplateAccessLevel.READ_ONLY : PlanTemplateAccessLevel.EDITABLE;
 	}
 
 	public ToolConfigVO getToolConfig() {
@@ -372,7 +416,7 @@ public class PlanTemplateConfigVO {
 	public String toString() {
 		return "PlanTemplateConfigVO{" + "title='" + title + '\'' + ", steps=" + steps + ", directResponse="
 				+ directResponse + ", planType='" + planType + '\'' + ", planTemplateId='" + planTemplateId + '\''
-				+ ", readOnly=" + readOnly + ", toolConfig=" + toolConfig + '}';
+				+ ", accessLevel=" + getAccessLevel() + ", toolConfig=" + toolConfig + '}';
 	}
 
 }

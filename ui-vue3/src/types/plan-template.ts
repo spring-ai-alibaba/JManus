@@ -81,7 +81,8 @@ export interface PlanTemplateConfigVO {
   directResponse?: boolean
   planType?: string
   planTemplateId?: string
-  readOnly?: boolean
+  accessLevel?: string
+  readOnly?: boolean // Deprecated: kept for backward compatibility, use accessLevel instead
   serviceGroup?: string
   toolConfig?: ToolConfigVO
   createTime?: string

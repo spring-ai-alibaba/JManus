@@ -17,7 +17,10 @@ package com.alibaba.cloud.ai.lynxe.planning.model.po;
 
 import java.time.LocalDateTime;
 
+import com.alibaba.cloud.ai.lynxe.planning.model.enums.PlanTemplateAccessLevel;
+
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -64,6 +67,10 @@ public class FuncAgentToolEntity {
 	@Column(name = "service_group", length = 100)
 	private String serviceGroup;
 
+	@Convert(converter = com.alibaba.cloud.ai.lynxe.planning.model.converter.PlanTemplateAccessLevelConverter.class)
+	@Column(name = "access_level", length = 50)
+	private PlanTemplateAccessLevel accessLevel;
+
 	@Column(name = "create_time", nullable = false)
 	private LocalDateTime createTime;
 
@@ -76,6 +83,7 @@ public class FuncAgentToolEntity {
 		this.enableInternalToolcall = false;
 		this.enableHttpService = false;
 		this.enableMcpService = false;
+		this.accessLevel = PlanTemplateAccessLevel.EDITABLE;
 	}
 
 	// Getters and Setters
@@ -167,6 +175,22 @@ public class FuncAgentToolEntity {
 		this.serviceGroup = serviceGroup;
 	}
 
+	public PlanTemplateAccessLevel getAccessLevel() {
+		return accessLevel != null ? accessLevel : PlanTemplateAccessLevel.EDITABLE;
+	}
+
+	public void setAccessLevel(PlanTemplateAccessLevel accessLevel) {
+		this.accessLevel = accessLevel != null ? accessLevel : PlanTemplateAccessLevel.EDITABLE;
+	}
+
+	/**
+	 * Convenience method to set access level from string value
+	 * @param accessLevelString String value of access level
+	 */
+	public void setAccessLevel(String accessLevelString) {
+		this.accessLevel = PlanTemplateAccessLevel.fromValue(accessLevelString);
+	}
+
 	/**
 	 * Automatically set update time when updating
 	 */
@@ -180,8 +204,8 @@ public class FuncAgentToolEntity {
 		return "FuncAgentToolEntity{" + "id=" + id + ", planTemplateId='" + planTemplateId + '\'' + ", toolName='"
 				+ toolName + '\'' + ", toolDescription='" + toolDescription + '\'' + ", enableInternalToolcall="
 				+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableMcpService="
-				+ enableMcpService + ", serviceGroup='" + serviceGroup + '\'' + ", createTime=" + createTime
-				+ ", updateTime=" + updateTime + '}';
+				+ enableMcpService + ", serviceGroup='" + serviceGroup + '\'' + ", accessLevel=" + accessLevel
+				+ ", createTime=" + createTime + ", updateTime=" + updateTime + '}';
 	}
 
 }

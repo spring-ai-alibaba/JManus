@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.cloud.ai.lynxe.planning.exception.PlanTemplateConfigException;
+import com.alibaba.cloud.ai.lynxe.planning.model.enums.PlanTemplateAccessLevel;
 import com.alibaba.cloud.ai.lynxe.planning.model.po.FuncAgentToolEntity;
 import com.alibaba.cloud.ai.lynxe.planning.model.vo.PlanTemplateConfigVO;
 import com.alibaba.cloud.ai.lynxe.planning.repository.FuncAgentToolRepository;
@@ -284,6 +285,9 @@ public class PlanTemplateConfigService {
 				template.setEnableInternalToolcall(false);
 				template.setEnableHttpService(false);
 				template.setEnableMcpService(false);
+				// Set accessLevel from configVO, default to EDITABLE
+				PlanTemplateAccessLevel accessLevel = configVO.getAccessLevel();
+				template.setAccessLevel(accessLevel != null ? accessLevel : PlanTemplateAccessLevel.EDITABLE);
 				funcAgentToolRepository.save(template);
 				log.debug("Created new plan template: {}", planTemplateId);
 			}
@@ -291,6 +295,11 @@ public class PlanTemplateConfigService {
 				// Update existing plan template
 				FuncAgentToolEntity template = existingTemplates.get(0);
 				template.setToolName(title);
+				// Update accessLevel if provided
+				PlanTemplateAccessLevel accessLevel = configVO.getAccessLevel();
+				if (accessLevel != null) {
+					template.setAccessLevel(accessLevel);
+				}
 				template.setUpdateTime(java.time.LocalDateTime.now());
 				funcAgentToolRepository.save(template);
 				log.debug("Updated existing plan template: {}", planTemplateId);
@@ -338,6 +347,10 @@ public class PlanTemplateConfigService {
 			resultVO.setPlanTemplateId(savedTemplate.getPlanTemplateId());
 			resultVO.setTitle(savedTemplate.getToolName());
 			resultVO.setServiceGroup(savedTemplate.getServiceGroup());
+			PlanTemplateAccessLevel savedAccessLevel = savedTemplate.getAccessLevel();
+			if (savedAccessLevel != null) {
+				resultVO.setAccessLevel(savedAccessLevel);
+			}
 			if (savedTemplate.getCreateTime() != null) {
 				resultVO.setCreateTime(savedTemplate.getCreateTime().toString());
 			}
@@ -473,6 +486,11 @@ public class PlanTemplateConfigService {
 			// Always update toolName from title to ensure consistency
 			existingEntity.setToolName(configVO.getTitle() != null ? configVO.getTitle() : "");
 			existingEntity.setPlanTemplateId(configVO.getPlanTemplateId());
+			// Update accessLevel if provided
+			PlanTemplateAccessLevel accessLevel = configVO.getAccessLevel();
+			if (accessLevel != null) {
+				existingEntity.setAccessLevel(accessLevel);
+			}
 
 			PlanTemplateConfigVO.ToolConfigVO toolConfig = configVO.getToolConfig();
 			if (toolConfig != null) {
@@ -624,6 +642,9 @@ public class PlanTemplateConfigService {
 			entity.setToolDescription(toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
 			entity.setInputSchema(convertInputSchemaListToJson(toolConfig.getInputSchema()));
 			entity.setPlanTemplateId(configVO.getPlanTemplateId());
+			// Set accessLevel from configVO, default to EDITABLE
+			PlanTemplateAccessLevel accessLevel = configVO.getAccessLevel();
+			entity.setAccessLevel(accessLevel != null ? accessLevel : PlanTemplateAccessLevel.EDITABLE);
 			entity.setEnableInternalToolcall(
 					toolConfig.getEnableInternalToolcall() != null ? toolConfig.getEnableInternalToolcall() : false);
 			entity.setEnableHttpService(
@@ -719,11 +740,15 @@ public class PlanTemplateConfigService {
 		try {
 			List<FuncAgentToolEntity> entities = funcAgentToolRepository.findByPlanTemplateId(planTemplateId);
 			if (!entities.isEmpty()) {
-				FuncAgentToolEntity entity = entities.get(0);
-				PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
-				configVO.setPlanTemplateId(entity.getPlanTemplateId());
-				configVO.setTitle(entity.getToolName());
-				configVO.setServiceGroup(entity.getServiceGroup());
+			FuncAgentToolEntity entity = entities.get(0);
+			PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
+			configVO.setPlanTemplateId(entity.getPlanTemplateId());
+			configVO.setTitle(entity.getToolName());
+			configVO.setServiceGroup(entity.getServiceGroup());
+			PlanTemplateAccessLevel entityAccessLevel = entity.getAccessLevel();
+			if (entityAccessLevel != null) {
+				configVO.setAccessLevel(entityAccessLevel.getValue());
+			}
 				if (entity.getCreateTime() != null) {
 					configVO.setCreateTime(entity.getCreateTime().toString());
 				}
@@ -751,6 +776,10 @@ public class PlanTemplateConfigService {
 				configVO.setPlanTemplateId(entity.getPlanTemplateId());
 				configVO.setTitle(entity.getToolName());
 				configVO.setServiceGroup(entity.getServiceGroup());
+				PlanTemplateAccessLevel entityAccessLevel = entity.getAccessLevel();
+				if (entityAccessLevel != null) {
+					configVO.setAccessLevel(entityAccessLevel);
+				}
 				if (entity.getCreateTime() != null) {
 					configVO.setCreateTime(entity.getCreateTime().toString());
 				}
@@ -830,7 +859,7 @@ public class PlanTemplateConfigService {
 					configVO.setPlanType(planInterface.getPlanType());
 					configVO.setServiceGroup(planTemplate.getServiceGroup());
 					configVO.setDirectResponse(planInterface.isDirectResponse());
-					configVO.setReadOnly(planTemplate.getReadOnly());
+					configVO.setAccessLevel(planTemplate.getAccessLevel());
 
 					// Convert ExecutionStep list to StepConfig list
 					if (planInterface.getAllSteps() != null) {
@@ -961,6 +990,10 @@ public class PlanTemplateConfigService {
 
 		// Get additional info from entity
 		configVO.setServiceGroup(entity.getServiceGroup());
+		PlanTemplateAccessLevel entityAccessLevel = entity.getAccessLevel();
+		if (entityAccessLevel != null) {
+			configVO.setAccessLevel(entityAccessLevel.getValue());
+		}
 
 		// Create ToolConfigVO from entity
 		PlanTemplateConfigVO.ToolConfigVO toolConfig = new PlanTemplateConfigVO.ToolConfigVO();

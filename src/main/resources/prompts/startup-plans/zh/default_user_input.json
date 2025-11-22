@@ -11,7 +11,7 @@
   "directResponse": false,
   "planType": "dynamic_agent",
   "planTemplateId": "default-plan-id-001000222",
-  "readOnly": true,
+  "accessLevel": "readOnly",
   "serviceGroup": "inited-toolcall",
   "toolConfig": {
     "toolName": "默认的用户输入(不要删除这个计划)",

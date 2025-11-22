@@ -36,7 +36,7 @@ export function usePlanTemplateConfig() {
     directResponse: false,
     planType: 'dynamic_agent',
     planTemplateId: '',
-    readOnly: false,
+    accessLevel: 'editable',
     serviceGroup: '',
   })
 
@@ -63,6 +63,7 @@ export function usePlanTemplateConfig() {
   const getTitle = () => config.title
   const getPlanType = () => config.planType || 'dynamic_agent'
   const getServiceGroup = () => config.serviceGroup || ''
+  const getAccessLevel = () => config.accessLevel || (config.readOnly ? 'readOnly' : 'editable')
 
   // Setters
   const setTitle = (title: string) => {
@@ -132,6 +133,8 @@ export function usePlanTemplateConfig() {
   // Set full config
   const setConfig = (newConfig: PlanTemplateConfigVO) => {
     needsFullRefresh.value = true
+    // Get accessLevel with backward compatibility for readOnly
+    const accessLevel = newConfig.accessLevel || (newConfig.readOnly ? 'readOnly' : 'editable')
     const updatedConfig: PlanTemplateConfigVO = {
       title: newConfig.title || '',
       // Deep copy steps to preserve all properties including selectedToolKeys
@@ -143,7 +146,7 @@ export function usePlanTemplateConfig() {
       directResponse: newConfig.directResponse || false,
       planType: newConfig.planType || 'dynamic_agent',
       planTemplateId: newConfig.planTemplateId || '',
-      readOnly: newConfig.readOnly || false,
+      accessLevel: accessLevel,
       serviceGroup: newConfig.serviceGroup || '',
     }
     if (newConfig.toolConfig) {
@@ -165,7 +168,7 @@ export function usePlanTemplateConfig() {
       directResponse: false,
       planType: 'dynamic_agent',
       planTemplateId: '',
-      readOnly: false,
+      accessLevel: 'editable',
       serviceGroup: '',
     })
     // Remove toolConfig if it exists
@@ -185,6 +188,7 @@ export function usePlanTemplateConfig() {
   const generateJsonString = (): string => {
     // Generate fresh JSON from current config state
     // Ensure selectedToolKeys is always an array (not null) in the output
+    const accessLevel = config.accessLevel || (config.readOnly ? 'readOnly' : 'editable')
     const jsonConfig: PlanTemplateConfigVO = {
       title: config.title || '',
       steps: (config.steps || []).map(step => ({
@@ -195,7 +199,7 @@ export function usePlanTemplateConfig() {
       directResponse: config.directResponse || false,
       planType: config.planType || 'dynamic_agent',
       planTemplateId: config.planTemplateId || '',
-      readOnly: config.readOnly || false,
+      accessLevel: accessLevel,
       serviceGroup: config.serviceGroup || '',
     }
     // Include toolConfig if it exists
