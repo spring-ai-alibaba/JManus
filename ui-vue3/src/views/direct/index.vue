@@ -25,6 +25,15 @@
           <img src="/Java-AI.svg" alt="Lynxe" class="java-logo" />
           <h1>Lynxe</h1>
         </div>
+        <div class="branding-actions">
+          <LanguageSwitcher />
+          <button class="back-button" @click="goBack">
+            <Icon icon="carbon:arrow-left" />
+          </button>
+          <button class="config-button" @click="handleConfig" :title="$t('direct.configuration')">
+            <Icon icon="carbon:settings-adjust" width="20" />
+          </button>
+        </div>
       </div>
     </header>
     <div class="direct-chat">
@@ -49,17 +58,10 @@
       <!-- Right Panel - Chat -->
       <div class="left-panel" :style="{ width: computedLeftPanelWidth + '%' }">
         <div class="chat-header">
-          <button class="back-button" @click="goBack">
-            <Icon icon="carbon:arrow-left" />
-          </button>
           <h2>{{ $t('conversation') }}</h2>
           <div class="header-actions">
-            <LanguageSwitcher />
             <button class="config-button" @click="newChat" :title="$t('memory.newChat')">
               <Icon icon="carbon:add" width="20" />
-            </button>
-            <button class="config-button" @click="handleConfig" :title="$t('direct.configuration')">
-              <Icon icon="carbon:settings-adjust" width="20" />
             </button>
             <button
               class="cron-task-btn"
@@ -489,7 +491,7 @@ const newChat = () => {
   max-width: 100%;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .branding-logo {
@@ -510,6 +512,12 @@ const newChat = () => {
     color: #ffffff;
     letter-spacing: 0.5px;
   }
+}
+
+.branding-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .direct-chat {
