@@ -679,16 +679,18 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
   width: 100%;
   min-width: 0;
+  min-height: fit-content;
 }
 
 .selection-input {
   flex-shrink: 1;
   flex-basis: auto;
   min-width: 0;
-  max-width: calc(100% - 200px);
+  max-width: 100%;
   padding: 6px 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
@@ -698,11 +700,16 @@ defineExpose({
   cursor: pointer;
   transition: all 0.2s ease;
   outline: none;
-  width: 24ch;
+  width: 18ch;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   box-sizing: border-box;
+  
+  @media (max-width: 600px) {
+    width: 100%;
+    max-width: 100%;
+  }
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
