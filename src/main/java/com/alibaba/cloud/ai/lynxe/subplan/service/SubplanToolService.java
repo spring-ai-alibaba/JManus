@@ -38,6 +38,7 @@ import com.alibaba.cloud.ai.lynxe.planning.service.PlanTemplateConfigService;
 import com.alibaba.cloud.ai.lynxe.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanningCoordinator;
+import com.alibaba.cloud.ai.lynxe.runtime.service.ServiceGroupIndexService;
 import com.alibaba.cloud.ai.lynxe.subplan.model.vo.SubplanToolWrapper;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -87,7 +88,7 @@ public class SubplanToolService {
 	}
 
 	public Map<String, PlanningFactory.ToolCallBackContext> createSubplanToolCallbacks(String planId, String rootPlanId,
-			String expectedReturnInfo, Map<String, Integer> serviceGroupIndexMap, int[] nextIndexRef) {
+			String expectedReturnInfo, ServiceGroupIndexService serviceGroupIndexService) {
 
 		logger.info("Creating subplan tool callbacks for planId: {}, rootPlanId: {}", planId, rootPlanId);
 
@@ -153,9 +154,14 @@ public class SubplanToolService {
 					String qualifiedKey;
 					
 					if (serviceGroup != null && !serviceGroup.isEmpty()) {
-						// Get or assign index for this serviceGroup
-						Integer index = serviceGroupIndexMap.computeIfAbsent(serviceGroup, k -> nextIndexRef[0]++);
-						qualifiedKey = index + " : " + toolName;
+						// Get or assign index for this serviceGroup using the service
+						Integer index = serviceGroupIndexService.getOrAssignIndex(serviceGroup);
+						if (index != null) {
+							qualifiedKey = index + " : " + toolName;
+						}
+						else {
+							qualifiedKey = toolName;
+						}
 					}
 					else {
 						qualifiedKey = toolName;

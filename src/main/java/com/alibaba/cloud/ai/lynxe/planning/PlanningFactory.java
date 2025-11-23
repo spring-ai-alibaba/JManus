@@ -56,6 +56,7 @@ import com.alibaba.cloud.ai.lynxe.recorder.service.PlanExecutionRecorder;
 import com.alibaba.cloud.ai.lynxe.runtime.executor.ImageRecognitionExecutorPool;
 import com.alibaba.cloud.ai.lynxe.runtime.executor.LevelBasedExecutorPool;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.lynxe.runtime.service.ServiceGroupIndexService;
 import com.alibaba.cloud.ai.lynxe.runtime.service.TaskInterruptionManager;
 import com.alibaba.cloud.ai.lynxe.subplan.service.SubplanToolService;
 import com.alibaba.cloud.ai.lynxe.tool.DebugTool;
@@ -174,6 +175,9 @@ public class PlanningFactory {
 	@Autowired
 	private com.alibaba.cloud.ai.lynxe.tool.shortUrl.ShortUrlService shortUrlService;
 
+	@Autowired
+	private ServiceGroupIndexService serviceGroupIndexService;
+
 	public PlanningFactory(ChromeDriverService chromeDriverService, PlanExecutionRecorder recorder,
 			LynxeProperties lynxeProperties, TextFileService textFileService, McpService mcpService,
 			SmartContentSavingService innerStorageService, UnifiedDirectoryManager unifiedDirectoryManager,
@@ -225,10 +229,6 @@ public class PlanningFactory {
 			String expectedReturnInfo) {
 
 		Map<String, ToolCallBackContext> toolCallbackMap = new HashMap<>();
-		// Map to store serviceGroup -> index mapping, ensuring same serviceGroup gets same index
-		Map<String, Integer> serviceGroupIndexMap = new HashMap<>();
-		// Use array wrapper to allow pass-by-reference for nextIndex
-		int[] nextIndexRef = new int[] { 1 }; // Start index from 1
 		List<ToolCallBiFunctionDef<?>> toolDefinitions = new ArrayList<>();
 		if (chromeDriverService == null) {
 			log.error("ChromeDriverService is null, skipping BrowserUseTool registration");
@@ -306,9 +306,14 @@ public class PlanningFactory {
 				String qualifiedKey;
 				
 				if (serviceGroup != null && !serviceGroup.isEmpty()) {
-					// Get or assign index for this serviceGroup
-					Integer index = serviceGroupIndexMap.computeIfAbsent(serviceGroup, k -> nextIndexRef[0]++);
-					qualifiedKey = toolName + "[" + index + "]";
+					// Get or assign index for this serviceGroup using the service
+					Integer index = serviceGroupIndexService.getOrAssignIndex(serviceGroup);
+					if (index != null) {
+						qualifiedKey = toolName + "*" + index + "*";
+					}
+					else {
+						qualifiedKey = toolName;
+					}
 				}
 				else {
 					qualifiedKey = toolName;
@@ -337,7 +342,7 @@ public class PlanningFactory {
 		if (subplanToolService != null) {
 			try {
 				Map<String, PlanningFactory.ToolCallBackContext> subplanToolCallbacks = subplanToolService
-					.createSubplanToolCallbacks(planId, rootPlanId, expectedReturnInfo, serviceGroupIndexMap, nextIndexRef);
+					.createSubplanToolCallbacks(planId, rootPlanId, expectedReturnInfo, serviceGroupIndexService);
 				toolCallbackMap.putAll(subplanToolCallbacks);
 				log.info("Registered {} subplan tools", subplanToolCallbacks.size());
 			}

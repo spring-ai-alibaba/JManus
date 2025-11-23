@@ -35,6 +35,7 @@ import com.alibaba.cloud.ai.lynxe.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.lynxe.runtime.service.AgentInterruptionHelper;
 import com.alibaba.cloud.ai.lynxe.runtime.service.ParallelToolExecutionService;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.lynxe.runtime.service.ServiceGroupIndexService;
 import com.alibaba.cloud.ai.lynxe.runtime.service.UserInputService;
 import com.alibaba.cloud.ai.lynxe.tool.TerminableTool;
 import com.alibaba.cloud.ai.lynxe.tool.TerminateTool;
@@ -50,6 +51,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class ConfigurableDynaAgent extends DynamicAgent {
 
 	private static final Logger log = LoggerFactory.getLogger(ConfigurableDynaAgent.class);
+
+	private ServiceGroupIndexService serviceGroupIndexService;
 
 	/**
 	 * Constructor for ConfigurableDynaAgent with configurable parameters
@@ -76,11 +79,13 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
 			LynxeEventPublisher lynxeEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
 			ObjectMapper objectMapper, ParallelToolExecutionService parallelToolExecutionService,
-			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService) {
+			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService,
+			ServiceGroupIndexService serviceGroupIndexService) {
 		super(llmService, planExecutionRecorder, lynxeProperties, name, description, nextStepPrompt, availableToolKeys,
 				toolCallingManager, initialAgentSetting, userInputService, modelName, streamingResponseHandler, step,
 				planIdDispatcher, lynxeEventPublisher, agentInterruptionHelper, objectMapper,
 				parallelToolExecutionService, memoryService, conversationMemoryLimitService);
+		this.serviceGroupIndexService = serviceGroupIndexService;
 	}
 
 	/**
@@ -180,6 +185,7 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 	/**
 	 * Find a tool by unqualified name (backward compatibility helper)
 	 * Searches for tools where the qualified key is "toolName" or "toolName[index]"
+	 * Uses ServiceGroupIndexService to construct qualified keys when serviceGroup is available
 	 * @param toolCallBackContext Map of all available tools
 	 * @param unqualifiedName The tool name without index suffix
 	 * @return The matching ToolCallBackContext or null if not found
@@ -191,7 +197,23 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 			return toolCallBackContext.get(unqualifiedName);
 		}
 		
-		// Then try to find by matching the tool name part before the index bracket
+		// Try to find by serviceGroup and tool name using ServiceGroupIndexService
+		// This is more efficient than iterating through all tools
+		if (serviceGroupIndexService != null) {
+			try {
+				ToolCallBackContext found = findToolByServiceGroupAndName(toolCallBackContext, unqualifiedName);
+				if (found != null) {
+					return found;
+				}
+			}
+			catch (Exception e) {
+				// Log and continue with fallback search if service-based lookup fails
+				log.debug("ServiceGroupIndexService lookup failed for tool '{}', falling back to manual search: {}",
+						unqualifiedName, e.getMessage());
+			}
+		}
+		
+		// Fallback: Then try to find by matching the tool name part before the index bracket
 		// Format: toolName[index] or just toolName
 		for (Map.Entry<String, ToolCallBackContext> entry : toolCallBackContext.entrySet()) {
 			String qualifiedKey = entry.getKey();
@@ -215,5 +237,56 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 		return null;
 	}
 
-
+	/**
+	 * Find a tool by serviceGroup and tool name using ServiceGroupIndexService
+	 * Constructs qualified keys using the service to match tools efficiently
+	 * @param toolCallBackContext Map of all available tools
+	 * @param toolName The tool name to search for
+	 * @return The matching ToolCallBackContext or null if not found
+	 */
+	private ToolCallBackContext findToolByServiceGroupAndName(Map<String, ToolCallBackContext> toolCallBackContext,
+			String toolName) {
+		try {
+			// Iterate through tools to find one with matching name and construct qualified key
+			for (Map.Entry<String, ToolCallBackContext> entry : toolCallBackContext.entrySet()) {
+				ToolCallBackContext context = entry.getValue();
+				if (context != null && context.getFunctionInstance() != null) {
+					// Get tool name and serviceGroup from the tool instance
+					String actualToolName = context.getFunctionInstance().getName();
+					String serviceGroup = context.getFunctionInstance().getServiceGroup();
+					
+					// Check if tool name matches
+					if (toolName.equals(actualToolName)) {
+						// If serviceGroup exists, construct qualified key using ServiceGroupIndexService
+						if (serviceGroup != null && !serviceGroup.isEmpty()) {
+							Integer index = serviceGroupIndexService.getOrAssignIndex(serviceGroup);
+							if (index != null) {
+								String expectedQualifiedKey = actualToolName + "*" + index + "*";
+								// Check if the constructed key matches the entry key
+								if (entry.getKey().equals(expectedQualifiedKey)) {
+									log.debug("Found tool '{}' with serviceGroup '{}' using ServiceGroupIndexService",
+											toolName, serviceGroup);
+									return context;
+								}
+							}
+						}
+						else {
+							// Tool has no serviceGroup, check if key matches tool name (backward compatibility)
+							// This allows tools without serviceGroups to still be found
+							if (entry.getKey().equals(toolName)) {
+								log.debug("Found tool '{}' without serviceGroup", toolName);
+								return context;
+							}
+						}
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			// Log and return null to allow fallback search in findToolByUnqualifiedName
+			log.debug("Error in findToolByServiceGroupAndName for tool '{}': {}", toolName, e.getMessage());
+		}
+		// Return null to allow fallback search in findToolByUnqualifiedName
+		return null;
+	}
 }

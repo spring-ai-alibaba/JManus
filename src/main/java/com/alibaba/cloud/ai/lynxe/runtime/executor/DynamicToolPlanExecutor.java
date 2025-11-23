@@ -40,6 +40,7 @@ import com.alibaba.cloud.ai.lynxe.runtime.service.AgentInterruptionHelper;
 import com.alibaba.cloud.ai.lynxe.runtime.service.FileUploadService;
 import com.alibaba.cloud.ai.lynxe.runtime.service.ParallelToolExecutionService;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.lynxe.runtime.service.ServiceGroupIndexService;
 import com.alibaba.cloud.ai.lynxe.runtime.service.UserInputService;
 import com.alibaba.cloud.ai.lynxe.workspace.conversation.service.MemoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,6 +81,8 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 
 	private final ConversationMemoryLimitService conversationMemoryLimitService;
 
+	private final ServiceGroupIndexService serviceGroupIndexService;
+
 	public DynamicToolPlanExecutor(List<DynamicAgentEntity> agents, PlanExecutionRecorder recorder,
 			LlmService llmService, LynxeProperties lynxeProperties, LevelBasedExecutorPool levelBasedExecutorPool,
 			DynamicModelRepository dynamicModelRepository, FileUploadService fileUploadService,
@@ -88,7 +91,8 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 			StreamingResponseHandler streamingResponseHandler, PlanIdDispatcher planIdDispatcher,
 			LynxeEventPublisher lynxeEventPublisher, ObjectMapper objectMapper,
 			ParallelToolExecutionService parallelToolExecutionService, MemoryService memoryService,
-			ConversationMemoryLimitService conversationMemoryLimitService) {
+			ConversationMemoryLimitService conversationMemoryLimitService,
+			ServiceGroupIndexService serviceGroupIndexService) {
 		super(agents, recorder, llmService, lynxeProperties, levelBasedExecutorPool, fileUploadService,
 				agentInterruptionHelper);
 		this.planningFactory = planningFactory;
@@ -101,6 +105,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 		this.parallelToolExecutionService = parallelToolExecutionService;
 		this.memoryService = memoryService;
 		this.conversationMemoryLimitService = conversationMemoryLimitService;
+		this.serviceGroupIndexService = serviceGroupIndexService;
 	}
 
 	protected String getStepFromStepReq(String stepRequirement) {
@@ -154,7 +159,7 @@ public class DynamicToolPlanExecutor extends AbstractPlanExecutor {
 				description, nextStepPrompt, selectedToolKeys, toolCallingManager, initialAgentSetting,
 				userInputService, modelName, streamingResponseHandler, step, planIdDispatcher, lynxeEventPublisher,
 				agentInterruptionHelper, objectMapper, parallelToolExecutionService, memoryService,
-				conversationMemoryLimitService);
+				conversationMemoryLimitService, serviceGroupIndexService);
 
 		agent.setCurrentPlanId(planId);
 		agent.setRootPlanId(rootPlanId);

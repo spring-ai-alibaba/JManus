@@ -176,16 +176,20 @@
 
 <script setup lang="ts">
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import { useRightPanelSingleton } from '@/composables/useRightPanel'
 import { templateStore, type TemplateStoreType } from '@/stores/templateStore'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
 import { Icon } from '@iconify/vue'
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
 // Template config management
 const templateConfig = usePlanTemplateConfigSingleton()
+
+// Right panel management
+const rightPanel = useRightPanelSingleton()
 
 // Search functionality
 const searchKeyword = ref('')
@@ -314,6 +318,10 @@ const handleToggleGroupCollapse = (groupName: string | null) => {
 
 // Handle select template
 const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
+  // Switch to 'config' tab immediately when template is clicked
+  // This ensures immediate feedback and prevents the need for double-click
+  rightPanel.setActiveTab('config')
+
   await templateStore.selectTemplate(template)
 
   // Load template config using singleton
@@ -326,6 +334,11 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
     templateConfig.reset()
     templateStore.hasTaskRequirementModified = false
   }
+
+  // Ensure tab switch is maintained after template loads
+  // Use nextTick to ensure all reactive updates are complete
+  await nextTick()
+  rightPanel.setActiveTab('config')
 
   emit('templateSelected', template)
 }
