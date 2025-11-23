@@ -89,6 +89,18 @@
               />
             </label>
           </div>
+          <p class="import-description">
+            {{ t('rightPanel.importDescription') }}
+            <a
+              href="https://github.com/Lynxe-public/Lynxe-public-prompts"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="prompt-library-link"
+            >
+              {{ t('rightPanel.promptLibrary') }}
+            </a>
+            {{ t('rightPanel.importDescriptionSuffix') }}
+          </p>
         </div>
       </div>
 
@@ -1474,6 +1486,27 @@ defineExpose({
     &:hover {
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+  }
+
+  .import-description {
+    margin-top: 16px;
+    padding: 0 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    max-width: 400px;
+
+    .prompt-library-link {
+      color: #667eea;
+      text-decoration: none;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: #764ba2;
+        text-decoration: underline;
+      }
     }
   }
 }
