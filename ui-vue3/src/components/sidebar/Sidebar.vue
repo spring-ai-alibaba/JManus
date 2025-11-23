@@ -172,13 +172,9 @@ defineExpose({
     overflow: hidden;
 
     .sidebar-content-title {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 600;
-
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: #ffffff;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;

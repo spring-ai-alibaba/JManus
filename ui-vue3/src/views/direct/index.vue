@@ -509,7 +509,10 @@ const newChat = () => {
     margin: 0;
     font-size: 20px;
     font-weight: 600;
-    color: #ffffff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     letter-spacing: 0.5px;
   }
 }
@@ -578,7 +581,7 @@ const newChat = () => {
 }
 
 .chat-header {
-  padding: 20px 24px;
+  padding: 14px 10px;
   border-bottom: 1px solid #1a1a1a;
   display: flex;
   align-items: center;
