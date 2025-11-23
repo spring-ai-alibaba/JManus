@@ -180,7 +180,7 @@ import { useRightPanelSingleton } from '@/composables/useRightPanel'
 import { templateStore, type TemplateStoreType } from '@/stores/templateStore'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
 import { Icon } from '@iconify/vue'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -335,10 +335,9 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
     templateStore.hasTaskRequirementModified = false
   }
 
-  // Ensure tab switch is maintained after template loads
-  // Use nextTick to ensure all reactive updates are complete
-  await nextTick()
-  rightPanel.setActiveTab('config')
+  // Note: No need to call setActiveTab again after nextTick
+  // The initial call at the beginning is sufficient since activeTab is reactive
+  // and will be maintained throughout the async operations
 
   emit('templateSelected', template)
 }

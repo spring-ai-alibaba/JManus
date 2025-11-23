@@ -452,12 +452,19 @@ const setEditingFlag = () => {
 const syncDisplayDataFromConfig = () => {
   // Don't sync if user is actively editing to prevent losing unsaved changes
   if (templateConfig.isUserUpdating.value) {
+    console.log('[JsonEditorV2] syncDisplayDataFromConfig skipped: isUserUpdating is true')
     return
   }
 
+  console.log('[JsonEditorV2] syncDisplayDataFromConfig called')
   isSyncingFromConfig.value = true
   try {
     const config = templateConfig.getConfig()
+    console.log('[JsonEditorV2] Syncing displayData with config:', {
+      title: config.title,
+      stepsCount: config.steps?.length || 0,
+      serviceGroup: config.serviceGroup,
+    })
     // Only update title if:
     // 1. config.title has a value (not empty), OR
     // 2. displayData.title is empty (user hasn't started typing)
@@ -469,6 +476,11 @@ const syncDisplayDataFromConfig = () => {
     displayData.steps = (config.steps || []).map(step => ({ ...step }))
     // Sync service group
     serviceGroup.value = config.serviceGroup || ''
+    console.log('[JsonEditorV2] displayData synced:', {
+      title: displayData.title,
+      stepsCount: displayData.steps.length,
+      serviceGroup: serviceGroup.value,
+    })
   } finally {
     // Use nextTick to ensure the watch doesn't trigger during sync
     setTimeout(() => {
@@ -1032,6 +1044,7 @@ watch(
 watch(
   () => templateConfig.currentPlanTemplateId.value,
   (newId, oldId) => {
+    console.log('[JsonEditorV2] currentPlanTemplateId changed:', { oldId, newId })
     // Only reset if template actually changed (not initial load)
     if (oldId !== null && oldId !== undefined && newId !== oldId) {
       // Reset UI states when template changes
@@ -1045,7 +1058,9 @@ watch(
       newPlanTitle.value = ''
       isCopyingPlan.value = false
     }
-    // Sync displayData when template changes
+    // Sync displayData when template changes (including when reloading same template)
+    // This watch will trigger even when oldId === newId if we temporarily set to null
+    console.log('[JsonEditorV2] Calling syncDisplayDataFromConfig from currentPlanTemplateId watch')
     syncDisplayDataFromConfig()
     // Load service group when template changes
     loadServiceGroup()

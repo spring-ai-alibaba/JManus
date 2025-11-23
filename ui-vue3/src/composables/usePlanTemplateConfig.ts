@@ -154,9 +154,10 @@ export function usePlanTemplateConfig() {
     }
     Object.assign(config, updatedConfig)
     // Reset flag after reactivity update
+    // Use a longer delay to ensure watchers have time to process the change
     setTimeout(() => {
       needsFullRefresh.value = false
-    }, 0)
+    }, 50)
   }
 
   // Reset to default
@@ -270,10 +271,38 @@ export function usePlanTemplateConfig() {
 
       // Load config from API
       const loadedConfig = await PlanTemplateApiService.getPlanTemplateConfigVO(planTemplateId)
+
+      // Check if this is the same template being reloaded
+      const isSameTemplate = currentPlanTemplateId.value === planTemplateId
+
+      // Update currentPlanTemplateId BEFORE setConfig to ensure watchers can detect the change
+      // If it's the same template, temporarily set to null first to trigger watch
+      if (isSameTemplate) {
+        currentPlanTemplateId.value = null
+        // Wait for the null assignment to be processed by watchers
+        await new Promise(resolve => setTimeout(resolve, 0))
+      }
+
+      // Ensure isUserUpdating is false before loading to allow sync
+      isUserUpdating.value = false
+
       setConfig(loadedConfig)
 
       // Update currentPlanTemplateId to ensure watchers can detect the change
       currentPlanTemplateId.value = planTemplateId
+
+      // Force a small delay to ensure watchers have processed the changes
+      // This is especially important when reloading the same template
+      await new Promise(resolve => setTimeout(resolve, 10))
+
+      // Update selectedTemplate.value to keep it in sync with the loaded config
+      // This ensures RightPanel.vue uses the latest data from API, not stale data from template list
+      if (selectedTemplate.value?.planTemplateId === planTemplateId) {
+        selectedTemplate.value = {
+          ...selectedTemplate.value,
+          ...loadedConfig,
+        }
+      }
 
       // Load versions for version control
       try {
