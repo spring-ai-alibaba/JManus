@@ -37,11 +37,20 @@
       </div>
     </header>
     <div class="direct-chat">
-      <Sidebar ref="sidebarRef" />
+      <Sidebar ref="sidebarRef" :width="sidebarWidth" />
+      <!-- Sidebar Resizer -->
+      <div
+        class="panel-resizer"
+        @mousedown="startSidebarResize"
+        @dblclick="resetSidebarWidth"
+        :title="$t('sidebar.resizeHint')"
+      >
+        <div class="resizer-line"></div>
+      </div>
       <!-- Left Panel - Config/Preview (RightPanel component) -->
       <RightPanel
         ref="rightPanelRef"
-        :style="{ width: 100 - leftPanelWidth + '%' }"
+        :style="{ width: 100 - sidebarWidth - leftPanelWidth + '%' }"
         :current-root-plan-id="currentRootPlanId"
       />
 
@@ -56,7 +65,7 @@
       </div>
 
       <!-- Right Panel - Chat -->
-      <div class="left-panel" :style="{ width: computedLeftPanelWidth + '%' }">
+      <div class="left-panel" :style="{ width: leftPanelWidth + '%' }">
         <div class="chat-header">
           <h2>{{ $t('conversation') }}</h2>
           <div class="header-actions">
@@ -107,11 +116,10 @@ import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { useToast } from '@/composables/useToast'
 import { memoryStore } from '@/stores/memory'
-import { sidebarStore } from '@/stores/sidebar'
 import { useTaskStore } from '@/stores/task'
 import { templateStore } from '@/stores/templateStore'
 import { Icon } from '@iconify/vue'
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 // Define component name for Vue linting rules
@@ -136,33 +144,14 @@ const currentRootPlanId = ref<string | null>(null)
 // Note: leftPanelWidth variable name is kept for backward compatibility
 // It actually controls the chat panel width (which is now on the right side)
 const leftPanelWidth = ref(50) // Chat panel width percentage
+const sidebarWidth = ref(80) // Sidebar width percentage
 const isResizing = ref(false)
 const startX = ref(0)
 const startLeftWidth = ref(0)
-
-// Computed chat panel width that adjusts based on sidebar width
-const computedLeftPanelWidth = computed(() => {
-  if (sidebarStore.isCollapsed) {
-    return leftPanelWidth.value
-  }
-
-  // When sidebar is expanded, calculate available width for chat panel
-  // Get sidebar width from the sidebar component if available
-  let sidebarWidth = 26 // Default sidebar width
-
-  // Try to get actual sidebar width from the sidebar component
-  if (sidebarRef.value && sidebarRef.value.sidebarWidth !== undefined) {
-    sidebarWidth = sidebarRef.value.sidebarWidth
-  }
-
-  // Calculate maximum available width for chat panel
-  // Total width is 100%, so chat panel max = 100% - sidebar width
-  const maxAvailableWidth = 100 - sidebarWidth
-
-  // Ensure chat panel width doesn't exceed available space
-  // Also maintain minimum width of 20%
-  return Math.max(20, Math.min(maxAvailableWidth, leftPanelWidth.value))
-})
+// Sidebar resize state
+const isSidebarResizing = ref(false)
+const startSidebarX = ref(0)
+const startSidebarWidth = ref(0)
 
 onMounted(() => {
   console.log('[Direct] onMounted called')
@@ -293,6 +282,12 @@ onMounted(() => {
     leftPanelWidth.value = parseFloat(savedWidth)
   }
 
+  // Restore sidebar width from localStorage
+  const savedSidebarWidth = localStorage.getItem('sidebarWidth')
+  if (savedSidebarWidth) {
+    sidebarWidth.value = parseFloat(savedSidebarWidth)
+  }
+
   console.log('[Direct] Final prompt value:', prompt.value)
   // Note: InputArea automatically handles taskToInput via watch
   // Note: Plan execution is now handled directly by Sidebar.vue using messageDialog.executePlan()
@@ -351,6 +346,8 @@ onUnmounted(() => {
   // Remove event listeners
   document.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('mouseup', handleMouseUp)
+  document.removeEventListener('mousemove', handleSidebarMouseMove)
+  document.removeEventListener('mouseup', handleSidebarMouseUp)
 })
 
 // Methods related to panel size adjustment
@@ -396,6 +393,51 @@ const handleMouseUp = () => {
 const resetPanelSize = () => {
   leftPanelWidth.value = 50
   localStorage.setItem('directPanelWidth', '50')
+}
+
+// Sidebar resize methods
+const startSidebarResize = (e: MouseEvent) => {
+  isSidebarResizing.value = true
+  startSidebarX.value = e.clientX
+  startSidebarWidth.value = sidebarWidth.value
+
+  document.addEventListener('mousemove', handleSidebarMouseMove)
+  document.addEventListener('mouseup', handleSidebarMouseUp)
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+
+  e.preventDefault()
+}
+
+const handleSidebarMouseMove = (e: MouseEvent) => {
+  if (!isSidebarResizing.value) return
+
+  const containerWidth = window.innerWidth
+  const deltaX = e.clientX - startSidebarX.value
+  const deltaPercent = (deltaX / containerWidth) * 100
+
+  let newWidth = startSidebarWidth.value + deltaPercent
+
+  // Limit sidebar width between 15% and 100%
+  newWidth = Math.max(15, Math.min(100, newWidth))
+
+  sidebarWidth.value = newWidth
+}
+
+const handleSidebarMouseUp = () => {
+  isSidebarResizing.value = false
+  document.removeEventListener('mousemove', handleSidebarMouseMove)
+  document.removeEventListener('mouseup', handleSidebarMouseUp)
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+
+  // Save to localStorage
+  localStorage.setItem('sidebarWidth', sidebarWidth.value.toString())
+}
+
+const resetSidebarWidth = () => {
+  sidebarWidth.value = 80
+  localStorage.setItem('sidebarWidth', '80')
 }
 
 // Helper function to check if the event should be processed for the current plan

@@ -14,11 +14,7 @@
  * limitations under the License.
 -->
 <template>
-  <div
-    class="sidebar-wrapper"
-    :class="{ 'sidebar-wrapper-collapsed': sidebarStore.isCollapsed }"
-    :style="{ width: sidebarWidth + '%' }"
-  >
+  <div class="sidebar-wrapper" :style="{ width: props.width + '%' }">
     <div class="sidebar-content">
       <div class="sidebar-content-header">
         <div class="sidebar-content-title">{{ $t('sidebar.title') }}</div>
@@ -32,16 +28,6 @@
       <div class="tab-content">
         <TemplateList />
       </div>
-    </div>
-
-    <!-- Sidebar Resizer -->
-    <div
-      class="sidebar-resizer"
-      @mousedown="startResize"
-      @dblclick="resetSidebarWidth"
-      :title="$t('sidebar.resizeHint')"
-    >
-      <div class="resizer-line"></div>
     </div>
   </div>
 </template>
@@ -57,8 +43,13 @@ import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateCon
 import { sidebarStore } from '@/stores/sidebar'
 import { templateStore } from '@/stores/templateStore'
 import { Icon } from '@iconify/vue'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import TemplateList from './TemplateList.vue'
+
+// Props
+const props = defineProps<{
+  width: number
+}>()
 
 // Available tools management
 const availableToolsStore = useAvailableToolsSingleton()
@@ -88,73 +79,10 @@ const handleCreateNewTemplate = async () => {
   await availableToolsStore.loadAvailableTools()
 }
 
-// Sidebar width management
-const sidebarWidth = ref(80) // Default width percentage
-const isResizing = ref(false)
-const startX = ref(0)
-const startWidth = ref(0)
-
-// Sidebar resize methods
-const startResize = (e: MouseEvent) => {
-  isResizing.value = true
-  startX.value = e.clientX
-  startWidth.value = sidebarWidth.value
-
-  document.addEventListener('mousemove', handleMouseMove)
-  document.addEventListener('mouseup', handleMouseUp)
-  document.body.style.cursor = 'col-resize'
-  document.body.style.userSelect = 'none'
-
-  e.preventDefault()
-}
-
-const handleMouseMove = (e: MouseEvent) => {
-  if (!isResizing.value) return
-
-  const containerWidth = window.innerWidth
-  const deltaX = e.clientX - startX.value
-  const deltaPercent = (deltaX / containerWidth) * 100
-
-  let newWidth = startWidth.value + deltaPercent
-
-  // Limit sidebar width between 15% and 100%
-  newWidth = Math.max(15, Math.min(100, newWidth))
-
-  sidebarWidth.value = newWidth
-}
-
-const handleMouseUp = () => {
-  isResizing.value = false
-  document.removeEventListener('mousemove', handleMouseMove)
-  document.removeEventListener('mouseup', handleMouseUp)
-  document.body.style.cursor = ''
-  document.body.style.userSelect = ''
-
-  // Save to localStorage
-  localStorage.setItem('sidebarWidth', sidebarWidth.value.toString())
-}
-
-const resetSidebarWidth = () => {
-  sidebarWidth.value = 80
-  localStorage.setItem('sidebarWidth', '80')
-}
-
 // Lifecycle
 onMounted(async () => {
   await templateStore.loadPlanTemplateList()
   availableToolsStore.loadAvailableTools() // Load available tools on sidebar mount
-
-  // Restore sidebar width from localStorage
-  const savedWidth = localStorage.getItem('sidebarWidth')
-  if (savedWidth) {
-    sidebarWidth.value = parseFloat(savedWidth)
-  }
-})
-
-onUnmounted(() => {
-  // Clean up event listeners
-  document.removeEventListener('mousemove', handleMouseMove)
-  document.removeEventListener('mouseup', handleMouseUp)
 })
 
 // Expose methods for parent component to call
@@ -173,17 +101,6 @@ defineExpose({
   transition: width 0.1s ease;
   overflow: hidden;
   display: flex;
-}
-.sidebar-wrapper-collapsed {
-  border-right: none;
-  width: 0 !important;
-  /* transform: translateX(-100%); */
-
-  .sidebar-content,
-  .sidebar-resizer {
-    opacity: 0;
-    pointer-events: none;
-  }
 }
 
 .sidebar-content {
@@ -253,41 +170,6 @@ defineExpose({
   to {
     transform: rotate(360deg);
   }
-}
-
-/* Sidebar Resizer Styles */
-.sidebar-resizer {
-  width: 6px;
-  height: 100vh;
-  background: #1a1a1a;
-  cursor: col-resize;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease;
-  flex-shrink: 0;
-
-  &:hover {
-    background: #2a2a2a;
-
-    .resizer-line {
-      background: #4a90e2;
-      width: 2px;
-    }
-  }
-
-  &:active {
-    background: #3a3a3a;
-  }
-}
-
-.resizer-line {
-  width: 1px;
-  height: 40px;
-  background: #3a3a3a;
-  border-radius: 1px;
-  transition: all 0.2s ease;
 }
 
 /* Copy Plan Modal Styles */
