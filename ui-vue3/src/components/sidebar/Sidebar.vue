@@ -22,6 +22,10 @@
     <div class="sidebar-content">
       <div class="sidebar-content-header">
         <div class="sidebar-content-title">{{ $t('sidebar.title') }}</div>
+        <button class="new-task-btn" @click="handleCreateNewTemplate">
+          <Icon icon="carbon:add" width="16" />
+          {{ $t('sidebar.newPlan') }}
+        </button>
       </div>
 
       <!-- Template List Content -->
@@ -49,13 +53,40 @@ defineOptions({
 })
 
 import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { sidebarStore } from '@/stores/sidebar'
 import { templateStore } from '@/stores/templateStore'
+import { Icon } from '@iconify/vue'
 import { onMounted, onUnmounted, ref } from 'vue'
 import TemplateList from './TemplateList.vue'
 
 // Available tools management
 const availableToolsStore = useAvailableToolsSingleton()
+
+// Template config management
+const templateConfig = usePlanTemplateConfigSingleton()
+
+// Handle create new template
+const handleCreateNewTemplate = async () => {
+  // Use default plan type or get from templateConfig
+  const planType = templateConfig.getPlanType() || 'dynamic_agent'
+  await templateStore.createNewTemplate(planType)
+
+  // Load template config for new template
+  const newTemplate = templateConfig.selectedTemplate.value
+  if (newTemplate) {
+    templateConfig.reset()
+    templateConfig.setPlanType(newTemplate.planType || 'dynamic_agent')
+    if (newTemplate.planTemplateId) {
+      templateConfig.setPlanTemplateId(newTemplate.planTemplateId)
+    }
+    templateConfig.setTitle(newTemplate.title || '')
+  }
+
+  // Reload available tools to ensure fresh tool list
+  console.log('[Sidebar] 🔄 Reloading available tools for new template')
+  await availableToolsStore.loadAvailableTools()
+}
 
 // Sidebar width management
 const sidebarWidth = ref(80) // Default width percentage
@@ -158,7 +189,6 @@ defineExpose({
 .sidebar-content {
   height: 100%;
   width: 100%;
-  padding: 12px 0 12px 12px;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease-in-out;
@@ -168,7 +198,9 @@ defineExpose({
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 0px;
+    padding: 12px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     overflow: hidden;
 
     .sidebar-content-title {
@@ -178,6 +210,30 @@ defineExpose({
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .new-task-btn {
+      margin: 0px 14px;
+      padding: 7px 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      }
     }
   }
 

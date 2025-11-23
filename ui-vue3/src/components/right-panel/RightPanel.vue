@@ -1334,7 +1334,7 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 7px 16px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;

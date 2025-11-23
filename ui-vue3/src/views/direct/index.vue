@@ -372,7 +372,7 @@ const handleMouseMove = (e: MouseEvent) => {
 
   const containerWidth = window.innerWidth
   const deltaX = e.clientX - startX.value
-  const deltaPercent = (deltaX / containerWidth) * 100
+  const deltaPercent = (-deltaX / containerWidth) * 100
 
   let newWidth = startLeftWidth.value + deltaPercent
 
@@ -473,9 +473,11 @@ const newChat = () => {
 <style lang="less" scoped>
 .direct-page {
   width: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
 }
 
 .branding-header {
@@ -536,14 +538,14 @@ const newChat = () => {
   border-right: none; /* Remove the original border, which will be provided by the resizer */
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Use fixed height */
+  height: 100%; /* Fit within parent container */
   overflow: hidden; /* Prevent panel itself overflow */
   transition: width 0.1s ease; /* Smooth transition */
 }
 
 .panel-resizer {
   width: 6px;
-  height: 100vh;
+  height: 100%; /* Fit within parent container */
   background: #1a1a1a;
   cursor: col-resize;
   position: relative;
@@ -581,7 +583,7 @@ const newChat = () => {
 }
 
 .chat-header {
-  padding: 14px 10px;
+  padding: 12px 10px;
   border-bottom: 1px solid #1a1a1a;
   display: flex;
   align-items: center;
