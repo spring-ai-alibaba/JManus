@@ -18,6 +18,15 @@
 
 <template>
   <div class="direct-page">
+    <!-- Branding Header -->
+    <header class="branding-header">
+      <div class="branding-content">
+        <div class="branding-logo">
+          <img src="/Java-AI.svg" alt="Lynxe" class="java-logo" />
+          <h1>Lynxe</h1>
+        </div>
+      </div>
+    </header>
     <div class="direct-chat">
       <Sidebar ref="sidebarRef" />
       <!-- Left Panel - Config/Preview (RightPanel component) -->
@@ -463,14 +472,52 @@ const newChat = () => {
 .direct-page {
   width: 100%;
   display: flex;
+  flex-direction: column;
   position: relative;
 }
 
+.branding-header {
+  width: 100%;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid #1a1a1a;
+  flex-shrink: 0;
+  z-index: 200;
+}
+
+.branding-content {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.branding-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .java-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+  }
+}
+
 .direct-chat {
-  height: 100vh;
+  height: calc(100vh - 65px); /* Subtract branding header height */
   width: 100%;
   background: #0a0a0a;
   display: flex;
+  flex: 1;
 }
 
 .left-panel {
