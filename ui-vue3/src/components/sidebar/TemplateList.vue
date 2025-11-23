@@ -175,7 +175,6 @@
 </template>
 
 <script setup lang="ts">
-import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { templateStore, type TemplateStoreType } from '@/stores/templateStore'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
@@ -187,9 +186,6 @@ const { t } = useI18n()
 
 // Template config management
 const templateConfig = usePlanTemplateConfigSingleton()
-
-// Available tools management
-const availableToolsStore = useAvailableToolsSingleton()
 
 // Search functionality
 const searchKeyword = ref('')
@@ -339,7 +335,7 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
 .template-list-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
   min-height: 0;
   overflow: hidden;
   padding: 10px 10px;
@@ -494,8 +490,10 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 12px;
+  padding-bottom: 40px;
 }
 
 .loading-state,
