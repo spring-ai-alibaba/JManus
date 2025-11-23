@@ -100,8 +100,6 @@ public class WriteCurrentWebContentAction extends BrowserAction {
 
 			// Format state content as YAML-like string
 			StringBuilder content = new StringBuilder();
-			content.append("# Page State Snapshot\n");
-			content.append("# URL: ").append(state.get("url")).append("\n");
 			content.append("# Title: ").append(state.get("title")).append("\n");
 			content.append("\n");
 

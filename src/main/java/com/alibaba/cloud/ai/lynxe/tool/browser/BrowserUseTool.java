@@ -234,7 +234,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 								action);
 						break;
 					}
-					case "write_current_web_snapshot": {
+					case "get_web_content": {
 						result = executeActionWithRetry(
 								() -> new WriteCurrentWebContentAction(this, textFileService).execute(requestVO),
 								action);
@@ -558,7 +558,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				- 'new_tab': Open new tab with specified URL
 				- 'close_tab': Close current tab
 				- 'switch_tab': Switch to specific tab
-				- 'write_current_web_snapshot': Write current page ARIA snapshot to a file named after the page title
+				- 'get_web_content': Get current page ARIA snapshot content
 
 				Note: Browser operations have timeout configuration, default is 30 seconds.
 				""";
@@ -737,7 +737,7 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				            "properties": {
 				                "action": {
 				                    "type": "string",
-				                    "const": "write_current_web_snapshot"
+				                    "const": "get_web_content"
 				                }
 				            },
 				            "required": ["action"],
