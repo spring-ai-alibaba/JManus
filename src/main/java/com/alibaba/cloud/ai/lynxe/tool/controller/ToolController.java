@@ -71,9 +71,16 @@ public class ToolController {
 				String serviceGroup = functionInstance.getServiceGroup();
 				String toolName = functionInstance.getName();
 
-				// Use the qualified key from the map (which now includes
-				// serviceGroup.toolName)
-				tool.setKey(entry.getKey());
+				// Construct key in serviceGroup.toolName format for frontend
+				// Backend will convert this to toolName*index* format during execution
+				String toolKey;
+				if (serviceGroup != null && !serviceGroup.isEmpty()) {
+					toolKey = serviceGroup + "." + toolName;
+				}
+				else {
+					toolKey = toolName;
+				}
+				tool.setKey(toolKey);
 				tool.setName(toolName); // Keep just the tool name for display
 				tool.setDescription(functionInstance.getDescription());
 				tool.setEnabled(true);

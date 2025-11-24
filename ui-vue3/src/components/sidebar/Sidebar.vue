@@ -40,6 +40,7 @@ defineOptions({
 
 import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import { useRightPanelSingleton } from '@/composables/useRightPanel'
 import { sidebarStore } from '@/stores/sidebar'
 import { templateStore } from '@/stores/templateStore'
 import { Icon } from '@iconify/vue'
@@ -57,6 +58,9 @@ const availableToolsStore = useAvailableToolsSingleton()
 // Template config management
 const templateConfig = usePlanTemplateConfigSingleton()
 
+// Right panel management for tab switching
+const rightPanel = useRightPanelSingleton()
+
 // Handle create new template
 const handleCreateNewTemplate = async () => {
   // Use default plan type or get from templateConfig
@@ -73,6 +77,9 @@ const handleCreateNewTemplate = async () => {
     }
     templateConfig.setTitle(newTemplate.title || '')
   }
+
+  // Switch to 'config' tab to show Func-Agent configuration
+  rightPanel.setActiveTab('config')
 
   // Reload available tools to ensure fresh tool list
   console.log('[Sidebar] 🔄 Reloading available tools for new template')

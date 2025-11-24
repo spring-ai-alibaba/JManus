@@ -58,6 +58,7 @@ import com.alibaba.cloud.ai.lynxe.runtime.executor.AbstractPlanExecutor;
 import com.alibaba.cloud.ai.lynxe.runtime.service.AgentInterruptionHelper;
 import com.alibaba.cloud.ai.lynxe.runtime.service.ParallelToolExecutionService;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.lynxe.runtime.service.ServiceGroupIndexService;
 import com.alibaba.cloud.ai.lynxe.runtime.service.TaskInterruptionCheckerService;
 import com.alibaba.cloud.ai.lynxe.runtime.service.UserInputService;
 import com.alibaba.cloud.ai.lynxe.tool.ErrorReportTool;
@@ -117,6 +118,8 @@ public class DynamicAgent extends ReActAgent {
 
 	private ConversationMemoryLimitService conversationMemoryLimitService;
 
+	private ServiceGroupIndexService serviceGroupIndexService;
+
 	/**
 	 * List to record all exceptions from LLM calls during retry attempts
 	 */
@@ -166,7 +169,8 @@ public class DynamicAgent extends ReActAgent {
 			StreamingResponseHandler streamingResponseHandler, ExecutionStep step, PlanIdDispatcher planIdDispatcher,
 			LynxeEventPublisher lynxeEventPublisher, AgentInterruptionHelper agentInterruptionHelper,
 			ObjectMapper objectMapper, ParallelToolExecutionService parallelToolExecutionService,
-			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService) {
+			MemoryService memoryService, ConversationMemoryLimitService conversationMemoryLimitService,
+			ServiceGroupIndexService serviceGroupIndexService) {
 		super(llmService, planExecutionRecorder, lynxeProperties, initialAgentSetting, step, planIdDispatcher);
 		this.objectMapper = objectMapper;
 		super.objectMapper = objectMapper; // Set parent's objectMapper as well
@@ -188,6 +192,7 @@ public class DynamicAgent extends ReActAgent {
 		this.parallelToolExecutionService = parallelToolExecutionService;
 		this.memoryService = memoryService;
 		this.conversationMemoryLimitService = conversationMemoryLimitService;
+		this.serviceGroupIndexService = serviceGroupIndexService;
 	}
 
 	@Override
@@ -1352,15 +1357,31 @@ public class DynamicAgent extends ReActAgent {
 		this.toolCallbackProvider = toolCallbackProvider;
 	}
 
+
 	protected String collectEnvData(String toolCallName) {
 		log.info("🔍 collectEnvData called for tool: {}", toolCallName);
-		ToolCallBackContext context = toolCallbackProvider.getToolCallBackContext().get(toolCallName);
+		Map<String, ToolCallBackContext> toolCallBackContext = toolCallbackProvider.getToolCallBackContext();
+
+		// Convert serviceGroup.toolName format to toolName*index* format if needed
+		String lookupKey = toolCallName;
+		try {
+			String convertedKey = serviceGroupIndexService.convertToolKeyToQualifiedKey(toolCallName);
+			if (convertedKey != null && !convertedKey.equals(toolCallName)) {
+				lookupKey = convertedKey;
+				log.debug("Converted tool key from '{}' to '{}' for collectEnvData", toolCallName, lookupKey);
+			}
+		}
+		catch (Exception e) {
+			log.debug("Failed to convert tool key '{}' in collectEnvData: {}", toolCallName, e.getMessage());
+		}
+
+		ToolCallBackContext context = toolCallBackContext.get(lookupKey);
 		if (context != null) {
 			String envData = context.getFunctionInstance().getCurrentToolStateString();
 			return envData;
 		}
 		// If corresponding tool callback context is not found, return empty string
-		log.warn("⚠️ No context found for tool: {}", toolCallName);
+		log.warn("⚠️ No context found for tool: {} (lookup key: {})", toolCallName, lookupKey);
 		return "";
 	}
 

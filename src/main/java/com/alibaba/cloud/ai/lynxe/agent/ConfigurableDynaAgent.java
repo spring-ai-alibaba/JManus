@@ -84,7 +84,7 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 		super(llmService, planExecutionRecorder, lynxeProperties, name, description, nextStepPrompt, availableToolKeys,
 				toolCallingManager, initialAgentSetting, userInputService, modelName, streamingResponseHandler, step,
 				planIdDispatcher, lynxeEventPublisher, agentInterruptionHelper, objectMapper,
-				parallelToolExecutionService, memoryService, conversationMemoryLimitService);
+				parallelToolExecutionService, memoryService, conversationMemoryLimitService, serviceGroupIndexService);
 		this.serviceGroupIndexService = serviceGroupIndexService;
 	}
 
@@ -109,10 +109,16 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 		// Check if any TerminableTool is already included
 		boolean hasTerminableTool = false;
 		for (String toolKey : availableToolKeys) {
+			// Convert serviceGroup.toolName format to toolName*index* format if needed
+			String lookupKey = convertServiceGroupToolNameToQualifiedKey(toolKey);
+			if (lookupKey == null) {
+				lookupKey = toolKey; // Use original key if conversion failed or not needed
+			}
+
 			// Try to find the tool with the given key (supports both qualified and
 			// unqualified keys)
-			if (toolCallBackContext.containsKey(toolKey)) {
-				ToolCallBackContext toolCallback = toolCallBackContext.get(toolKey);
+			if (toolCallBackContext.containsKey(lookupKey)) {
+				ToolCallBackContext toolCallback = toolCallBackContext.get(lookupKey);
 				if (toolCallback != null && toolCallback.getFunctionInstance() instanceof TerminableTool) {
 					hasTerminableTool = true;
 					break;
@@ -120,7 +126,7 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 			}
 			else {
 				// Backward compatibility: try to find by unqualified tool name
-				ToolCallBackContext foundCallback = findToolByUnqualifiedName(toolCallBackContext, toolKey);
+				ToolCallBackContext foundCallback = findToolByUnqualifiedName(toolCallBackContext, lookupKey);
 				if (foundCallback != null && foundCallback.getFunctionInstance() instanceof TerminableTool) {
 					hasTerminableTool = true;
 					break;
@@ -160,15 +166,21 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 		for (String toolKey : availableToolKeys) {
 			ToolCallBackContext toolCallback = null;
 
+			// Convert serviceGroup.toolName format to toolName*index* format if needed
+			String lookupKey = convertServiceGroupToolNameToQualifiedKey(toolKey);
+			if (lookupKey == null) {
+				lookupKey = toolKey; // Use original key if conversion failed or not needed
+			}
+
 			// First try exact match (supports new qualified keys)
-			if (toolCallBackContext.containsKey(toolKey)) {
-				toolCallback = toolCallBackContext.get(toolKey);
+			if (toolCallBackContext.containsKey(lookupKey)) {
+				toolCallback = toolCallBackContext.get(lookupKey);
 			}
 			else {
 				// Backward compatibility: try to find by unqualified tool name
-				toolCallback = findToolByUnqualifiedName(toolCallBackContext, toolKey);
+				toolCallback = findToolByUnqualifiedName(toolCallBackContext, lookupKey);
 				if (toolCallback != null) {
-					log.info("Found tool '{}' using backward compatibility lookup", toolKey);
+					log.info("Found tool '{}' using backward compatibility lookup", lookupKey);
 				}
 			}
 
@@ -182,6 +194,32 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 
 		log.info("Agent {} configured with {} tools: {}", getName(), toolCallbacks.size(), availableToolKeys);
 		return toolCallbacks;
+	}
+
+	/**
+	 * Convert serviceGroup.toolName format to toolName*index* format
+	 * This method delegates to ServiceGroupIndexService for the conversion logic
+	 * @param toolKey The tool key in serviceGroup.toolName format or other formats
+	 * @return The converted key in toolName*index* format, or null if conversion is not needed
+	 */
+	private String convertServiceGroupToolNameToQualifiedKey(String toolKey) {
+		if (toolKey == null || toolKey.isEmpty() || serviceGroupIndexService == null) {
+			return null;
+		}
+
+		try {
+			String convertedKey = serviceGroupIndexService.convertToolKeyToQualifiedKey(toolKey);
+			// Return null if key was not converted (already in correct format)
+			if (convertedKey != null && !convertedKey.equals(toolKey)) {
+				return convertedKey;
+			}
+		}
+		catch (Exception e) {
+			log.debug("Failed to convert tool key '{}' using ServiceGroupIndexService: {}", toolKey, e.getMessage());
+		}
+
+		// Return null if conversion is not needed (key is already in correct format or conversion failed)
+		return null;
 	}
 
 	/**

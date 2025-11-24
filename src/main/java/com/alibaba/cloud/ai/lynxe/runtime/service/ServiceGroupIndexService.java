@@ -94,4 +94,38 @@ public class ServiceGroupIndexService {
 		return serviceGroup != null && serviceGroupIndexMap.containsKey(serviceGroup);
 	}
 
+	/**
+	 * Convert serviceGroup.toolName format to toolName*index* format
+	 * This method handles the conversion from frontend format (serviceGroup.toolName) to
+	 * backend execution format (toolName*index*)
+	 * @param toolKey The tool key in serviceGroup.toolName format or other formats
+	 * @return The converted key in toolName*index* format, or the original key if
+	 * conversion is not needed or failed
+	 */
+	public String convertToolKeyToQualifiedKey(String toolKey) {
+		if (toolKey == null || toolKey.isEmpty()) {
+			return toolKey;
+		}
+
+		// Check if key is in serviceGroup.toolName format (contains a dot)
+		// Use lastIndexOf to handle serviceGroups that may contain dots
+		int dotIndex = toolKey.lastIndexOf('.');
+		if (dotIndex > 0 && dotIndex < toolKey.length() - 1) {
+			String serviceGroup = toolKey.substring(0, dotIndex);
+			String toolName = toolKey.substring(dotIndex + 1);
+
+			// Get or assign index for this serviceGroup
+			Integer index = getOrAssignIndex(serviceGroup);
+			if (index != null) {
+				String qualifiedKey = toolName + "*" + index + "*";
+				log.debug("Converted tool key from '{}' to '{}'", toolKey, qualifiedKey);
+				return qualifiedKey;
+			}
+		}
+
+		// Return original key if conversion is not needed (key is already in correct format
+		// or conversion failed)
+		return toolKey;
+	}
+
 }
