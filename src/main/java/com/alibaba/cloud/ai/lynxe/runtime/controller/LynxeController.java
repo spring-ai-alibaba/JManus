@@ -159,13 +159,14 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 	 */
 	@GetMapping("/executeByToolNameSync/{toolName}")
 	public ResponseEntity<Map<String, Object>> executeByToolNameGetSync(@PathVariable("toolName") String toolName,
-			@RequestParam(required = false, name = "allParams") Map<String, String> allParams) {
+			@RequestParam(required = false, name = "allParams") Map<String, String> allParams,
+			@RequestParam(required = false, name = "serviceGroup") String serviceGroup) {
 		if (toolName == null || toolName.trim().isEmpty()) {
 			return ResponseEntity.badRequest().body(Map.of("error", "Tool name cannot be empty"));
 		}
 
 		// Get plan template ID from coordinator tool
-		String planTemplateId = getPlanTemplateIdFromTool(toolName);
+		String planTemplateId = getPlanTemplateIdFromTool(toolName, serviceGroup);
 		if (planTemplateId == null) {
 			return ResponseEntity.badRequest().body(Map.of("error", "Tool not found with name: " + toolName));
 		}
@@ -204,10 +205,13 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 		// Log request source
 		logger.info("📡 [{}] Received query request from: {}", requestSource, requestSource.name());
 
+		// Extract serviceGroup from request (optional)
+		String serviceGroup = (String) request.get("serviceGroup");
+
 		String planTemplateId = null;
 
-		// First, try to find the coordinator tool by tool name
-		planTemplateId = getPlanTemplateIdFromTool(toolName);
+		// First, try to find the coordinator tool by tool name and serviceGroup
+		planTemplateId = getPlanTemplateIdFromTool(toolName, serviceGroup);
 		if (planTemplateId != null) {
 			// Tool is published, get plan template ID from coordinator tool
 			logger.info("Found published tool: {} with plan template ID: {}", toolName, planTemplateId);
@@ -313,8 +317,11 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 		// Log request source
 		logger.info("📡 [{}] Received query request from: {}", requestSource, requestSource.name());
 
+		// Extract serviceGroup from request (optional)
+		String serviceGroup = (String) request.get("serviceGroup");
+
 		// Get plan template ID from coordinator tool
-		String planTemplateId = getPlanTemplateIdFromTool(toolName);
+		String planTemplateId = getPlanTemplateIdFromTool(toolName, serviceGroup);
 		if (planTemplateId == null) {
 			return ResponseEntity.badRequest().body(Map.of("error", "Tool not found with name: " + toolName));
 		}
@@ -761,10 +768,11 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 	 * Get plan template ID from coordinator tool by tool name Only returns plan template
 	 * ID if HTTP service is enabled for the tool
 	 * @param toolName The tool name to look up
+	 * @param serviceGroup Optional service group to disambiguate tools with same name
 	 * @return Plan template ID if found and HTTP service is enabled, null otherwise
 	 */
-	private String getPlanTemplateIdFromTool(String toolName) {
-		return planTemplateConfigService.getPlanTemplateIdFromToolName(toolName);
+	private String getPlanTemplateIdFromTool(String toolName, String serviceGroup) {
+		return planTemplateConfigService.getPlanTemplateIdFromToolName(toolName, serviceGroup);
 	}
 
 	@Override

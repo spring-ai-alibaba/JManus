@@ -281,40 +281,6 @@ const pendingExecutionPayload = ref<PlanExecutionRequestPayload | null>(null)
 // API tabs configuration
 const apiTabs = ref([
   {
-    id: 'get-sync',
-    label: 'GET + Sync',
-    method: 'GET',
-    endpoint: '/api/executor/executeByToolNameSync/{toolName}',
-    description: 'Synchronous GET request - returns execution result immediately',
-    example: `GET /api/executor/executeByToolNameSync/my-tool?allParams={"rawParam":"test"}
-Response: {
-  "status": "completed",
-  "result": "Execution result here"
-}`,
-  },
-  {
-    id: 'post-sync',
-    label: 'POST + Sync',
-    method: 'POST',
-    endpoint: '/api/executor/executeByToolNameSync',
-    description: 'Synchronous POST request - returns execution result immediately',
-    example: `POST /api/executor/executeByToolNameSync
-Content-Type: application/json
-
-{
-  "toolName": "my-tool",
-  "replacementParams": {
-    "rawParam": "test"
-  },
-  "uploadedFiles": []
-}
-
-Response: {
-  "status": "completed",
-  "result": "Execution result here"
-}`,
-  },
-  {
     id: 'post-async',
     label: 'POST + Async',
     method: 'POST',
@@ -325,11 +291,14 @@ Content-Type: application/json
 
 {
   "toolName": "my-tool",
+  "serviceGroup": "research",
   "replacementParams": {
     "rawParam": "test"
   },
   "uploadedFiles": []
 }
+
+Note: serviceGroup is optional. Use it to disambiguate tools with the same name in different service groups.
 
 Response: {
   "planId": "plan-123",
@@ -364,6 +333,31 @@ Response: {
       }
     ]
   }
+}`,
+  },
+  {
+    id: 'post-sync',
+    label: 'POST + Sync',
+    method: 'POST',
+    endpoint: '/api/executor/executeByToolNameSync',
+    description: 'Synchronous POST request - returns execution result immediately',
+    example: `POST /api/executor/executeByToolNameSync
+Content-Type: application/json
+
+{
+  "toolName": "my-tool",
+  "serviceGroup": "research",
+  "replacementParams": {
+    "rawParam": "test"
+  },
+  "uploadedFiles": []
+}
+
+Note: serviceGroup is optional. Use it to disambiguate tools with the same name in different service groups.
+
+Response: {
+  "status": "completed",
+  "result": "Execution result here"
 }`,
   },
 ])

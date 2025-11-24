@@ -688,21 +688,34 @@ public class PlanTemplateConfigService {
 	}
 
 	/**
-	 * Get plan template ID from tool name Only returns plan template ID if HTTP service
-	 * is enabled for the tool Tool name is matched against FuncAgentToolEntity.toolName
+	 * Get plan template ID from tool name and optional service group Only returns plan
+	 * template ID if HTTP service is enabled for the tool
 	 * @param toolName Tool name (FuncAgentToolEntity.toolName)
+	 * @param serviceGroup Optional service group to disambiguate tools with same name
 	 * @return Plan template ID if found and HTTP service is enabled, null otherwise
 	 */
-	public String getPlanTemplateIdFromToolName(String toolName) {
+	public String getPlanTemplateIdFromToolName(String toolName, String serviceGroup) {
 		try {
-			// Find FuncAgentToolEntity by tool name
+			if (serviceGroup != null && !serviceGroup.trim().isEmpty()) {
+				// Use serviceGroup + toolName lookup for precise matching
+				Optional<FuncAgentToolEntity> toolEntity = funcAgentToolRepository
+						.findByServiceGroupAndToolName(serviceGroup, toolName);
+				if (toolEntity.isPresent()) {
+					FuncAgentToolEntity entity = toolEntity.get();
+					Boolean isHttpEnabled = entity.getEnableHttpService();
+					if (isHttpEnabled != null && isHttpEnabled) {
+						return entity.getPlanTemplateId();
+					}
+				}
+				return null; // Not found with serviceGroup
+			}
+
+			// Fallback: search by toolName only (when serviceGroup is null/empty)
 			List<FuncAgentToolEntity> toolEntities = funcAgentToolRepository.findByToolName(toolName);
 			if (toolEntities.isEmpty()) {
 				return null;
 			}
-
 			FuncAgentToolEntity toolEntity = toolEntities.get(0);
-			// Only return plan template ID if HTTP service is enabled
 			Boolean isHttpEnabled = toolEntity.getEnableHttpService();
 			if (isHttpEnabled == null || !isHttpEnabled) {
 				return null;
