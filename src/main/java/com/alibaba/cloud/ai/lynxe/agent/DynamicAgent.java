@@ -1357,7 +1357,6 @@ public class DynamicAgent extends ReActAgent {
 		this.toolCallbackProvider = toolCallbackProvider;
 	}
 
-
 	protected String collectEnvData(String toolCallName) {
 		log.info("🔍 collectEnvData called for tool: {}", toolCallName);
 		Map<String, ToolCallBackContext> toolCallBackContext = toolCallbackProvider.getToolCallBackContext();

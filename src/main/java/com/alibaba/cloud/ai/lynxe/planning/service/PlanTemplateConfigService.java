@@ -699,7 +699,7 @@ public class PlanTemplateConfigService {
 			if (serviceGroup != null && !serviceGroup.trim().isEmpty()) {
 				// Use serviceGroup + toolName lookup for precise matching
 				Optional<FuncAgentToolEntity> toolEntity = funcAgentToolRepository
-						.findByServiceGroupAndToolName(serviceGroup, toolName);
+					.findByServiceGroupAndToolName(serviceGroup, toolName);
 				if (toolEntity.isPresent()) {
 					FuncAgentToolEntity entity = toolEntity.get();
 					Boolean isHttpEnabled = entity.getEnableHttpService();

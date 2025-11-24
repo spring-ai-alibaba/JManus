@@ -204,7 +204,8 @@ public class DriverWrapper {
 
 		// Step 2: Close BrowserContext first (best practice)
 		// This will close all pages in the context and ensure proper event handling
-		// History files may be locked while context is open, so we must close context first
+		// History files may be locked while context is open, so we must close context
+		// first
 		if (browserContext != null) {
 			try {
 				if (!browserContext.browser().isConnected()) {
@@ -234,7 +235,8 @@ public class DriverWrapper {
 						log.info("Cookies verified after history cleaning");
 					}
 					else {
-						log.warn("Cookies file not found after history cleaning - this is expected if using storage-state.json");
+						log.warn(
+								"Cookies file not found after history cleaning - this is expected if using storage-state.json");
 					}
 				}
 				else {

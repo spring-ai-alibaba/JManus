@@ -30,56 +30,38 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Utility class to clean Chrome browsing history from userDataDir while preserving cookies.
- * 
- * Chrome stores browsing history in the following files:
- * - Default/History (main history database)
- * - Default/History-journal (WAL journal file)
- * - Default/History Provider Cache (cache directory)
- * - Default/History Index (index files)
- * 
- * Cookies are stored separately in:
- * - Default/Cookies
- * - Default/Cookies-journal
+ * Utility class to clean Chrome browsing history from userDataDir while preserving
+ * cookies.
+ *
+ * Chrome stores browsing history in the following files: - Default/History (main history
+ * database) - Default/History-journal (WAL journal file) - Default/History Provider Cache
+ * (cache directory) - Default/History Index (index files)
+ *
+ * Cookies are stored separately in: - Default/Cookies - Default/Cookies-journal
  */
 public class ChromeHistoryCleaner {
 
 	private static final Logger logger = LoggerFactory.getLogger(ChromeHistoryCleaner.class);
 
 	// History-related files and directories to delete
-	private static final String[] HISTORY_FILES = {
-			"History",
-			"History-journal",
-			"History Provider Cache",
-			"History Index",
-			"History Index *", // Pattern for History Index files
+	private static final String[] HISTORY_FILES = { "History", "History-journal", "History Provider Cache",
+			"History Index", "History Index *", // Pattern for History Index files
 			"Favicons", // Often associated with history
 			"Top Sites", // Top sites list
 			"Shortcuts" // Shortcuts database
 	};
 
 	// Files to preserve (cookies and other important data)
-	// Note: This list is for documentation purposes - we preserve these by NOT deleting them
+	// Note: This list is for documentation purposes - we preserve these by NOT deleting
+	// them
 	@SuppressWarnings("unused")
-	private static final String[] PRESERVE_FILES = {
-			"Cookies",
-			"Cookies-journal",
-			"Login Data",
-			"Login Data-journal",
-			"Web Data",
-			"Web Data-journal",
-			"Local Storage",
-			"Session Storage",
-			"IndexedDB",
-			"Cache",
-			"Code Cache",
-			"GPUCache"
-	};
+	private static final String[] PRESERVE_FILES = { "Cookies", "Cookies-journal", "Login Data", "Login Data-journal",
+			"Web Data", "Web Data-journal", "Local Storage", "Session Storage", "IndexedDB", "Cache", "Code Cache",
+			"GPUCache" };
 
 	/**
-	 * Cleans browsing history from the specified userDataDir.
-	 * This method should be called AFTER closing the browser context.
-	 * 
+	 * Cleans browsing history from the specified userDataDir. This method should be
+	 * called AFTER closing the browser context.
 	 * @param userDataDir Path to the Chrome user data directory
 	 * @return true if cleaning was successful, false otherwise
 	 */
@@ -95,7 +77,8 @@ public class ChromeHistoryCleaner {
 			return false;
 		}
 
-		// Chrome stores profile data in "Default" directory (or "Profile 1", "Profile 2", etc.)
+		// Chrome stores profile data in "Default" directory (or "Profile 1", "Profile 2",
+		// etc.)
 		// For persistent contexts, it's usually "Default"
 		Path defaultProfilePath = userDataPath.resolve("Default");
 
@@ -229,7 +212,6 @@ public class ChromeHistoryCleaner {
 
 	/**
 	 * Verifies that cookies are still present after cleaning.
-	 * 
 	 * @param userDataDir Path to the Chrome user data directory
 	 * @return true if cookies file exists, false otherwise
 	 */
@@ -252,4 +234,3 @@ public class ChromeHistoryCleaner {
 	}
 
 }
-

@@ -95,9 +95,9 @@ public class ServiceGroupIndexService {
 	}
 
 	/**
-	 * Convert serviceGroup.toolName format to toolName*index* format
-	 * This method handles the conversion from frontend format (serviceGroup.toolName) to
-	 * backend execution format (toolName*index*)
+	 * Convert serviceGroup.toolName format to toolName*index* format This method handles
+	 * the conversion from frontend format (serviceGroup.toolName) to backend execution
+	 * format (toolName*index*)
 	 * @param toolKey The tool key in serviceGroup.toolName format or other formats
 	 * @return The converted key in toolName*index* format, or the original key if
 	 * conversion is not needed or failed
@@ -123,7 +123,8 @@ public class ServiceGroupIndexService {
 			}
 		}
 
-		// Return original key if conversion is not needed (key is already in correct format
+		// Return original key if conversion is not needed (key is already in correct
+		// format
 		// or conversion failed)
 		return toolKey;
 	}

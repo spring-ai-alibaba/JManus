@@ -347,8 +347,10 @@ public class ChromeDriverService implements IChromeDriverService {
 				throw new RuntimeException("Failed to get browser type", e);
 			}
 
-			// Use sharedDir (extensions/playwright) as persistent userDataDir for history cleaning
-			// Using launchPersistentContext() is the recommended Playwright way to handle persistent profiles
+			// Use sharedDir (extensions/playwright) as persistent userDataDir for history
+			// cleaning
+			// Using launchPersistentContext() is the recommended Playwright way to handle
+			// persistent profiles
 			java.nio.file.Path userDataDirPath = java.nio.file.Paths.get(sharedDir);
 			try {
 				// Ensure the directory exists (it should already exist, but check anyway)
@@ -358,10 +360,12 @@ public class ChromeDriverService implements IChromeDriverService {
 			}
 			catch (Exception e) {
 				log.warn("Failed to setup userDataDir, browser will use temporary profile: {}", e.getMessage());
-				// Continue without persistent userDataDir - history cleaning won't work but browser will still function
+				// Continue without persistent userDataDir - history cleaning won't work
+				// but browser will still function
 			}
 
-			// Configure launch persistent context options with optimizations for faster startup
+			// Configure launch persistent context options with optimizations for faster
+			// startup
 			// Store configuration values for use in both persistent and fallback modes
 			BrowserType.LaunchPersistentContextOptions launchOptions = new BrowserType.LaunchPersistentContextOptions();
 			List<String> args = null;
@@ -477,7 +481,8 @@ public class ChromeDriverService implements IChromeDriverService {
 					// Use persistent context with userDataDir for history cleaning
 					browserContext = browserType.launchPersistentContext(userDataDirPath, launchOptions);
 					log.info("Successfully launched Playwright persistent context with userDataDir: {}", userDataDir);
-					// Get browser instance from context (browser is automatically managed by Playwright)
+					// Get browser instance from context (browser is automatically managed
+					// by Playwright)
 					browser = browserContext.browser();
 					if (browser == null) {
 						throw new RuntimeException("Browser context created but browser is null");

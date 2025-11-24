@@ -112,7 +112,8 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 			// Convert serviceGroup.toolName format to toolName*index* format if needed
 			String lookupKey = convertServiceGroupToolNameToQualifiedKey(toolKey);
 			if (lookupKey == null) {
-				lookupKey = toolKey; // Use original key if conversion failed or not needed
+				lookupKey = toolKey; // Use original key if conversion failed or not
+										// needed
 			}
 
 			// Try to find the tool with the given key (supports both qualified and
@@ -169,7 +170,8 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 			// Convert serviceGroup.toolName format to toolName*index* format if needed
 			String lookupKey = convertServiceGroupToolNameToQualifiedKey(toolKey);
 			if (lookupKey == null) {
-				lookupKey = toolKey; // Use original key if conversion failed or not needed
+				lookupKey = toolKey; // Use original key if conversion failed or not
+										// needed
 			}
 
 			// First try exact match (supports new qualified keys)
@@ -197,10 +199,11 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 	}
 
 	/**
-	 * Convert serviceGroup.toolName format to toolName*index* format
-	 * This method delegates to ServiceGroupIndexService for the conversion logic
+	 * Convert serviceGroup.toolName format to toolName*index* format This method
+	 * delegates to ServiceGroupIndexService for the conversion logic
 	 * @param toolKey The tool key in serviceGroup.toolName format or other formats
-	 * @return The converted key in toolName*index* format, or null if conversion is not needed
+	 * @return The converted key in toolName*index* format, or null if conversion is not
+	 * needed
 	 */
 	private String convertServiceGroupToolNameToQualifiedKey(String toolKey) {
 		if (toolKey == null || toolKey.isEmpty() || serviceGroupIndexService == null) {
@@ -218,7 +221,8 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 			log.debug("Failed to convert tool key '{}' using ServiceGroupIndexService: {}", toolKey, e.getMessage());
 		}
 
-		// Return null if conversion is not needed (key is already in correct format or conversion failed)
+		// Return null if conversion is not needed (key is already in correct format or
+		// conversion failed)
 		return null;
 	}
 
