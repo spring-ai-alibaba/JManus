@@ -254,13 +254,31 @@ public class PdfOcrProcessor {
 
 					CompletableFuture<BufferedImage> conversionTask = imageRecognitionExecutorPool.submitTask(() -> {
 						try {
+							// Validate page index and document state
+							if (currentPageIndex < 0 || currentPageIndex >= docRef.getNumberOfPages()) {
+								log.error("Invalid page index {} for document with {} pages", currentPageIndex + 1,
+										docRef.getNumberOfPages());
+								return null;
+							}
+
+							if (docRef.isEncrypted()) {
+								log.warn("Document is encrypted, page {} may not render correctly",
+										currentPageIndex + 1);
+							}
+
 							PDFRenderer pdfRenderer = new PDFRenderer(docRef);
 
 							// Use optimized DPI and image type from LynxeProperties
 							float dpi = getOptimizedDpi();
 							ImageType imageType = getConfiguredImageType();
 
-							BufferedImage image = pdfRenderer.renderImageWithDPI(currentPageIndex, dpi, imageType);
+							// Render page with retry logic and fallback settings
+							BufferedImage image = renderPageWithRetry(pdfRenderer, currentPageIndex, dpi, imageType);
+
+							if (image == null) {
+								log.error("Failed to render page {} after all retry attempts", currentPageIndex + 1);
+								return null;
+							}
 
 							// Optimize the image for OCR processing
 							BufferedImage optimizedImage = optimizeImageForOcr(image);
@@ -275,14 +293,19 @@ public class PdfOcrProcessor {
 								}
 								catch (IOException e) {
 									log.error("Failed to save page {} image to temp folder: {}", currentPageIndex + 1,
-											e.getMessage());
+											e.getMessage(), e);
 								}
 							}
 
 							return optimizedImage;
 						}
+						catch (IllegalArgumentException e) {
+							log.error("Invalid argument error converting page {} to image: {}", currentPageIndex + 1,
+									e.getMessage(), e);
+							return null;
+						}
 						catch (Exception e) {
-							log.error("Error converting page {} to image: {}", currentPageIndex + 1, e.getMessage());
+							log.error("Error converting page {} to image: {}", currentPageIndex + 1, e.getMessage(), e);
 							return null; // Return null for failed conversions
 						}
 					});
@@ -643,6 +666,81 @@ public class PdfOcrProcessor {
 		}
 
 		return configuredDpi;
+	}
+
+	/**
+	 * Render PDF page to image with retry logic and fallback settings
+	 * @param pdfRenderer The PDFRenderer instance
+	 * @param pageIndex The page index to render
+	 * @param initialDpi The initial DPI setting
+	 * @param initialImageType The initial ImageType setting
+	 * @return BufferedImage or null if all attempts fail
+	 */
+	private BufferedImage renderPageWithRetry(PDFRenderer pdfRenderer, int pageIndex, float initialDpi,
+			ImageType initialImageType) {
+		// Attempt 1: Use configured settings
+		try {
+			BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, initialDpi, initialImageType);
+			if (validateRenderedImage(image, pageIndex)) {
+				return image;
+			}
+		}
+		catch (Exception e) {
+			log.debug("Initial render attempt failed for page {}: {}", pageIndex + 1, e.getMessage());
+		}
+
+		// Attempt 2: Lower DPI if initial DPI > 100
+		if (initialDpi > 100) {
+			try {
+				float fallbackDpi = 100.0f;
+				log.debug("Retrying page {} with lower DPI: {}", pageIndex + 1, fallbackDpi);
+				BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, fallbackDpi, initialImageType);
+				if (validateRenderedImage(image, pageIndex)) {
+					log.info("Page {} successfully rendered with fallback DPI {}", pageIndex + 1, fallbackDpi);
+					return image;
+				}
+			}
+			catch (Exception e) {
+				log.debug("Fallback DPI render attempt failed for page {}: {}", pageIndex + 1, e.getMessage());
+			}
+		}
+
+		// Attempt 3: Use RGB image type as fallback
+		if (initialImageType != ImageType.RGB) {
+			try {
+				float dpi = initialDpi > 100 ? 100.0f : initialDpi;
+				log.debug("Retrying page {} with RGB image type and DPI: {}", pageIndex + 1, dpi);
+				BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, dpi, ImageType.RGB);
+				if (validateRenderedImage(image, pageIndex)) {
+					log.info("Page {} successfully rendered with RGB fallback", pageIndex + 1);
+					return image;
+				}
+			}
+			catch (Exception e) {
+				log.debug("RGB fallback render attempt failed for page {}: {}", pageIndex + 1, e.getMessage());
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Validate rendered image
+	 * @param image The rendered BufferedImage
+	 * @param pageIndex The page index for logging
+	 * @return true if image is valid, false otherwise
+	 */
+	private boolean validateRenderedImage(BufferedImage image, int pageIndex) {
+		if (image == null) {
+			log.warn("Page {} rendered as null image", pageIndex + 1);
+			return false;
+		}
+		if (image.getWidth() <= 0 || image.getHeight() <= 0) {
+			log.warn("Page {} rendered with invalid dimensions: {}x{}", pageIndex + 1, image.getWidth(),
+					image.getHeight());
+			return false;
+		}
+		return true;
 	}
 
 	/**
