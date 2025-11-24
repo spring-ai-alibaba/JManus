@@ -851,6 +851,8 @@ const words: I18nType = {
     copyPlanSuccess: '计划复制成功: {title}',
     copyPlanFailed: '计划复制失败: {message}',
     duplicatePlanTitle: '有重复计划标题',
+    defaultPlanId: '系统返回的PlanID',
+    defaultPlanIdDetails: '系统刚才返回的那个planId',
 
     newTemplate: '新建模板',
     templateName: '模板名称',

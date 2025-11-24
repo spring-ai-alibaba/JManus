@@ -895,6 +895,8 @@ const words: I18nType = {
     usage: 'Usage',
     example: 'Example',
     enterValueFor: 'Enter value for {param}',
+    defaultPlanId: 'System returned PlanID',
+    defaultPlanIdDetails: 'The planId that the system just returned',
     newTemplate: 'New Template',
     templateName: 'Template Name',
     templateDescription: 'Template Description',

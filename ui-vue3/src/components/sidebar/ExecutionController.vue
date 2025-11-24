@@ -301,9 +301,9 @@ const apiTabs = computed(() => {
     replacementParams['rawParam'] = 'test'
   }
 
-  // Use actual planId or Chinese placeholder
-  const planId = lastPlanId.value || '系统返回的PlanID'
-  const detailsPlanId = lastPlanId.value || '系统刚才返回的那个planId'
+  // Use actual planId or i18n placeholder
+  const planId = lastPlanId.value || t('sidebar.defaultPlanId')
+  const detailsPlanId = lastPlanId.value || t('sidebar.defaultPlanIdDetails')
 
   return [
     {
