@@ -307,6 +307,7 @@ public class ChromeDriverService implements IChromeDriverService {
 		Browser browser = null;
 		BrowserContext browserContext = null;
 		Page page = null;
+		String userDataDir = null;
 
 		try {
 			// Set system properties for Playwright configuration
@@ -346,11 +347,31 @@ public class ChromeDriverService implements IChromeDriverService {
 				throw new RuntimeException("Failed to get browser type", e);
 			}
 
-			// Configure browser launch options with optimizations for faster startup
-			BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions();
+			// Use sharedDir (extensions/playwright) as persistent userDataDir for history cleaning
+			// Using launchPersistentContext() is the recommended Playwright way to handle persistent profiles
+			java.nio.file.Path userDataDirPath = java.nio.file.Paths.get(sharedDir);
+			try {
+				// Ensure the directory exists (it should already exist, but check anyway)
+				unifiedDirectoryManager.ensureDirectoryExists(userDataDirPath);
+				userDataDir = userDataDirPath.toString();
+				log.info("Configured persistent userDataDir: {}", userDataDir);
+			}
+			catch (Exception e) {
+				log.warn("Failed to setup userDataDir, browser will use temporary profile: {}", e.getMessage());
+				// Continue without persistent userDataDir - history cleaning won't work but browser will still function
+			}
+
+			// Configure launch persistent context options with optimizations for faster startup
+			// Store configuration values for use in both persistent and fallback modes
+			BrowserType.LaunchPersistentContextOptions launchOptions = new BrowserType.LaunchPersistentContextOptions();
+			List<String> args = null;
+			String userAgent = null;
+			boolean headlessMode = false;
+			java.nio.file.Path storageStatePath = null;
+			boolean hasStorageState = false;
+
 			try {
 				// Basic configuration with error handling for user agent
-				String userAgent;
 				try {
 					userAgent = getRandomUserAgent();
 				}
@@ -364,7 +385,7 @@ public class ChromeDriverService implements IChromeDriverService {
 				// requests
 				// Note: Browser runs in normal mode (not incognito) to preserve cookies
 				// and history
-				List<String> args = new java.util.ArrayList<>(Arrays.asList(
+				args = new java.util.ArrayList<>(Arrays.asList(
 						// Essential arguments
 						"--remote-allow-origins=*", "--disable-blink-features=AutomationControlled",
 						"--disable-infobars", "--disable-notifications", "--disable-dev-shm-usage", "--no-sandbox",
@@ -399,8 +420,27 @@ public class ChromeDriverService implements IChromeDriverService {
 
 				launchOptions.setArgs(args);
 
+				// Set viewport size
+				launchOptions.setViewportSize(1920, 1080);
+
+				// Set user agent
+				launchOptions.setUserAgent(userAgent);
+
+				// Set locale
+				launchOptions.setLocale("zh-CN");
+
+				// Disable service workers to prevent network requests during startup
+				try {
+					launchOptions.setServiceWorkers(ServiceWorkerPolicy.BLOCK);
+					log.debug("Service workers disabled for faster startup");
+				}
+				catch (Exception e) {
+					log.warn("Failed to disable service workers: {}", e.getMessage());
+				}
+
 				// Set headless mode based on configuration
-				if (lynxeProperties.getBrowserHeadless()) {
+				headlessMode = lynxeProperties.getBrowserHeadless();
+				if (headlessMode) {
 					log.info("Enable Playwright headless mode");
 					launchOptions.setHeadless(true);
 				}
@@ -412,113 +452,69 @@ public class ChromeDriverService implements IChromeDriverService {
 				// Set timeout for browser launch
 				launchOptions.setTimeout(60000); // 60 seconds timeout for browser launch
 
-			}
-			catch (Exception e) {
-				log.error("Failed to configure browser launch options: {}", e.getMessage(), e);
-				throw new RuntimeException("Failed to configure browser launch options", e);
-			}
-
-			// Launch browser with error handling
-			try {
-				browser = browserType.launch(launchOptions);
-				log.info("Successfully launched Playwright Browser instance");
-
-				// Verify browser connection
-				if (!browser.isConnected()) {
-					throw new RuntimeException("Browser launched but is not connected");
-				}
-
-			}
-			catch (PlaywrightException e) {
-				log.error("Failed to launch browser: {}", e.getMessage(), e);
-				throw new RuntimeException("Failed to launch browser: " + e.getMessage(), e);
-			}
-			catch (Exception e) {
-				log.error("Unexpected error during browser launch: {}", e.getMessage(), e);
-				throw new RuntimeException("Unexpected error during browser launch", e);
-			}
-
-			// Create browser context with error handling
-			// Using browser.newContext() provides better isolation and resource
-			// management
-			// Note: BrowserContext is created in normal mode (not incognito) to preserve
-			// cookies and history
-			// Cache storage state check outside try block for reuse in page creation
-			java.nio.file.Path storageStatePath = null;
-			boolean hasStorageState = false;
-			try {
+				// Check for storage state (cookies, localStorage, etc.) for persistence
 				storageStatePath = java.nio.file.Paths.get(sharedDir, "storage-state.json");
 				hasStorageState = java.nio.file.Files.exists(storageStatePath);
-			}
-			catch (Exception e) {
-				log.warn("Failed to check storage state path: {}", e.getMessage());
-			}
-
-			try {
-				// Check browser is still connected before creating context
-				if (!browser.isConnected()) {
-					throw new RuntimeException("Browser is not connected, cannot create context");
-				}
-
-				// Configure context options with optimizations for faster startup
-				// BrowserContext runs in normal mode (not incognito) by default in
-				// Playwright
-				Browser.NewContextOptions contextOptions = new Browser.NewContextOptions();
-
-				// Set viewport size
-				contextOptions.setViewportSize(1920, 1080);
-
-				// Set user agent
-				try {
-					String userAgent = getRandomUserAgent();
-					contextOptions.setUserAgent(userAgent);
-				}
-				catch (Exception e) {
-					log.warn("Failed to set user agent in context options: {}", e.getMessage());
-				}
-
-				// Set locale
-				contextOptions.setLocale("zh-CN");
-
-				// Set timezone if needed
-				// contextOptions.setTimezoneId("Asia/Shanghai");
-
-				// Disable service workers to prevent network requests during startup
-				// Service workers can make network requests that slow down context
-				// creation
-				try {
-					contextOptions.setServiceWorkers(ServiceWorkerPolicy.BLOCK);
-					log.debug("Service workers disabled for faster startup");
-				}
-				catch (Exception e) {
-					log.warn("Failed to disable service workers: {}", e.getMessage());
-				}
-
-				// Try to load storage state (cookies, localStorage, etc.) for persistence
-				// This provides better cookie persistence than manual cookie loading
-				// Use cached hasStorageState flag to avoid duplicate file system
-				// operations
-				if (hasStorageState && storageStatePath != null) {
-					try {
-						contextOptions.setStorageStatePath(storageStatePath);
-						log.info("Loading browser storage state from: {}", storageStatePath);
-					}
-					catch (Exception e) {
-						log.warn("Failed to set storage state path, continuing without it: {}", e.getMessage());
-					}
+				if (hasStorageState) {
+					log.info("Storage state file found: {}", storageStatePath);
 				}
 				else {
 					log.debug("Storage state file not found, creating new context without storage state: {}",
 							storageStatePath);
 				}
 
-				// Create context with timeout
-				// According to Playwright call tree: browser.newContext() ->
-				// sendMessage("newContext")
-				// -> [driver process] creates context and applies all options including
-				// storageState
-				browserContext = browser.newContext(contextOptions);
-				log.info("Successfully created browser context");
+			}
+			catch (Exception e) {
+				log.error("Failed to configure browser launch options: {}", e.getMessage(), e);
+				throw new RuntimeException("Failed to configure browser launch options", e);
+			}
+
+			// Launch persistent context with error handling
+			// Using launchPersistentContext() is the recommended Playwright way to handle
+			// persistent profiles with userDataDir
+			try {
+				if (userDataDir != null && !userDataDir.isEmpty()) {
+					// Use persistent context with userDataDir for history cleaning
+					browserContext = browserType.launchPersistentContext(userDataDirPath, launchOptions);
+					log.info("Successfully launched Playwright persistent context with userDataDir: {}", userDataDir);
+					// Get browser instance from context (browser is automatically managed by Playwright)
+					browser = browserContext.browser();
+					if (browser == null) {
+						throw new RuntimeException("Browser context created but browser is null");
+					}
+				}
+				else {
+					// Fallback: use regular launch if userDataDir creation failed
+					log.warn("userDataDir not available, falling back to regular launch");
+					BrowserType.LaunchOptions regularLaunchOptions = new BrowserType.LaunchOptions();
+					if (args != null) {
+						regularLaunchOptions.setArgs(args);
+					}
+					regularLaunchOptions.setHeadless(headlessMode);
+					regularLaunchOptions.setTimeout(60000); // 60 seconds timeout
+					browser = browserType.launch(regularLaunchOptions);
+					log.info("Successfully launched Playwright Browser instance (fallback mode)");
+
+					// Create context with the same options
+					Browser.NewContextOptions contextOptions = new Browser.NewContextOptions();
+					contextOptions.setViewportSize(1920, 1080);
+					if (userAgent != null) {
+						contextOptions.setUserAgent(userAgent);
+					}
+					contextOptions.setLocale("zh-CN");
+					contextOptions.setServiceWorkers(ServiceWorkerPolicy.BLOCK);
+					if (hasStorageState && storageStatePath != null) {
+						contextOptions.setStorageStatePath(storageStatePath);
+						log.info("Loading browser storage state from: {}", storageStatePath);
+					}
+					browserContext = browser.newContext(contextOptions);
+					log.info("Successfully created browser context (fallback mode)");
+				}
+
+				// Verify browser connection
+				if (browser != null && !browser.isConnected()) {
+					throw new RuntimeException("Browser launched but is not connected");
+				}
 
 				// Verify context is valid
 				if (browserContext == null) {
@@ -527,18 +523,12 @@ public class ChromeDriverService implements IChromeDriverService {
 
 			}
 			catch (PlaywrightException e) {
-				log.error("Failed to create browser context: {}", e.getMessage(), e);
-				// Check if it's a connection issue
-				if (e.getMessage() != null && (e.getMessage().contains("Target closed")
-						|| e.getMessage().contains("Browser has been closed")
-						|| e.getMessage().contains("Connection closed"))) {
-					throw new RuntimeException("Browser connection lost while creating context: " + e.getMessage(), e);
-				}
-				throw new RuntimeException("Failed to create browser context: " + e.getMessage(), e);
+				log.error("Failed to launch browser context: {}", e.getMessage(), e);
+				throw new RuntimeException("Failed to launch browser context: " + e.getMessage(), e);
 			}
 			catch (Exception e) {
-				log.error("Unexpected error during browser context creation: {}", e.getMessage(), e);
-				throw new RuntimeException("Unexpected error during browser context creation", e);
+				log.error("Unexpected error during browser context launch: {}", e.getMessage(), e);
+				throw new RuntimeException("Unexpected error during browser context launch", e);
 			}
 
 			// Create new page from context with error handling
@@ -636,7 +626,8 @@ public class ChromeDriverService implements IChromeDriverService {
 			// Create and return DriverWrapper with error handling
 			// Following best practices: Browser -> BrowserContext -> Page
 			try {
-				DriverWrapper wrapper = new DriverWrapper(playwright, browser, browserContext, page, this.sharedDir);
+				DriverWrapper wrapper = new DriverWrapper(playwright, browser, browserContext, page, this.sharedDir,
+						userDataDir);
 				log.info("Successfully created DriverWrapper instance with browser context");
 				return wrapper;
 			}

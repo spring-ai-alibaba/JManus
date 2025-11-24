@@ -48,6 +48,8 @@ public class DriverWrapper {
 
 	private final Path storageStatePath;
 
+	private final String userDataDir;
+
 	/**
 	 * Create a new DriverWrapper with Playwright resources. Following best practices:
 	 * Browser -> BrowserContext -> Page
@@ -56,13 +58,15 @@ public class DriverWrapper {
 	 * @param browserContext Browser context instance
 	 * @param currentPage Current page instance
 	 * @param storageStateDir Directory for storing storage state
+	 * @param userDataDir Path to the Chrome user data directory (for history cleaning)
 	 */
 	public DriverWrapper(Playwright playwright, Browser browser, BrowserContext browserContext, Page currentPage,
-			String storageStateDir) {
+			String storageStateDir, String userDataDir) {
 		this.playwright = playwright;
 		this.browser = browser;
 		this.browserContext = browserContext;
 		this.currentPage = currentPage;
+		this.userDataDir = userDataDir;
 
 		// Set storage state path
 		if (storageStateDir == null || storageStateDir.trim().isEmpty()) {
@@ -74,6 +78,9 @@ public class DriverWrapper {
 		}
 
 		log.info("DriverWrapper created with storage state path: {}", this.storageStatePath.toAbsolutePath());
+		if (userDataDir != null && !userDataDir.isEmpty()) {
+			log.info("DriverWrapper configured with userDataDir for history cleaning: {}", userDataDir);
+		}
 	}
 
 	/**
@@ -172,6 +179,7 @@ public class DriverWrapper {
 	 * <ol>
 	 * <li>Save storage state (preserves cookies, localStorage, sessionStorage)</li>
 	 * <li>Close BrowserContext (closes all pages and ensures artifacts are flushed)</li>
+	 * <li>Clean browsing history from userDataDir (if configured, preserves cookies)</li>
 	 * <li>Close Browser (after all contexts are closed)</li>
 	 * <li>Close Playwright (terminates I/O threads)</li>
 	 * </ol>
@@ -196,6 +204,7 @@ public class DriverWrapper {
 
 		// Step 2: Close BrowserContext first (best practice)
 		// This will close all pages in the context and ensure proper event handling
+		// History files may be locked while context is open, so we must close context first
 		if (browserContext != null) {
 			try {
 				if (!browserContext.browser().isConnected()) {
@@ -208,6 +217,33 @@ public class DriverWrapper {
 			}
 			catch (Exception e) {
 				log.warn("Error closing browser context: {}", e.getMessage());
+			}
+		}
+
+		// Step 2.5: Clean browsing history after context is closed
+		// This must happen after context.close() to ensure history files are not locked
+		// Cookies are preserved because they're saved separately via storage state
+		if (userDataDir != null && !userDataDir.isEmpty()) {
+			try {
+				log.info("Cleaning browsing history from userDataDir: {}", userDataDir);
+				boolean cleaned = ChromeHistoryCleaner.cleanHistory(userDataDir);
+				if (cleaned) {
+					log.info("Successfully cleaned browsing history");
+					// Verify cookies are still preserved
+					if (ChromeHistoryCleaner.verifyCookiesPreserved(userDataDir)) {
+						log.info("Cookies verified after history cleaning");
+					}
+					else {
+						log.warn("Cookies file not found after history cleaning - this is expected if using storage-state.json");
+					}
+				}
+				else {
+					log.warn("History cleaning completed with some errors");
+				}
+			}
+			catch (Exception e) {
+				log.warn("Failed to clean browsing history: {}", e.getMessage(), e);
+				// Don't fail the close operation if history cleaning fails
 			}
 		}
 
