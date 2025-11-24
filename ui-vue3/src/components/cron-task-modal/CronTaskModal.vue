@@ -199,11 +199,11 @@
             <p>{{ $t('cronTask.selectCreateMethod') }}</p>
 
             <div class="create-options">
-              <button class="create-option-btn jmanus-btn" @click="createWithJmanus">
+              <button class="create-option-btn lynxe-btn" @click="createWithLynxe">
                 <Icon icon="carbon:ai-status" />
                 <div class="option-content">
-                  <span class="option-title">{{ $t('cronTask.createWithJmanus') }}</span>
-                  <span class="option-desc">{{ $t('cronTask.createWithJmanusDesc') }}</span>
+                  <span class="option-title">{{ $t('cronTask.createWithLynxe') }}</span>
+                  <span class="option-desc">{{ $t('cronTask.createWithLynxeDesc') }}</span>
                 </div>
               </button>
 
@@ -452,7 +452,7 @@ const addNewTask = () => {
 /**
  * Create task using AI assistant
  */
-const createWithJmanus = () => {
+const createWithLynxe = () => {
   showCreateOptions.value = false
 
   try {
@@ -470,7 +470,7 @@ const createWithJmanus = () => {
       params: { id: chatId },
     })
   } catch (error) {
-    console.error('Error in createWithJmanus:', error)
+    console.error('Error in createWithLynxe:', error)
     toast.error(`Creation failed: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
@@ -1056,16 +1056,16 @@ watch(
   font-size: 24px;
 }
 
-.jmanus-btn {
+.lynxe-btn {
   color: #3b82f6;
 }
 
-.jmanus-btn:hover {
+.lynxe-btn:hover {
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.3);
 }
 
-.jmanus-btn .iconify {
+.lynxe-btn .iconify {
   color: #3b82f6;
 }
 

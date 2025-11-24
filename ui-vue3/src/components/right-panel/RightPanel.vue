@@ -17,6 +17,15 @@
   <div class="right-panel">
     <div class="preview-header">
       <div class="preview-tabs">
+        <!-- Func-Agent Config tab -->
+        <div
+          class="tab-item"
+          :class="{ active: activeTab === 'config' }"
+          @click="activeTab = 'config'"
+        >
+          <Icon icon="carbon:settings" />
+          <span>{{ t('sidebar.configuration') }}</span>
+        </div>
         <!-- Step Execution Details tab -->
         <div
           class="tab-item"
@@ -39,6 +48,62 @@
     </div>
 
     <div class="preview-content">
+      <!-- Func-Agent Config -->
+      <div v-if="activeTab === 'config'" class="config-tab-content">
+        <div v-if="templateConfig.selectedTemplate.value" class="config-container">
+          <!-- Template Info Header -->
+          <div class="template-info-header">
+            <div class="template-info">
+              <h3>
+                {{ templateConfig.selectedTemplate.value.title || t('sidebar.unnamedPlan') }}
+              </h3>
+              <span class="template-id"
+                >ID: {{ templateConfig.selectedTemplate.value.planTemplateId }}</span
+              >
+            </div>
+            <button class="back-to-list-btn" @click="sidebarStore.switchToTab('list')">
+              <Icon icon="carbon:arrow-left" width="16" />
+            </button>
+          </div>
+
+          <!-- JSON Editor -->
+          <JsonEditorV2 />
+
+          <!-- Execution Controller -->
+          <ExecutionController />
+        </div>
+        <div v-else class="no-template-selected">
+          <div class="action-buttons">
+            <button class="new-task-btn" @click="handleCreateNewPlan">
+              <Icon icon="carbon:add" width="16" />
+              {{ t('rightPanel.newFuncAgentPlan') }}
+            </button>
+            <label class="new-task-btn" :title="t('rightPanel.importExistingPlan')">
+              <Icon icon="carbon:import" width="16" />
+              {{ t('rightPanel.importExistingPlan') }}
+              <input
+                type="file"
+                accept=".json"
+                @change="handleImportExistingPlan"
+                style="display: none"
+              />
+            </label>
+          </div>
+          <p class="import-description">
+            {{ t('rightPanel.importDescription') }}
+            <a
+              href="https://github.com/Lynxe-public/Lynxe-public-prompts"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="prompt-library-link"
+            >
+              {{ t('rightPanel.promptLibrary') }}
+            </a>
+            {{ t('rightPanel.importDescriptionSuffix') }}
+          </p>
+        </div>
+      </div>
+
       <!-- Step Execution Details -->
       <div v-if="activeTab === 'details'" class="step-details">
         <!-- Step basic information -->
@@ -317,7 +382,15 @@
 
 <script setup lang="ts">
 import FileBrowser from '@/components/file-browser/index.vue'
+import ExecutionController from '@/components/sidebar/ExecutionController.vue'
+import JsonEditorV2 from '@/components/sidebar/JsonEditorV2.vue'
+import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
+import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import { usePlanTemplateImport } from '@/composables/usePlanTemplateImport'
 import { useRightPanelSingleton } from '@/composables/useRightPanel'
+import { useToast } from '@/plugins/useToast'
+import { sidebarStore } from '@/stores/sidebar'
+import { templateStore } from '@/stores/templateStore'
 import { Icon } from '@iconify/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -331,9 +404,19 @@ interface Props {
 const props = defineProps<Props>()
 
 const { t } = useI18n()
+const toast = useToast()
 
 // Use singleton composable for right panel state
 const rightPanel = useRightPanelSingleton()
+
+// Template config for Func-Agent Config tab
+const templateConfig = usePlanTemplateConfigSingleton()
+
+// Available tools management
+const availableToolsStore = useAvailableToolsSingleton()
+
+// Plan template import composable
+const { handleImport: handleImportPlanTemplate } = usePlanTemplateImport()
 
 // DOM element reference
 const scrollContainer = ref<HTMLElement>()
@@ -347,7 +430,7 @@ const shouldAutoScrollToBottom = ref(true)
 const selectedStep = computed(() => rightPanel.selectedStep.value)
 const activeTab = computed({
   get: () => rightPanel.activeTab.value,
-  set: (value: 'details' | 'files') => rightPanel.setActiveTab(value),
+  set: (value: 'config' | 'details' | 'files') => rightPanel.setActiveTab(value),
 })
 const fileBrowserPlanId = computed(() => rightPanel.fileBrowserPlanId.value)
 const shouldShowNoTaskMessage = computed(() => rightPanel.shouldShowNoTaskMessage.value)
@@ -358,6 +441,68 @@ const stepStatusText = computed(() => {
   if (selectedStep.value.current) return t('rightPanel.status.executing')
   return t('rightPanel.status.waiting')
 })
+
+// Actions - Template creation and import
+/**
+ * Handle creating a new Func-Agent plan
+ */
+const handleCreateNewPlan = async () => {
+  try {
+    // Use default plan type or get from templateConfig
+    const planType = templateConfig.getPlanType() || 'dynamic_agent'
+    await templateStore.createNewTemplate(planType)
+
+    // Load template config for new template
+    const newTemplate = templateConfig.selectedTemplate.value
+    if (newTemplate) {
+      templateConfig.reset()
+      templateConfig.setPlanType(newTemplate.planType || 'dynamic_agent')
+      if (newTemplate.planTemplateId) {
+        templateConfig.setPlanTemplateId(newTemplate.planTemplateId)
+      }
+      templateConfig.setTitle(newTemplate.title || '')
+    }
+
+    // Reload available tools to ensure fresh tool list
+    console.log('[RightPanel] 🔄 Reloading available tools for new template')
+    await availableToolsStore.loadAvailableTools()
+  } catch (error) {
+    console.error('[RightPanel] Failed to create new plan:', error)
+    const message = error instanceof Error ? error.message : t('rightPanel.createPlanFailed')
+    toast.error(message)
+  }
+}
+
+/**
+ * Handle importing an existing plan
+ */
+const handleImportExistingPlan = async (event: Event) => {
+  await handleImportPlanTemplate(event, {
+    onSuccess: async result => {
+      const successMsg = t('rightPanel.importSuccess', {
+        total: result.total,
+        success: result.successCount,
+        failed: result.failureCount,
+      })
+      toast.success(successMsg)
+    },
+    onError: error => {
+      const errorMessage = error instanceof Error ? error.message : t('rightPanel.importFailed')
+      toast.error(errorMessage)
+    },
+    onReload: async () => {
+      // Reload template list
+      await templateStore.loadPlanTemplateList()
+    },
+    onSingleTemplateImported: async template => {
+      // If only one template was imported, select it
+      if (template.planTemplateId) {
+        templateConfig.setPlanTemplateId(template.planTemplateId)
+        await templateConfig.load(template.planTemplateId)
+      }
+    },
+  })
+}
 
 // Actions - Step selection and refresh control
 
@@ -543,7 +688,7 @@ defineExpose({
 }
 
 .preview-header {
-  padding: 20px 24px;
+  padding: 8px 12px;
   border-bottom: 1px solid #1a1a1a;
   background: rgba(255, 255, 255, 0.02);
 
@@ -1201,7 +1346,7 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 7px 16px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1234,5 +1379,135 @@ defineExpose({
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Config Tab Styles */
+.config-tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.config-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+  gap: 16px;
+}
+
+.template-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+
+  .template-info {
+    flex: 1;
+    min-width: 0;
+
+    h3 {
+      margin: 0 0 4px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .template-id {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  .back-to-list-btn {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+  }
+}
+
+.no-template-selected {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #666666;
+  padding: 40px 20px;
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .new-task-btn {
+    width: 100%;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+  }
+
+  .import-description {
+    margin-top: 16px;
+    padding: 0 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    max-width: 400px;
+
+    .prompt-library-link {
+      color: #667eea;
+      text-decoration: none;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: #764ba2;
+        text-decoration: underline;
+      }
+    }
+  }
 }
 </style>

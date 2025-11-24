@@ -8,14 +8,18 @@
     <property name="maxHistory" value="90"/>
 
     <!-- Rendering classes for colored log output -->
-    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
-    <conversionRule conversionWord="wex" converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
-    <conversionRule conversionWord="wEx" converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter" />
+    <conversionRule conversionWord="clr" class="org.springframework.boot.logging.logback.ColorConverter" />
+    <conversionRule conversionWord="wex" class="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
+    <conversionRule conversionWord="wEx" class="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter" />
 
     <property name="CONSOLE_LOG_PATTERN" value="${CONSOLE_LOG_PATTERN:-%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}" />
 
     <!-- ConsoleAppender console log output -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- Filter to only output WARN level and above to console -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
         <!-- Format the log output -->
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
@@ -164,9 +168,13 @@
 
     <!-- Block logs from specific classes -->
     <logger name="org.docx4j.convert.in.xhtml.XHTMLImporterImp" level="OFF" additivity="false"/>
+    
+    <!-- Suppress netty DNS native library warning - fallback to system defaults works fine -->
+    <logger name="io.netty.resolver.dns.DnsServerAddressStreamProviders" level="INFO" additivity="false"/>
 
     <!-- Root logger, all log appenders must be included in root/logger, otherwise they won't work -->
-    <root level="INFO">
+    <!-- Root level is set to DEBUG to allow DEBUG logs from application.yml to be processed -->
+    <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="DEBUG"/>
         <appender-ref ref="INFO"/>

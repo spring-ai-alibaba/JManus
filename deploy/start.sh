@@ -82,9 +82,9 @@ echo -e "${CYAN}  ├─${RESET} JVM Options  : ${GREEN}${JAVA_OPTS}${RESET}"
 echo -e "${CYAN}  └─${RESET} Working Dir  : ${GREEN}/app/extracted${RESET}"
 echo ""
 echo -e "${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${YELLOW}${BOLD}⏳ Launching JManus...${RESET}"
+echo -e "${YELLOW}${BOLD}⏳ Launching Lynxe...${RESET}"
 echo -e "${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo ""
 
 cd /app/extracted
-exec java $JAVA_OPTS -cp /app/extracted/BOOT-INF/classes:/app/extracted/BOOT-INF/lib/*:. com.alibaba.cloud.ai.manus.OpenManusSpringBootApplication --spring.profiles.active=h2,docker
+exec java $JAVA_OPTS -cp /app/extracted/BOOT-INF/classes:/app/extracted/BOOT-INF/lib/*:. com.alibaba.cloud.ai.lynxe.OpenLynxeSpringBootApplication --spring.profiles.active=h2,docker

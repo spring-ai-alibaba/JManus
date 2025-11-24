@@ -148,7 +148,7 @@
             <div class="api-key-input-wrapper">
               <input
                 type="password"
-                v-model="selectedApiKey"
+                v-model="selectedApiKeyInput"
                 :placeholder="t('config.modelConfig.apiKeyPlaceholder')"
                 required
               />
@@ -157,7 +157,7 @@
           <button
             class="check-btn"
             @click="handleValidateConfig"
-            :disabled="validating || !selectedModel.baseUrl || !selectedApiKey"
+            :disabled="validating || !selectedModel.baseUrl || !selectedModel.apiKey"
             :title="t('config.modelConfig.validateConfig')"
           >
             <Icon icon="carbon:checkmark" v-if="!validating" />
@@ -391,7 +391,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 // Rest of the code remains unchanged
 import { ModelApiService, type Model } from '@/api/model-api-service'
 import GroupedSelect from '@/components/GroupedSelect.vue'
@@ -421,14 +421,25 @@ const modelAvailableModels = ref<Map<string, Model[]>>(new Map())
 const newModelValidating = ref(false)
 const newModelAvailableModels = ref<Model[]>([])
 
-// Computed property for selected model API key - always empty to require user input
+// Local ref for API key input (for security, always shows empty but stores value)
+const selectedApiKeyInput = ref('')
+
+// Watch selectedApiKeyInput and sync to selectedModel.value.apiKey
+watch(selectedApiKeyInput, (newValue) => {
+  if (selectedModel.value) {
+    selectedModel.value.apiKey = newValue
+  }
+})
+
+// Computed property for selected model API key - returns stored value for validation
 const selectedApiKey = computed({
   get() {
-    return ''
+    return selectedModel.value?.apiKey || ''
   },
   set(val) {
     if (!selectedModel.value) return
     selectedModel.value.apiKey = val
+    selectedApiKeyInput.value = val
   },
 })
 
@@ -531,6 +542,8 @@ const selectModel = async (model: Model) => {
     selectedModel.value = {
       ...detailedModel,
     }
+    // Clear API key input when switching models (for security)
+    selectedApiKeyInput.value = ''
     // When switching models, clear validation state but keep available model list for that model
     validating.value = false
   } catch (err: unknown) {
@@ -541,6 +554,8 @@ const selectModel = async (model: Model) => {
     selectedModel.value = {
       ...model,
     }
+    // Clear API key input when switching models (for security)
+    selectedApiKeyInput.value = ''
   }
 }
 

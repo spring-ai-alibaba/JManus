@@ -268,7 +268,11 @@ export const templateStore = reactive({
 // Create computed properties for reactive template lists
 // These must be defined after templateStore to access reactive properties
 const sortedTemplatesComputed = computed(() => {
-  const templates = [...templateConfigRef.planTemplateList.value]
+  // Filter out readOnly templates (accessLevel === "readOnly")
+  const templates = [...templateConfigRef.planTemplateList.value].filter(template => {
+    const accessLevel = template.accessLevel || (template.readOnly ? 'readOnly' : 'editable')
+    return accessLevel !== 'readOnly'
+  })
 
   switch (templateStore.organizationMethod) {
     case 'by_time':

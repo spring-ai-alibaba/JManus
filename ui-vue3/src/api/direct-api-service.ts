@@ -69,7 +69,8 @@ export class DirectApiService {
     replacementParams?: Record<string, string>,
     uploadedFiles?: string[],
     uploadKey?: string,
-    requestSource: 'VUE_DIALOG' | 'VUE_SIDEBAR' = 'VUE_DIALOG'
+    requestSource: 'VUE_DIALOG' | 'VUE_SIDEBAR' = 'VUE_DIALOG',
+    serviceGroup?: string
   ): Promise<unknown> {
     return LlmCheckService.withLlmCheck(async () => {
       console.log('[DirectApiService] executeByToolName called with:', {
@@ -78,6 +79,7 @@ export class DirectApiService {
         uploadedFiles,
         uploadKey,
         requestSource,
+        serviceGroup,
       })
 
       const requestBody: Record<string, unknown> = {
@@ -92,6 +94,12 @@ export class DirectApiService {
           '[DirectApiService] Including conversationId from memoryStore:',
           memoryStore.conversationId
         )
+      }
+
+      // Include serviceGroup if provided
+      if (serviceGroup) {
+        requestBody.serviceGroup = serviceGroup
+        console.log('[DirectApiService] Including serviceGroup:', serviceGroup)
       }
 
       // Include replacement parameters if present

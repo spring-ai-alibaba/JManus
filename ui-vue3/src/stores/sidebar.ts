@@ -16,7 +16,7 @@
 
 import { reactive } from 'vue'
 
-type TabType = 'list' | 'config'
+type TabType = 'list'
 
 export class SidebarStore {
   // Basic state (sidebar UI state only)

@@ -36,7 +36,7 @@ export function usePlanTemplateConfig() {
     directResponse: false,
     planType: 'dynamic_agent',
     planTemplateId: '',
-    readOnly: false,
+    accessLevel: 'editable',
     serviceGroup: '',
   })
 
@@ -46,6 +46,9 @@ export function usePlanTemplateConfig() {
 
   // Flag to prevent watchers from syncing when user is updating individual properties
   const isUserUpdating = ref(false)
+
+  // Flag to indicate that a full refresh is needed (for load, setConfig, fromJsonString, reset, version control)
+  const needsFullRefresh = ref(false)
 
   // Version control state
   const planVersions = ref<string[]>([])
@@ -128,6 +131,9 @@ export function usePlanTemplateConfig() {
 
   // Set full config
   const setConfig = (newConfig: PlanTemplateConfigVO) => {
+    needsFullRefresh.value = true
+    // Get accessLevel with backward compatibility for readOnly
+    const accessLevel = newConfig.accessLevel || (newConfig.readOnly ? 'readOnly' : 'editable')
     const updatedConfig: PlanTemplateConfigVO = {
       title: newConfig.title || '',
       // Deep copy steps to preserve all properties including selectedToolKeys
@@ -139,24 +145,30 @@ export function usePlanTemplateConfig() {
       directResponse: newConfig.directResponse || false,
       planType: newConfig.planType || 'dynamic_agent',
       planTemplateId: newConfig.planTemplateId || '',
-      readOnly: newConfig.readOnly || false,
+      accessLevel: accessLevel,
       serviceGroup: newConfig.serviceGroup || '',
     }
     if (newConfig.toolConfig) {
       updatedConfig.toolConfig = { ...newConfig.toolConfig }
     }
     Object.assign(config, updatedConfig)
+    // Reset flag after reactivity update
+    // Use a longer delay to ensure watchers have time to process the change
+    setTimeout(() => {
+      needsFullRefresh.value = false
+    }, 50)
   }
 
   // Reset to default
   const reset = () => {
+    needsFullRefresh.value = true
     Object.assign(config, {
       title: '',
       steps: [],
       directResponse: false,
       planType: 'dynamic_agent',
       planTemplateId: '',
-      readOnly: false,
+      accessLevel: 'editable',
       serviceGroup: '',
     })
     // Remove toolConfig if it exists
@@ -166,12 +178,17 @@ export function usePlanTemplateConfig() {
     planVersions.value = []
     currentVersionIndex.value = -1
     error.value = null
+    // Reset flag after reactivity update
+    setTimeout(() => {
+      needsFullRefresh.value = false
+    }, 0)
   }
 
   // Dynamically generate JSON from current config state (not cached, regenerated each time)
   const generateJsonString = (): string => {
     // Generate fresh JSON from current config state
     // Ensure selectedToolKeys is always an array (not null) in the output
+    const accessLevel = config.accessLevel || (config.readOnly ? 'readOnly' : 'editable')
     const jsonConfig: PlanTemplateConfigVO = {
       title: config.title || '',
       steps: (config.steps || []).map(step => ({
@@ -182,7 +199,7 @@ export function usePlanTemplateConfig() {
       directResponse: config.directResponse || false,
       planType: config.planType || 'dynamic_agent',
       planTemplateId: config.planTemplateId || '',
-      readOnly: config.readOnly || false,
+      accessLevel: accessLevel,
       serviceGroup: config.serviceGroup || '',
     }
     // Include toolConfig if it exists
@@ -253,7 +270,38 @@ export function usePlanTemplateConfig() {
 
       // Load config from API
       const loadedConfig = await PlanTemplateApiService.getPlanTemplateConfigVO(planTemplateId)
+
+      // Check if this is the same template being reloaded
+      const isSameTemplate = currentPlanTemplateId.value === planTemplateId
+
+      // Update currentPlanTemplateId BEFORE setConfig to ensure watchers can detect the change
+      // If it's the same template, temporarily set to null first to trigger watch
+      if (isSameTemplate) {
+        currentPlanTemplateId.value = null
+        // Wait for the null assignment to be processed by watchers
+        await new Promise(resolve => setTimeout(resolve, 0))
+      }
+
+      // Ensure isUserUpdating is false before loading to allow sync
+      isUserUpdating.value = false
+
       setConfig(loadedConfig)
+
+      // Update currentPlanTemplateId to ensure watchers can detect the change
+      currentPlanTemplateId.value = planTemplateId
+
+      // Force a small delay to ensure watchers have processed the changes
+      // This is especially important when reloading the same template
+      await new Promise(resolve => setTimeout(resolve, 10))
+
+      // Update selectedTemplate.value to keep it in sync with the loaded config
+      // This ensures RightPanel.vue uses the latest data from API, not stale data from template list
+      if (selectedTemplate.value?.planTemplateId === planTemplateId) {
+        selectedTemplate.value = {
+          ...selectedTemplate.value,
+          ...loadedConfig,
+        }
+      }
 
       // Load versions for version control
       try {
@@ -518,6 +566,7 @@ export function usePlanTemplateConfig() {
     isLoading,
     error,
     isUserUpdating,
+    needsFullRefresh,
     planVersions,
     currentVersionIndex,
     planTemplateList,

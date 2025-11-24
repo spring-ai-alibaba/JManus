@@ -62,11 +62,11 @@ jobs:
 
       - name: Rename JAR with version
         run: |
-          if [ -f target/jmanus.jar ]; then
-            cp target/jmanus.jar "target/jmanus-${BUILD_VERSION}.jar"
-            echo "✅ JAR renamed to jmanus-${BUILD_VERSION}.jar"
+          if [ -f target/jlynxe.jar ]; then
+            cp target/jlynxe.jar "target/jlynxe-${BUILD_VERSION}.jar"
+            echo "✅ JAR renamed to jlynxe-${BUILD_VERSION}.jar"
           else
-            echo "❌ Error: target/jmanus.jar not found"
+            echo "❌ Error: target/jlynxe.jar not found"
             exit 1
           fi
         env:
@@ -77,8 +77,8 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: |
-            target/jmanus.jar
-            target/jmanus-${{ steps.version.outputs.BUILD_VERSION }}.jar
+            target/jlynxe.jar
+            target/jlynxe-${{ steps.version.outputs.BUILD_VERSION }}.jar
           tag: ${{ github.event.release.tag_name }}
           allowUpdates: true
           makeLatest: true
@@ -90,7 +90,7 @@ jobs:
           echo "🎉 JAR file released successfully!"
           echo "📦 Version: ${{ steps.version.outputs.BUILD_VERSION }}"
           echo "📁 Files:"
-          echo "  - target/jmanus.jar"
-          echo "  - target/jmanus-${{ steps.version.outputs.BUILD_VERSION }}.jar"
-          ls -lh target/jmanus*.jar
+          echo "  - target/jlynxe.jar"
+          echo "  - target/jlynxe-${{ steps.version.outputs.BUILD_VERSION }}.jar"
+          ls -lh target/jlynxe*.jar
 

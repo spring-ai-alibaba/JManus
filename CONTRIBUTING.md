@@ -1,14 +1,14 @@
 # How to Contribute
 
-## Thank you for contributing to JManus!
+## Thank you for contributing to Lynxe!
 
-Since JManus was open-sourced, it has received attention from many community members. Every Issue and PR from the community helps the project and contributes to building a better JManus.
+Since Lynxe was open-sourced, it has received attention from many community members. Every Issue and PR from the community helps the project and contributes to building a better Lynxe.
 
 We sincerely thank all developers who have contributed Issues and PRs to this project. We hope more community developers will join us to make the project even better.
 
 ## How to Contribute
 
-Before contributing code, please take a moment to understand the process for contributing to JManus.
+Before contributing code, please take a moment to understand the process for contributing to Lynxe.
 
 ### What to Contribute?
 
@@ -18,7 +18,7 @@ If it's a relatively complex modification, it's recommended to first add a Featu
 
 ### Where to Start?
 
-If you're a first-time contributor, you can start by claiming a relatively simple task from [good first issue](https://github.com/spring-ai-alibaba/JManus/labels/good%20first%20issue) and [help wanted](https://github.com/spring-ai-alibaba/JManus/labels/help%20wanted).
+If you're a first-time contributor, you can start by claiming a relatively simple task from [good first issue](https://github.com/spring-ai-alibaba/Lynxe/labels/good%20first%20issue) and [help wanted](https://github.com/spring-ai-alibaba/Lynxe/labels/help%20wanted).
 
 ### Sign the Contributor License Agreement (CLA)
 
@@ -42,24 +42,24 @@ Before submitting a Pull Request, you need to sign our [Contributor License Agre
 
 ### Fork the Repository and Clone it Locally
 
-- Click the `Fork` button in the top right corner of [this project](https://github.com/spring-ai-alibaba/JManus) to fork spring-ai-alibaba/JManus to your own space.
-- Clone the JManus repository under your account to your local machine. For example, if your account is `yourname`, execute `git clone https://github.com/yourname/JManus.git` to clone.
+- Click the `Fork` button in the top right corner of [this project](https://github.com/spring-ai-alibaba/Lynxe) to fork spring-ai-alibaba/Lynxe to your own space.
+- Clone the Lynxe repository under your account to your local machine. For example, if your account is `yourname`, execute `git clone https://github.com/yourname/Lynxe.git` to clone.
 
 ### Configure Github Information
 
 - Execute `git config --list` on your machine to check the global username and email for git.
 - Check if the displayed user.name and user.email match your GitHub username and email.
-- If your company has its own GitLab or uses other commercial GitLab services, there may be a mismatch. In this case, you need to set the username and email separately for the JManus project.
+- If your company has its own GitLab or uses other commercial GitLab services, there may be a mismatch. In this case, you need to set the username and email separately for the Lynxe project.
 - For how to set username and email, please refer to GitHub's official documentation: [Setting your username](https://help.github.com/articles/setting-your-username-in-git/#setting-your-git-username-for-a-single-repository), [Setting your email](https://help.github.com/articles/setting-your-commit-email-address-in-git/).
 
 ### Merge the Latest Code
 
 After forking the code, the original repository's main branch may have new commits. To avoid conflicts between your PR and the commits in main, you need to merge the main branch in time.
 
-- In your local JManus directory, execute `git remote add upstream https://github.com/spring-ai-alibaba/JManus` to add the original repository address to the remote stream.
-- In your local JManus directory, execute `git fetch upstream` to fetch the remote stream locally.
-- In your local JManus directory, execute `git checkout main` to switch to the main branch.
-- In your local JManus directory, execute `git rebase upstream/main` to rebase the latest code.
+- In your local Lynxe directory, execute `git remote add upstream https://github.com/spring-ai-alibaba/Lynxe` to add the original repository address to the remote stream.
+- In your local Lynxe directory, execute `git fetch upstream` to fetch the remote stream locally.
+- In your local Lynxe directory, execute `git checkout main` to switch to the main branch.
+- In your local Lynxe directory, execute `git rebase upstream/main` to rebase the latest code.
 
 ### Configure Code Format
 
@@ -75,7 +75,7 @@ After local development is complete, it's strongly recommended to execute the `m
 
 ### Local Checkstyle
 
-To reduce unnecessary code style issues, JManus provides local Checkstyle checking functionality. You can execute the `mvn checkstyle:check` command in the project root directory to check if the code style conforms to specifications.
+To reduce unnecessary code style issues, Lynxe provides local Checkstyle checking functionality. You can execute the `mvn checkstyle:check` command in the project root directory to check if the code style conforms to specifications.
 
 ### Remove Unused Imports
 
@@ -116,9 +116,9 @@ Submit a PR, clearly state the modifications and implemented features according 
 5. Wait for CI checks to pass
 6. Wait for project maintainers to conduct Code Review
 7. Make modifications based on feedback (if needed)
-8. After the PR is merged, you will become a JManus Contributor!
+8. After the PR is merged, you will become a Lynxe Contributor!
 
-Thank you for contributing to JManus, let's build a better open-source project together!
+Thank you for contributing to Lynxe, let's build a better open-source project together!
 
 ## Code of Conduct
 

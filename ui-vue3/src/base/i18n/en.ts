@@ -24,8 +24,8 @@ const words: I18nType = {
 
   // Initialization page
   init: {
-    welcome: 'Welcome to JManus',
-    welcomeStep: 'Welcome to JManus',
+    welcome: 'Welcome to Lynxe',
+    welcomeStep: 'Welcome to Lynxe',
     description:
       'To get started, you need to configure an LLM service to enable AI features. You can choose Alibaba Cloud DashScope or configure any OpenAI-compatible API service.',
     languageStepDescription:
@@ -203,6 +203,7 @@ const words: I18nType = {
       mcp: 'Tools/MCP Configuration',
       database: 'Database Configuration',
       namespace: 'Namespace Configuration',
+      planTemplate: 'Plan Template Management',
     },
     subGroupDisplayNames: {
       agent: 'Agent',
@@ -528,7 +529,7 @@ const words: I18nType = {
       resetFailed: 'Reset failed, please try again',
       importFailed: 'Import failed, please check file format',
       groupDisplayNames: {
-        manus: 'Manus',
+        lynxe: 'Lynxe',
         browser: 'Browser',
         interaction: 'Interaction',
         system: 'System',
@@ -562,6 +563,30 @@ const words: I18nType = {
         selectNamespace: 'Please select a namespace',
         namespace: 'Namespace',
       },
+    },
+    // Plan Template Management page
+    planTemplate: {
+      title: 'Plan Template Management',
+      totalTemplates: 'Total Templates',
+      export: 'Export',
+      exportAll: 'Export All',
+      exportGroup: 'Export Group',
+      import: 'Import',
+      noTemplates: 'No plan templates available',
+      untitled: 'Untitled',
+      serviceGroup: 'Service Group',
+      noServiceGroup: 'Ungrouped',
+      planType: 'Plan Type',
+      steps: 'Steps',
+      groupCount: '{count} templates',
+      exportSuccess: 'Plan templates exported successfully',
+      exportFailed: 'Failed to export plan templates',
+      importSuccess: 'Import completed: {total} total, {success} successful, {failed} failed',
+      importFailed: 'Failed to import plan templates',
+      importConfirm:
+        'This will overwrite existing templates with the same planTemplateId. Continue?',
+      invalidFormat: 'Invalid file format. Expected a JSON array of plan templates.',
+      loadFailed: 'Failed to load plan templates',
     },
   },
 
@@ -691,8 +716,8 @@ const words: I18nType = {
 
   // Chat component
   chat: {
-    botName: 'JManus:',
-    thinkingLabel: 'JManus Thinking/Processing',
+    botName: 'Lynxe:',
+    thinkingLabel: 'Lynxe Thinking/Processing',
     processing: 'Processing...',
     step: 'Step',
     stepNumber: 'Step {number}',
@@ -760,7 +785,7 @@ const words: I18nType = {
 
   // Input component
   input: {
-    placeholder: 'Send a message to JManus',
+    placeholder: 'Send a message to Lynxe',
     send: 'Send',
     stop: 'Stop',
     planMode: 'Func-Agent Mode',
@@ -870,6 +895,8 @@ const words: I18nType = {
     usage: 'Usage',
     example: 'Example',
     enterValueFor: 'Enter value for {param}',
+    defaultPlanId: 'System returned PlanID',
+    defaultPlanIdDetails: 'The planId that the system just returned',
     newTemplate: 'New Template',
     templateName: 'Template Name',
     templateDescription: 'Template Description',
@@ -933,7 +960,7 @@ const words: I18nType = {
       'Please enter the specific requirements and description for this task...',
     terminateColumns: 'Task Output Requirements Description',
     terminateColumnsPlaceholder:
-      'Specify structured return values. If specified, returns a JSON list where each row contains your specified columns. For example: col1,col2 will output [(col1:val1,col2:val2), (col1:val3,col2:val4)]',
+      'Specify structured return, for example: col1,col2, will return a json list',
     preview: 'Preview',
     systemWillReturnListWithTableHeaderFormat:
       'System will return a multi-row list in JSON format with table header',
@@ -1102,10 +1129,9 @@ const words: I18nType = {
 
   // Home page
   home: {
-    welcomeTitle: 'Welcome to JManus!',
+    welcomeTitle: 'Welcome to Lynxe!',
     welcomeSubtitle:
       'Your Java AI intelligent assistant, helping you build and complete various tasks.',
-    tagline: 'Java AI Agent',
     inputPlaceholder: 'Describe what you want to build or accomplish...',
     directButton: 'Enter Workbench Directly',
     examples: {
@@ -1152,6 +1178,19 @@ const words: I18nType = {
     stepExecutionDetails: 'Step Execution Details',
     noStepSelected: 'No Step Selected',
     selectStepHint: 'Please select an execution step in the left chat area to view details',
+    noTemplateSelected: 'No Template Selected',
+    selectTemplateHint: 'Please select a template from the left sidebar to configure',
+    newFuncAgentPlan: 'New Func-Agent Plan',
+    importExistingPlan: 'Import Existing Plan',
+    importDescription: 'You can view and import excellent examples from the',
+    promptLibrary: 'Public Prompt Library',
+    importDescriptionSuffix: 'to get started quickly',
+    newPlanCreated: 'New plan created successfully',
+    createPlanFailed: 'Failed to create new plan',
+    importSuccess: 'Successfully imported {success} of {total} plan(s)',
+    importFailed: 'Failed to import plan',
+    invalidImportFormat:
+      'Invalid import format. Please provide a valid JSON array of plan templates',
     stepExecuting: 'Step is executing, please wait...',
     step: 'Step',
     executingAgent: 'Executing Agent',
@@ -1261,8 +1300,8 @@ const words: I18nType = {
     templateHelpText: 'After selection, the cron task will execute according to the defined plan',
     createTask: 'Create Cron Task',
     selectCreateMethod: 'Please select creation method',
-    createWithJmanus: 'Create with Jmanus',
-    createWithJmanusDesc: 'Create cron task with AI assistant guidance',
+    createWithLynxe: 'Create with Lynxe',
+    createWithLynxeDesc: 'Create cron task with AI assistant guidance',
     createManually: 'Create Manually',
     createManuallyDesc: 'Fill in task information yourself',
   },

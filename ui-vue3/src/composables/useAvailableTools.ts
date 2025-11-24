@@ -55,7 +55,7 @@ export function useAvailableTools() {
       availableTools.value = tools
         .filter((tool: Tool) => tool.selectable !== false)
         .map((tool: Tool) => ({
-          key: tool.key || '',
+          key: tool.key || '', // Use the qualified key from backend (serviceGroup.toolName)
           name: tool.name || '',
           description: tool.description || '',
           enabled: tool.enabled || false,

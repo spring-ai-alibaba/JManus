@@ -16,10 +16,6 @@
 <template>
   <div class="template-list-container">
     <div class="organization-section">
-      <button class="new-task-btn" @click="handleCreateNewTemplate">
-        <Icon icon="carbon:add" width="16" />
-        {{ $t('sidebar.newPlan') }}
-      </button>
       <div class="organization-row">
         <div class="organization-selector">
           <label class="organization-label">{{ $t('sidebar.organizationLabel') }}</label>
@@ -179,9 +175,8 @@
 </template>
 
 <script setup lang="ts">
-import { useAvailableToolsSingleton } from '@/composables/useAvailableTools'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
-import { sidebarStore } from '@/stores/sidebar'
+import { useRightPanelSingleton } from '@/composables/useRightPanel'
 import { templateStore, type TemplateStoreType } from '@/stores/templateStore'
 import type { PlanTemplateConfigVO } from '@/types/plan-template'
 import { Icon } from '@iconify/vue'
@@ -193,8 +188,8 @@ const { t } = useI18n()
 // Template config management
 const templateConfig = usePlanTemplateConfigSingleton()
 
-// Available tools management
-const availableToolsStore = useAvailableToolsSingleton()
+// Right panel management
+const rightPanel = useRightPanelSingleton()
 
 // Search functionality
 const searchKeyword = ref('')
@@ -202,7 +197,6 @@ const searchKeyword = ref('')
 // Emits
 const emit = defineEmits<{
   templateSelected: [template: PlanTemplateConfigVO]
-  templateCreated: []
 }>()
 
 // Handle organization method change
@@ -211,31 +205,6 @@ const handleOrganizationChange = (event: Event) => {
   templateStore.setOrganizationMethod(
     target.value as 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc'
   )
-}
-
-// Handle create new template
-const handleCreateNewTemplate = async () => {
-  // Use default plan type or get from templateConfig
-  const planType = templateConfig.getPlanType() || 'dynamic_agent'
-  await templateStore.createNewTemplate(planType)
-
-  // Load template config for new template
-  const newTemplate = templateConfig.selectedTemplate.value
-  if (newTemplate) {
-    templateConfig.reset()
-    templateConfig.setPlanType(newTemplate.planType || 'dynamic_agent')
-    if (newTemplate.planTemplateId) {
-      templateConfig.setPlanTemplateId(newTemplate.planTemplateId)
-    }
-    templateConfig.setTitle(newTemplate.title || '')
-  }
-
-  sidebarStore.switchToTab('config')
-  // Reload available tools to ensure fresh tool list
-  console.log('[TemplateList] 🔄 Reloading available tools for new template')
-  await availableToolsStore.loadAvailableTools()
-
-  emit('templateCreated')
 }
 
 // Utility functions
@@ -349,6 +318,10 @@ const handleToggleGroupCollapse = (groupName: string | null) => {
 
 // Handle select template
 const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
+  // Switch to 'config' tab immediately when template is clicked
+  // This ensures immediate feedback and prevents the need for double-click
+  rightPanel.setActiveTab('config')
+
   await templateStore.selectTemplate(template)
 
   // Load template config using singleton
@@ -362,7 +335,10 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
     templateStore.hasTaskRequirementModified = false
   }
 
-  sidebarStore.switchToTab('config')
+  // Note: No need to call setActiveTab again after nextTick
+  // The initial call at the beginning is sufficient since activeTab is reactive
+  // and will be maintained throughout the async operations
+
   emit('templateSelected', template)
 }
 </script>
@@ -371,7 +347,10 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
 .template-list-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px 10px;
 }
 
 .organization-section {
@@ -386,6 +365,7 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .organization-selector {
@@ -518,35 +498,14 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
   color: white;
 }
 
-.new-task-btn {
-  width: 100%;
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 6px;
-  color: white;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.new-task-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
 .sidebar-content-list {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 12px;
+  padding-bottom: 40px;
 }
 
 .loading-state,

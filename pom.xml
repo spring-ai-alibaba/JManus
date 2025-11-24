@@ -4,10 +4,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.jmanus</groupId>
-    <name>JManus - AI Agent Management System</name>
-    <artifactId>jmanus</artifactId> 
-    <version>4.7.5</version>
+    <groupId>com.lynxe</groupId>
+    <name>Lynxe - AI Agent Management System</name>
+    <artifactId>lynxe</artifactId> 
+    <version>4.8.0</version>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -16,7 +16,7 @@
         <relativePath/>
     </parent>
 
-    <description>JManus - AI Agent Management System built on Spring AI Alibaba</description>
+    <description>Lynxe - AI Agent Management System built on Spring AI Alibaba</description>
     <properties>
         <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -77,13 +77,6 @@
         </dependency>
 
 
-        <!-- Spring Native support -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context-indexer</artifactId>
-            <optional>true</optional>
-        </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-logging</artifactId>
@@ -132,10 +125,19 @@
         </dependency>
         
         <!-- MacOS DNS resolver for better DNS resolution on MacOS -->
+        <!-- Optional: improves DNS resolution performance on macOS, but not required -->
+        <!-- The application will fallback to system defaults if native library fails to load -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <classifier>osx-aarch_64</classifier>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-resolver-dns-native-macos</artifactId>
             <classifier>osx-x86_64</classifier>
+            <optional>true</optional>
         </dependency>
         
         <!-- Spring WebFlux -->
@@ -339,7 +341,7 @@
 
 
     <build>
-        <finalName>jmanus</finalName>
+        <finalName>lynxe</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -457,7 +459,7 @@
                     <addResources>false</addResources>
                     <executable>false</executable>
                     <layout>ZIP</layout>
-                    <mainClass>com.alibaba.cloud.ai.manus.OpenManusSpringBootApplication</mainClass>
+                    <mainClass>com.alibaba.cloud.ai.lynxe.OpenLynxeSpringBootApplication</mainClass>
                 </configuration>
                 <executions>
                     <execution>
