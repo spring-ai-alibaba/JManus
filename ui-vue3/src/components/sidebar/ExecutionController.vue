@@ -259,10 +259,11 @@ const parameterRequirements = ref<ParameterRequirements>({
 })
 const parameterValues = ref<Record<string, string>>({})
 const isLoadingParameters = ref(false)
-const activeTab = ref('get-sync')
+const activeTab = ref('post-async')
 const parameterErrors = ref<Record<string, string>>({})
 const isValidationError = ref(false)
 const isExecutingPlan = ref(false) // Flag to prevent parameter reload during execution
+const lastPlanId = ref<string | null>(null) // Track last returned plan ID
 
 // Computed property: whether to show publish MCP service button
 const showPublishButton = computed(() => {
@@ -278,41 +279,64 @@ const uploadKey = ref<string | null>(null)
 const showSaveDialog = ref(false)
 const pendingExecutionPayload = ref<PlanExecutionRequestPayload | null>(null)
 
-// API tabs configuration
-const apiTabs = ref([
-  {
-    id: 'post-async',
-    label: 'POST + Async',
-    method: 'POST',
-    endpoint: '/api/executor/executeByToolNameAsync',
-    description: 'Asynchronous POST request - returns task ID, check status separately',
-    example: `POST /api/executor/executeByToolNameAsync
+// API tabs configuration - dynamically generated from template and parameters
+const apiTabs = computed(() => {
+  // Get actual values from selected template
+  const toolName = templateConfig.selectedTemplate.value?.title || 'my-tool'
+  const serviceGroup = templateConfig.selectedTemplate.value?.serviceGroup || 'research'
+  const planTemplateId = templateConfig.selectedTemplate.value?.planTemplateId || 'template-456'
+
+  // Generate replacementParams from actual parameter requirements
+  const replacementParams: Record<string, string> = {}
+  if (
+    parameterRequirements.value.hasParameters &&
+    parameterRequirements.value.parameters.length > 0
+  ) {
+    parameterRequirements.value.parameters.forEach(param => {
+      // Use actual value if available, otherwise use placeholder
+      replacementParams[param] = parameterValues.value[param] || 'test'
+    })
+  } else {
+    // Default example when no parameters
+    replacementParams['rawParam'] = 'test'
+  }
+
+  // Use actual planId or Chinese placeholder
+  const planId = lastPlanId.value || '系统返回的PlanID'
+  const detailsPlanId = lastPlanId.value || '系统刚才返回的那个planId'
+
+  return [
+    {
+      id: 'post-async',
+      label: 'POST + Async',
+      method: 'POST',
+      endpoint: '/api/executor/executeByToolNameAsync',
+      description: 'Asynchronous POST request - returns task ID, check status separately',
+      example: `POST /api/executor/executeByToolNameAsync
 Content-Type: application/json
 
 {
-  "toolName": "my-tool",
-  "serviceGroup": "research",
-  "replacementParams": {
-    "rawParam": "test"
-  },
+  "toolName": "${toolName}",
+  "serviceGroup": "${serviceGroup}",
+  "replacementParams": ${JSON.stringify(replacementParams, null, 2)},
   "uploadedFiles": []
 }
 
 Note: serviceGroup is optional. Use it to disambiguate tools with the same name in different service groups.
 
 Response: {
-  "planId": "plan-123",
+  "planId": "${planId}",
   "status": "processing",
   "message": "Task submitted, processing",
   "memoryId": "ABC12345",
-  "toolName": "my-tool",
-  "planTemplateId": "template-456"
+  "toolName": "${toolName}",
+  "planTemplateId": "${planTemplateId}"
 }
 
 # Check execution status and get detailed results:
-GET /api/executor/details/{planId}
+GET /api/executor/details/${detailsPlanId}
 Response: {
-  "currentPlanId": "plan-123",
+  "currentPlanId": "${planId}",
   "title": "Plan Title",
   "status": "completed",
   "summary": "Execution completed successfully",
@@ -334,22 +358,20 @@ Response: {
     ]
   }
 }`,
-  },
-  {
-    id: 'post-sync',
-    label: 'POST + Sync',
-    method: 'POST',
-    endpoint: '/api/executor/executeByToolNameSync',
-    description: 'Synchronous POST request - returns execution result immediately',
-    example: `POST /api/executor/executeByToolNameSync
+    },
+    {
+      id: 'post-sync',
+      label: 'POST + Sync',
+      method: 'POST',
+      endpoint: '/api/executor/executeByToolNameSync',
+      description: 'Synchronous POST request - returns execution result immediately',
+      example: `POST /api/executor/executeByToolNameSync
 Content-Type: application/json
 
 {
-  "toolName": "my-tool",
-  "serviceGroup": "research",
-  "replacementParams": {
-    "rawParam": "test"
-  },
+  "toolName": "${toolName}",
+  "serviceGroup": "${serviceGroup}",
+  "replacementParams": ${JSON.stringify(replacementParams, null, 2)},
   "uploadedFiles": []
 }
 
@@ -359,8 +381,9 @@ Response: {
   "status": "completed",
   "result": "Execution result here"
 }`,
-  },
-])
+    },
+  ]
+})
 
 // Computed properties
 const isAnyServiceEnabled = computed(() => {
@@ -580,6 +603,11 @@ const proceedWithExecution = async () => {
 
     if (result.success) {
       console.log('[ExecutionController] ✅ Plan execution started successfully:', result.planId)
+      // Track the returned planId for API examples
+      if (result.planId) {
+        lastPlanId.value = result.planId
+        console.log('[ExecutionController] 📝 Tracked planId for API examples:', lastPlanId.value)
+      }
     } else {
       console.error('[ExecutionController] ❌ Plan execution failed:', result.error)
       toast.error(result.error || t('sidebar.executeFailed'))
