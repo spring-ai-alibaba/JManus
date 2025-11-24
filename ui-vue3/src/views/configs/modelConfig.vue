@@ -425,7 +425,7 @@ const newModelAvailableModels = ref<Model[]>([])
 const selectedApiKeyInput = ref('')
 
 // Watch selectedApiKeyInput and sync to selectedModel.value.apiKey
-watch(selectedApiKeyInput, (newValue) => {
+watch(selectedApiKeyInput, newValue => {
   if (selectedModel.value) {
     selectedModel.value.apiKey = newValue
   }
