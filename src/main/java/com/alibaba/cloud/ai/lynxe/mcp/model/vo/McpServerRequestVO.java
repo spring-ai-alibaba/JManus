@@ -66,6 +66,11 @@ public class McpServerRequestVO {
 	private Map<String, String> env;
 
 	/**
+	 * HTTP headers (optional for SSE/STREAMING type)
+	 */
+	private Map<String, String> headers;
+
+	/**
 	 * Status: ENABLE, DISABLE
 	 */
 	private String status;
@@ -125,6 +130,14 @@ public class McpServerRequestVO {
 
 	public void setEnv(Map<String, String> env) {
 		this.env = env;
+	}
+
+	public Map<String, String> getHeaders() {
+		return headers;
+	}
+
+	public void setHeaders(Map<String, String> headers) {
+		this.headers = headers;
 	}
 
 	public String getStatus() {
@@ -295,6 +308,23 @@ public class McpServerRequestVO {
 			jsonBuilder.append("\"env\":{");
 			boolean first = true;
 			for (Map.Entry<String, String> entry : env.entrySet()) {
+				if (!first) {
+					jsonBuilder.append(",");
+				}
+				jsonBuilder.append("\"").append(entry.getKey()).append("\":\"").append(entry.getValue()).append("\"");
+				first = false;
+			}
+			jsonBuilder.append("}");
+		}
+
+		// Add headers (if exists)
+		if (headers != null && !headers.isEmpty()) {
+			if (jsonBuilder.length() > 1) {
+				jsonBuilder.append(",");
+			}
+			jsonBuilder.append("\"headers\":{");
+			boolean first = true;
+			for (Map.Entry<String, String> entry : headers.entrySet()) {
 				if (!first) {
 					jsonBuilder.append(",");
 				}
