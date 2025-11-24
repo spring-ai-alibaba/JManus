@@ -879,12 +879,13 @@ export function useMessageDialog() {
       // 4. Try all record keys to find matching rootPlanId or currentPlanId
       let recordEntry = recordsArray.find(([planId]) => planId === dialog.planId)
 
-      if (!recordEntry && message.planExecution?.rootPlanId) {
-        recordEntry = recordsArray.find(([planId]) => planId === message.planExecution.rootPlanId)
+      const planExecution = message.planExecution
+      if (!recordEntry && planExecution?.rootPlanId) {
+        recordEntry = recordsArray.find(([planId]) => planId === planExecution.rootPlanId)
       }
 
-      if (!recordEntry && message.planExecution?.currentPlanId) {
-        recordEntry = recordsArray.find(([planId]) => planId === message.planExecution.currentPlanId)
+      if (!recordEntry && planExecution?.currentPlanId) {
+        recordEntry = recordsArray.find(([planId]) => planId === planExecution.currentPlanId)
       }
 
       // If still not found, try to match by checking all records' rootPlanId/currentPlanId
@@ -918,16 +919,16 @@ export function useMessageDialog() {
       if (!recordEntry) {
         // If message has planExecution with status 'running', keep it visible
         // Don't skip - this ensures the execution chain displays immediately
-        if (message.planExecution && message.planExecution.status === 'running') {
+        const messagePlanExecution = message.planExecution
+        if (messagePlanExecution && messagePlanExecution.status === 'running') {
           console.log(
             '[useMessageDialog] watchEffect: Message has planExecution but record not found yet, keeping initial state:',
             {
               dialogId: dialog.id,
               messageId: message.id,
               planId: dialog.planId,
-              messagePlanExecution: message.planExecution,
+              messagePlanExecution: messagePlanExecution,
               availableRecordKeys: recordsArray.map(([key]) => key),
-              trackedPlanIds: Array.from(planExecution.trackedPlanIds.value),
             }
           )
           // Keep the initial state visible - don't update, just ensure it's displayed

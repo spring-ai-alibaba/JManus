@@ -59,7 +59,7 @@
     <div v-else-if="planTemplates.length > 0" class="templates-list">
       <div
         v-for="group in groupedTemplates"
-        :key="group.key || '__ungrouped__'"
+        :key="(group.key ?? '__ungrouped__') as string"
         class="template-group"
       >
         <!-- Group Header -->
@@ -88,10 +88,10 @@
 
         <!-- Group Content (Collapsible) -->
         <transition name="group-content">
-          <div v-show="!isGroupCollapsed(group.key)" class="group-content">
+          <div v-show="!isGroupCollapsed(group.key)" class="group-content" :key="((group.key ?? '__ungrouped__') + '_content') as string">
             <div
-              v-for="template in group.templates"
-              :key="template.planTemplateId"
+              v-for="(template, index) in group.templates"
+              :key="template.planTemplateId ?? `template-${group.key ?? 'ungrouped'}-${index}`"
               class="template-item"
             >
               <div class="template-info">

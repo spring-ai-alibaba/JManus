@@ -63,7 +63,6 @@ export function usePlanTemplateConfig() {
   const getTitle = () => config.title
   const getPlanType = () => config.planType || 'dynamic_agent'
   const getServiceGroup = () => config.serviceGroup || ''
-  const getAccessLevel = () => config.accessLevel || (config.readOnly ? 'readOnly' : 'editable')
 
   // Setters
   const setTitle = (title: string) => {
