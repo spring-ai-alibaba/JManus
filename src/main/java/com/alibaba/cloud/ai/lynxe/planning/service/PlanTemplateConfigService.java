@@ -615,21 +615,22 @@ public class PlanTemplateConfigService {
 			}
 			else {
 				// Fallback to old behavior for backward compatibility
-			List<FuncAgentToolEntity> existingToolsWithSameName = funcAgentToolRepository.findByToolName(toolName);
-			if (!existingToolsWithSameName.isEmpty()) {
-				for (FuncAgentToolEntity existingTool : existingToolsWithSameName) {
-						// If the existing tool has a different planTemplateId or null planTemplateId, delete it
-					if (existingTool.getPlanTemplateId() == null
-							|| !existingTool.getPlanTemplateId().equals(configVO.getPlanTemplateId())) {
-						log.warn(
-								"Found existing coordinator tool with same toolName '{}' but different planTemplateId (existing: {}, new: {}). Deleting old tool.",
-								toolName, existingTool.getPlanTemplateId(), configVO.getPlanTemplateId());
-						funcAgentToolRepository.deleteById(existingTool.getId());
-					}
-					else {
-						log.warn(
-								"Found existing coordinator tool with same toolName '{}' and planTemplateId '{}'. This should have been handled by update logic.",
-								toolName, configVO.getPlanTemplateId());
+				List<FuncAgentToolEntity> existingToolsWithSameName = funcAgentToolRepository.findByToolName(toolName);
+				if (!existingToolsWithSameName.isEmpty()) {
+					for (FuncAgentToolEntity existingTool : existingToolsWithSameName) {
+						// If the existing tool has a different planTemplateId or null
+						// planTemplateId, delete it
+						if (existingTool.getPlanTemplateId() == null
+								|| !existingTool.getPlanTemplateId().equals(configVO.getPlanTemplateId())) {
+							log.warn(
+									"Found existing coordinator tool with same toolName '{}' but different planTemplateId (existing: {}, new: {}). Deleting old tool.",
+									toolName, existingTool.getPlanTemplateId(), configVO.getPlanTemplateId());
+							funcAgentToolRepository.deleteById(existingTool.getId());
+						}
+						else {
+							log.warn(
+									"Found existing coordinator tool with same toolName '{}' and planTemplateId '{}'. This should have been handled by update logic.",
+									toolName, configVO.getPlanTemplateId());
 						}
 					}
 				}
@@ -740,15 +741,15 @@ public class PlanTemplateConfigService {
 		try {
 			List<FuncAgentToolEntity> entities = funcAgentToolRepository.findByPlanTemplateId(planTemplateId);
 			if (!entities.isEmpty()) {
-			FuncAgentToolEntity entity = entities.get(0);
-			PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
-			configVO.setPlanTemplateId(entity.getPlanTemplateId());
-			configVO.setTitle(entity.getToolName());
-			configVO.setServiceGroup(entity.getServiceGroup());
-			PlanTemplateAccessLevel entityAccessLevel = entity.getAccessLevel();
-			if (entityAccessLevel != null) {
-				configVO.setAccessLevel(entityAccessLevel.getValue());
-			}
+				FuncAgentToolEntity entity = entities.get(0);
+				PlanTemplateConfigVO configVO = new PlanTemplateConfigVO();
+				configVO.setPlanTemplateId(entity.getPlanTemplateId());
+				configVO.setTitle(entity.getToolName());
+				configVO.setServiceGroup(entity.getServiceGroup());
+				PlanTemplateAccessLevel entityAccessLevel = entity.getAccessLevel();
+				if (entityAccessLevel != null) {
+					configVO.setAccessLevel(entityAccessLevel.getValue());
+				}
 				if (entity.getCreateTime() != null) {
 					configVO.setCreateTime(entity.getCreateTime().toString());
 				}
@@ -830,7 +831,8 @@ public class PlanTemplateConfigService {
 	public List<PlanTemplateConfigVO> exportAllPlanTemplates() {
 		try {
 			log.info("Exporting all plan templates");
-			// Get all plan templates using the same logic as getAllPlanTemplateConfigVOs in controller
+			// Get all plan templates using the same logic as getAllPlanTemplateConfigVOs
+			// in controller
 			List<PlanTemplateConfigVO> templates = getAllPlanTemplates();
 			List<PlanTemplateConfigVO> configVOs = new ArrayList<>();
 
@@ -887,7 +889,8 @@ public class PlanTemplateConfigService {
 						}
 					}
 					else {
-						// If no toolConfig exists, create an empty one to match export format
+						// If no toolConfig exists, create an empty one to match export
+						// format
 						PlanTemplateConfigVO.ToolConfigVO toolConfig = new PlanTemplateConfigVO.ToolConfigVO();
 						configVO.setToolConfig(toolConfig);
 					}
@@ -905,8 +908,7 @@ public class PlanTemplateConfigService {
 		}
 		catch (Exception e) {
 			log.error("Failed to export all plan templates", e);
-			throw new PlanTemplateConfigException("EXPORT_ERROR",
-					"Failed to export plan templates: " + e.getMessage());
+			throw new PlanTemplateConfigException("EXPORT_ERROR", "Failed to export plan templates: " + e.getMessage());
 		}
 	}
 
@@ -944,7 +946,8 @@ public class PlanTemplateConfigService {
 					deletePlanTemplate(planTemplateId);
 				}
 
-				// Create plan template from config (this saves the plan JSON to version history)
+				// Create plan template from config (this saves the plan JSON to version
+				// history)
 				createPlanTemplateFromConfig(template);
 
 				// If toolConfig is provided, create or update coordinator tool
@@ -960,7 +963,8 @@ public class PlanTemplateConfigService {
 			catch (Exception e) {
 				failureCount++;
 				Map<String, String> error = new HashMap<>();
-				error.put("planTemplateId", template.getPlanTemplateId() != null ? template.getPlanTemplateId() : "unknown");
+				error.put("planTemplateId",
+						template.getPlanTemplateId() != null ? template.getPlanTemplateId() : "unknown");
 				error.put("message", e.getMessage());
 				errors.add(error);
 				log.error("Failed to import plan template {}: {}", template.getPlanTemplateId(), e.getMessage(), e);

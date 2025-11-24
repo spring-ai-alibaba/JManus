@@ -70,8 +70,9 @@ public class ToolController {
 				ToolCallBiFunctionDef<?> functionInstance = entry.getValue().getFunctionInstance();
 				String serviceGroup = functionInstance.getServiceGroup();
 				String toolName = functionInstance.getName();
-				
-				// Use the qualified key from the map (which now includes serviceGroup.toolName)
+
+				// Use the qualified key from the map (which now includes
+				// serviceGroup.toolName)
 				tool.setKey(entry.getKey());
 				tool.setName(toolName); // Keep just the tool name for display
 				tool.setDescription(functionInstance.getDescription());

@@ -60,7 +60,8 @@ public class NavigateAction extends BrowserAction {
 		page.waitForLoadState(LoadState.DOMCONTENTLOADED, new WaitForLoadStateOptions().setTimeout(timeoutMs));
 
 		// Save storage state after navigation to persist cookies, localStorage, etc.
-		// Following Playwright best practices: use storage state instead of manual cookie management
+		// Following Playwright best practices: use storage state instead of manual cookie
+		// management
 		try {
 			getBrowserUseTool().getDriver().saveStorageState();
 		}

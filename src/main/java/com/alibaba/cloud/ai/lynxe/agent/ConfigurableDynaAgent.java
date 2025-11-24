@@ -109,7 +109,8 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 		// Check if any TerminableTool is already included
 		boolean hasTerminableTool = false;
 		for (String toolKey : availableToolKeys) {
-			// Try to find the tool with the given key (supports both qualified and unqualified keys)
+			// Try to find the tool with the given key (supports both qualified and
+			// unqualified keys)
 			if (toolCallBackContext.containsKey(toolKey)) {
 				ToolCallBackContext toolCallback = toolCallBackContext.get(toolKey);
 				if (toolCallback != null && toolCallback.getFunctionInstance() instanceof TerminableTool) {
@@ -131,7 +132,8 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 		if (!hasTerminableTool) {
 			// Try to find TerminateTool by unqualified name first
 			// The qualified key format is now toolName[index], so we search for it
-			ToolCallBackContext terminateToolContext = findToolByUnqualifiedName(toolCallBackContext, TerminateTool.name);
+			ToolCallBackContext terminateToolContext = findToolByUnqualifiedName(toolCallBackContext,
+					TerminateTool.name);
 			if (terminateToolContext != null) {
 				// Find the qualified key for this tool
 				for (Map.Entry<String, ToolCallBackContext> entry : toolCallBackContext.entrySet()) {
@@ -157,7 +159,7 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 		// Build the tool callbacks list
 		for (String toolKey : availableToolKeys) {
 			ToolCallBackContext toolCallback = null;
-			
+
 			// First try exact match (supports new qualified keys)
 			if (toolCallBackContext.containsKey(toolKey)) {
 				toolCallback = toolCallBackContext.get(toolKey);
@@ -169,7 +171,7 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 					log.info("Found tool '{}' using backward compatibility lookup", toolKey);
 				}
 			}
-			
+
 			if (toolCallback != null) {
 				toolCallbacks.add(toolCallback.getToolCallback());
 			}
@@ -183,9 +185,9 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 	}
 
 	/**
-	 * Find a tool by unqualified name (backward compatibility helper)
-	 * Searches for tools where the qualified key is "toolName" or "toolName[index]"
-	 * Uses ServiceGroupIndexService to construct qualified keys when serviceGroup is available
+	 * Find a tool by unqualified name (backward compatibility helper) Searches for tools
+	 * where the qualified key is "toolName" or "toolName[index]" Uses
+	 * ServiceGroupIndexService to construct qualified keys when serviceGroup is available
 	 * @param toolCallBackContext Map of all available tools
 	 * @param unqualifiedName The tool name without index suffix
 	 * @return The matching ToolCallBackContext or null if not found
@@ -196,7 +198,7 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 		if (toolCallBackContext.containsKey(unqualifiedName)) {
 			return toolCallBackContext.get(unqualifiedName);
 		}
-		
+
 		// Try to find by serviceGroup and tool name using ServiceGroupIndexService
 		// This is more efficient than iterating through all tools
 		if (serviceGroupIndexService != null) {
@@ -212,17 +214,18 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 						unqualifiedName, e.getMessage());
 			}
 		}
-		
-		// Fallback: Then try to find by matching the tool name part before the index bracket
+
+		// Fallback: Then try to find by matching the tool name part before the index
+		// bracket
 		// Format: toolName[index] or just toolName
 		for (Map.Entry<String, ToolCallBackContext> entry : toolCallBackContext.entrySet()) {
 			String qualifiedKey = entry.getKey();
-			
+
 			// Check if the qualified key matches the unqualified name exactly
 			if (qualifiedKey.equals(unqualifiedName)) {
 				return entry.getValue();
 			}
-			
+
 			// Check if the qualified key is in format "toolName[index]"
 			int bracketIndex = qualifiedKey.lastIndexOf('[');
 			if (bracketIndex > 0) {
@@ -238,8 +241,8 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 	}
 
 	/**
-	 * Find a tool by serviceGroup and tool name using ServiceGroupIndexService
-	 * Constructs qualified keys using the service to match tools efficiently
+	 * Find a tool by serviceGroup and tool name using ServiceGroupIndexService Constructs
+	 * qualified keys using the service to match tools efficiently
 	 * @param toolCallBackContext Map of all available tools
 	 * @param toolName The tool name to search for
 	 * @return The matching ToolCallBackContext or null if not found
@@ -247,17 +250,19 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 	private ToolCallBackContext findToolByServiceGroupAndName(Map<String, ToolCallBackContext> toolCallBackContext,
 			String toolName) {
 		try {
-			// Iterate through tools to find one with matching name and construct qualified key
+			// Iterate through tools to find one with matching name and construct
+			// qualified key
 			for (Map.Entry<String, ToolCallBackContext> entry : toolCallBackContext.entrySet()) {
 				ToolCallBackContext context = entry.getValue();
 				if (context != null && context.getFunctionInstance() != null) {
 					// Get tool name and serviceGroup from the tool instance
 					String actualToolName = context.getFunctionInstance().getName();
 					String serviceGroup = context.getFunctionInstance().getServiceGroup();
-					
+
 					// Check if tool name matches
 					if (toolName.equals(actualToolName)) {
-						// If serviceGroup exists, construct qualified key using ServiceGroupIndexService
+						// If serviceGroup exists, construct qualified key using
+						// ServiceGroupIndexService
 						if (serviceGroup != null && !serviceGroup.isEmpty()) {
 							Integer index = serviceGroupIndexService.getOrAssignIndex(serviceGroup);
 							if (index != null) {
@@ -271,7 +276,8 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 							}
 						}
 						else {
-							// Tool has no serviceGroup, check if key matches tool name (backward compatibility)
+							// Tool has no serviceGroup, check if key matches tool name
+							// (backward compatibility)
 							// This allows tools without serviceGroups to still be found
 							if (entry.getKey().equals(toolName)) {
 								log.debug("Found tool '{}' without serviceGroup", toolName);
@@ -289,4 +295,5 @@ public class ConfigurableDynaAgent extends DynamicAgent {
 		// Return null to allow fallback search in findToolByUnqualifiedName
 		return null;
 	}
+
 }

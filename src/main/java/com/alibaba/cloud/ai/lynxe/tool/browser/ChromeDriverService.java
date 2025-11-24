@@ -61,7 +61,6 @@ public class ChromeDriverService implements IChromeDriverService {
 
 	private UnifiedDirectoryManager unifiedDirectoryManager;
 
-
 	@Autowired(required = false)
 	private SpringBootPlaywrightInitializer playwrightInitializer;
 
@@ -160,7 +159,8 @@ public class ChromeDriverService implements IChromeDriverService {
 		try {
 			// Close all drivers first before clearing the map
 			// This ensures browser processes and I/O threads are properly terminated
-			// DriverWrapper.close() will handle closing pages, browsers, contexts, and Playwright instances
+			// DriverWrapper.close() will handle closing pages, browsers, contexts, and
+			// Playwright instances
 			for (String planId : drivers.keySet()) {
 				DriverWrapper driver = drivers.get(planId);
 				if (driver != null) {
@@ -360,46 +360,42 @@ public class ChromeDriverService implements IChromeDriverService {
 				}
 
 				// Build optimized arguments list for faster startup
-				// Critical: disable background networking to prevent unnecessary network requests
-				// Note: Browser runs in normal mode (not incognito) to preserve cookies and history
+				// Critical: disable background networking to prevent unnecessary network
+				// requests
+				// Note: Browser runs in normal mode (not incognito) to preserve cookies
+				// and history
 				List<String> args = new java.util.ArrayList<>(Arrays.asList(
 						// Essential arguments
-						"--remote-allow-origins=*",
-						"--disable-blink-features=AutomationControlled",
-						"--disable-infobars",
-						"--disable-notifications",
-						"--disable-dev-shm-usage",
-						"--no-sandbox",
-						"--disable-gpu",
-						"--lang=zh-CN,zh,en-US,en",
-						"--user-agent=" + userAgent,
+						"--remote-allow-origins=*", "--disable-blink-features=AutomationControlled",
+						"--disable-infobars", "--disable-notifications", "--disable-dev-shm-usage", "--no-sandbox",
+						"--disable-gpu", "--lang=zh-CN,zh,en-US,en", "--user-agent=" + userAgent,
 						"--window-size=1920,1080",
-						// Ensure normal mode (not incognito) - do not add --incognito flag
+						// Ensure normal mode (not incognito) - do not add --incognito
+						// flag
 						// Performance optimizations - disable background network requests
-						"--disable-background-networking", // Critical: prevents background network requests
-						"--disable-background-timer-throttling",
-						"--disable-backgrounding-occluded-windows",
-						"--disable-breakpad",
-						"--disable-client-side-phishing-detection",
-						"--disable-component-extensions-with-background-pages",
-						"--disable-component-update", // Disables component updates
+						"--disable-background-networking", // Critical: prevents
+															// background network requests
+						"--disable-background-timer-throttling", "--disable-backgrounding-occluded-windows",
+						"--disable-breakpad", "--disable-client-side-phishing-detection",
+						"--disable-component-extensions-with-background-pages", "--disable-component-update", // Disables
+																												// component
+																												// updates
 						"--disable-default-apps", // Disables default apps
-						"--disable-domain-reliability", // Disables domain reliability service
+						"--disable-domain-reliability", // Disables domain reliability
+														// service
 						"--disable-extensions", // Disables extensions
 						"--disable-features=TranslateUI", // Disables translate UI
-						"--disable-hang-monitor",
-						"--disable-ipc-flooding-protection",
-						"--disable-popup-blocking",
-						"--disable-prompt-on-repost",
-						"--disable-renderer-backgrounding",
-						"--disable-sync", // Disables sync service
-						"--disable-translate",
-						"--metrics-recording-only",
-						"--no-first-run", // Skips first run tasks
-						"--safebrowsing-disable-auto-update", // Disables safe browsing updates
-						"--enable-automation",
-						"--password-store=basic",
-						"--use-mock-keychain"));
+						"--disable-hang-monitor", "--disable-ipc-flooding-protection", "--disable-popup-blocking",
+						"--disable-prompt-on-repost", "--disable-renderer-backgrounding", "--disable-sync", // Disables
+																											// sync
+																											// service
+						"--disable-translate", "--metrics-recording-only", "--no-first-run", // Skips
+																								// first
+																								// run
+																								// tasks
+						"--safebrowsing-disable-auto-update", // Disables safe browsing
+																// updates
+						"--enable-automation", "--password-store=basic", "--use-mock-keychain"));
 
 				launchOptions.setArgs(args);
 
@@ -445,7 +441,8 @@ public class ChromeDriverService implements IChromeDriverService {
 			// Create browser context with error handling
 			// Using browser.newContext() provides better isolation and resource
 			// management
-			// Note: BrowserContext is created in normal mode (not incognito) to preserve cookies and history
+			// Note: BrowserContext is created in normal mode (not incognito) to preserve
+			// cookies and history
 			// Cache storage state check outside try block for reuse in page creation
 			java.nio.file.Path storageStatePath = null;
 			boolean hasStorageState = false;
@@ -464,7 +461,8 @@ public class ChromeDriverService implements IChromeDriverService {
 				}
 
 				// Configure context options with optimizations for faster startup
-				// BrowserContext runs in normal mode (not incognito) by default in Playwright
+				// BrowserContext runs in normal mode (not incognito) by default in
+				// Playwright
 				Browser.NewContextOptions contextOptions = new Browser.NewContextOptions();
 
 				// Set viewport size
@@ -486,7 +484,8 @@ public class ChromeDriverService implements IChromeDriverService {
 				// contextOptions.setTimezoneId("Asia/Shanghai");
 
 				// Disable service workers to prevent network requests during startup
-				// Service workers can make network requests that slow down context creation
+				// Service workers can make network requests that slow down context
+				// creation
 				try {
 					contextOptions.setServiceWorkers(ServiceWorkerPolicy.BLOCK);
 					log.debug("Service workers disabled for faster startup");
@@ -497,7 +496,8 @@ public class ChromeDriverService implements IChromeDriverService {
 
 				// Try to load storage state (cookies, localStorage, etc.) for persistence
 				// This provides better cookie persistence than manual cookie loading
-				// Use cached hasStorageState flag to avoid duplicate file system operations
+				// Use cached hasStorageState flag to avoid duplicate file system
+				// operations
 				if (hasStorageState && storageStatePath != null) {
 					try {
 						contextOptions.setStorageStatePath(storageStatePath);
@@ -513,8 +513,10 @@ public class ChromeDriverService implements IChromeDriverService {
 				}
 
 				// Create context with timeout
-				// According to Playwright call tree: browser.newContext() -> sendMessage("newContext")
-				// -> [driver process] creates context and applies all options including storageState
+				// According to Playwright call tree: browser.newContext() ->
+				// sendMessage("newContext")
+				// -> [driver process] creates context and applies all options including
+				// storageState
 				browserContext = browser.newContext(contextOptions);
 				log.info("Successfully created browser context");
 
@@ -540,22 +542,25 @@ public class ChromeDriverService implements IChromeDriverService {
 			}
 
 			// Create new page from context with error handling
-			// According to Playwright call tree: context.newPage() -> sendMessage("newPage")
+			// According to Playwright call tree: context.newPage() ->
+			// sendMessage("newPage")
 			// -> [driver process] creates new page and initializes page environment
 			try {
-				// browserContext is guaranteed to be non-null here due to previous validation
+				// browserContext is guaranteed to be non-null here due to previous
+				// validation
 
 				// Check if there are existing pages from storage state
-				// When storage state is loaded, context.newContext() may restore existing pages
-				// We preserve them instead of closing, as they may contain important state
+				// When storage state is loaded, context.newContext() may restore existing
+				// pages
+				// We preserve them instead of closing, as they may contain important
+				// state
 				// Use cached hasStorageState flag to avoid duplicate file system check
 				if (hasStorageState) {
 					try {
 						// Check for existing pages restored from storage state
 						List<Page> existingPages = browserContext.pages();
 						if (!existingPages.isEmpty()) {
-							log.info(
-									"Found {} existing page(s) from storage state for planId {}, preserving them",
+							log.info("Found {} existing page(s) from storage state for planId {}, preserving them",
 									existingPages.size(), planId);
 							// Use the first existing page if available
 							page = existingPages.get(0);
@@ -576,8 +581,10 @@ public class ChromeDriverService implements IChromeDriverService {
 					}
 				}
 				else {
-					// No storage state, directly create new page without checking existing pages
-					// This avoids unnecessary browserContext.pages() call when we know there are no pages
+					// No storage state, directly create new page without checking
+					// existing pages
+					// This avoids unnecessary browserContext.pages() call when we know
+					// there are no pages
 					page = browserContext.newPage();
 					log.info("Successfully created new page from context (no storage state)");
 				}

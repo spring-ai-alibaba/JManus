@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * Service for managing serviceGroup to index mapping with thread-safe caching.
- * Provides application-wide consistent indexing for service groups.
+ * Service for managing serviceGroup to index mapping with thread-safe caching. Provides
+ * application-wide consistent indexing for service groups.
  *
  * @author yuluo
  */
@@ -44,12 +44,12 @@ public class ServiceGroupIndexService {
 	private final AtomicInteger nextIndex = new AtomicInteger(1);
 
 	/**
-	 * Get or assign a unique index for the given serviceGroup.
-	 * If the serviceGroup already exists in the cache, returns its existing index.
-	 * Otherwise, assigns a new unique index and caches it.
-	 *
+	 * Get or assign a unique index for the given serviceGroup. If the serviceGroup
+	 * already exists in the cache, returns its existing index. Otherwise, assigns a new
+	 * unique index and caches it.
 	 * @param serviceGroup The service group name (can be null or empty)
-	 * @return The index assigned to the serviceGroup, or null if serviceGroup is null or empty
+	 * @return The index assigned to the serviceGroup, or null if serviceGroup is null or
+	 * empty
 	 */
 	public Integer getOrAssignIndex(String serviceGroup) {
 		if (serviceGroup == null || serviceGroup.isEmpty()) {
@@ -68,8 +68,8 @@ public class ServiceGroupIndexService {
 	}
 
 	/**
-	 * Clear the cache and reset the counter to 1.
-	 * Useful for testing or resetting the service state.
+	 * Clear the cache and reset the counter to 1. Useful for testing or resetting the
+	 * service state.
 	 */
 	public void clearCache() {
 		serviceGroupIndexMap.clear();
@@ -95,4 +95,3 @@ public class ServiceGroupIndexService {
 	}
 
 }
-

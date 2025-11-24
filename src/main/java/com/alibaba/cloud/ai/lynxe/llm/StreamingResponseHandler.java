@@ -319,8 +319,10 @@ public class StreamingResponseHandler {
 			}).doOnCancel(() -> {
 				if (shouldEarlyTerminate.get()) {
 					log.info("Stream cancelled due to early termination (thinking-only response detected)");
-					// Construct ChatResponse with accumulated content when early termination is detected
-					// This ensures finalChatResponseRef is set even when stream is cancelled
+					// Construct ChatResponse with accumulated content when early
+					// termination is detected
+					// This ensures finalChatResponseRef is set even when stream is
+					// cancelled
 					if (finalChatResponseRef.get() == null) {
 						var usage = new MessageAggregator.DefaultUsage(metadataUsagePromptTokensRef.get(),
 								metadataUsageGenerationTokensRef.get(), metadataUsageTotalTokensRef.get());
@@ -332,14 +334,13 @@ public class StreamingResponseHandler {
 							.usage(usage)
 							.promptMetadata(metadataPromptMetadataRef.get())
 							.build();
-						
+
 						// Create ChatResponse with accumulated text and empty tool calls
-						finalChatResponseRef.set(
-								new ChatResponse(List.of(new Generation(
-										new AssistantMessage(messageTextContentRef.get().toString(),
-												messageMetadataMapRef.get(), messageToolCallRef.get()),
-										generationMetadataRef.get())), chatResponseMetadata));
-						
+						finalChatResponseRef.set(new ChatResponse(List.of(new Generation(
+								new AssistantMessage(messageTextContentRef.get().toString(),
+										messageMetadataMapRef.get(), messageToolCallRef.get()),
+								generationMetadataRef.get())), chatResponseMetadata));
+
 						log.info("Constructed ChatResponse from early termination: {} characters, {} tool calls",
 								messageTextContentRef.get().length(), messageToolCallRef.get().size());
 					}

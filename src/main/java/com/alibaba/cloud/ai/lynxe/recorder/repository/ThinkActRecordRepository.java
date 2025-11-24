@@ -48,6 +48,7 @@ public interface ThinkActRecordRepository extends JpaRepository<ThinkActRecordEn
 	 * Find think-act records by parent execution ID with eagerly fetched actToolInfoList
 	 */
 	@Query("SELECT t FROM ThinkActRecordEntity t LEFT JOIN FETCH t.actToolInfoList WHERE t.parentExecutionId = :parentExecutionId")
-	List<ThinkActRecordEntity> findByParentExecutionIdWithActToolInfo(@Param("parentExecutionId") Long parentExecutionId);
+	List<ThinkActRecordEntity> findByParentExecutionIdWithActToolInfo(
+			@Param("parentExecutionId") Long parentExecutionId);
 
 }

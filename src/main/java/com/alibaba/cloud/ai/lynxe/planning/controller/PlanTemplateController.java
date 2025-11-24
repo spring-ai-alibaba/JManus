@@ -557,8 +557,7 @@ public class PlanTemplateController {
 	 */
 	@PostMapping("/import-all")
 	@Transactional
-	public ResponseEntity<Map<String, Object>> importPlanTemplates(
-			@RequestBody List<PlanTemplateConfigVO> templates) {
+	public ResponseEntity<Map<String, Object>> importPlanTemplates(@RequestBody List<PlanTemplateConfigVO> templates) {
 		try {
 			if (templates == null || templates.isEmpty()) {
 				return ResponseEntity.badRequest()

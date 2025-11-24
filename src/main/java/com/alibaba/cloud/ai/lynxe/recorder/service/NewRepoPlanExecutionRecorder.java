@@ -701,7 +701,8 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 	 */
 	private List<ThinkActRecord> fetchThinkActRecords(Long agentExecutionId) {
 		try {
-			// Find all ThinkActRecordEntity by parentExecutionId with eagerly fetched actToolInfoList
+			// Find all ThinkActRecordEntity by parentExecutionId with eagerly fetched
+			// actToolInfoList
 			List<ThinkActRecordEntity> thinkActEntities = thinkActRecordRepository
 				.findByParentExecutionIdWithActToolInfo(agentExecutionId);
 

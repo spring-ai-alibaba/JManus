@@ -19,10 +19,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * Plan Template Access Level Enum
- * Defines the access level for plan templates
+ * Plan Template Access Level Enum Defines the access level for plan templates
  */
 public enum PlanTemplateAccessLevel {
+
 	/**
 	 * Read-only access level - templates cannot be modified or deleted from frontend
 	 */
@@ -75,5 +75,5 @@ public enum PlanTemplateAccessLevel {
 	public static boolean isReadOnly(String value) {
 		return READ_ONLY.value.equalsIgnoreCase(value);
 	}
-}
 
+}

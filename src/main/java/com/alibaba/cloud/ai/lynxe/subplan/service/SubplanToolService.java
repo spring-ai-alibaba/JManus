@@ -152,7 +152,7 @@ public class SubplanToolService {
 					// Use qualified key format: index : toolName
 					String serviceGroup = coordinatorTool.getServiceGroup();
 					String qualifiedKey;
-					
+
 					if (serviceGroup != null && !serviceGroup.isEmpty()) {
 						// Get or assign index for this serviceGroup using the service
 						Integer index = serviceGroupIndexService.getOrAssignIndex(serviceGroup);
@@ -167,7 +167,8 @@ public class SubplanToolService {
 						qualifiedKey = toolName;
 					}
 
-					// Create FunctionToolCallback with qualified name so LLM calls tools with qualified names
+					// Create FunctionToolCallback with qualified name so LLM calls tools
+					// with qualified names
 					FunctionToolCallback<Map<String, Object>, ToolExecuteResult> functionToolCallback = FunctionToolCallback
 						.builder(qualifiedKey, toolWrapper)
 						.description(description)
@@ -182,8 +183,8 @@ public class SubplanToolService {
 
 					toolCallbackMap.put(qualifiedKey, context);
 
-					logger.info("Successfully registered coordinator tool: {} with qualified key: {} -> {}", 
-							toolName, qualifiedKey, planTemplateId);
+					logger.info("Successfully registered coordinator tool: {} with qualified key: {} -> {}", toolName,
+							qualifiedKey, planTemplateId);
 
 				}
 				catch (Exception e) {

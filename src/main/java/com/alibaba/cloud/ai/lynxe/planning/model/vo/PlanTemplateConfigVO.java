@@ -44,7 +44,8 @@ public class PlanTemplateConfigVO {
 	private PlanTemplateAccessLevel accessLevel;
 
 	@JsonProperty("readOnly")
-	private Boolean readOnly; // Deprecated: kept for backward compatibility, use accessLevel instead
+	private Boolean readOnly; // Deprecated: kept for backward compatibility, use
+								// accessLevel instead
 
 	private String serviceGroup;
 
@@ -132,7 +133,8 @@ public class PlanTemplateConfigVO {
 	}
 
 	/**
-	 * @deprecated Use getAccessLevel() instead. This method is kept for backward compatibility.
+	 * @deprecated Use getAccessLevel() instead. This method is kept for backward
+	 * compatibility.
 	 */
 	@Deprecated
 	public Boolean getReadOnly() {
@@ -144,7 +146,8 @@ public class PlanTemplateConfigVO {
 	}
 
 	/**
-	 * @deprecated Use setAccessLevel() instead. This method is kept for backward compatibility.
+	 * @deprecated Use setAccessLevel() instead. This method is kept for backward
+	 * compatibility.
 	 */
 	@Deprecated
 	public void setReadOnly(Boolean readOnly) {

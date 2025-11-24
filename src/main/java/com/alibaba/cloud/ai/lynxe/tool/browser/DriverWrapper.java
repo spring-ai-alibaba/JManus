@@ -30,9 +30,9 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 
 /**
- * Wrapper for Playwright browser resources following best practices.
- * Uses Storage State for persistence (cookies, localStorage, sessionStorage).
- * Ensures proper cleanup order: BrowserContext -> Browser -> Playwright
+ * Wrapper for Playwright browser resources following best practices. Uses Storage State
+ * for persistence (cookies, localStorage, sessionStorage). Ensures proper cleanup order:
+ * BrowserContext -> Browser -> Playwright
  */
 public class DriverWrapper {
 
@@ -49,9 +49,8 @@ public class DriverWrapper {
 	private final Path storageStatePath;
 
 	/**
-	 * Create a new DriverWrapper with Playwright resources.
-	 * Following best practices: Browser -> BrowserContext -> Page
-	 *
+	 * Create a new DriverWrapper with Playwright resources. Following best practices:
+	 * Browser -> BrowserContext -> Page
 	 * @param playwright Playwright instance
 	 * @param browser Browser instance
 	 * @param browserContext Browser context instance
@@ -120,8 +119,9 @@ public class DriverWrapper {
 	}
 
 	/**
-	 * Save storage state (cookies, localStorage, sessionStorage) asynchronously with timeout.
-	 * This is the recommended way to persist browser state according to Playwright best practices.
+	 * Save storage state (cookies, localStorage, sessionStorage) asynchronously with
+	 * timeout. This is the recommended way to persist browser state according to
+	 * Playwright best practices.
 	 */
 	public void saveStorageState() {
 		if (browserContext == null) {
@@ -130,11 +130,11 @@ public class DriverWrapper {
 		}
 
 		try {
-			// Save storage state asynchronously with timeout to prevent blocking during shutdown
+			// Save storage state asynchronously with timeout to prevent blocking during
+			// shutdown
 			CompletableFuture<Void> saveFuture = CompletableFuture.runAsync(() -> {
 				try {
-					browserContext.storageState(
-							new BrowserContext.StorageStateOptions().setPath(storageStatePath));
+					browserContext.storageState(new BrowserContext.StorageStateOptions().setPath(storageStatePath));
 					log.info("Storage state saved successfully to: {}", storageStatePath.toAbsolutePath());
 				}
 				catch (Exception e) {
@@ -161,22 +161,26 @@ public class DriverWrapper {
 
 	/**
 	 * Close all resources following Playwright best practices.
-	 * 
-	 * <p>According to Playwright documentation, BrowserContext should be explicitly closed
-	 * before calling Browser.close() to ensure graceful cleanup and proper event handling.
-	 * 
-	 * <p>Cleanup order:
+	 *
+	 * <p>
+	 * According to Playwright documentation, BrowserContext should be explicitly closed
+	 * before calling Browser.close() to ensure graceful cleanup and proper event
+	 * handling.
+	 *
+	 * <p>
+	 * Cleanup order:
 	 * <ol>
-	 *   <li>Save storage state (preserves cookies, localStorage, sessionStorage)</li>
-	 *   <li>Close BrowserContext (closes all pages and ensures artifacts are flushed)</li>
-	 *   <li>Close Browser (after all contexts are closed)</li>
-	 *   <li>Close Playwright (terminates I/O threads)</li>
+	 * <li>Save storage state (preserves cookies, localStorage, sessionStorage)</li>
+	 * <li>Close BrowserContext (closes all pages and ensures artifacts are flushed)</li>
+	 * <li>Close Browser (after all contexts are closed)</li>
+	 * <li>Close Playwright (terminates I/O threads)</li>
 	 * </ol>
-	 * 
-	 * <p>Reference: {@link com.microsoft.playwright.Browser#newContext() Browser.newContext()}
-	 * documentation recommends: "explicitly close the returned context via 
-	 * BrowserContext.close() when your code is done with the BrowserContext, and before 
-	 * calling Browser.close()"
+	 *
+	 * <p>
+	 * Reference: {@link com.microsoft.playwright.Browser#newContext()
+	 * Browser.newContext()} documentation recommends: "explicitly close the returned
+	 * context via BrowserContext.close() when your code is done with the BrowserContext,
+	 * and before calling Browser.close()"
 	 */
 	public void close() {
 		log.info("Closing DriverWrapper and all associated resources");

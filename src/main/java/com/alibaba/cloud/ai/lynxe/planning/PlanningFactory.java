@@ -299,12 +299,12 @@ public class PlanningFactory {
 			try {
 				toolDefinition.setCurrentPlanId(planId);
 				toolDefinition.setRootPlanId(rootPlanId);
-				
+
 				// Use qualified key format: toolName[index]
 				String serviceGroup = toolDefinition.getServiceGroup();
 				String toolName = toolDefinition.getName();
 				String qualifiedKey;
-				
+
 				if (serviceGroup != null && !serviceGroup.isEmpty()) {
 					// Get or assign index for this serviceGroup using the service
 					Integer index = serviceGroupIndexService.getOrAssignIndex(serviceGroup);
@@ -318,8 +318,9 @@ public class PlanningFactory {
 				else {
 					qualifiedKey = toolName;
 				}
-				
-				// Build FunctionToolCallback with qualified name so LLM calls tools with qualified names
+
+				// Build FunctionToolCallback with qualified name so LLM calls tools with
+				// qualified names
 				FunctionToolCallback<?, ToolExecuteResult> functionToolcallback = FunctionToolCallback
 					.builder(qualifiedKey, toolDefinition)
 					.description(toolDefinition.getDescription())
@@ -327,7 +328,7 @@ public class PlanningFactory {
 					.inputType(toolDefinition.getInputType())
 					.toolMetadata(ToolMetadata.builder().returnDirect(toolDefinition.isReturnDirect()).build())
 					.build();
-				
+
 				log.info("Registering tool: {} with qualified key: {}", toolName, qualifiedKey);
 				ToolCallBackContext functionToolcallbackContext = new ToolCallBackContext(functionToolcallback,
 						toolDefinition);

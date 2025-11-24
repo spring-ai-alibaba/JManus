@@ -21,8 +21,8 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
 /**
- * JPA Converter for PlanTemplateAccessLevel enum
- * Converts between enum and database string value
+ * JPA Converter for PlanTemplateAccessLevel enum Converts between enum and database
+ * string value
  */
 @Converter(autoApply = true)
 public class PlanTemplateAccessLevelConverter implements AttributeConverter<PlanTemplateAccessLevel, String> {
@@ -41,4 +41,3 @@ public class PlanTemplateAccessLevelConverter implements AttributeConverter<Plan
 	}
 
 }
-
