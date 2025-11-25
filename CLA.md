@@ -2,9 +2,9 @@
 
 ## English Version
 
-### JManus Project Contributor License Agreement
+### Lynxe Project Contributor License Agreement
 
-Thank you for your interest in contributing to the JManus project ("the Project"). This Contributor License Agreement ("Agreement") documents the rights granted by contributors to the Project.
+Thank you for your interest in contributing to the Lynxe project ("the Project"). This Contributor License Agreement ("Agreement") documents the rights granted by contributors to the Project.
 
 By signing this Agreement, you accept and agree to the following terms and conditions for your present and future contributions submitted to the Project. Except for the license granted herein to the Project and recipients of software distributed by the Project, you reserve all right, title, and interest in and to your contributions.
 
@@ -37,9 +37,9 @@ You are not expected to provide support for Your Contributions, except to the ex
 
 ## 中文版本
 
-### JManus 项目贡献者许可协议
+### Lynxe 项目贡献者许可协议
 
-感谢您有兴趣为 JManus 项目（"本项目"）做出贡献。本贡献者许可协议（"协议"）记录了贡献者授予本项目的权利。
+感谢您有兴趣为 Lynxe 项目（"本项目"）做出贡献。本贡献者许可协议（"协议"）记录了贡献者授予本项目的权利。
 
 通过签署本协议，您接受并同意以下条款和条件，适用于您现在和将来提交给本项目的贡献。除本协议授予本项目及本项目分发的软件接收者的许可外，您保留对您贡献的所有权利、所有权和利益。
 

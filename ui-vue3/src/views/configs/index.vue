@@ -75,6 +75,7 @@ import DatabaseConfig from './databaseConfig.vue'
 import LanguageSwitcher from '@/components/language-switcher/LanguageSwitcher.vue'
 import NamespaceConfig from './namespaceConfig.vue'
 import NamespaceSwitch from './components/namespaceSwitch.vue'
+import PlanTemplateConfig from './planTemplateConfig.vue'
 
 // Define component name for Vue linting rules
 defineOptions({
@@ -87,6 +88,7 @@ type ConfigComponent =
   | typeof McpConfig
   | typeof DatabaseConfig
   | typeof NamespaceConfig
+  | typeof PlanTemplateConfig
 
 interface CategoryMap {
   [key: string]: ConfigComponent | undefined
@@ -95,6 +97,7 @@ interface CategoryMap {
   mcp: typeof McpConfig
   database: typeof DatabaseConfig
   namespace: typeof NamespaceConfig
+  planTemplate: typeof PlanTemplateConfig
 }
 
 const { t } = useI18n()
@@ -110,6 +113,7 @@ const categoryMap: CategoryMap = {
   mcp: McpConfig,
   database: DatabaseConfig,
   namespace: NamespaceConfig,
+  planTemplate: PlanTemplateConfig,
 }
 
 const activeComponent = computed(() => {
@@ -127,6 +131,12 @@ const categories = computed(() => [
     label: t('config.categories.namespace'),
     disabled: false,
     icon: 'carbon:batch-job',
+  },
+  {
+    key: 'planTemplate',
+    label: t('config.categories.planTemplate'),
+    disabled: false,
+    icon: 'carbon:document',
   },
 ])
 

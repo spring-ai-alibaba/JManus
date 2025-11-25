@@ -18,22 +18,59 @@
 
 <template>
   <div class="direct-page">
-    <div class="direct-chat">
-      <Sidebar ref="sidebarRef" />
-      <!-- Left Panel - Chat -->
-      <div class="left-panel" :style="{ width: computedLeftPanelWidth + '%' }">
-        <div class="chat-header">
+    <!-- Branding Header -->
+    <header class="branding-header">
+      <div class="branding-content">
+        <div class="branding-logo">
+          <img src="/Java-AI.svg" alt="Lynxe" class="java-logo" />
+          <h1>Lynxe</h1>
+        </div>
+        <div class="branding-actions">
+          <LanguageSwitcher />
           <button class="back-button" @click="goBack">
             <Icon icon="carbon:arrow-left" />
           </button>
+          <button class="config-button" @click="handleConfig" :title="$t('direct.configuration')">
+            <Icon icon="carbon:settings-adjust" width="20" />
+          </button>
+        </div>
+      </div>
+    </header>
+    <div class="direct-chat">
+      <Sidebar ref="sidebarRef" :width="sidebarWidth" />
+      <!-- Sidebar Resizer -->
+      <div
+        class="panel-resizer"
+        @mousedown="startSidebarResize"
+        @dblclick="resetSidebarWidth"
+        :title="$t('sidebar.resizeHint')"
+      >
+        <div class="resizer-line"></div>
+      </div>
+      <!-- Left Panel - Config/Preview (RightPanel component) -->
+      <RightPanel
+        ref="rightPanelRef"
+        :style="{ width: 100 - sidebarWidth - leftPanelWidth + '%' }"
+        :current-root-plan-id="currentRootPlanId"
+      />
+
+      <!-- Resizer -->
+      <div
+        class="panel-resizer"
+        @mousedown="startResize"
+        @dblclick="resetPanelSize"
+        :title="$t('direct.panelResizeHint')"
+      >
+        <div class="resizer-line"></div>
+      </div>
+
+      <!-- Right Panel - Chat -->
+      <div class="left-panel" :style="{ width: leftPanelWidth + '%' }">
+        <div class="chat-header">
           <h2>{{ $t('conversation') }}</h2>
           <div class="header-actions">
-            <LanguageSwitcher />
             <button class="config-button" @click="newChat" :title="$t('memory.newChat')">
               <Icon icon="carbon:add" width="20" />
-            </button>
-            <button class="config-button" @click="handleConfig" :title="$t('direct.configuration')">
-              <Icon icon="carbon:settings-adjust" width="20" />
             </button>
             <button
               class="cron-task-btn"
@@ -53,23 +90,6 @@
         <!-- Input Area -->
         <InputArea :key="$i18n.locale" :initial-value="prompt" />
       </div>
-
-      <!-- Resizer -->
-      <div
-        class="panel-resizer"
-        @mousedown="startResize"
-        @dblclick="resetPanelSize"
-        :title="$t('direct.panelResizeHint')"
-      >
-        <div class="resizer-line"></div>
-      </div>
-
-      <!-- Right Panel - Preview -->
-      <RightPanel
-        ref="rightPanelRef"
-        :style="{ width: 100 - leftPanelWidth + '%' }"
-        :current-root-plan-id="currentRootPlanId"
-      />
     </div>
 
     <!-- Memory Modal -->
@@ -96,11 +116,10 @@ import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { useToast } from '@/composables/useToast'
 import { memoryStore } from '@/stores/memory'
-import { sidebarStore } from '@/stores/sidebar'
 import { useTaskStore } from '@/stores/task'
 import { templateStore } from '@/stores/templateStore'
 import { Icon } from '@iconify/vue'
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 // Define component name for Vue linting rules
@@ -122,34 +141,17 @@ const sidebarRef = ref()
 const currentRootPlanId = ref<string | null>(null)
 
 // Related to panel width
-const leftPanelWidth = ref(50) // Left panel width percentage
+// Note: leftPanelWidth variable name is kept for backward compatibility
+// It actually controls the chat panel width (which is now on the right side)
+const leftPanelWidth = ref(50) // Chat panel width percentage
+const sidebarWidth = ref(80) // Sidebar width percentage
 const isResizing = ref(false)
 const startX = ref(0)
 const startLeftWidth = ref(0)
-
-// Computed left panel width that adjusts based on sidebar width
-const computedLeftPanelWidth = computed(() => {
-  if (sidebarStore.isCollapsed) {
-    return leftPanelWidth.value
-  }
-
-  // When sidebar is expanded, calculate available width for left panel
-  // Get sidebar width from the sidebar component if available
-  let sidebarWidth = 26 // Default sidebar width
-
-  // Try to get actual sidebar width from the sidebar component
-  if (sidebarRef.value && sidebarRef.value.sidebarWidth !== undefined) {
-    sidebarWidth = sidebarRef.value.sidebarWidth
-  }
-
-  // Calculate maximum available width for left panel
-  // Total width is 100%, so left panel max = 100% - sidebar width
-  const maxAvailableWidth = 100 - sidebarWidth
-
-  // Ensure left panel width doesn't exceed available space
-  // Also maintain minimum width of 20%
-  return Math.max(20, Math.min(maxAvailableWidth, leftPanelWidth.value))
-})
+// Sidebar resize state
+const isSidebarResizing = ref(false)
+const startSidebarX = ref(0)
+const startSidebarWidth = ref(0)
 
 onMounted(() => {
   console.log('[Direct] onMounted called')
@@ -167,7 +169,7 @@ onMounted(() => {
           continue
         }
 
-        // Update right panel progress
+        // Update config/preview panel progress
         if (
           rightPanelRef.value &&
           typeof rightPanelRef.value.updateDisplayedPlanProgress === 'function'
@@ -280,6 +282,12 @@ onMounted(() => {
     leftPanelWidth.value = parseFloat(savedWidth)
   }
 
+  // Restore sidebar width from localStorage
+  const savedSidebarWidth = localStorage.getItem('sidebarWidth')
+  if (savedSidebarWidth) {
+    sidebarWidth.value = parseFloat(savedSidebarWidth)
+  }
+
   console.log('[Direct] Final prompt value:', prompt.value)
   // Note: InputArea automatically handles taskToInput via watch
   // Note: Plan execution is now handled directly by Sidebar.vue using messageDialog.executePlan()
@@ -338,6 +346,8 @@ onUnmounted(() => {
   // Remove event listeners
   document.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('mouseup', handleMouseUp)
+  document.removeEventListener('mousemove', handleSidebarMouseMove)
+  document.removeEventListener('mouseup', handleSidebarMouseUp)
 })
 
 // Methods related to panel size adjustment
@@ -359,7 +369,7 @@ const handleMouseMove = (e: MouseEvent) => {
 
   const containerWidth = window.innerWidth
   const deltaX = e.clientX - startX.value
-  const deltaPercent = (deltaX / containerWidth) * 100
+  const deltaPercent = (-deltaX / containerWidth) * 100
 
   let newWidth = startLeftWidth.value + deltaPercent
 
@@ -383,6 +393,51 @@ const handleMouseUp = () => {
 const resetPanelSize = () => {
   leftPanelWidth.value = 50
   localStorage.setItem('directPanelWidth', '50')
+}
+
+// Sidebar resize methods
+const startSidebarResize = (e: MouseEvent) => {
+  isSidebarResizing.value = true
+  startSidebarX.value = e.clientX
+  startSidebarWidth.value = sidebarWidth.value
+
+  document.addEventListener('mousemove', handleSidebarMouseMove)
+  document.addEventListener('mouseup', handleSidebarMouseUp)
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+
+  e.preventDefault()
+}
+
+const handleSidebarMouseMove = (e: MouseEvent) => {
+  if (!isSidebarResizing.value) return
+
+  const containerWidth = window.innerWidth
+  const deltaX = e.clientX - startSidebarX.value
+  const deltaPercent = (deltaX / containerWidth) * 100
+
+  let newWidth = startSidebarWidth.value + deltaPercent
+
+  // Limit sidebar width between 15% and 100%
+  newWidth = Math.max(15, Math.min(100, newWidth))
+
+  sidebarWidth.value = newWidth
+}
+
+const handleSidebarMouseUp = () => {
+  isSidebarResizing.value = false
+  document.removeEventListener('mousemove', handleSidebarMouseMove)
+  document.removeEventListener('mouseup', handleSidebarMouseUp)
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+
+  // Save to localStorage
+  localStorage.setItem('sidebarWidth', sidebarWidth.value.toString())
+}
+
+const resetSidebarWidth = () => {
+  sidebarWidth.value = 80
+  localStorage.setItem('sidebarWidth', '80')
 }
 
 // Helper function to check if the event should be processed for the current plan
@@ -418,9 +473,9 @@ const shouldProcessEventForCurrentPlan = (
 const handleStepSelected = (stepId: string) => {
   console.log('[DirectView] Step selected:', stepId)
 
-  // Forward step selection to right panel
+  // Forward step selection to config/preview panel
   if (rightPanelRef.value && typeof rightPanelRef.value.handleStepSelected === 'function') {
-    console.log('[DirectView] Forwarding step selection to right panel:', stepId)
+    console.log('[DirectView] Forwarding step selection to config/preview panel:', stepId)
     rightPanelRef.value.handleStepSelected(stepId)
   } else {
     console.warn('[DirectView] rightPanelRef.handleStepSelected method not available')
@@ -460,15 +515,64 @@ const newChat = () => {
 <style lang="less" scoped>
 .direct-page {
   width: 100%;
+  height: 100vh;
   display: flex;
+  flex-direction: column;
   position: relative;
+  overflow: hidden;
+}
+
+.branding-header {
+  width: 100%;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid #1a1a1a;
+  flex-shrink: 0;
+  z-index: 200;
+}
+
+.branding-content {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.branding-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .java-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 0.5px;
+  }
+}
+
+.branding-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .direct-chat {
-  height: 100vh;
+  height: calc(100vh - 65px); /* Subtract branding header height */
   width: 100%;
   background: #0a0a0a;
   display: flex;
+  flex: 1;
 }
 
 .left-panel {
@@ -476,14 +580,14 @@ const newChat = () => {
   border-right: none; /* Remove the original border, which will be provided by the resizer */
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Use fixed height */
+  height: 100%; /* Fit within parent container */
   overflow: hidden; /* Prevent panel itself overflow */
   transition: width 0.1s ease; /* Smooth transition */
 }
 
 .panel-resizer {
   width: 6px;
-  height: 100vh;
+  height: 100%; /* Fit within parent container */
   background: #1a1a1a;
   cursor: col-resize;
   position: relative;
@@ -515,13 +619,13 @@ const newChat = () => {
   transition: all 0.2s ease;
 }
 
-/* Adjust right panel styles */
+/* Adjust config/preview panel styles */
 :deep(.right-panel) {
   transition: width 0.1s ease;
 }
 
 .chat-header {
-  padding: 20px 24px;
+  padding: 12px 10px;
   border-bottom: 1px solid #1a1a1a;
   display: flex;
   align-items: center;

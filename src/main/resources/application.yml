@@ -2,7 +2,7 @@ server:
   port: 18080
 spring:
   application:
-    name: spring-ai-alibaba-openmanus
+    name: spring-ai-alibaba-openlynxe
   profiles:
     active: h2
   main:
@@ -24,13 +24,14 @@ spring:
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
-      pool-name: JManus-${spring.profiles.active}-Pool
+      pool-name: Lynxe-${spring.profiles.active}-Pool
       connection-test-query: SELECT 1
       validation-timeout: 5000
       leak-detection-threshold: 60000
   # JPA Configuration
   jpa:
     show-sql: false
+    open-in-view: false  # Disable Open Session In View to avoid performance issues
     properties:
       hibernate:
         format_sql: true
@@ -48,15 +49,15 @@ logging:
     name: ./logs/info.log
   level:
     root: INFO
-    com.alibaba.cloud.ai.example.manus.inhouse.registry.McpToolRegistry: INFO
-    com.alibaba.cloud.ai.example.manus.tool: DEBUG
-    com.alibaba.cloud.ai.example.manus.inhouse.tool: DEBUG
-    com.alibaba.cloud.ai.manus.agent: DEBUG
-    com.alibaba.cloud.ai.manus.llm: DEBUG
+    com.alibaba.cloud.ai.example.lynxe.inhouse.registry.McpToolRegistry: INFO
+    com.alibaba.cloud.ai.example.lynxe.tool: DEBUG
+    com.alibaba.cloud.ai.example.lynxe.inhouse.tool: DEBUG
+    com.alibaba.cloud.ai.lynxe.agent: DEBUG
+    com.alibaba.cloud.ai.lynxe.llm: DEBUG
     org.springframework.web.reactive.function.client: DEBUG
 
 # 计划轮询配置
-manus:
+lynxe:
   plan:
     polling:
       # 是否启用轮询

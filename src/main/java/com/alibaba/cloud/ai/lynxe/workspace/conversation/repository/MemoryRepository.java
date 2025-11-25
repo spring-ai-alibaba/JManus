@@ -1,0 +1,49 @@
+/*
+ * Copyright 2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.cloud.ai.lynxe.workspace.conversation.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import com.alibaba.cloud.ai.lynxe.workspace.conversation.entity.po.MemoryEntity;
+
+import java.util.List;
+
+/**
+ * @author dahua
+ * @time 2025/8/5
+ * @desc memory repository
+ */
+@Repository
+public interface MemoryRepository extends JpaRepository<MemoryEntity, Long> {
+
+	List<MemoryEntity> findAll();
+
+	void deleteByConversationId(String conversationId);
+
+	MemoryEntity findByConversationId(String conversationId);
+
+	/**
+	 * Find top 15 memories ordered by create time descending (newest first) Uses native
+	 * query for better performance with LIMIT clause
+	 * @return List of top 15 most recent MemoryEntity records
+	 */
+	@Query(value = "SELECT * FROM dynamic_memories WHERE create_time IS NOT NULL ORDER BY create_time DESC LIMIT 15",
+			nativeQuery = true)
+	List<MemoryEntity> findTop15Memories();
+
+}

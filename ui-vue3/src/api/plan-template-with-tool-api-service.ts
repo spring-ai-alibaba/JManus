@@ -123,4 +123,44 @@ export class PlanTemplateApiService {
       throw error
     }
   }
+
+  /**
+   * Export all plan templates as JSON array
+   */
+  static async exportAllPlanTemplates(): Promise<PlanTemplateConfigVO[]> {
+    try {
+      const response = await fetch('/api/plan-template/export-all')
+      const result = await this.handleResponse(response)
+      return await result.json()
+    } catch (error) {
+      console.error('Failed to export all plan templates:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Import plan templates from JSON array
+   */
+  static async importPlanTemplates(templates: PlanTemplateConfigVO[]): Promise<{
+    success: boolean
+    total: number
+    successCount: number
+    failureCount: number
+    errors: Array<{ planTemplateId: string; message: string }>
+  }> {
+    try {
+      const response = await fetch('/api/plan-template/import-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(templates),
+      })
+      const result = await this.handleResponse(response)
+      return await result.json()
+    } catch (error) {
+      console.error('Failed to import plan templates:', error)
+      throw error
+    }
+  }
 }

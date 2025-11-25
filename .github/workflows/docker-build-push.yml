@@ -65,8 +65,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ secrets.DOCKER_USERNAME != '' && format('{0}/jmanus', secrets.DOCKER_USERNAME) || '' }}
-            ghcr.io/${{ github.repository_owner }}/jmanus
+            ${{ secrets.DOCKER_USERNAME != '' && format('{0}/lynxe', secrets.DOCKER_USERNAME) || '' }}
+            ghcr.io/${{ github.repository_owner }}/lynxe
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=branch

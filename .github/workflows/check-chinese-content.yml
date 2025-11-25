@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-name: 🔍 Check Chinese Content in Jmanus
+name: 🔍 Check Chinese Content in Lynxe
 
 on:
   pull_request:
@@ -27,7 +27,7 @@ permissions:
 jobs:
   check-chinese-content:
     runs-on: ubuntu-latest
-    name: Check for Chinese content in Jmanus
+    name: Check for Chinese content in Lynxe
 
     steps:
       - name: Checkout code
@@ -40,9 +40,9 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Check Chinese content in Jmanus
+      - name: Check Chinese content in Lynxe
         run: |
-          echo "🔍 Checking for Chinese content in Jmanus Java and frontend files..."
+          echo "🔍 Checking for Chinese content in Lynxe Java and frontend files..."
           echo "📁 Checking directories:"
           echo "  - src/main/java"
           echo "  - ui-vue3/src (excluding i18n files)"
@@ -55,9 +55,9 @@ jobs:
             echo "✅ No Chinese content found - Check passed!"
           else
             echo ""
-            echo "## 🚨 Chinese Content Detected in Jmanus"
+            echo "## 🚨 Chinese Content Detected in Lynxe"
             echo ""
-            echo "Chinese content has been detected in Jmanus Java or frontend files."
+            echo "Chinese content has been detected in Lynxe Java or frontend files."
             echo ""
             echo "### Modification Suggestions:"
             echo ""

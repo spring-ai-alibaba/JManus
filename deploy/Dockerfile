@@ -87,7 +87,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy JAR file
-COPY target/jmanus.jar app.jar
+COPY target/lynxe.jar app.jar
 
 # Install Playwright browsers, extract JAR and setup directories
 RUN java -jar app.jar playwright-init && \
@@ -116,7 +116,7 @@ COPY src/main/resources/application-docker.yml /app/extracted/BOOT-INF/classes/
 ENV DISPLAY=:99 \
     PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright \
     DOCKER_ENV=true \
-    JAVA_OPTS="-Xmx2g -Xms1g -XX:+UseG1GC -XX:+UseContainerSupport"
+    JAVA_OPTS="-Xmx2g -Xms1g -XX:+UseG1GC -XX:+UseContainerSupport --enable-native-access=ALL-UNNAMED -Dio.netty.noUnsafe=true"
 
 # Copy startup script
 COPY deploy/start.sh /app/start.sh
@@ -126,8 +126,8 @@ RUN chmod +x /app/start.sh
 EXPOSE 18080
 
 # Add labels for better image management
-LABEL org.opencontainers.image.title="JManus"
-LABEL org.opencontainers.image.description="Spring AI Alibaba JManus - Web Automation Platform"
+LABEL org.opencontainers.image.title="Lynxe"
+LABEL org.opencontainers.image.description="Spring AI Alibaba Lynxe - Web Automation Platform"
 LABEL org.opencontainers.image.vendor="Alibaba Cloud"
 LABEL org.opencontainers.image.version="latest"
 LABEL org.opencontainers.image.url="https://github.com/alibaba/spring-ai-alibaba"

@@ -24,8 +24,8 @@ const words: I18nType = {
 
   // 初始化页面
   init: {
-    welcome: '欢迎使用 JManus',
-    welcomeStep: '欢迎使用 JManus',
+    welcome: '欢迎使用 Lynxe',
+    welcomeStep: '欢迎使用 Lynxe',
     description:
       '首次使用需要配置 LLM 服务来启用 AI 功能。您可以选择使用阿里云百炼服务或自定义 OpenAI 兼容的 API 服务。',
     languageStepDescription: '请选择您的语言偏好，这将作为默认界面语言。',
@@ -199,6 +199,7 @@ const words: I18nType = {
       mcp: 'Tools/MCP配置',
       database: '数据库配置',
       namespace: '命名空间配置',
+      planTemplate: '计划模板管理',
     },
     subGroupDisplayNames: {
       agent: 'Agent',
@@ -513,7 +514,7 @@ const words: I18nType = {
       resetFailed: '重置失败，请重试',
       importFailed: '导入失败，请检查文件格式',
       groupDisplayNames: {
-        manus: 'Manus',
+        lynxe: 'Lynxe',
         browser: '浏览器',
         interaction: '交互',
         system: '系统',
@@ -547,6 +548,29 @@ const words: I18nType = {
         selectNamespace: '请选择命名空间',
         namespace: '命名空间',
       },
+    },
+    // 计划模板管理页面
+    planTemplate: {
+      title: '计划模板管理',
+      totalTemplates: '模板总数',
+      export: '导出',
+      exportAll: '全部导出',
+      exportGroup: '导出组',
+      import: '导入',
+      noTemplates: '暂无计划模板',
+      untitled: '未命名',
+      serviceGroup: '服务组',
+      noServiceGroup: '未分组',
+      planType: '计划类型',
+      steps: '步骤数',
+      groupCount: '共 {count} 个模板',
+      exportSuccess: '计划模板导出成功',
+      exportFailed: '导出计划模板失败',
+      importSuccess: '导入完成：共 {total} 个，成功 {success} 个，失败 {failed} 个',
+      importFailed: '导入计划模板失败',
+      importConfirm: '这将覆盖具有相同 planTemplateId 的现有模板。是否继续？',
+      invalidFormat: '文件格式无效。应为计划模板的 JSON 数组。',
+      loadFailed: '加载计划模板失败',
     },
   },
 
@@ -644,8 +668,8 @@ const words: I18nType = {
 
   // 聊天组件
   chat: {
-    botName: 'JManus:',
-    thinkingLabel: 'JManus 思考/处理',
+    botName: 'Lynxe:',
+    thinkingLabel: 'Lynxe 思考/处理',
     processing: '处理中...',
     step: '步骤',
     stepNumber: '步骤 {number}',
@@ -713,7 +737,7 @@ const words: I18nType = {
 
   // 输入组件
   input: {
-    placeholder: '向 JManus 发送消息',
+    placeholder: '向 Lynxe 发送消息',
     send: '发送',
     stop: '停止',
     planMode: 'Func-Agent模式',
@@ -827,6 +851,8 @@ const words: I18nType = {
     copyPlanSuccess: '计划复制成功: {title}',
     copyPlanFailed: '计划复制失败: {message}',
     duplicatePlanTitle: '有重复计划标题',
+    defaultPlanId: '系统返回的PlanID',
+    defaultPlanIdDetails: '系统刚才返回的那个planId',
 
     newTemplate: '新建模板',
     templateName: '模板名称',
@@ -881,7 +907,7 @@ const words: I18nType = {
     stepRequirementPlaceholder: '请输入任务的具体需求和描述...',
     terminateColumns: '任务输出要求描述',
     terminateColumnsPlaceholder:
-      '指定结构化返回值，如果指定，则返回为一个json 列表 ，每一行都是你指定的col。 例如： col1,col2 ，最后会输出 [(col1:val1,col2:val2), (col1:val3,col2:val4)]',
+      '要求模型结构化返回一个列表，你可以在这里指定表头 例如： col1,col2',
     preview: '预览',
     systemWillReturnListWithTableHeaderFormat: '系统将以json格式返回一个多行列表，表头为',
     titlePlaceholder: '请输入计划标题...',
@@ -1048,9 +1074,8 @@ const words: I18nType = {
 
   // 首页
   home: {
-    welcomeTitle: '欢迎使用 JManus！',
+    welcomeTitle: '欢迎使用 Lynxe！',
     welcomeSubtitle: '您的 Java AI 智能助手，帮助您构建和完成各种任务。',
-    tagline: 'Java AI 智能体',
     inputPlaceholder: '描述您想构建或完成的内容...',
     directButton: '直接进入工作台',
     examples: {
@@ -1092,6 +1117,18 @@ const words: I18nType = {
     stepExecutionDetails: '步骤执行详情',
     noStepSelected: '未选择执行步骤',
     selectStepHint: '请在左侧聊天区域选择一个执行步骤查看详情',
+    noTemplateSelected: '未选择模板',
+    selectTemplateHint: '请从左侧边栏选择一个模板进行配置',
+    newFuncAgentPlan: '新建 Func-Agent计划',
+    importExistingPlan: '导入既有计划',
+    importDescription: '您可以通过',
+    promptLibrary: '公共 prompt库',
+    importDescriptionSuffix: '查看和导入优秀的案例并快速开始使用',
+    newPlanCreated: '新计划创建成功',
+    createPlanFailed: '创建新计划失败',
+    importSuccess: '成功导入 {success}/{total} 个计划',
+    importFailed: '导入计划失败',
+    invalidImportFormat: '无效的导入格式。请提供有效的计划模板JSON数组',
     stepExecuting: '步骤正在执行中，请稍候...',
     step: '步骤',
     executingAgent: '执行智能体',
@@ -1200,8 +1237,8 @@ const words: I18nType = {
     templateHelpText: '选择后，定时任务将按照制定好的计划执行',
     createTask: '创建定时任务',
     selectCreateMethod: '请选择创建方式',
-    createWithJmanus: '让Jmanus帮忙创建',
-    createWithJmanusDesc: '通过AI助手引导创建定时任务',
+    createWithLynxe: '让Lynxe帮忙创建',
+    createWithLynxeDesc: '通过AI助手引导创建定时任务',
     createManually: '手动创建',
     createManuallyDesc: '自己填写定时任务信息',
   },

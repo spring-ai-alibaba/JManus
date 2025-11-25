@@ -54,10 +54,6 @@
             {{ option.label }}
           </option>
         </select>
-        <button class="plan-mode-btn" :title="$t('input.planMode')" @click="handlePlanModeClick">
-          <Icon icon="carbon:document" />
-          {{ $t('input.planMode') }}
-        </button>
         <button
           v-if="!isTaskRunning"
           class="send-button"
@@ -89,7 +85,6 @@ import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { memoryStore } from '@/stores/memory'
-import { sidebarStore } from '@/stores/sidebar'
 import { useTaskStore } from '@/stores/task'
 import type { InputMessage } from '@/types/message-dialog'
 import { Icon } from '@iconify/vue'
@@ -555,15 +550,6 @@ const handleSend = async () => {
   clearInput()
 }
 
-const handlePlanModeClick = () => {
-  // Toggle sidebar display state
-  sidebarStore.toggleSidebar()
-  console.log(
-    '[InputArea] Plan mode button clicked, sidebar toggled, isCollapsed:',
-    sidebarStore.isCollapsed
-  )
-}
-
 const handleStop = async () => {
   console.log('[InputArea] Stop button clicked')
   const success = await taskStore.stopCurrentTask()
@@ -679,16 +665,18 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
   width: 100%;
   min-width: 0;
+  min-height: fit-content;
 }
 
 .selection-input {
   flex-shrink: 1;
   flex-basis: auto;
   min-width: 0;
-  max-width: calc(100% - 200px);
+  max-width: 100%;
   padding: 6px 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
@@ -698,11 +686,16 @@ defineExpose({
   cursor: pointer;
   transition: all 0.2s ease;
   outline: none;
-  width: 24ch;
+  width: 18ch;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   box-sizing: border-box;
+
+  @media (max-width: 600px) {
+    width: 100%;
+    max-width: 100%;
+  }
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -750,27 +743,6 @@ defineExpose({
     &::placeholder {
       color: #444444;
     }
-  }
-}
-
-.plan-mode-btn {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: #667eea;
-    transform: translateY(-1px);
   }
 }
 
