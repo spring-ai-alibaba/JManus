@@ -806,7 +806,7 @@ const words: I18nType = {
     unsupportedFileType: 'Unsupported file type',
     fileSizeExceeded: 'File size exceeded limit',
     maxFileSize: 'Max file size: 50MB',
-    supportedFormats: 'Supported formats: PDF, text, CSV, JSON, XML, HTML, logs, code files, etc.',
+    supportedFormats: 'Supported formats: PDF, text, CSV, JSON, XML, HTML, MHTML, logs, code files, etc.',
   },
 
   // Sidebar

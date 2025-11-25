@@ -758,7 +758,7 @@ const words: I18nType = {
     unsupportedFileType: '不支持的文件类型',
     fileSizeExceeded: '文件大小超出限制',
     maxFileSize: '最大文件大小：50MB',
-    supportedFormats: '支持的格式：PDF、文本、CSV、JSON、XML、HTML、日志、代码文件等',
+    supportedFormats: '支持的格式：PDF、文本、CSV、JSON、XML、HTML、MHTML、日志、代码文件等',
   },
 
   // 侧边栏
