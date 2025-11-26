@@ -37,11 +37,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * File-based parallel execution tool that reads JSON parameters from a file (one JSON per line)
- * and executes a specified tool for each parameter set.
+ * File-based parallel execution tool that reads JSON parameters from a file (one JSON per
+ * line) and executes a specified tool for each parameter set.
  *
- * The file format: Each line contains a single JSON object. Newlines within JSON must be escaped.
- * One row = one parameter set.
+ * The file format: Each line contains a single JSON object. Newlines within JSON must be
+ * escaped. One row = one parameter set.
  */
 public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedParallelExecutionTool.BatchExecutionInput>
 		implements AsyncToolCallBiFunctionDef<FileBasedParallelExecutionTool.BatchExecutionInput> {
@@ -264,7 +264,6 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 			return null;
 		}
 	}
-
 
 	@Override
 	public void cleanup(String planId) {

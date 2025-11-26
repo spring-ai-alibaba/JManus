@@ -35,8 +35,8 @@ import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Common service for parallel execution of tools.
- * Handles the execution logic shared between ParallelExecutionTool and FileBasedParallelExecutionTool.
+ * Common service for parallel execution of tools. Handles the execution logic shared
+ * between ParallelExecutionTool and FileBasedParallelExecutionTool.
  */
 @Service
 public class ParallelExecutionService {
@@ -141,9 +141,8 @@ public class ParallelExecutionService {
 		}
 
 		// Create ToolContext for this execution
-		ToolContext executionContext = new ToolContext(
-				propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
-						: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth));
+		ToolContext executionContext = new ToolContext(propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
+				: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth));
 
 		// Execute the tool
 		if (levelBasedExecutorPool != null) {
@@ -176,7 +175,7 @@ public class ParallelExecutionService {
 					try {
 						@SuppressWarnings("unchecked")
 						ToolExecuteResult result = ((ToolCallBiFunctionDef<Object>) functionInstance)
-								.apply(convertedInput, executionContext);
+							.apply(convertedInput, executionContext);
 						Map<String, Object> resultMap = new HashMap<>();
 						if (index != null) {
 							resultMap.put("index", index);
@@ -227,7 +226,7 @@ public class ParallelExecutionService {
 					try {
 						@SuppressWarnings("unchecked")
 						ToolExecuteResult result = ((ToolCallBiFunctionDef<Object>) functionInstance)
-								.apply(convertedInput, executionContext);
+							.apply(convertedInput, executionContext);
 						Map<String, Object> resultMap = new HashMap<>();
 						if (index != null) {
 							resultMap.put("index", index);
@@ -397,4 +396,3 @@ public class ParallelExecutionService {
 	}
 
 }
-

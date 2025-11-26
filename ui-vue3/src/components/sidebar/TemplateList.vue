@@ -184,7 +184,9 @@
           </div>
           <div class="confirm-content">
             <p>
-              {{ $t('sidebar.deleteConfirmMessage', { templateName: templateToDelete?.title || '' }) }}
+              {{
+                $t('sidebar.deleteConfirmMessage', { templateName: templateToDelete?.title || '' })
+              }}
             </p>
           </div>
           <div class="confirm-actions">

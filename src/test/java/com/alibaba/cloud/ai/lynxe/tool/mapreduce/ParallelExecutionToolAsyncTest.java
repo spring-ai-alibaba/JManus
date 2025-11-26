@@ -183,7 +183,8 @@ class ParallelExecutionToolAsyncTest {
 		input.setAction("registerBatch");
 		input.setToolName("testTool");
 
-		// functions is now a List<Map<String, Object>> where each Map contains input parameters
+		// functions is now a List<Map<String, Object>> where each Map contains input
+		// parameters
 		List<Map<String, Object>> functions = new ArrayList<>();
 		Map<String, Object> func1Params = new HashMap<>();
 		func1Params.put("key", "value");

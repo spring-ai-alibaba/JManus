@@ -274,4 +274,3 @@ public class ExecuteSqlToJsonFileAction extends AbstractDatabaseAction {
 	}
 
 }
-

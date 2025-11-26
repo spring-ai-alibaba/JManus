@@ -273,7 +273,8 @@ public class PlanningFactory {
 			// toolDefinitions.add(new GoogleSearch());
 			// toolDefinitions.add(new PythonExecute());
 			toolDefinitions.add(new FormInputTool(objectMapper));
-			toolDefinitions.add(new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher, levelBasedExecutorPool));
+			toolDefinitions.add(
+					new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher, levelBasedExecutorPool));
 			toolDefinitions.add(new FileBasedParallelExecutionTool(objectMapper, toolCallbackMap, textFileService,
 					parallelExecutionService));
 			toolDefinitions.add(new CronTool(cronService, objectMapper));

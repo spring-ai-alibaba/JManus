@@ -806,7 +806,8 @@ const words: I18nType = {
     unsupportedFileType: 'Unsupported file type',
     fileSizeExceeded: 'File size exceeded limit',
     maxFileSize: 'Max file size: 50MB',
-    supportedFormats: 'Supported formats: PDF, text, CSV, JSON, XML, HTML, MHTML, logs, code files, etc.',
+    supportedFormats:
+      'Supported formats: PDF, text, CSV, JSON, XML, HTML, MHTML, logs, code files, etc.',
   },
 
   // Sidebar
@@ -822,7 +823,8 @@ const words: I18nType = {
     noDescription: 'No description',
     deleteTemplate: 'Delete this plan template',
     deleteConfirm: 'Delete Confirmation',
-    deleteConfirmMessage: 'Are you sure you want to delete plan template "{templateName}"? This action cannot be undone.',
+    deleteConfirmMessage:
+      'Are you sure you want to delete plan template "{templateName}"? This action cannot be undone.',
     deleteSuccess: 'Plan template deleted successfully',
     deleteFailed: 'Failed to delete plan template',
     jsonTemplate: 'Func-Agent Plan Template Editor',
