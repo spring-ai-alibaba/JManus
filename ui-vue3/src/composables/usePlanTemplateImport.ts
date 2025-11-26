@@ -35,12 +35,15 @@ export interface ImportPlanTemplateOptions {
    * @param result - Import result with success count, failure count, etc.
    * @param templates - The imported templates array
    */
-  onSuccess?: (result: {
-    success: boolean
-    total: number
-    successCount: number
-    failureCount: number
-  }, templates: PlanTemplateConfigVO[]) => void | Promise<void>
+  onSuccess?: (
+    result: {
+      success: boolean
+      total: number
+      successCount: number
+      failureCount: number
+    },
+    templates: PlanTemplateConfigVO[]
+  ) => void | Promise<void>
   /**
    * Callback function called on import failure
    * @param error - Error message or Error object
@@ -143,7 +146,8 @@ export function usePlanTemplateImport() {
       }
     } catch (error) {
       console.error('Failed to import plan templates:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Failed to import plan templates'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to import plan templates'
       if (onError) {
         onError(errorMessage)
       }
@@ -157,4 +161,3 @@ export function usePlanTemplateImport() {
     handleImport,
   }
 }
-

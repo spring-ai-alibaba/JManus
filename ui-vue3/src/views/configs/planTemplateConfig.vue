@@ -88,7 +88,11 @@
 
         <!-- Group Content (Collapsible) -->
         <transition name="group-content">
-          <div v-show="!isGroupCollapsed(group.key)" class="group-content" :key="((group.key ?? '__ungrouped__') + '_content') as string">
+          <div
+            v-show="!isGroupCollapsed(group.key)"
+            class="group-content"
+            :key="((group.key ?? '__ungrouped__') + '_content') as string"
+          >
             <div
               v-for="(template, index) in group.templates"
               :key="template.planTemplateId ?? `template-${group.key ?? 'ungrouped'}-${index}`"

@@ -60,7 +60,7 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 																												// and
 																												// Markdown
 			".java", ".py", ".js", ".ts", ".jsx", ".tsx", // Common programming languages
-			".html", ".htm", ".css", ".scss", ".sass", ".less", // Web-related
+			".html", ".htm", ".mhtml", ".css", ".scss", ".sass", ".less", // Web-related
 			".xml", ".json", ".yaml", ".yml", ".properties", // Configuration files
 			".sql", ".sh", ".bat", ".cmd", // Scripts and database
 			".log", ".conf", ".ini", // Logs and configuration
