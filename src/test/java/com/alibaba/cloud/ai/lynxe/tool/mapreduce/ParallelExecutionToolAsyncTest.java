@@ -61,6 +61,7 @@ class ParallelExecutionToolAsyncTest {
 		executorPool = Mockito.mock(LevelBasedExecutorPool.class);
 
 		Mockito.when(planIdDispatcher.generateToolCallId()).thenReturn("test-call-id-1");
+		Mockito.when(planIdDispatcher.generateParallelExecutionId()).thenReturn("test-parallel-id-1");
 
 		tool = new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher, executorPool);
 	}
@@ -180,12 +181,13 @@ class ParallelExecutionToolAsyncTest {
 		// Arrange
 		RegisterBatchInput input = new RegisterBatchInput();
 		input.setAction("registerBatch");
+		input.setToolName("testTool");
 
-		List<Object> functions = new ArrayList<>();
-		Map<String, Object> func1 = new HashMap<>();
-		func1.put("toolName", "testTool");
-		func1.put("input", Map.of("key", "value"));
-		functions.add(func1);
+		// functions is now a List<Map<String, Object>> where each Map contains input parameters
+		List<Map<String, Object>> functions = new ArrayList<>();
+		Map<String, Object> func1Params = new HashMap<>();
+		func1Params.put("key", "value");
+		functions.add(func1Params);
 
 		input.setFunctions(functions);
 		ToolContext context = new ToolContext(Map.of());

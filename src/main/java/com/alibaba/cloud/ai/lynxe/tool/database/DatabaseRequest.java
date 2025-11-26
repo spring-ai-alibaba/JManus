@@ -91,6 +91,16 @@ public class DatabaseRequest {
 	private List<Object> parameters;
 
 	/**
+	 * File name for saving SQL query results to JSON file
+	 *
+	 * <p>
+	 * Used when operation type is {@code execute_sql_to_json_file}. Specifies the file
+	 * name (with relative path) where the JSON result will be saved.
+	 * </p>
+	 */
+	private String fileName;
+
+	/**
 	 * Get database operation type
 	 * @return Operation type string, such as "execute_sql", "get_table_name", etc.
 	 */
@@ -170,6 +180,22 @@ public class DatabaseRequest {
 	 */
 	public void setParameters(List<Object> parameters) {
 		this.parameters = parameters;
+	}
+
+	/**
+	 * Get file name for saving SQL query results
+	 * @return File name for JSON output, may be null
+	 */
+	public String getFileName() {
+		return fileName;
+	}
+
+	/**
+	 * Set file name for saving SQL query results
+	 * @param fileName File name (with relative path) for saving JSON output
+	 */
+	public void setFileName(String fileName) {
+		this.fileName = fileName;
 	}
 
 }

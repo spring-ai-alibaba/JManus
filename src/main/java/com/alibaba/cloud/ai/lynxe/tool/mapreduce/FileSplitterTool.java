@@ -550,7 +550,7 @@ public class FileSplitterTool extends AbstractBaseTool<FileSplitterTool.FileSpli
 
 	@Override
 	public String getServiceGroup() {
-		return "default-service-group";
+		return "parallel-execution";
 	}
 
 	@Override

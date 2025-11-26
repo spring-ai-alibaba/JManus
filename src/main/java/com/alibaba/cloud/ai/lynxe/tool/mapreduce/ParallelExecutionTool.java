@@ -34,7 +34,6 @@ import com.alibaba.cloud.ai.lynxe.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.mapreduce.ParallelExecutionTool.RegisterBatchInput;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -107,8 +106,10 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 
 		private String action;
 
-		@com.fasterxml.jackson.annotation.JsonRawValue
-		private Object functions;
+		@com.fasterxml.jackson.annotation.JsonProperty("tool_name")
+		private String toolName;
+
+		private List<Map<String, Object>> functions;
 
 		public RegisterBatchInput() {
 		}
@@ -121,28 +122,6 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 			this.action = action;
 		}
 
-		public Object getFunctions() {
-			return functions;
-		}
-
-		public void setFunctions(Object functions) {
-			this.functions = functions;
-		}
-
-	}
-
-	/**
-	 * Function input for batch registration
-	 */
-	static class FunctionInput {
-
-		private String toolName;
-
-		private Map<String, Object> input;
-
-		public FunctionInput() {
-		}
-
 		public String getToolName() {
 			return toolName;
 		}
@@ -151,12 +130,12 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 			this.toolName = toolName;
 		}
 
-		public Map<String, Object> getInput() {
-			return input;
+		public List<Map<String, Object>> getFunctions() {
+			return functions;
 		}
 
-		public void setInput(Map<String, Object> input) {
-			this.input = input;
+		public void setFunctions(List<Map<String, Object>> functions) {
+			this.functions = functions;
 		}
 
 	}
@@ -181,7 +160,7 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 
 	@Override
 	public String getServiceGroup() {
-		return "default-service-group";
+		return "parallel-execution";
 	}
 
 	@Override
@@ -200,48 +179,35 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 				{
 				    "type": "object",
 				    "oneOf": [
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": { "type": "string", "const": "registerBatch" },
-				                "functions": {
-				                    "type": "array",
-				                    "description": "Array of functions to register",
-				                    "items": {
-				                        "type": "object",
-				                        "properties": {
-				                            "toolName": {"type": "string", "description": "Tool name"},
-				                            "input": {"type": "object", "description": "Input parameters for the tool"}
-				                        },
-				                        "required": ["toolName"]
-				                    }
-				                }
-				            },
-				            "required": ["action", "functions"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": { "type": "string", "const": "start" },
-				                "functionIds": {
-				                    "type": "array",
-				                    "description": "Array of function IDs to execute (optional, executes all if not provided)",
-				                    "items": {"type": "string"}
-				                }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": { "type": "string", "const": "clearPending" }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				        }
-				    ]
+							{
+							"description": "Register multiple executions of the same tool in parallel",
+							"properties": {
+								"action": { "const": "registerBatch" },
+								"tool_name": { "type": "string", "description": "Tool name (same for all calls)" },
+								"functions": {
+								"type": "array",
+								"description": "Array of input parameters for the same tool",
+								"items": { "type": "object", "description": "Input parameters for one execution" }
+								}
+							},
+							"required": ["action", "tool_name", "functions"],
+							"additionalProperties": false
+							},
+							{
+							"properties": {
+								"action": { "const": "start" }
+							},
+							"required": ["action"],
+							"additionalProperties": false
+							},
+							{
+							"properties": {
+								"action": { "const": "clearPending" }
+							},
+							"required": ["action"],
+							"additionalProperties": false
+							}
+						]
 				}
 				""";
 	}
@@ -313,67 +279,45 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 	@SuppressWarnings("unchecked")
 	private ToolExecuteResult registerFunctionsBatch(RegisterBatchInput input) {
 		try {
-			Object functionsRaw = input.getFunctions();
-			if (functionsRaw == null) {
+			String toolName = input.getToolName();
+			if (toolName == null || toolName.trim().isEmpty()) {
+				return new ToolExecuteResult("Error: tool_name parameter is required for registerBatch action");
+			}
+
+			List<Map<String, Object>> functionParamsList = input.getFunctions();
+			if (functionParamsList == null || functionParamsList.isEmpty()) {
 				return new ToolExecuteResult("No functions provided");
 			}
 
-			List<FunctionInput> functions;
-
-			// Try to parse as List first (Spring AI default behavior)
-			if (functionsRaw instanceof List) {
-				// Convert List<Map> to List<FunctionInput>
-				List<?> rawList = (List<?>) functionsRaw;
-				functions = new ArrayList<>();
-				for (Object item : rawList) {
-					if (item instanceof Map) {
-						// Convert Map to FunctionInput
-						Map<String, Object> map = (Map<String, Object>) item;
-						FunctionInput funcInput = objectMapper.convertValue(map, FunctionInput.class);
-						functions.add(funcInput);
-					}
-					else if (item instanceof FunctionInput) {
-						functions.add((FunctionInput) item);
-					}
+			// Ensure all items are properly formatted as Map<String, Object>
+			List<Map<String, Object>> validatedParamsList = new ArrayList<>();
+			for (Object item : functionParamsList) {
+				if (item instanceof Map) {
+					// Each item is already a Map of input parameters
+					validatedParamsList.add((Map<String, Object>) item);
+				}
+				else {
+					// Try to convert using ObjectMapper
+					Map<String, Object> params = objectMapper.convertValue(item, Map.class);
+					validatedParamsList.add(params);
 				}
 			}
-			// Try to parse as JSON string
-			else if (functionsRaw instanceof String) {
-				String functionsString = (String) functionsRaw;
-				functions = objectMapper.readValue(functionsString, new TypeReference<List<FunctionInput>>() {
-				});
-			}
-			// Try to parse as JSON array string (escaped)
-			else {
-				// Try to serialize and re-parse
-				String jsonString = objectMapper.writeValueAsString(functionsRaw);
-				functions = objectMapper.readValue(jsonString, new TypeReference<List<FunctionInput>>() {
-				});
-			}
 
-			if (functions == null || functions.isEmpty()) {
+			if (validatedParamsList.isEmpty()) {
 				return new ToolExecuteResult("No valid functions provided");
 			}
 
 			List<Map<String, Object>> registeredFunctions = new ArrayList<>();
-			for (FunctionInput functionInput : functions) {
-				String toolName = functionInput.getToolName();
-				if (toolName == null) {
-					logger.warn("Missing toolName in function input");
-					continue;
-				}
-
-				Map<String, Object> functionParams = functionInput.getInput();
-				if (functionParams == null) {
-					functionParams = new HashMap<>();
-				}
+			for (Map<String, Object> functionParams : validatedParamsList) {
+				// Ensure functionParams is not null
+				Map<String, Object> params = (functionParams != null) ? functionParams : new HashMap<>();
 
 				String funcId = planIdDispatcher.generateParallelExecutionId();
-				FunctionRegistry function = new FunctionRegistry(funcId, toolName, functionParams);
+				FunctionRegistry function = new FunctionRegistry(funcId, toolName, params);
 				functionRegistries.add(function);
 
 				registeredFunctions
-					.add(Map.of("id", funcId, "input", functionParams, "toolName", toolName, "status", "REGISTERED"));
+					.add(Map.of("id", funcId, "input", params, "toolName", toolName, "status", "REGISTERED"));
 			}
 
 			Map<String, Object> result = new HashMap<>();
