@@ -247,7 +247,7 @@ public class PlanningFactory {
 			// Add all tool definitions
 			toolDefinitions.add(BrowserUseTool.getInstance(chromeDriverService, innerStorageService, objectMapper,
 					shortUrlService, textFileService));
-			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper, textFileService));
+			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper, unifiedDirectoryManager));
 			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
 			toolDefinitions.add(DatabaseTableToExcelTool.getInstance(lynxeProperties, dataSourceService,

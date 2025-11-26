@@ -37,11 +37,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * File-based parallel execution tool that reads JSON parameters from a file (one JSON per
- * line) and executes a specified tool for each parameter set.
+ * File-based parallel execution tool that reads JSON parameters from a file (JSON array)
+ * and executes a specified tool for each parameter set.
  *
- * The file format: Each line contains a single JSON object. Newlines within JSON must be
- * escaped. One row = one parameter set.
+ * The file format: The entire file contains a single JSON array, where each element is a
+ * JSON object representing one parameter set.
  */
 public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedParallelExecutionTool.BatchExecutionInput>
 		implements AsyncToolCallBiFunctionDef<FileBasedParallelExecutionTool.BatchExecutionInput> {
@@ -115,8 +115,8 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 
 	@Override
 	public String getDescription() {
-		return "Reads JSON parameters from a file (one JSON per line) and executes a specified tool for each parameter set. "
-				+ "Each line in the file must contain a single JSON object. Newlines within JSON must be escaped. "
+		return "Reads JSON parameters from a file (JSON array) and executes a specified tool for each parameter set. "
+				+ "The file must contain a single JSON array, where each element is a JSON object representing one parameter set. "
 				+ "If the tool requires parameters that are not present in the JSON, they will be set to empty string.";
 	}
 
@@ -128,7 +128,7 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 				    "properties": {
 				        "file_name": {
 				            "type": "string",
-				            "description": "Relative path to the file containing JSON parameters (one JSON object per line)"
+				            "description": "Relative path to the file containing JSON array of parameters (each element is a parameter object)"
 				        },
 				        "tool_name": {
 				            "type": "string",
@@ -222,7 +222,7 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 	}
 
 	/**
-	 * Read file and parse JSON parameters (one JSON per line)
+	 * Read file and parse JSON array of parameters
 	 */
 	private List<Map<String, Object>> readAndParseFile(String fileName) {
 		try {
@@ -234,30 +234,29 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 				return null;
 			}
 
-			// Read all lines from file
-			List<String> lines = Files.readAllLines(absolutePath);
-			List<Map<String, Object>> paramsList = new ArrayList<>();
-
-			// Parse each line as JSON
-			for (int i = 0; i < lines.size(); i++) {
-				String line = lines.get(i).trim();
-				if (line.isEmpty()) {
-					continue; // Skip empty lines
-				}
-
-				try {
-					// Parse JSON from line
-					Map<String, Object> params = objectMapper.readValue(line, new TypeReference<Map<String, Object>>() {
-					});
-					paramsList.add(params);
-				}
-				catch (Exception e) {
-					logger.warn("Error parsing JSON at line {}: {}. Line content: {}", i + 1, e.getMessage(), line);
-					// Continue with next line instead of failing completely
-				}
+			// Read entire file content
+			String fileContent = Files.readString(absolutePath).trim();
+			if (fileContent.isEmpty()) {
+				logger.warn("File is empty: {}", absolutePath);
+				return new ArrayList<>();
 			}
 
-			return paramsList;
+			// Parse entire file as JSON array
+			try {
+				List<Map<String, Object>> paramsList = objectMapper.readValue(fileContent,
+						new TypeReference<List<Map<String, Object>>>() {
+						});
+				if (paramsList == null) {
+					logger.warn("Parsed JSON array is null, returning empty list");
+					return new ArrayList<>();
+				}
+				logger.debug("Successfully parsed {} parameter sets from file: {}", paramsList.size(), fileName);
+				return paramsList;
+			}
+			catch (Exception e) {
+				logger.error("Error parsing JSON array from file {}: {}", fileName, e.getMessage(), e);
+				return null;
+			}
 		}
 		catch (IOException e) {
 			logger.error("Error reading file {}: {}", fileName, e.getMessage(), e);

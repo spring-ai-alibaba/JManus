@@ -27,7 +27,7 @@ import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.ExecuteSqlAction;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.ExecuteSqlToJsonFileAction;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.GetTableNameAction;
-import com.alibaba.cloud.ai.lynxe.tool.textOperator.TextFileService;
+import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
@@ -39,13 +39,13 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 
 	private final ObjectMapper objectMapper;
 
-	private final TextFileService textFileService;
+	private final UnifiedDirectoryManager directoryManager;
 
 	public DatabaseReadTool(LynxeProperties lynxeProperties, DataSourceService dataSourceService,
-			ObjectMapper objectMapper, TextFileService textFileService) {
+			ObjectMapper objectMapper, UnifiedDirectoryManager directoryManager) {
 		this.dataSourceService = dataSourceService;
 		this.objectMapper = objectMapper;
-		this.textFileService = textFileService;
+		this.directoryManager = directoryManager;
 	}
 
 	public DataSourceService getDataSourceService() {
@@ -148,7 +148,7 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 					if (sqlQuery != null && !sqlQuery.trim().toUpperCase().startsWith("SELECT")) {
 						return new ToolExecuteResult("Only SELECT queries are allowed in read-only mode");
 					}
-					return new ExecuteSqlToJsonFileAction(textFileService, objectMapper, rootPlanId, currentPlanId)
+					return new ExecuteSqlToJsonFileAction(directoryManager, objectMapper, rootPlanId)
 						.execute(request, dataSourceService);
 				default:
 					return new ToolExecuteResult("Unknown action: " + action);
@@ -199,8 +199,8 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 	}
 
 	public static DatabaseReadTool getInstance(DataSourceService dataSourceService, ObjectMapper objectMapper,
-			TextFileService textFileService) {
-		return new DatabaseReadTool(null, dataSourceService, objectMapper, textFileService);
+			UnifiedDirectoryManager directoryManager) {
+		return new DatabaseReadTool(null, dataSourceService, objectMapper, directoryManager);
 	}
 
 }
