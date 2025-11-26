@@ -936,13 +936,16 @@ export function useMessageDialog() {
           continue
         }
         // If message doesn't have planExecution or status is not 'running', skip
-        console.log('[useMessageDialog] watchEffect: No record found and message has no running planExecution:', {
-          dialogId: dialog.id,
-          planId: dialog.planId,
-          hasPlanExecution: !!message.planExecution,
-          planExecutionStatus: message.planExecution?.status,
-          availableRecordKeys: recordsArray.map(([key]) => key),
-        })
+        console.log(
+          '[useMessageDialog] watchEffect: No record found and message has no running planExecution:',
+          {
+            dialogId: dialog.id,
+            planId: dialog.planId,
+            hasPlanExecution: !!message.planExecution,
+            planExecutionStatus: message.planExecution?.status,
+            availableRecordKeys: recordsArray.map(([key]) => key),
+          }
+        )
         continue
       }
 

@@ -43,7 +43,7 @@ public class FileTypeConfiguration {
 			"rb", "swift", "kt", "scala");
 
 	// Web files
-	public static final Set<String> WEB_FILES = Set.of("html", "css", "scss", "sass", "less");
+	public static final Set<String> WEB_FILES = Set.of("html", "htm", "css", "scss", "sass", "less", "mhtml");
 
 	// Configuration files
 	public static final Set<String> CONFIG_FILES = Set.of("json", "xml", "yaml", "yml", "toml", "ini", "conf");

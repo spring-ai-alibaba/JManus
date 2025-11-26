@@ -161,7 +161,7 @@
                 <button
                   class="delete-task-btn"
                   :title="$t('sidebar.deleteTemplate')"
-                  @click.stop="templateStore.deleteTemplate(template)"
+                  @click.stop="showDeleteConfirm(template)"
                 >
                   <Icon icon="carbon:close" width="16" />
                 </button>
@@ -172,6 +172,40 @@
       </template>
     </div>
   </div>
+
+  <!-- Delete Confirmation Modal -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="showDeleteConfirmModal" class="modal-overlay" @click="cancelDelete">
+        <div class="confirm-modal" @click.stop>
+          <div class="confirm-header">
+            <Icon icon="carbon:warning" class="warning-icon" />
+            <h3>{{ $t('sidebar.deleteConfirm') }}</h3>
+          </div>
+          <div class="confirm-content">
+            <p>
+              {{
+                $t('sidebar.deleteConfirmMessage', { templateName: templateToDelete?.title || '' })
+              }}
+            </p>
+          </div>
+          <div class="confirm-actions">
+            <button class="confirm-btn cancel-btn" @click="cancelDelete">
+              {{ $t('common.cancel') }}
+            </button>
+            <button
+              class="confirm-btn delete-btn"
+              @click="handleDeleteTemplate"
+              :disabled="deleting"
+            >
+              <Icon :icon="deleting ? 'carbon:loading' : 'carbon:trash-can'" />
+              {{ $t('common.delete') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -182,6 +216,7 @@ import type { PlanTemplateConfigVO } from '@/types/plan-template'
 import { Icon } from '@iconify/vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useToast } from '@/plugins/useToast'
 
 const { t } = useI18n()
 
@@ -191,8 +226,16 @@ const templateConfig = usePlanTemplateConfigSingleton()
 // Right panel management
 const rightPanel = useRightPanelSingleton()
 
+// Toast for notifications
+const toast = useToast()
+
 // Search functionality
 const searchKeyword = ref('')
+
+// Delete confirmation state
+const showDeleteConfirmModal = ref(false)
+const templateToDelete = ref<PlanTemplateConfigVO | null>(null)
+const deleting = ref(false)
 
 // Emits
 const emit = defineEmits<{
@@ -340,6 +383,46 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
   // and will be maintained throughout the async operations
 
   emit('templateSelected', template)
+}
+
+/**
+ * Show delete confirmation dialog
+ * @param template Template to delete
+ */
+const showDeleteConfirm = (template: PlanTemplateConfigVO) => {
+  templateToDelete.value = template
+  showDeleteConfirmModal.value = true
+}
+
+/**
+ * Handle template deletion
+ */
+const handleDeleteTemplate = async () => {
+  if (!templateToDelete.value) return
+
+  deleting.value = true
+  try {
+    await templateStore.deleteTemplate(templateToDelete.value)
+    showDeleteConfirmModal.value = false
+    templateToDelete.value = null
+    toast.success(t('sidebar.deleteSuccess') || 'Template deleted successfully')
+  } catch (error) {
+    console.error('Failed to delete template:', error)
+    toast.error(
+      t('sidebar.deleteFailed') ||
+        `Delete failed: ${error instanceof Error ? error.message : String(error)}`
+    )
+  } finally {
+    deleting.value = false
+  }
+}
+
+/**
+ * Cancel delete operation
+ */
+const cancelDelete = () => {
+  showDeleteConfirmModal.value = false
+  templateToDelete.value = null
 }
 </script>
 
@@ -704,5 +787,131 @@ const handleSelectTemplate = async (template: PlanTemplateConfigVO) => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Delete confirmation modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.confirm-modal {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.15));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.confirm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.warning-icon {
+  font-size: 24px;
+  color: #f59e0b;
+}
+
+.confirm-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.confirm-content {
+  padding: 20px 24px;
+}
+
+.confirm-content p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px 24px;
+  justify-content: flex-end;
+}
+
+.confirm-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid transparent;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.confirm-btn.cancel-btn {
+  background: rgba(156, 163, 175, 0.1);
+  border-color: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+}
+
+.confirm-btn.cancel-btn:hover {
+  background: rgba(156, 163, 175, 0.2);
+  border-color: rgba(156, 163, 175, 0.3);
+}
+
+.confirm-btn.delete-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.confirm-btn.delete-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.confirm-btn.delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal transition animations */
+.modal-enter-active,
+.modal-leave-active {
+  transition: all 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .confirm-modal,
+.modal-leave-to .confirm-modal {
+  transform: scale(0.9) translateY(-20px);
+}
+
+.modal-enter-to .confirm-modal,
+.modal-leave-from .confirm-modal {
+  transform: scale(1) translateY(0);
 }
 </style>
