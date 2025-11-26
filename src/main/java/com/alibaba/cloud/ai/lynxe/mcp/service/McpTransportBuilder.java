@@ -161,9 +161,15 @@ public class McpTransportBuilder {
 		}
 
 		// Set to null if empty
-		if (sseEndpoint.isEmpty()) {
-			sseEndpoint = null;
-		}
+    if (sseEndpoint.isEmpty()) {
+      sseEndpoint = null;
+    } else {
+      // Append query parameters if present
+      String query = parsedUrl.getQuery();
+      if (query != null && !query.isEmpty()) {
+        sseEndpoint += "?" + query;
+      }
+    }
 
 		logger.info("Building SSE transport for server: {} with baseUrl: {}, endpoint: {}", serverName, baseUrl,
 				sseEndpoint);
