@@ -152,8 +152,8 @@ public class McpTransportBuilder {
 		String baseUrl = parsedUrl.getProtocol() + "://" + parsedUrl.getHost()
 				+ (parsedUrl.getPort() == -1 ? "" : ":" + parsedUrl.getPort());
 
-		String path = parsedUrl.getPath();
-		String sseEndpoint = path;
+		String file = parsedUrl.getFile();
+		String sseEndpoint = file;
 
 		// Remove leading slash
 		if (sseEndpoint.startsWith("/")) {
@@ -163,13 +163,6 @@ public class McpTransportBuilder {
 		// Set to null if empty
 		if (sseEndpoint.isEmpty()) {
 			sseEndpoint = null;
-		}
-		else {
-			// Append query parameters if present
-			String query = parsedUrl.getQuery();
-			if (query != null && !query.isEmpty()) {
-				sseEndpoint += "?" + query;
-			}
 		}
 
 		logger.info("Building SSE transport for server: {} with baseUrl: {}, endpoint: {}", serverName, baseUrl,
