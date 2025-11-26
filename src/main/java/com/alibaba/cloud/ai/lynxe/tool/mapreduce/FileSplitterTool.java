@@ -57,7 +57,7 @@ public class FileSplitterTool extends AbstractBaseTool<FileSplitterTool.FileSpli
 																												// and
 																												// Markdown
 			".java", ".py", ".js", ".ts", ".jsx", ".tsx", // Common programming languages
-			".html", ".htm", ".css", ".scss", ".sass", ".less", // Web-related
+			".html", ".htm", ".mhtml", ".css", ".scss", ".sass", ".less", // Web-related
 			".xml", ".json", ".yaml", ".yml", ".properties", // Configuration files
 			".sql", ".sh", ".bat", ".cmd", // Scripts and database
 			".log", ".conf", ".ini", // Logs and configuration
@@ -481,7 +481,7 @@ public class FileSplitterTool extends AbstractBaseTool<FileSplitterTool.FileSpli
 				Supported file types:
 				- Text files (.txt, .md, .markdown)
 				- Programming files (.java, .py, .js, .ts, .cpp, .c, .h, .go, .rs, .php, .rb, .swift, .kt, .scala)
-				- Web files (.html, .htm, .css, .scss, .sass, .less)
+				- Web files (.html, .htm, .mhtml, .css, .scss, .sass, .less)
 				- Configuration files (.json, .xml, .yaml, .yml, .properties, .conf, .ini)
 				- Scripts (.sql, .sh, .bat, .cmd)
 				- Build tools (.gradle, .pom, .mvn)
@@ -550,7 +550,7 @@ public class FileSplitterTool extends AbstractBaseTool<FileSplitterTool.FileSpli
 
 	@Override
 	public String getServiceGroup() {
-		return "default-service-group";
+		return "parallel-execution";
 	}
 
 	@Override

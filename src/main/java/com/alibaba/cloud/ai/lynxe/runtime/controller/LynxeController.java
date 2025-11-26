@@ -68,6 +68,7 @@ import com.alibaba.cloud.ai.lynxe.runtime.service.UserInputService;
 import com.alibaba.cloud.ai.lynxe.workspace.conversation.entity.vo.Memory;
 import com.alibaba.cloud.ai.lynxe.workspace.conversation.service.MemoryService;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.cache.Cache;
@@ -753,10 +754,10 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 		// This happens when TerminateTool returns a JSON string that gets stored as a
 		// string field
 		try {
-			// Try to parse as JSON
-			Object jsonObject = objectMapper.readValue(result, Object.class);
-			// Re-serialize without escaping
-			return objectMapper.writeValueAsString(jsonObject);
+			// Try to parse as JSON using JsonNode to preserve field order
+			JsonNode jsonNode = objectMapper.readTree(result);
+			// Re-serialize without escaping, preserving field order
+			return objectMapper.writeValueAsString(jsonNode);
 		}
 		catch (Exception e) {
 			// If it's not valid JSON, return as-is

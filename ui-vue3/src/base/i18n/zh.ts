@@ -758,7 +758,7 @@ const words: I18nType = {
     unsupportedFileType: '不支持的文件类型',
     fileSizeExceeded: '文件大小超出限制',
     maxFileSize: '最大文件大小：50MB',
-    supportedFormats: '支持的格式：PDF、文本、CSV、JSON、XML、HTML、日志、代码文件等',
+    supportedFormats: '支持的格式：PDF、文本、CSV、JSON、XML、HTML、MHTML、日志、代码文件等',
   },
 
   // 侧边栏
@@ -773,6 +773,10 @@ const words: I18nType = {
     unnamedPlan: '未命名计划',
     noDescription: '无描述',
     deleteTemplate: '删除此计划模板',
+    deleteConfirm: '删除确认',
+    deleteConfirmMessage: '确定要删除计划模板 "{templateName}" 吗？此操作不可恢复。',
+    deleteSuccess: '计划模板删除成功',
+    deleteFailed: '删除计划模板失败',
     jsonTemplate: 'Func-Agent计划模板编辑器',
     rollback: '回滚',
     restore: '恢复',

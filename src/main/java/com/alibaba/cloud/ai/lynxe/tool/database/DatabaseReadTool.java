@@ -25,7 +25,9 @@ import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.ExecuteSqlAction;
+import com.alibaba.cloud.ai.lynxe.tool.database.action.ExecuteSqlToJsonFileAction;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.GetTableNameAction;
+import com.alibaba.cloud.ai.lynxe.tool.textOperator.TextFileService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
@@ -37,10 +39,13 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 
 	private final ObjectMapper objectMapper;
 
+	private final TextFileService textFileService;
+
 	public DatabaseReadTool(LynxeProperties lynxeProperties, DataSourceService dataSourceService,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper, TextFileService textFileService) {
 		this.dataSourceService = dataSourceService;
 		this.objectMapper = objectMapper;
+		this.textFileService = textFileService;
 	}
 
 	public DataSourceService getDataSourceService() {
@@ -66,6 +71,7 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 				Use this tool when you need to:
 				- 'execute_read_sql': Execute SELECT queries (read-only operations only)
 				- 'get_table_name': Find table names based on table comments
+				- 'execute_sql_to_json_file': Execute SELECT query and save results to JSON file
 
 				Important: When querying NULL values, use NULL keyword explicitly (e.g., WHERE email IS NULL).
 				""";
@@ -96,6 +102,17 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 				            },
 				            "required": ["action", "text"],
 				            "additionalProperties": false
+				        },
+				        {
+				            "type": "object",
+				            "properties": {
+				                "action": { "type": "string", "const": "execute_sql_to_json_file" },
+				                "query": { "type": "string", "description": "SELECT query statement to execute (read-only)" },
+				                "fileName": { "type": "string", "description": "File name (with relative path) to save JSON results, e.g., 'results.json' or 'data/query_results.json'" },
+				                "datasourceName": { "type": "string", "description": "Data source name, optional" }
+				            },
+				            "required": ["action", "query", "fileName"],
+				            "additionalProperties": false
 				        }
 				    ]
 				}
@@ -125,6 +142,14 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 					return new ExecuteSqlAction().execute(request, dataSourceService);
 				case "get_table_name":
 					return new GetTableNameAction(objectMapper).execute(request, dataSourceService);
+				case "execute_sql_to_json_file":
+					// Validate that it's a SELECT query
+					String sqlQuery = request.getQuery();
+					if (sqlQuery != null && !sqlQuery.trim().toUpperCase().startsWith("SELECT")) {
+						return new ToolExecuteResult("Only SELECT queries are allowed in read-only mode");
+					}
+					return new ExecuteSqlToJsonFileAction(textFileService, objectMapper, rootPlanId, currentPlanId)
+						.execute(request, dataSourceService);
 				default:
 					return new ToolExecuteResult("Unknown action: " + action);
 			}
@@ -173,8 +198,9 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 		}
 	}
 
-	public static DatabaseReadTool getInstance(DataSourceService dataSourceService, ObjectMapper objectMapper) {
-		return new DatabaseReadTool(null, dataSourceService, objectMapper);
+	public static DatabaseReadTool getInstance(DataSourceService dataSourceService, ObjectMapper objectMapper,
+			TextFileService textFileService) {
+		return new DatabaseReadTool(null, dataSourceService, objectMapper, textFileService);
 	}
 
 }
