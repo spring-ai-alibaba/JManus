@@ -218,4 +218,52 @@ public class UserService {
 		return entityOpt.map(UserEntity::getCurrentConversationId).orElse(null);
 	}
 
+	/**
+	 * Get current language preference from default user (ID 1)
+	 * @return The language preference ("zh" or "en"), defaults to "zh" if not set or user not found
+	 */
+	public String getLanguage() {
+		logger.debug("Getting language preference from default user");
+		Optional<UserEntity> entityOpt = userRepository.findById(1L);
+		if (entityOpt.isEmpty()) {
+			logger.warn("Default user (ID 1) not found, returning default language 'zh'");
+			return "zh";
+		}
+		UserEntity entity = entityOpt.get();
+		String language = entity.getLanguage();
+		if (language == null || language.trim().isEmpty()) {
+			logger.debug("Language not set for default user, returning default 'zh'");
+			return "zh";
+		}
+		return language;
+	}
+
+	/**
+	 * Set language preference for default user (ID 1)
+	 * @param language The language to set ("zh" or "en")
+	 * @return True if updated successfully, false if user not found
+	 */
+	public boolean setLanguage(String language) {
+		logger.info("Setting language preference to '{}' for default user", language);
+		if (language == null || language.trim().isEmpty()) {
+			logger.warn("Invalid language value provided: {}", language);
+			return false;
+		}
+		// Validate language value
+		if (!"zh".equals(language) && !"en".equals(language)) {
+			logger.warn("Invalid language value: {}. Must be 'zh' or 'en'", language);
+			return false;
+		}
+		Optional<UserEntity> entityOpt = userRepository.findById(1L);
+		if (entityOpt.isEmpty()) {
+			logger.warn("Default user (ID 1) not found, cannot set language");
+			return false;
+		}
+		UserEntity entity = entityOpt.get();
+		entity.setLanguage(language);
+		userRepository.save(entity);
+		logger.info("Updated language preference to '{}' for default user", language);
+		return true;
+	}
+
 }
