@@ -118,13 +118,14 @@ public class SpringBootPlaywrightInitializer {
 				if (Files.isDirectory(browsersPath) && Files.isReadable(browsersPath)) {
 					// Check if chromium directory exists
 					boolean hasChromium = Files.list(browsersPath)
-							.anyMatch(p -> p.getFileName().toString().startsWith("chromium-"));
+						.anyMatch(p -> p.getFileName().toString().startsWith("chromium-"));
 					if (hasChromium) {
 						log.info("Chromium browser binaries found in: {}", browserPath);
 						System.setProperty("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1");
 					}
 					else {
-						log.warn("Browser directory exists but Chromium not found. Browsers will be downloaded on first use.");
+						log.warn(
+								"Browser directory exists but Chromium not found. Browsers will be downloaded on first use.");
 					}
 				}
 				else {
@@ -132,7 +133,8 @@ public class SpringBootPlaywrightInitializer {
 				}
 			}
 			catch (Exception e) {
-				log.warn("Error checking browser binaries: {}. Browsers will be downloaded on first use.", e.getMessage());
+				log.warn("Error checking browser binaries: {}. Browsers will be downloaded on first use.",
+						e.getMessage());
 			}
 		}
 		else {

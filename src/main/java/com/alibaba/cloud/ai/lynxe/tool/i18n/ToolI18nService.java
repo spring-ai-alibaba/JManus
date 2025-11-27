@@ -28,8 +28,8 @@ import org.yaml.snakeyaml.Yaml;
 import com.alibaba.cloud.ai.lynxe.user.service.UserService;
 
 /**
- * Service for loading tool internationalization (i18n) content from YAML files
- * Loads tool descriptions and parameters based on current user language preference
+ * Service for loading tool internationalization (i18n) content from YAML files Loads tool
+ * descriptions and parameters based on current user language preference
  */
 @Service
 public class ToolI18nService {
@@ -218,4 +218,3 @@ public class ToolI18nService {
 	}
 
 }
-

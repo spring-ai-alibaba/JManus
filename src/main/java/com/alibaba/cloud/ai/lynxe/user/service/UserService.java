@@ -220,7 +220,8 @@ public class UserService {
 
 	/**
 	 * Get current language preference from default user (ID 1)
-	 * @return The language preference ("zh" or "en"), defaults to "zh" if not set or user not found
+	 * @return The language preference ("zh" or "en"), defaults to "zh" if not set or user
+	 * not found
 	 */
 	public String getLanguage() {
 		logger.debug("Getting language preference from default user");

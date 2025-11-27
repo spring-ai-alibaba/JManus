@@ -369,7 +369,9 @@ public class ChromeDriverService implements IChromeDriverService {
 				if (browserPath != null) {
 					java.nio.file.Path browsersDir = java.nio.file.Paths.get(browserPath);
 					if (!java.nio.file.Files.exists(browsersDir)) {
-						log.warn("Browser binaries directory does not exist: {}. Playwright will download browsers on first use.", browserPath);
+						log.warn(
+								"Browser binaries directory does not exist: {}. Playwright will download browsers on first use.",
+								browserPath);
 					}
 					else {
 						log.debug("Browser binaries directory exists: {}", browserPath);
@@ -456,12 +458,21 @@ public class ChromeDriverService implements IChromeDriverService {
 																// updates
 						"--enable-automation", "--password-store=basic", "--use-mock-keychain",
 						// macOS-specific crash prevention flags
-						"--disable-software-rasterizer", // Prevents GPU-related crashes on macOS
-						"--disable-accelerated-2d-canvas", // Prevents canvas rendering crashes
-						"--disable-accelerated-video-decode", // Prevents video decode crashes
-						"--disable-features=UseChromeOSDirectVideoDecoder", // Prevents video decoder crashes
-						"--disable-features=MediaFoundationRenderer", // Prevents media foundation crashes
-						"--js-flags=--max-old-space-size=4096")); // Limits JS memory to prevent OOM crashes
+						"--disable-software-rasterizer", // Prevents GPU-related crashes
+															// on macOS
+						"--disable-accelerated-2d-canvas", // Prevents canvas rendering
+															// crashes
+						"--disable-accelerated-video-decode", // Prevents video decode
+																// crashes
+						"--disable-features=UseChromeOSDirectVideoDecoder", // Prevents
+																			// video
+																			// decoder
+																			// crashes
+						"--disable-features=MediaFoundationRenderer", // Prevents media
+																		// foundation
+																		// crashes
+						"--js-flags=--max-old-space-size=4096")); // Limits JS memory to
+																	// prevent OOM crashes
 
 				launchOptions.setArgs(args);
 

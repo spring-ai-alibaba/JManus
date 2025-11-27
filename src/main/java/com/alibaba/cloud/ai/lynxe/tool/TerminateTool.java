@@ -359,7 +359,8 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 
 	@Override
 	public String getParameters() {
-		// For TerminateTool, parameters are dynamically generated based on expectedReturnInfo
+		// For TerminateTool, parameters are dynamically generated based on
+		// expectedReturnInfo
 		if (toolI18nService != null) {
 			// We use the base parameters from i18n and modify if needed
 			String baseParams = toolI18nService.getParameters("terminate-tool");

@@ -264,9 +264,8 @@ public class PlanningFactory {
 			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper, toolI18nService));
 			// toolDefinitions.add(new DocLoaderTool());
 
-			toolDefinitions.add(
-					new GlobalFileOperator(textFileService, innerStorageService, objectMapper, shortUrlService,
-							toolI18nService));
+			toolDefinitions.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper,
+					shortUrlService, toolI18nService));
 			toolDefinitions.add(new FileImportOperator(textFileService, null, toolI18nService));
 			toolDefinitions.add(new FileSplitterTool(textFileService, objectMapper, toolI18nService));
 			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper, toolI18nService));

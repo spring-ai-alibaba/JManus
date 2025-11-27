@@ -56,7 +56,7 @@ public class LlmTraceRecorder {
 	public void recordRequest(OpenAiApi.ChatCompletionRequest chatRequest) {
 		try {
 			logger.info("Request[{}]: {}", requestId, objectMapper.writer().writeValueAsString(chatRequest));
-			
+
 			// Calculate input character count from all messages in the request
 			int count = 0;
 			if (chatRequest != null && chatRequest.messages() != null) {
@@ -79,7 +79,6 @@ public class LlmTraceRecorder {
 			String responseJson = objectMapper.writer().writeValueAsString(chatResponse);
 			logger.info("Response[{}]: {}", requestId, objectMapper.writer().writeValueAsString(chatResponse));
 
-			
 			this.outputCharCount = responseJson.length();
 			logger.info("Response[{}] OutputCharCount: {}", requestId, this.outputCharCount);
 		}
