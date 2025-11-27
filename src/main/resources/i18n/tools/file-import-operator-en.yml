@@ -1,0 +1,25 @@
+description: |
+  Import all files and subdirectories from a specified real file system path to
+  the current directory. This tool recursively copies all files and folders
+  from the source path to the current directory.
+
+  Keywords: import files, copy files, file import, directory import, bulk import,
+  file migration, shared files import.
+
+  Operation:
+  - import: Import all files and subdirectories from real_path to current directory
+    Requires real_path parameter (absolute or relative file system path)
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "real_path": {
+              "type": "string",
+              "description": "Real file system path (absolute or relative) to import files from. All files and subdirectories will be recursively copied to the current directory"
+          }
+      },
+      "required": ["real_path"],
+      "additionalProperties": false
+  }
+

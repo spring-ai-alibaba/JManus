@@ -1,0 +1,18 @@
+description: |
+  在终端中执行 bash 命令（当前操作系统：%s）。
+  * 长时间运行的命令：对于可能无限期运行的命令，应该在后台运行并将输出重定向到文件，例如：command = `python3 app.py > server.log 2>&1 &`。
+  * 交互式命令：如果 bash 命令返回退出代码 `-1`，这意味着进程尚未完成。助手必须发送第二个终端调用，其中 `command` 为空（这将检索任何其他日志），或者可以发送其他文本（将 `command` 设置为文本）到运行进程的 STDIN，或者可以发送 command=`ctrl+c` 来中断进程。
+  * 超时处理：如果命令执行结果显示 "Command timed out. Sending SIGINT to the process"，助手应该尝试在后台重新运行该命令。
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "command": {
+              "type": "string",
+              "description": "要执行的 bash 命令。当之前的退出代码为 `-1` 时可以为空以查看其他日志。可以是 `ctrl+c` 来中断当前正在运行的进程。"
+          }
+      },
+      "required": ["command"]
+  }
+

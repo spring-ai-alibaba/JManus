@@ -79,6 +79,14 @@ public class ThinkActRecordEntity {
 	@Column(name = "error_message", columnDefinition = "LONGTEXT")
 	private String errorMessage;
 
+	// Input character count (total characters in all messages sent to LLM)
+	@Column(name = "input_char_count")
+	private Integer inputCharCount;
+
+	// Output character count (total characters in LLM response)
+	@Column(name = "output_char_count")
+	private Integer outputCharCount;
+
 	// Action tool information(When disabling parallel tool calls, there is always only
 	// one)
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -142,6 +150,22 @@ public class ThinkActRecordEntity {
 
 	public void setErrorMessage(String errorMessage) {
 		this.errorMessage = errorMessage;
+	}
+
+	public Integer getInputCharCount() {
+		return inputCharCount;
+	}
+
+	public void setInputCharCount(Integer inputCharCount) {
+		this.inputCharCount = inputCharCount;
+	}
+
+	public Integer getOutputCharCount() {
+		return outputCharCount;
+	}
+
+	public void setOutputCharCount(Integer outputCharCount) {
+		this.outputCharCount = outputCharCount;
 	}
 
 	public List<ActToolInfoEntity> getActToolInfoList() {

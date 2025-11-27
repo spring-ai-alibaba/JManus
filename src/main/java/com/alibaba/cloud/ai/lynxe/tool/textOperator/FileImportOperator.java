@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -66,8 +67,12 @@ public class FileImportOperator extends AbstractBaseTool<FileImportOperator.File
 
 	private final TextFileService textFileService;
 
-	public FileImportOperator(TextFileService textFileService, ObjectMapper objectMapper) {
+	private final ToolI18nService toolI18nService;
+
+	public FileImportOperator(TextFileService textFileService, ObjectMapper objectMapper,
+			ToolI18nService toolI18nService) {
 		this.textFileService = textFileService;
+		this.toolI18nService = toolI18nService;
 	}
 
 	@Override
@@ -214,35 +219,12 @@ public class FileImportOperator extends AbstractBaseTool<FileImportOperator.File
 
 	@Override
 	public String getDescription() {
-		return """
-				Import all files and subdirectories from a specified real file system path to
-				the current directory. This tool recursively copies all files and folders
-				from the source path to the current directory.
-
-				Keywords: import files, copy files, file import, directory import, bulk import,
-				file migration, shared files import.
-
-				Operation:
-				- import: Import all files and subdirectories from real_path to current directory
-				  Requires real_path parameter (absolute or relative file system path)
-				""";
+		return toolI18nService.getDescription("file-import-operator");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "properties": {
-				        "real_path": {
-				            "type": "string",
-				            "description": "Real file system path (absolute or relative) to import files from. All files and subdirectories will be recursively copied to the current directory"
-				        }
-				    },
-				    "required": ["real_path"],
-				    "additionalProperties": false
-				}
-				""";
+		return toolI18nService.getParameters("file-import-operator");
 	}
 
 	@Override

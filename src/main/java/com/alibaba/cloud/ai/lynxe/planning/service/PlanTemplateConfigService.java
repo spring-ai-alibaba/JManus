@@ -158,14 +158,6 @@ public class PlanTemplateConfigService {
 
 		if (!existingTemplates.isEmpty()) {
 			FuncAgentToolEntity planTemplate = existingTemplates.get(0);
-			// Update serviceGroup on existing PlanTemplate if provided in configVO
-			String serviceGroup = configVO.getServiceGroup();
-			if (serviceGroup != null && !serviceGroup.trim().isEmpty()
-					&& !serviceGroup.equals(planTemplate.getServiceGroup())) {
-				planTemplate.setServiceGroup(serviceGroup);
-				funcAgentToolRepository.save(planTemplate);
-				log.info("Updated serviceGroup to '{}' on PlanTemplate with ID: {}", serviceGroup, planTemplateId);
-			}
 			// Convert entity to VO
 			PlanTemplateConfigVO result = new PlanTemplateConfigVO();
 			result.setPlanTemplateId(planTemplate.getPlanTemplateId());

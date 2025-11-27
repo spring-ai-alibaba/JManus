@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.database.DataSourceService;
 import com.alibaba.cloud.ai.lynxe.tool.database.DatabaseRequest;
-import com.alibaba.cloud.ai.lynxe.tool.textOperator.TextFileService;
+import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -47,20 +47,17 @@ public class ExecuteSqlToJsonFileAction extends AbstractDatabaseAction {
 
 	private static final Logger log = LoggerFactory.getLogger(ExecuteSqlToJsonFileAction.class);
 
-	private final TextFileService textFileService;
+	private final UnifiedDirectoryManager directoryManager;
 
 	private final ObjectMapper objectMapper;
 
 	private final String rootPlanId;
 
-	private final String currentPlanId;
-
-	public ExecuteSqlToJsonFileAction(TextFileService textFileService, ObjectMapper objectMapper, String rootPlanId,
-			String currentPlanId) {
-		this.textFileService = textFileService;
+	public ExecuteSqlToJsonFileAction(UnifiedDirectoryManager directoryManager, ObjectMapper objectMapper,
+			String rootPlanId) {
+		this.directoryManager = directoryManager;
 		this.objectMapper = objectMapper;
 		this.rootPlanId = rootPlanId;
-		this.currentPlanId = currentPlanId;
 	}
 
 	@Override
@@ -218,16 +215,35 @@ public class ExecuteSqlToJsonFileAction extends AbstractDatabaseAction {
 	}
 
 	/**
-	 * Save JSON results to file
+	 * Save JSON results to file following the common rule: save to rootPlanId/shared/
+	 * directory (same as MarkdownConverterTool)
 	 */
 	private ToolExecuteResult saveToFile(List<Map<String, Object>> jsonResults, String fileName,
 			String datasourceName) {
 		try {
-			// Get file path using TextFileService
-			Path filePath = textFileService.getCreateFilePath(rootPlanId, fileName, currentPlanId);
+			if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
+				log.error("rootPlanId is required for file operations but is null or empty");
+				return new ToolExecuteResult("Datasource: " + (datasourceName != null ? datasourceName : "default")
+						+ "\nError: rootPlanId is required for saving files");
+			}
 
-			// Ensure parent directory exists
-			Files.createDirectories(filePath.getParent());
+			// Get root plan directory and resolve to shared subdirectory (same as
+			// MarkdownConverterTool)
+			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
+			Path sharedDirectory = rootPlanDirectory.resolve("shared");
+
+			// Ensure shared directory exists
+			Files.createDirectories(sharedDirectory);
+
+			// Resolve file path within the shared directory
+			Path filePath = sharedDirectory.resolve(fileName).normalize();
+
+			// Ensure the path stays within the shared directory
+			if (!filePath.startsWith(sharedDirectory)) {
+				log.warn("File path is outside shared directory: {}", fileName);
+				return new ToolExecuteResult("Datasource: " + (datasourceName != null ? datasourceName : "default")
+						+ "\nError: File path is outside shared directory");
+			}
 
 			// Convert to JSON string with pretty printing
 			String jsonContent = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonResults);

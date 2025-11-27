@@ -1,0 +1,57 @@
+description: |
+  Create interactive forms to collect user input. This tool allows you to define form fields and collect structured data from users through a web interface.
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "title": {
+              "type": "string",
+              "description": "Title of the form displayed to the user"
+          },
+          "description": {
+              "type": "string",
+              "description": "Description of the form and what information is being collected"
+          },
+          "inputs": {
+              "type": "array",
+              "items": {
+                  "type": "object",
+                  "properties": {
+                      "name": {
+                          "type": "string",
+                          "description": "Name/ID of the input field"
+                      },
+                      "label": {
+                          "type": "string",
+                          "description": "Display label for the input field"
+                      },
+                      "type": {
+                          "type": "string",
+                          "enum": ["text", "number", "email", "password", "textarea", "select", "checkbox", "radio"],
+                          "description": "Type of input field"
+                      },
+                      "required": {
+                          "type": "boolean",
+                          "description": "Whether this field is required"
+                      },
+                      "placeholder": {
+                          "type": "string",
+                          "description": "Placeholder text for the input field"
+                      },
+                      "options": {
+                          "type": "array",
+                          "items": {
+                              "type": "string"
+                          },
+                          "description": "Options for select, checkbox, or radio inputs"
+                      }
+                  },
+                  "required": ["name", "label", "type"]
+              },
+              "description": "Array of input field definitions"
+          }
+      },
+      "required": ["title", "description", "inputs"]
+  }
+

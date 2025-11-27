@@ -1,0 +1,183 @@
+description: |
+  与 Web 浏览器交互以执行各种操作，如导航、元素交互、内容提取和标签页管理。优先使用此工具处理搜索相关任务。
+
+  支持的操作包括：
+  - 'navigate': 访问特定 URL
+  - 'click': 按索引点击元素
+  - 'input_text': 在元素中输入文本
+  - 'key_enter': 按 Enter 键
+  - 'screenshot': 捕获截图
+  - 'scroll': 向上/向下滚动页面
+  - 'refresh': 刷新当前页面
+  - 'new_tab': 使用指定 URL 打开新标签页
+  - 'close_tab': 关闭当前标签页
+  - 'switch_tab': 切换到特定标签页
+  - 'get_web_content': 获取当前页面 ARIA 快照内容
+
+  注意：浏览器操作有超时配置，默认为 30 秒。
+
+parameters: |
+  {
+      "type": "object",
+      "oneOf": [
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "navigate"
+                  },
+                  "url": {
+                      "type": "string",
+                      "description": "要导航到的 URL"
+                  }
+              },
+              "required": ["action", "url"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "click"
+                  },
+                  "index": {
+                      "type": "integer",
+                      "description": "要点击的元素索引。这对应于每个交互元素在 ARIA 快照中显示的 idx 值（例如，idx=39）。"
+                  }
+              },
+              "required": ["action", "index"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "input_text"
+                  },
+                  "index": {
+                      "type": "integer",
+                      "description": "要输入文本的元素索引。这对应于每个交互元素在 ARIA 快照中显示的 idx 值（例如，idx=39）。"
+                  },
+                  "text": {
+                      "type": "string",
+                      "description": "要输入的文本"
+                  }
+              },
+              "required": ["action", "index", "text"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "key_enter"
+                  },
+                  "index": {
+                      "type": "integer",
+                      "description": "要按 Enter 的元素索引。这对应于每个交互元素在 ARIA 快照中显示的 idx 值（例如，idx=39）。"
+                  }
+              },
+              "required": ["action", "index"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "screenshot"
+                  }
+              },
+              "required": ["action"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "scroll"
+                  },
+                  "scroll_amount": {
+                      "type": "integer",
+                      "description": "滚动量（以像素为单位）。正值向下滚动，负值向上滚动。如果未提供，将使用 'direction'，默认 500 像素。"
+                  },
+                  "direction": {
+                      "type": "string",
+                      "enum": ["up", "down"],
+                      "description": "滚动方向。当未提供 'scroll_amount' 时使用。默认为 500 像素。"
+                  }
+              },
+              "required": ["action", "direction"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "switch_tab"
+                  },
+                  "tab_id": {
+                      "type": "integer",
+                      "description": "要切换到的标签页 ID"
+                  }
+              },
+              "required": ["action", "tab_id"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "new_tab"
+                  },
+                  "url": {
+                      "type": "string",
+                      "description": "在新标签页中打开的 URL"
+                  }
+              },
+              "required": ["action", "url"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "close_tab"
+                  }
+              },
+              "required": ["action"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "refresh"
+                  }
+              },
+              "required": ["action"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "get_web_content"
+                  }
+              },
+              "required": ["action"],
+              "additionalProperties": false
+          }
+      ]
+  }
+

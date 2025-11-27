@@ -63,7 +63,7 @@ public class StreamingResponseHandler {
 	private LynxeEventPublisher lynxeEventPublisher;
 
 	@Autowired
-	private LlmTraceRecorder llmTraceRecorder;
+	private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
 	/**
 	 * Result container for streaming response processing
@@ -74,14 +74,30 @@ public class StreamingResponseHandler {
 
 		private final boolean earlyTerminated;
 
+		private final int outputCharCount;
+
+		private final int inputCharCount;
+
 		public StreamingResult(ChatResponse lastResponse) {
 			this.lastResponse = lastResponse;
 			this.earlyTerminated = false;
+			this.outputCharCount = 0;
+			this.inputCharCount = 0;
 		}
 
 		public StreamingResult(ChatResponse lastResponse, boolean earlyTerminated) {
 			this.lastResponse = lastResponse;
 			this.earlyTerminated = earlyTerminated;
+			this.outputCharCount = 0;
+			this.inputCharCount = 0;
+		}
+
+		public StreamingResult(ChatResponse lastResponse, boolean earlyTerminated, int outputCharCount,
+				int inputCharCount) {
+			this.lastResponse = lastResponse;
+			this.earlyTerminated = earlyTerminated;
+			this.outputCharCount = outputCharCount;
+			this.inputCharCount = inputCharCount;
 		}
 
 		public ChatResponse getLastResponse() {
@@ -116,6 +132,22 @@ public class StreamingResponseHandler {
 							: "";
 		}
 
+		/**
+		 * Get output character count
+		 * @return The total number of characters in the LLM response
+		 */
+		public int getOutputCharCount() {
+			return outputCharCount;
+		}
+
+		/**
+		 * Get input character count
+		 * @return The total number of characters in the LLM request
+		 */
+		public int getInputCharCount() {
+			return inputCharCount;
+		}
+
 	}
 
 	/**
@@ -128,12 +160,18 @@ public class StreamingResponseHandler {
 	 * when only thinking text (no tool calls) is detected
 	 * @param enableEarlyTermination Whether to enable early termination for thinking-only
 	 * responses. Should be false for text-only generation tasks (e.g., summaries)
+	 * @param inputCharCount The input character count from the request (calculated from
+	 * messages)
 	 * @return StreamingResult containing merged content and the last response
 	 */
 	public StreamingResult processStreamingResponse(Flux<ChatResponse> responseFlux, String contextName, String planId,
-			boolean isDebugModel, boolean enableEarlyTermination) {
+			boolean isDebugModel, boolean enableEarlyTermination, int inputCharCount) {
+		// Create a new LlmTraceRecorder instance for this request
+		LlmTraceRecorder llmTraceRecorder = new LlmTraceRecorder(objectMapper);
+		// Set input count (calculated from messages in DynamicAgent/PlanFinalizer)
+		llmTraceRecorder.setInputCharCount(inputCharCount);
+		AtomicReference<Integer> inputCharCountRef = new AtomicReference<>(inputCharCount);
 		try {
-			LlmTraceRecorder.initRequest();
 			AtomicReference<Long> lastLogTime = new AtomicReference<>(System.currentTimeMillis());
 
 			// Assistant Message
@@ -160,6 +198,9 @@ public class StreamingResponseHandler {
 
 			AtomicInteger responseCounter = new AtomicInteger(0);
 			long startTime = System.currentTimeMillis();
+
+			// Store output character count for retrieval after stream completes
+			AtomicReference<Integer> outputCharCountRef = new AtomicReference<>(0);
 
 			// Early termination flag: when non-debug mode detects thinking-only response
 			AtomicReference<Boolean> shouldEarlyTerminate = new AtomicReference<>(false);
@@ -199,6 +240,7 @@ public class StreamingResponseHandler {
 					if (chatResponse.getResult().getOutput().getText() != null) {
 						messageTextContentRef.get().append(chatResponse.getResult().getOutput().getText());
 					}
+
 					messageToolCallRef.get().addAll(chatResponse.getResult().getOutput().getToolCalls());
 					messageMetadataMapRef.get().putAll(chatResponse.getResult().getOutput().getMetadata());
 				}
@@ -277,6 +319,12 @@ public class StreamingResponseHandler {
 					.usage(usage)
 					.promptMetadata(metadataPromptMetadataRef.get())
 					.build();
+
+				// Calculate output character count BEFORE clearing the StringBuilder
+				int outputCharCount = messageTextContentRef.get() != null ? messageTextContentRef.get().length() : 0;
+				// Store it in AtomicReference for later retrieval
+				outputCharCountRef.set(outputCharCount);
+
 				finalChatResponseRef.set(
 						new ChatResponse(List.of(new Generation(
 								new AssistantMessage(messageTextContentRef.get().toString(),
@@ -335,6 +383,11 @@ public class StreamingResponseHandler {
 							.promptMetadata(metadataPromptMetadataRef.get())
 							.build();
 
+						// Calculate output character count before creating response
+						int outputCharCount = messageTextContentRef.get() != null ? messageTextContentRef.get().length()
+								: 0;
+						outputCharCountRef.set(outputCharCount);
+
 						// Create ChatResponse with accumulated text and empty tool calls
 						finalChatResponseRef.set(new ChatResponse(List.of(new Generation(
 								new AssistantMessage(messageTextContentRef.get().toString(),
@@ -342,7 +395,7 @@ public class StreamingResponseHandler {
 								generationMetadataRef.get())), chatResponseMetadata));
 
 						log.info("Constructed ChatResponse from early termination: {} characters, {} tool calls",
-								messageTextContentRef.get().length(), messageToolCallRef.get().size());
+								outputCharCount, messageToolCallRef.get().size());
 					}
 				}
 			});
@@ -371,10 +424,16 @@ public class StreamingResponseHandler {
 				throw e;
 			}
 
-			llmTraceRecorder.recordResponse(finalChatResponseRef.get());
+			if (llmTraceRecorder != null) {
+				llmTraceRecorder.recordResponse(finalChatResponseRef.get());
+				// Get counts from the recorder
+				outputCharCountRef.set(llmTraceRecorder.getOutputCharCount());
+				inputCharCountRef.set(llmTraceRecorder.getInputCharCount());
+			}
 			// Check if early termination occurred and pass the flag to StreamingResult
 			boolean wasEarlyTerminated = shouldEarlyTerminate.get();
-			return new StreamingResult(finalChatResponseRef.get(), wasEarlyTerminated);
+			return new StreamingResult(finalChatResponseRef.get(), wasEarlyTerminated, outputCharCountRef.get(),
+					inputCharCountRef.get());
 		}
 		catch (Exception e) {
 			// Final error handling - log and re-throw
@@ -386,9 +445,6 @@ public class StreamingResponseHandler {
 						responseBody != null && !responseBody.isEmpty() ? responseBody : "(empty)", webClientException);
 			}
 			throw e;
-		}
-		finally {
-			LlmTraceRecorder.clearRequest();
 		}
 	}
 
@@ -403,9 +459,10 @@ public class StreamingResponseHandler {
 	 * @return The merged text content
 	 */
 	public String processStreamingTextResponse(Flux<ChatResponse> responseFlux, String contextName, String planId,
-			boolean isDebugModel) {
+			boolean isDebugModel, int inputCharCount) {
 		// For text-only responses, disable early termination (no tool calls expected)
-		StreamingResult result = processStreamingResponse(responseFlux, contextName, planId, isDebugModel, false);
+		StreamingResult result = processStreamingResponse(responseFlux, contextName, planId, isDebugModel, false,
+				inputCharCount);
 		return result.getEffectiveText();
 	}
 

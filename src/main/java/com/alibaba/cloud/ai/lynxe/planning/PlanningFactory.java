@@ -82,6 +82,7 @@ import com.alibaba.cloud.ai.lynxe.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
 import com.alibaba.cloud.ai.lynxe.tool.jsxGenerator.JsxGeneratorOperator;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.mapreduce.FileBasedParallelExecutionTool;
 import com.alibaba.cloud.ai.lynxe.tool.mapreduce.FileSplitterTool;
 import com.alibaba.cloud.ai.lynxe.tool.mapreduce.ParallelExecutionService;
@@ -183,6 +184,9 @@ public class PlanningFactory {
 	@Autowired
 	private ParallelExecutionService parallelExecutionService;
 
+	@Autowired
+	private ToolI18nService toolI18nService;
+
 	public PlanningFactory(ChromeDriverService chromeDriverService, PlanExecutionRecorder recorder,
 			LynxeProperties lynxeProperties, TextFileService textFileService, McpService mcpService,
 			SmartContentSavingService innerStorageService, UnifiedDirectoryManager unifiedDirectoryManager,
@@ -246,24 +250,25 @@ public class PlanningFactory {
 		if (agentInit) {
 			// Add all tool definitions
 			toolDefinitions.add(BrowserUseTool.getInstance(chromeDriverService, innerStorageService, objectMapper,
-					shortUrlService, textFileService));
-			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper, textFileService));
-			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper));
-			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper));
+					shortUrlService, textFileService, toolI18nService));
+			toolDefinitions.add(DatabaseReadTool.getInstance(dataSourceService, objectMapper, unifiedDirectoryManager,
+					toolI18nService));
+			toolDefinitions.add(DatabaseWriteTool.getInstance(dataSourceService, objectMapper, toolI18nService));
+			toolDefinitions.add(DatabaseMetadataTool.getInstance(dataSourceService, objectMapper, toolI18nService));
 			toolDefinitions.add(DatabaseTableToExcelTool.getInstance(lynxeProperties, dataSourceService,
-					excelProcessingService, unifiedDirectoryManager));
-			toolDefinitions.add(UuidGenerateTool.getInstance(objectMapper));
-			toolDefinitions
-				.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService, lynxeProperties));
-			toolDefinitions.add(new DebugTool());
-			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper));
+					excelProcessingService, unifiedDirectoryManager, toolI18nService));
+			toolDefinitions.add(UuidGenerateTool.getInstance(objectMapper, toolI18nService));
+			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService,
+					lynxeProperties, toolI18nService));
+			toolDefinitions.add(new DebugTool(toolI18nService));
+			toolDefinitions.add(new Bash(unifiedDirectoryManager, objectMapper, toolI18nService));
 			// toolDefinitions.add(new DocLoaderTool());
 
-			toolDefinitions
-				.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper, shortUrlService));
-			toolDefinitions.add(new FileImportOperator(textFileService, null));
-			toolDefinitions.add(new FileSplitterTool(textFileService, objectMapper));
-			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper));
+			toolDefinitions.add(new GlobalFileOperator(textFileService, innerStorageService, objectMapper,
+					shortUrlService, toolI18nService));
+			toolDefinitions.add(new FileImportOperator(textFileService, null, toolI18nService));
+			toolDefinitions.add(new FileSplitterTool(textFileService, objectMapper, toolI18nService));
+			toolDefinitions.add(new DirectoryOperator(unifiedDirectoryManager, objectMapper, toolI18nService));
 			// toolDefinitions.add(new UploadedFileLoaderTool(unifiedDirectoryManager,
 			// applicationContext));
 			// toolDefinitions.add(new TableProcessorTool(tableProcessingService));
@@ -272,23 +277,23 @@ public class PlanningFactory {
 			// toolDefinitions.add(new FileMergeTool(unifiedDirectoryManager));
 			// toolDefinitions.add(new GoogleSearch());
 			// toolDefinitions.add(new PythonExecute());
-			toolDefinitions.add(new FormInputTool(objectMapper));
-			toolDefinitions.add(
-					new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher, levelBasedExecutorPool));
-			toolDefinitions.add(new FileBasedParallelExecutionTool(objectMapper, toolCallbackMap, textFileService,
-					parallelExecutionService));
-			toolDefinitions.add(new CronTool(cronService, objectMapper));
+			toolDefinitions.add(new FormInputTool(objectMapper, toolI18nService));
+			toolDefinitions.add(new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher,
+					levelBasedExecutorPool, toolI18nService));
+			toolDefinitions.add(new FileBasedParallelExecutionTool(objectMapper, toolCallbackMap,
+					unifiedDirectoryManager, parallelExecutionService, toolI18nService));
+			toolDefinitions.add(new CronTool(cronService, objectMapper, toolI18nService));
 			toolDefinitions.add(new MarkdownConverterTool(unifiedDirectoryManager,
 					new PdfOcrProcessor(unifiedDirectoryManager, llmService, lynxeProperties,
 							new ImageRecognitionExecutorPool(lynxeProperties)),
 					new ImageOcrProcessor(unifiedDirectoryManager, llmService, lynxeProperties,
 							new ImageRecognitionExecutorPool(lynxeProperties)),
-					excelProcessingService, objectMapper));
+					excelProcessingService, objectMapper, toolI18nService));
 			// toolDefinitions.add(new ExcelProcessorTool(excelProcessingService));
 		}
 		else {
-			toolDefinitions
-				.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService, lynxeProperties));
+			toolDefinitions.add(new TerminateTool(planId, expectedReturnInfo, objectMapper, shortUrlService,
+					lynxeProperties, toolI18nService));
 		}
 
 		List<McpServiceEntity> functionCallbacks = mcpService.getFunctionCallbacks(planId);

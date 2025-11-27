@@ -1,0 +1,22 @@
+description: |
+  从指定的真实文件系统路径导入所有文件和子目录到当前目录。此工具递归复制源路径中的所有文件和文件夹到当前目录。
+
+  关键词：导入文件、复制文件、文件导入、目录导入、批量导入、文件迁移、共享文件导入。
+
+  操作：
+  - import: 从 real_path 导入所有文件和子目录到当前目录
+    需要 real_path 参数（绝对或相对文件系统路径）
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "real_path": {
+              "type": "string",
+              "description": "要导入文件的真实文件系统路径（绝对或相对）。所有文件和子目录将递归复制到当前目录"
+          }
+      },
+      "required": ["real_path"],
+      "additionalProperties": false
+  }
+
