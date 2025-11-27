@@ -18,6 +18,9 @@ package com.alibaba.cloud.ai.lynxe.tool.mapreduce;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +34,7 @@ import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.AsyncToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.lynxe.tool.textOperator.TextFileService;
+import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +55,7 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 
 	private final Map<String, ToolCallBackContext> toolCallbackMap;
 
-	private final TextFileService textFileService;
+	private final UnifiedDirectoryManager directoryManager;
 
 	private final ParallelExecutionService parallelExecutionService;
 
@@ -89,10 +92,10 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 	}
 
 	public FileBasedParallelExecutionTool(ObjectMapper objectMapper, Map<String, ToolCallBackContext> toolCallbackMap,
-			TextFileService textFileService, ParallelExecutionService parallelExecutionService) {
+			UnifiedDirectoryManager directoryManager, ParallelExecutionService parallelExecutionService) {
 		this.objectMapper = objectMapper;
 		this.toolCallbackMap = toolCallbackMap;
-		this.textFileService = textFileService;
+		this.directoryManager = directoryManager;
 		this.parallelExecutionService = parallelExecutionService;
 	}
 
@@ -191,17 +194,51 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 
 			return parallelExecutionService.executeToolsInParallel(executions, toolCallbackMap, toolContext)
 				.thenApply(results -> {
+					// Count success and failure
+					int successCount = 0;
+					int failureCount = 0;
+					for (Map<String, Object> result : results) {
+						String status = (String) result.get("status");
+						if ("SUCCESS".equals(status)) {
+							successCount++;
+						}
+						else {
+							failureCount++;
+						}
+					}
+
+					// Build complete result JSON
 					Map<String, Object> finalResult = new HashMap<>();
 					finalResult.put("message", "Executed " + paramsList.size() + " parameter sets");
 					finalResult.put("total", paramsList.size());
+					finalResult.put("successCount", successCount);
+					finalResult.put("failureCount", failureCount);
 					finalResult.put("results", results);
-					try {
-						return new ToolExecuteResult(objectMapper.writeValueAsString(finalResult));
+
+					// Generate filename: toolName-timestamp.json
+					String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+					String outputFileName = toolName + "-" + timestamp + ".json";
+
+					// Save complete JSON to file
+					String savedFilePath = saveResultToFile(finalResult, outputFileName);
+					if (savedFilePath == null) {
+						// If file save failed, return full result as fallback
+						try {
+							return new ToolExecuteResult(objectMapper.writeValueAsString(finalResult));
+						}
+						catch (JsonProcessingException e) {
+							logger.error("Error serializing result: {}", e.getMessage(), e);
+							return new ToolExecuteResult(
+									String.format("Executed %d parameter sets. Success: %d, Failure: %d",
+											paramsList.size(), successCount, failureCount));
+						}
 					}
-					catch (JsonProcessingException e) {
-						logger.error("Error serializing result: {}", e.getMessage(), e);
-						return new ToolExecuteResult("Executed " + paramsList.size() + " parameter sets");
-					}
+
+					// Return simplified message
+					String summaryMessage = String.format(
+							"Executed %d parameter sets. Success: %d, Failure: %d. Details saved to file: %s",
+							paramsList.size(), successCount, failureCount, outputFileName);
+					return new ToolExecuteResult(summaryMessage);
 				})
 				.exceptionally(ex -> {
 					logger.error("Error in batch execution: {}", ex.getMessage(), ex);
@@ -223,21 +260,38 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 
 	/**
 	 * Read file and parse JSON array of parameters
+	 * File is located in root plan shared directory (same as MarkdownConverterTool)
 	 */
 	private List<Map<String, Object>> readAndParseFile(String fileName) {
 		try {
-			// Get absolute path using TextFileService
-			Path absolutePath = textFileService.getAbsolutePath(rootPlanId, fileName, currentPlanId);
+			if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
+				logger.error("rootPlanId is required for file operations but is null or empty");
+				return null;
+			}
 
-			if (!Files.exists(absolutePath)) {
-				logger.error("File not found: {}", absolutePath);
+			// Get the root plan directory and resolve to shared subdirectory (same as
+			// MarkdownConverterTool)
+			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
+			Path sharedDirectory = rootPlanDirectory.resolve("shared");
+
+			// Resolve file path within the shared directory
+			Path filePath = sharedDirectory.resolve(fileName).normalize();
+
+			// Ensure the path stays within the shared directory
+			if (!filePath.startsWith(sharedDirectory)) {
+				logger.warn("File path is outside shared directory: {}", fileName);
+				return null;
+			}
+
+			if (!Files.exists(filePath)) {
+				logger.error("File not found in root plan shared directory: {} (full path: {})", fileName, filePath);
 				return null;
 			}
 
 			// Read entire file content
-			String fileContent = Files.readString(absolutePath).trim();
+			String fileContent = Files.readString(filePath).trim();
 			if (fileContent.isEmpty()) {
-				logger.warn("File is empty: {}", absolutePath);
+				logger.warn("File is empty: {}", filePath);
 				return new ArrayList<>();
 			}
 
@@ -260,6 +314,60 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 		}
 		catch (IOException e) {
 			logger.error("Error reading file {}: {}", fileName, e.getMessage(), e);
+			return null;
+		}
+		catch (Exception e) {
+			logger.error("Error finding file {}: {}", fileName, e.getMessage(), e);
+			return null;
+		}
+	}
+
+	/**
+	 * Save complete result JSON to file in shared directory
+	 * @param result Complete result map
+	 * @param fileName Output file name
+	 * @return Saved file path (relative) or null if failed
+	 */
+	private String saveResultToFile(Map<String, Object> result, String fileName) {
+		try {
+			if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
+				logger.error("rootPlanId is required for file operations but is null or empty");
+				return null;
+			}
+
+			// Get root plan directory and resolve to shared subdirectory (same as
+			// MarkdownConverterTool)
+			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
+			Path sharedDirectory = rootPlanDirectory.resolve("shared");
+
+			// Ensure shared directory exists
+			Files.createDirectories(sharedDirectory);
+
+			// Resolve file path within the shared directory
+			Path filePath = sharedDirectory.resolve(fileName).normalize();
+
+			// Ensure the path stays within the shared directory
+			if (!filePath.startsWith(sharedDirectory)) {
+				logger.warn("File path is outside shared directory: {}", fileName);
+				return null;
+			}
+
+			// Convert to JSON string with pretty printing
+			String jsonContent = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result);
+
+			// Write to file
+			Files.writeString(filePath, jsonContent, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
+					StandardOpenOption.WRITE);
+
+			logger.info("Successfully saved execution results to file: {}", filePath);
+			return fileName; // Return relative path
+		}
+		catch (IOException e) {
+			logger.error("Error saving results to file: {}", fileName, e);
+			return null;
+		}
+		catch (Exception e) {
+			logger.error("Error converting results to JSON for file: {}", fileName, e);
 			return null;
 		}
 	}

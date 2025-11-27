@@ -275,8 +275,8 @@ public class PlanningFactory {
 			toolDefinitions.add(new FormInputTool(objectMapper));
 			toolDefinitions.add(
 					new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher, levelBasedExecutorPool));
-			toolDefinitions.add(new FileBasedParallelExecutionTool(objectMapper, toolCallbackMap, textFileService,
-					parallelExecutionService));
+			toolDefinitions.add(new FileBasedParallelExecutionTool(objectMapper, toolCallbackMap,
+					unifiedDirectoryManager, parallelExecutionService));
 			toolDefinitions.add(new CronTool(cronService, objectMapper));
 			toolDefinitions.add(new MarkdownConverterTool(unifiedDirectoryManager,
 					new PdfOcrProcessor(unifiedDirectoryManager, llmService, lynxeProperties,
