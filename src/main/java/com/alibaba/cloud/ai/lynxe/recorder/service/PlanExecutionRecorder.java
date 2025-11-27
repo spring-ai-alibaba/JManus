@@ -122,16 +122,28 @@ public interface PlanExecutionRecorder {
 
 		private final String errorMessage;
 
+		private final Integer inputCharCount;
+
+		private final Integer outputCharCount;
+
 		private final List<ActToolParam> actToolInfoList;
 
 		public ThinkActRecordParams(String thinkActId, String stepId, String thinkInput, String thinkOutput,
 				String errorMessage, List<ActToolParam> actToolInfoList) {
+			this(thinkActId, stepId, thinkInput, thinkOutput, errorMessage, null, null, actToolInfoList);
+		}
+
+		public ThinkActRecordParams(String thinkActId, String stepId, String thinkInput, String thinkOutput,
+				String errorMessage, Integer inputCharCount, Integer outputCharCount,
+				List<ActToolParam> actToolInfoList) {
 
 			this.thinkActId = thinkActId;
 			this.stepId = stepId;
 			this.thinkInput = thinkInput;
 			this.thinkOutput = thinkOutput;
 			this.errorMessage = errorMessage;
+			this.inputCharCount = inputCharCount;
+			this.outputCharCount = outputCharCount;
 			this.actToolInfoList = actToolInfoList;
 		}
 
@@ -157,6 +169,14 @@ public interface PlanExecutionRecorder {
 
 		public List<ActToolParam> getActToolInfoList() {
 			return actToolInfoList;
+		}
+
+		public Integer getInputCharCount() {
+			return inputCharCount;
+		}
+
+		public Integer getOutputCharCount() {
+			return outputCharCount;
 		}
 
 	}

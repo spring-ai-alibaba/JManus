@@ -1,0 +1,38 @@
+description: |
+  管理多个函数的并行执行，支持批量注册和状态跟踪。
+
+parameters: |
+  {
+      "type": "object",
+      "oneOf": [
+              {
+              "description": "并行注册同一工具的多个执行",
+              "properties": {
+                  "action": { "const": "registerBatch" },
+                  "tool_name": { "type": "string", "description": "工具名称（所有调用相同）" },
+                  "functions": {
+                  "type": "array",
+                  "description": "同一工具的输入参数数组",
+                  "items": { "type": "object", "description": "一次执行的输入参数" }
+                  }
+              },
+              "required": ["action", "tool_name", "functions"],
+              "additionalProperties": false
+              },
+              {
+              "properties": {
+                  "action": { "const": "start" }
+              },
+              "required": ["action"],
+              "additionalProperties": false
+              },
+              {
+              "properties": {
+                  "action": { "const": "clearPending" }
+              },
+              "required": ["action"],
+              "additionalProperties": false
+              }
+          ]
+  }
+

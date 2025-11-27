@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -54,11 +55,15 @@ public class DatabaseTableToExcelTool extends AbstractBaseTool<DatabaseTableToEx
 
 	private final UnifiedDirectoryManager directoryManager;
 
+	private final ToolI18nService toolI18nService;
+
 	public DatabaseTableToExcelTool(LynxeProperties lynxeProperties, DataSourceService dataSourceService,
-			IExcelProcessingService excelProcessingService, UnifiedDirectoryManager directoryManager) {
+			IExcelProcessingService excelProcessingService, UnifiedDirectoryManager directoryManager,
+			ToolI18nService toolI18nService) {
 		this.dataSourceService = dataSourceService;
 		this.excelProcessingService = excelProcessingService;
 		this.directoryManager = directoryManager;
+		this.toolI18nService = toolI18nService;
 	}
 
 	/**
@@ -141,47 +146,12 @@ public class DatabaseTableToExcelTool extends AbstractBaseTool<DatabaseTableToEx
 
 	@Override
 	public String getDescription() {
-		return """
-				Convert database table data to Excel format.
-				Supports exporting table data by table name or custom SQL query.
-				The Excel file will be saved in the root plan shared directory.
-				""";
+		return toolI18nService.getDescription("database-table-to-excel-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "properties": {
-				        "tableName": {
-				            "type": "string",
-				            "description": "Table name to export (if provided, will use SELECT * FROM tableName)"
-				        },
-				        "query": {
-				            "type": "string",
-				            "description": "Custom SQL SELECT query to execute (alternative to tableName)"
-				        },
-				        "datasourceName": {
-				            "type": "string",
-				            "description": "Data source name, optional (uses default if not specified)"
-				        },
-				        "filename": {
-				            "type": "string",
-				            "description": "Output Excel filename (e.g., 'table_export.xlsx'). If not provided, will generate from table name or query"
-				        },
-				        "worksheetName": {
-				            "type": "string",
-				            "description": "Worksheet name in Excel file (default: 'Sheet1')"
-				        },
-				        "parameters": {
-				            "type": "array",
-				            "description": "SQL parameters for prepared statements (when using query with ? placeholders)"
-				        }
-				    },
-				    "required": []
-				}
-				""";
+		return toolI18nService.getParameters("database-table-to-excel-tool");
 	}
 
 	@Override
@@ -449,9 +419,9 @@ public class DatabaseTableToExcelTool extends AbstractBaseTool<DatabaseTableToEx
 
 	public static DatabaseTableToExcelTool getInstance(LynxeProperties lynxeProperties,
 			DataSourceService dataSourceService, IExcelProcessingService excelProcessingService,
-			UnifiedDirectoryManager directoryManager) {
+			UnifiedDirectoryManager directoryManager, ToolI18nService toolI18nService) {
 		return new DatabaseTableToExcelTool(lynxeProperties, dataSourceService, excelProcessingService,
-				directoryManager);
+				directoryManager, toolI18nService);
 	}
 
 }

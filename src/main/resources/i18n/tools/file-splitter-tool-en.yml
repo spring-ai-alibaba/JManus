@@ -1,0 +1,55 @@
+description: |
+  Split text files (markdown, code, HTML, etc.) into smaller pieces. This tool helps break down
+  large text files into manageable chunks while preserving content completeness.
+
+  Important: Files are read from rootPlanId/shared/ directory, same as GlobalFileOperator and
+  MarkdownConverterTool. For example, to split rootPlanId/shared/projects.md, use file_path "projects.md".
+
+  Supported operations:
+  - split: Split a file into 10 smaller pieces (as evenly as possible by lines)
+    Parameters: file_path (required, relative to rootPlanId/shared/), header (optional - text to add at the beginning of each split file)
+    Output files are saved in the same directory as the source file, named with index prefix: 0-filename.ext, 1-filename.ext, etc.
+  - count: Count total lines and character size of a file
+    Parameters: file_path (required, relative to rootPlanId/shared/)
+
+parameters: |
+  {
+      "type": "object",
+      "oneOf": [
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "split"
+                  },
+                  "file_path": {
+                      "type": "string",
+                      "description": "Path to the file to split (relative to rootPlanId/shared/ directory, e.g., 'file.md' or 'subdir/file.md')"
+                  },
+                  "header": {
+                      "type": "string",
+                      "description": "Optional header text to add at the beginning of each split file"
+                  }
+              },
+              "required": ["action", "file_path"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "count"
+                  },
+                  "file_path": {
+                      "type": "string",
+                      "description": "Path to the file to count (relative to rootPlanId/shared/ directory, e.g., 'file.md' or 'subdir/file.md')"
+                  }
+              },
+              "required": ["action", "file_path"],
+              "additionalProperties": false
+          }
+      ]
+  }
+

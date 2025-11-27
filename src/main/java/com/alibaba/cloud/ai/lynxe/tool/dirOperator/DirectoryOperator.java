@@ -18,6 +18,7 @@ package com.alibaba.cloud.ai.lynxe.tool.dirOperator;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -42,9 +43,13 @@ public class DirectoryOperator extends AbstractBaseTool<DirectoryOperator.Direct
 
 	private final ObjectMapper objectMapper;
 
-	public DirectoryOperator(UnifiedDirectoryManager unifiedDirectoryManager, ObjectMapper objectMapper) {
+	private final ToolI18nService toolI18nService;
+
+	public DirectoryOperator(UnifiedDirectoryManager unifiedDirectoryManager, ObjectMapper objectMapper,
+			ToolI18nService toolI18nService) {
 		this.unifiedDirectoryManager = unifiedDirectoryManager;
 		this.objectMapper = objectMapper;
+		this.toolI18nService = toolI18nService;
 	}
 
 	/**
@@ -396,54 +401,12 @@ public class DirectoryOperator extends AbstractBaseTool<DirectoryOperator.Direct
 
 	@Override
 	public String getDescription() {
-		return """
-				Directory operator tool providing file system operations similar to Linux commands.
-				Supports listing files recursively (like 'ls -R') and copying files/directories (like 'cp -r').
-
-				Operations:
-				- list/ls: List files and directories with optional recursive traversal
-				- copy/cp: Copy files and directories recursively
-
-				Features:
-				- Recursive directory traversal
-				- File pattern filtering
-				- Detailed file information (size, timestamps)
-				- Error handling and validation
-				""";
+		return toolI18nService.getDescription("directory-operator");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "properties": {
-				        "action": {
-				            "type": "string",
-				            "enum": ["ls", "list", "cp", "copy"],
-				            "description": "Operation to perform: ls/list for listing files, cp/copy for copying files"
-				        },
-				        "source_path": {
-				            "type": "string",
-				            "description": "Source path for the operation (required for all operations)"
-				        },
-				        "target_path": {
-				            "type": "string",
-				            "description": "Target path for copy operations (required for copy operations)"
-				        },
-				        "recursive": {
-				            "type": "boolean",
-				            "default": false,
-				            "description": "Whether to perform recursive operations (for listing directories)"
-				        },
-				        "file_pattern": {
-				            "type": "string",
-				            "description": "Regex pattern to filter files by name"
-				        }
-				    },
-				    "required": ["action", "source_path"]
-				}
-				""";
+		return toolI18nService.getParameters("directory-operator");
 	}
 
 	@Override

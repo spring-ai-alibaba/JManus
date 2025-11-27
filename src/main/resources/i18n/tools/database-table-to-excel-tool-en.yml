@@ -1,0 +1,37 @@
+description: |
+  Convert database table data to Excel format.
+  Supports exporting table data by table name or custom SQL query.
+  The Excel file will be saved in the root plan shared directory.
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "tableName": {
+              "type": "string",
+              "description": "Table name to export (if provided, will use SELECT * FROM tableName)"
+          },
+          "query": {
+              "type": "string",
+              "description": "Custom SQL SELECT query to execute (alternative to tableName)"
+          },
+          "datasourceName": {
+              "type": "string",
+              "description": "Data source name, optional (uses default if not specified)"
+          },
+          "filename": {
+              "type": "string",
+              "description": "Output Excel filename (e.g., 'table_export.xlsx'). If not provided, will generate from table name or query"
+          },
+          "worksheetName": {
+              "type": "string",
+              "description": "Worksheet name in Excel file (default: 'Sheet1')"
+          },
+          "parameters": {
+              "type": "array",
+              "description": "SQL parameters for prepared statements (when using query with ? placeholders)"
+          }
+      },
+      "required": []
+  }
+

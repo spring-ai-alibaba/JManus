@@ -1,0 +1,23 @@
+description: |
+  Create and manage scheduled cron tasks. This tool allows you to create recurring tasks that will be executed automatically at specified times using cron expressions.
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "cronName": {
+              "type": "string",
+              "description": "Name of the cron task"
+          },
+          "cronTime": {
+              "type": "string",
+              "description": "Cron expression for scheduling (e.g., '0 0 8 * * ?' for daily at 8 AM，need 6 parameters)"
+          },
+          "planDesc": {
+              "type": "string",
+              "description": "Description of what this cron task does"
+          }
+      },
+      "required": ["cronName", "cronTime", "planDesc"]
+  }
+

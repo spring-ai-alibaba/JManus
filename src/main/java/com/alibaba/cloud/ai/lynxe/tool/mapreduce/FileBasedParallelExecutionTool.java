@@ -18,6 +18,9 @@ package com.alibaba.cloud.ai.lynxe.tool.mapreduce;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,17 +34,18 @@ import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.AsyncToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.lynxe.tool.textOperator.TextFileService;
+import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * File-based parallel execution tool that reads JSON parameters from a file (one JSON per
- * line) and executes a specified tool for each parameter set.
+ * File-based parallel execution tool that reads JSON parameters from a file (JSON array)
+ * and executes a specified tool for each parameter set.
  *
- * The file format: Each line contains a single JSON object. Newlines within JSON must be
- * escaped. One row = one parameter set.
+ * The file format: The entire file contains a single JSON array, where each element is a
+ * JSON object representing one parameter set.
  */
 public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedParallelExecutionTool.BatchExecutionInput>
 		implements AsyncToolCallBiFunctionDef<FileBasedParallelExecutionTool.BatchExecutionInput> {
@@ -52,9 +56,11 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 
 	private final Map<String, ToolCallBackContext> toolCallbackMap;
 
-	private final TextFileService textFileService;
+	private final UnifiedDirectoryManager directoryManager;
 
 	private final ParallelExecutionService parallelExecutionService;
+
+	private final ToolI18nService toolI18nService;
 
 	/**
 	 * Input class for batch execution
@@ -89,11 +95,13 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 	}
 
 	public FileBasedParallelExecutionTool(ObjectMapper objectMapper, Map<String, ToolCallBackContext> toolCallbackMap,
-			TextFileService textFileService, ParallelExecutionService parallelExecutionService) {
+			UnifiedDirectoryManager directoryManager, ParallelExecutionService parallelExecutionService,
+			ToolI18nService toolI18nService) {
 		this.objectMapper = objectMapper;
 		this.toolCallbackMap = toolCallbackMap;
-		this.textFileService = textFileService;
+		this.directoryManager = directoryManager;
 		this.parallelExecutionService = parallelExecutionService;
+		this.toolI18nService = toolI18nService;
 	}
 
 	/**
@@ -115,30 +123,12 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 
 	@Override
 	public String getDescription() {
-		return "Reads JSON parameters from a file (one JSON per line) and executes a specified tool for each parameter set. "
-				+ "Each line in the file must contain a single JSON object. Newlines within JSON must be escaped. "
-				+ "If the tool requires parameters that are not present in the JSON, they will be set to empty string.";
+		return toolI18nService.getDescription("file-based-parallel-execution-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "properties": {
-				        "file_name": {
-				            "type": "string",
-				            "description": "Relative path to the file containing JSON parameters (one JSON object per line)"
-				        },
-				        "tool_name": {
-				            "type": "string",
-				            "description": "Name of the tool to execute for each parameter set"
-				        }
-				    },
-				    "required": ["file_name", "tool_name"],
-				    "additionalProperties": false
-				}
-				""";
+		return toolI18nService.getParameters("file-based-parallel-execution-tool");
 	}
 
 	@Override
@@ -191,17 +181,51 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 
 			return parallelExecutionService.executeToolsInParallel(executions, toolCallbackMap, toolContext)
 				.thenApply(results -> {
+					// Count success and failure
+					int successCount = 0;
+					int failureCount = 0;
+					for (Map<String, Object> result : results) {
+						String status = (String) result.get("status");
+						if ("SUCCESS".equals(status)) {
+							successCount++;
+						}
+						else {
+							failureCount++;
+						}
+					}
+
+					// Build complete result JSON
 					Map<String, Object> finalResult = new HashMap<>();
 					finalResult.put("message", "Executed " + paramsList.size() + " parameter sets");
 					finalResult.put("total", paramsList.size());
+					finalResult.put("successCount", successCount);
+					finalResult.put("failureCount", failureCount);
 					finalResult.put("results", results);
-					try {
-						return new ToolExecuteResult(objectMapper.writeValueAsString(finalResult));
+
+					// Generate filename: toolName-timestamp.json
+					String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+					String outputFileName = toolName + "-" + timestamp + ".json";
+
+					// Save complete JSON to file
+					String savedFilePath = saveResultToFile(finalResult, outputFileName);
+					if (savedFilePath == null) {
+						// If file save failed, return full result as fallback
+						try {
+							return new ToolExecuteResult(objectMapper.writeValueAsString(finalResult));
+						}
+						catch (JsonProcessingException e) {
+							logger.error("Error serializing result: {}", e.getMessage(), e);
+							return new ToolExecuteResult(
+									String.format("Executed %d parameter sets. Success: %d, Failure: %d",
+											paramsList.size(), successCount, failureCount));
+						}
 					}
-					catch (JsonProcessingException e) {
-						logger.error("Error serializing result: {}", e.getMessage(), e);
-						return new ToolExecuteResult("Executed " + paramsList.size() + " parameter sets");
-					}
+
+					// Return simplified message
+					String summaryMessage = String.format(
+							"Executed %d parameter sets. Success: %d, Failure: %d. Details saved to file: %s",
+							paramsList.size(), successCount, failureCount, outputFileName);
+					return new ToolExecuteResult(summaryMessage);
 				})
 				.exceptionally(ex -> {
 					logger.error("Error in batch execution: {}", ex.getMessage(), ex);
@@ -222,45 +246,115 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 	}
 
 	/**
-	 * Read file and parse JSON parameters (one JSON per line)
+	 * Read file and parse JSON array of parameters File is located in root plan shared
+	 * directory (same as MarkdownConverterTool)
 	 */
 	private List<Map<String, Object>> readAndParseFile(String fileName) {
 		try {
-			// Get absolute path using TextFileService
-			Path absolutePath = textFileService.getAbsolutePath(rootPlanId, fileName, currentPlanId);
-
-			if (!Files.exists(absolutePath)) {
-				logger.error("File not found: {}", absolutePath);
+			if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
+				logger.error("rootPlanId is required for file operations but is null or empty");
 				return null;
 			}
 
-			// Read all lines from file
-			List<String> lines = Files.readAllLines(absolutePath);
-			List<Map<String, Object>> paramsList = new ArrayList<>();
+			// Get the root plan directory and resolve to shared subdirectory (same as
+			// MarkdownConverterTool)
+			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
+			Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
-			// Parse each line as JSON
-			for (int i = 0; i < lines.size(); i++) {
-				String line = lines.get(i).trim();
-				if (line.isEmpty()) {
-					continue; // Skip empty lines
-				}
+			// Resolve file path within the shared directory
+			Path filePath = sharedDirectory.resolve(fileName).normalize();
 
-				try {
-					// Parse JSON from line
-					Map<String, Object> params = objectMapper.readValue(line, new TypeReference<Map<String, Object>>() {
-					});
-					paramsList.add(params);
-				}
-				catch (Exception e) {
-					logger.warn("Error parsing JSON at line {}: {}. Line content: {}", i + 1, e.getMessage(), line);
-					// Continue with next line instead of failing completely
-				}
+			// Ensure the path stays within the shared directory
+			if (!filePath.startsWith(sharedDirectory)) {
+				logger.warn("File path is outside shared directory: {}", fileName);
+				return null;
 			}
 
-			return paramsList;
+			if (!Files.exists(filePath)) {
+				logger.error("File not found in root plan shared directory: {} (full path: {})", fileName, filePath);
+				return null;
+			}
+
+			// Read entire file content
+			String fileContent = Files.readString(filePath).trim();
+			if (fileContent.isEmpty()) {
+				logger.warn("File is empty: {}", filePath);
+				return new ArrayList<>();
+			}
+
+			// Parse entire file as JSON array
+			try {
+				List<Map<String, Object>> paramsList = objectMapper.readValue(fileContent,
+						new TypeReference<List<Map<String, Object>>>() {
+						});
+				if (paramsList == null) {
+					logger.warn("Parsed JSON array is null, returning empty list");
+					return new ArrayList<>();
+				}
+				logger.debug("Successfully parsed {} parameter sets from file: {}", paramsList.size(), fileName);
+				return paramsList;
+			}
+			catch (Exception e) {
+				logger.error("Error parsing JSON array from file {}: {}", fileName, e.getMessage(), e);
+				return null;
+			}
 		}
 		catch (IOException e) {
 			logger.error("Error reading file {}: {}", fileName, e.getMessage(), e);
+			return null;
+		}
+		catch (Exception e) {
+			logger.error("Error finding file {}: {}", fileName, e.getMessage(), e);
+			return null;
+		}
+	}
+
+	/**
+	 * Save complete result JSON to file in shared directory
+	 * @param result Complete result map
+	 * @param fileName Output file name
+	 * @return Saved file path (relative) or null if failed
+	 */
+	private String saveResultToFile(Map<String, Object> result, String fileName) {
+		try {
+			if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
+				logger.error("rootPlanId is required for file operations but is null or empty");
+				return null;
+			}
+
+			// Get root plan directory and resolve to shared subdirectory (same as
+			// MarkdownConverterTool)
+			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
+			Path sharedDirectory = rootPlanDirectory.resolve("shared");
+
+			// Ensure shared directory exists
+			Files.createDirectories(sharedDirectory);
+
+			// Resolve file path within the shared directory
+			Path filePath = sharedDirectory.resolve(fileName).normalize();
+
+			// Ensure the path stays within the shared directory
+			if (!filePath.startsWith(sharedDirectory)) {
+				logger.warn("File path is outside shared directory: {}", fileName);
+				return null;
+			}
+
+			// Convert to JSON string with pretty printing
+			String jsonContent = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result);
+
+			// Write to file
+			Files.writeString(filePath, jsonContent, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
+					StandardOpenOption.WRITE);
+
+			logger.info("Successfully saved execution results to file: {}", filePath);
+			return fileName; // Return relative path
+		}
+		catch (IOException e) {
+			logger.error("Error saving results to file: {}", fileName, e);
+			return null;
+		}
+		catch (Exception e) {
+			logger.error("Error converting results to JSON for file: {}", fileName, e);
 			return null;
 		}
 	}

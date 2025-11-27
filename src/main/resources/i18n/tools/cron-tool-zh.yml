@@ -1,0 +1,23 @@
+description: |
+  创建和管理计划任务（cron 任务）。此工具允许您创建将在指定时间使用 cron 表达式自动执行的重复任务。
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "cronName": {
+              "type": "string",
+              "description": "计划任务的名称"
+          },
+          "cronTime": {
+              "type": "string",
+              "description": "用于调度的 Cron 表达式（例如，'0 0 8 * * ?' 表示每天上午 8 点，需要 6 个参数）"
+          },
+          "planDesc": {
+              "type": "string",
+              "description": "此计划任务执行内容的描述"
+          }
+      },
+      "required": ["cronName", "cronTime", "planDesc"]
+  }
+

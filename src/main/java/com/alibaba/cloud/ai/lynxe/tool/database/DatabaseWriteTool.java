@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.ExecuteSqlAction;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -34,9 +35,15 @@ public class DatabaseWriteTool extends AbstractBaseTool<DatabaseRequest> {
 
 	private final DataSourceService dataSourceService;
 
+	private final ObjectMapper objectMapper;
+
+	private final ToolI18nService toolI18nService;
+
 	public DatabaseWriteTool(LynxeProperties lynxeProperties, DataSourceService dataSourceService,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper, ToolI18nService toolI18nService) {
 		this.dataSourceService = dataSourceService;
+		this.objectMapper = objectMapper;
+		this.toolI18nService = toolI18nService;
 	}
 
 	public DataSourceService getDataSourceService() {
@@ -57,46 +64,12 @@ public class DatabaseWriteTool extends AbstractBaseTool<DatabaseRequest> {
 
 	@Override
 	public String getDescription() {
-		return """
-				Execute write operations on database (INSERT, UPDATE, DELETE, CREATE, DROP, ALTER).
-				Use this tool when you need to modify database data or structure.
-
-				Operations:
-				- 'execute_write_sql': Execute INSERT, UPDATE, DELETE, or DDL statements using prepared statements
-
-				Features:
-				- Uses prepared statements with parameterized queries for SQL injection prevention
-				- Use ? placeholders in query and provide parameters array for safe parameter binding
-				- Supports all data types including strings, numbers, booleans, and null values
-
-				Examples:
-				- INSERT: query="INSERT INTO users (name, email) VALUES (?, ?)", parameters=["John", "john@example.com"]
-				- UPDATE: query="UPDATE users SET email = ? WHERE id = ?", parameters=["newemail@example.com", 123]
-				- DELETE: query="DELETE FROM users WHERE id = ?", parameters=[456]
-
-				Important: Always use ? placeholders and provide corresponding parameters array for data values.
-				""";
+		return toolI18nService.getDescription("database-write-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "properties": {
-				        "action": { "type": "string", "const": "execute_write_sql" },
-				        "query": { "type": "string", "description": "SQL statement for write operations (INSERT, UPDATE, DELETE, ALTER, etc.). Use ? placeholders for parameterized queries." },
-				        "parameters": {
-				            "type": "array",
-				            "description": "Optional array of parameter values for prepared statements. Values will be bound to ? placeholders in the query.",
-				            "items": { "type": ["string", "number", "boolean", "null"] }
-				        },
-				        "datasourceName": { "type": "string", "description": "Data source name, optional" }
-				    },
-				    "required": ["action", "query"],
-				    "additionalProperties": false
-				}
-				""";
+		return toolI18nService.getParameters("database-write-tool");
 	}
 
 	@Override
@@ -163,8 +136,9 @@ public class DatabaseWriteTool extends AbstractBaseTool<DatabaseRequest> {
 		}
 	}
 
-	public static DatabaseWriteTool getInstance(DataSourceService dataSourceService, ObjectMapper objectMapper) {
-		return new DatabaseWriteTool(null, dataSourceService, null);
+	public static DatabaseWriteTool getInstance(DataSourceService dataSourceService, ObjectMapper objectMapper,
+			ToolI18nService toolI18nService) {
+		return new DatabaseWriteTool(null, dataSourceService, null, toolI18nService);
 	}
 
 }

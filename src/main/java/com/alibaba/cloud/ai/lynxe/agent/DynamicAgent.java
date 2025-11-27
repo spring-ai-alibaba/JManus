@@ -341,15 +341,15 @@ public class DynamicAgent extends ReActAgent {
 				else {
 					chatClient = llmService.getDynamicAgentChatClient(modelName);
 				}
-				// Calculate and log word count for userPrompt
-				int wordCount = messages.stream().mapToInt(message -> {
+				// Calculate input character count from all messages before calling LLM
+				int inputCharCount = messages.stream().mapToInt(message -> {
 					String text = message.getText();
 					if (text == null || text.trim().isEmpty()) {
 						return 0;
 					}
 					return text.length();
 				}).sum();
-				log.info("User prompt word count: {}", wordCount);
+				log.info("User prompt character count: {}", inputCharCount);
 
 				// Use streaming response handler for better user experience and content
 				// merging
@@ -360,13 +360,19 @@ public class DynamicAgent extends ReActAgent {
 				boolean isDebugModel = lynxeProperties.getDebugDetail() != null && lynxeProperties.getDebugDetail();
 				// Enable early termination for agent thinking (should have tool calls)
 				streamResult = streamingResponseHandler.processStreamingResponse(responseFlux,
-						"Agent " + getName() + " thinking", getCurrentPlanId(), isDebugModel, true);
+						"Agent " + getName() + " thinking", getCurrentPlanId(), isDebugModel, true, inputCharCount);
 
 				response = streamResult.getLastResponse();
 
 				// Use merged content from streaming handler
 				List<ToolCall> toolCalls = streamResult.getEffectiveToolCalls();
 				String responseByLLm = streamResult.getEffectiveText();
+
+				// Get input and output character counts from StreamingResult
+				int finalInputCharCount = streamResult.getInputCharCount();
+				int finalOutputCharCount = streamResult.getOutputCharCount();
+				log.info("Input character count: {}, Output character count: {}", finalInputCharCount,
+						finalOutputCharCount);
 
 				// Check for early termination
 				boolean isEarlyTerminated = streamResult.isEarlyTerminated();
@@ -409,7 +415,7 @@ public class DynamicAgent extends ReActAgent {
 					}
 
 					ThinkActRecordParams paramsN = new ThinkActRecordParams(thinkActId, stepId, thinkInput,
-							responseByLLm, null, actToolInfoList);
+							responseByLLm, null, finalInputCharCount, finalOutputCharCount, actToolInfoList);
 					planExecutionRecorder.recordThinkingAndAction(step, paramsN);
 
 					// Clear exception cache if this was a retry attempt

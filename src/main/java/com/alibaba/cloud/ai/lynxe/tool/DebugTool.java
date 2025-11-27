@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 
 /**
  * A simple debug tool that allows LLM to output a message and return it directly. This
@@ -31,6 +32,12 @@ public class DebugTool extends AbstractBaseTool<Map<String, Object>> {
 	private static final Logger log = LoggerFactory.getLogger(DebugTool.class);
 
 	public static final String name = "debug";
+
+	private final ToolI18nService toolI18nService;
+
+	public DebugTool(ToolI18nService toolI18nService) {
+		this.toolI18nService = toolI18nService;
+	}
 
 	@Override
 	public ToolExecuteResult run(Map<String, Object> input) {
@@ -63,23 +70,12 @@ public class DebugTool extends AbstractBaseTool<Map<String, Object>> {
 
 	@Override
 	public String getDescription() {
-		return "Output a debug message. This tool allows you to log messages or output information during execution for debugging purposes.";
+		return toolI18nService.getDescription("debug-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				  "type": "object",
-				  "properties": {
-				    "message": {
-				      "type": "string",
-				      "description": "The debug message to output and return"
-				    }
-				  },
-				  "required": ["message"]
-				}
-				""";
+		return toolI18nService.getParameters("debug-tool");
 	}
 
 	@Override

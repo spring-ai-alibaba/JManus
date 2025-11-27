@@ -19,6 +19,7 @@ import com.alibaba.cloud.ai.lynxe.cron.service.CronService;
 import com.alibaba.cloud.ai.lynxe.cron.vo.CronConfig;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,13 +28,16 @@ public class CronTool extends AbstractBaseTool<CronTool.CronToolInput> {
 
 	private final ObjectMapper objectMapper;
 
+	private final ToolI18nService toolI18nService;
+
 	private static final Logger log = LoggerFactory.getLogger(CronTool.class);
 
 	private final CronService cronService;
 
-	public CronTool(CronService cronService, ObjectMapper objectMapper) {
+	public CronTool(CronService cronService, ObjectMapper objectMapper, ToolI18nService toolI18nService) {
 		this.cronService = cronService;
 		this.objectMapper = objectMapper;
+		this.toolI18nService = toolI18nService;
 	}
 
 	public static class CronToolInput {
@@ -114,33 +118,12 @@ public class CronTool extends AbstractBaseTool<CronTool.CronToolInput> {
 
 	@Override
 	public String getDescription() {
-		return """
-				Create and manage scheduled cron tasks. This tool allows you to create recurring tasks that will be executed automatically at specified times using cron expressions.
-				""";
+		return toolI18nService.getDescription("cron-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "properties": {
-				        "cronName": {
-				            "type": "string",
-				            "description": "Name of the cron task"
-				        },
-				        "cronTime": {
-				            "type": "string",
-				            "description": "Cron expression for scheduling (e.g., '0 0 8 * * ?' for daily at 8 AM，need 6 parameters)"
-				        },
-				        "planDesc": {
-				            "type": "string",
-				            "description": "Description of what this cron task does"
-				        }
-				    },
-				    "required": ["cronName", "cronTime", "planDesc"]
-				}
-				""";
+		return toolI18nService.getParameters("cron-tool");
 	}
 
 	@Override

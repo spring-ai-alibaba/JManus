@@ -41,6 +41,7 @@ import com.alibaba.cloud.ai.lynxe.tool.browser.actions.ScrollAction;
 import com.alibaba.cloud.ai.lynxe.tool.browser.actions.SwitchTabAction;
 import com.alibaba.cloud.ai.lynxe.tool.browser.actions.WriteCurrentWebContentAction;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
 import com.alibaba.cloud.ai.lynxe.tool.textOperator.TextFileService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,14 +63,17 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	private final TextFileService textFileService;
 
+	private final ToolI18nService toolI18nService;
+
 	public BrowserUseTool(ChromeDriverService chromeDriverService, SmartContentSavingService innerStorageService,
 			ObjectMapper objectMapper, com.alibaba.cloud.ai.lynxe.tool.shortUrl.ShortUrlService shortUrlService,
-			TextFileService textFileService) {
+			TextFileService textFileService, ToolI18nService toolI18nService) {
 		this.chromeDriverService = chromeDriverService;
 		this.innerStorageService = innerStorageService;
 		this.objectMapper = objectMapper;
 		this.shortUrlService = shortUrlService;
 		this.textFileService = textFileService;
+		this.toolI18nService = toolI18nService;
 	}
 
 	public DriverWrapper getDriver() {
@@ -102,9 +106,10 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	public static synchronized BrowserUseTool getInstance(ChromeDriverService chromeDriverService,
 			SmartContentSavingService innerStorageService, ObjectMapper objectMapper,
-			com.alibaba.cloud.ai.lynxe.tool.shortUrl.ShortUrlService shortUrlService, TextFileService textFileService) {
+			com.alibaba.cloud.ai.lynxe.tool.shortUrl.ShortUrlService shortUrlService, TextFileService textFileService,
+			ToolI18nService toolI18nService) {
 		BrowserUseTool instance = new BrowserUseTool(chromeDriverService, innerStorageService, objectMapper,
-				shortUrlService, textFileService);
+				shortUrlService, textFileService, toolI18nService);
 		return instance;
 	}
 
@@ -543,209 +548,12 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 	@Override
 	public String getDescription() {
-		return """
-				Interact with web browser to perform various operations such as navigation, element interaction, content extraction and tab management. Prioritize this tool for search-related tasks.
-
-				Supported operations include:
-				- 'navigate': Visit specific URL
-				- 'click': Click element by index
-				- 'input_text': Input text in element
-				- 'key_enter': Press Enter key
-				- 'screenshot': Capture screenshot
-				- 'execute_js': Execute JavaScript code
-				- 'scroll': Scroll page up/down
-				- 'refresh': Refresh current page
-				- 'new_tab': Open new tab with specified URL
-				- 'close_tab': Close current tab
-				- 'switch_tab': Switch to specific tab
-				- 'get_web_content': Get current page ARIA snapshot content
-
-				Note: Browser operations have timeout configuration, default is 30 seconds.
-				""";
+		return toolI18nService.getDescription("browser-use-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "oneOf": [
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "navigate"
-				                },
-				                "url": {
-				                    "type": "string",
-				                    "description": "URL to navigate to"
-				                }
-				            },
-				            "required": ["action", "url"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "click"
-				                },
-				                "index": {
-				                    "type": "integer",
-				                    "description": "Element index to click. This corresponds to the idx value (e.g., idx=39) shown in the ARIA snapshot for each interactive element."
-				                }
-				            },
-				            "required": ["action", "index"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "input_text"
-				                },
-				                "index": {
-				                    "type": "integer",
-				                    "description": "Element index to input text. This corresponds to the idx value (e.g., idx=39) shown in the ARIA snapshot for each interactive element."
-				                },
-				                "text": {
-				                    "type": "string",
-				                    "description": "Text to input"
-				                }
-				            },
-				            "required": ["action", "index", "text"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "key_enter"
-				                },
-				                "index": {
-				                    "type": "integer",
-				                    "description": "Element index to press enter. This corresponds to the idx value (e.g., idx=39) shown in the ARIA snapshot for each interactive element."
-				                }
-				            },
-				            "required": ["action", "index"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "screenshot"
-				                }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "execute_js"
-				                },
-				                "script": {
-				                    "type": "string",
-				                    "description": "JavaScript code to execute"
-				                }
-				            },
-				            "required": ["action", "script"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "scroll"
-				                },
-				                "scroll_amount": {
-				                    "type": "integer",
-				                    "description": "Scroll amount in pixels. Positive values scroll down, negative values scroll up. If not provided, 'direction' will be used with default 500 pixels."
-				                },
-				                "direction": {
-				                    "type": "string",
-				                    "enum": ["up", "down"],
-				                    "description": "Scroll direction. Used when 'scroll_amount' is not provided. Defaults to 500 pixels."
-				                }
-				            },
-				            "required": ["action", "direction"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "switch_tab"
-				                },
-				                "tab_id": {
-				                    "type": "integer",
-				                    "description": "Tab ID to switch to"
-				                }
-				            },
-				            "required": ["action", "tab_id"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "new_tab"
-				                },
-				                "url": {
-				                    "type": "string",
-				                    "description": "URL to open in new tab"
-				                }
-				            },
-				            "required": ["action", "url"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "close_tab"
-				                }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "refresh"
-				                }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "get_web_content"
-				                }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				        }
-				    ]
-				}
-				""";
+		return toolI18nService.getParameters("browser-use-tool");
 	}
 
 	@Override

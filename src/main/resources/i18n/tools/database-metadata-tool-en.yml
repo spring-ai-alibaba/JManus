@@ -1,0 +1,43 @@
+description: |
+  Get database metadata information including table structures, indexes, and datasource information.
+  Use this tool when you need to:
+  - 'get_table_meta': Get complete metadata of table structure, fields, indexes
+  - 'get_table_index': Get table index information
+  - 'get_datasource_info': Get data source information
+
+parameters: |
+  {
+      "type": "object",
+      "oneOf": [
+          {
+              "type": "object",
+              "properties": {
+                  "action": { "type": "string", "const": "get_table_meta" },
+                  "text": { "type": "string", "description": "Fuzzy search table description, leave empty to get all tables" },
+                  "datasourceName": { "type": "string", "description": "Data source name, optional" }
+              },
+              "required": ["action"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": { "type": "string", "const": "get_table_index" },
+                  "text": { "type": "string", "description": "Table name to search" },
+                  "datasourceName": { "type": "string", "description": "Data source name, optional" }
+              },
+              "required": ["action", "text"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": { "type": "string", "const": "get_datasource_info" },
+                  "datasourceName": { "type": "string", "description": "Data source name, leave empty to get all available data sources" }
+              },
+              "required": ["action"],
+              "additionalProperties": false
+          }
+      ]
+  }
+

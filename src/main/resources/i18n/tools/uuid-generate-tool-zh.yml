@@ -1,0 +1,16 @@
+description: |
+  生成 UUID（通用唯一标识符）字符串。
+  在需要生成唯一标识符时使用此工具。
+
+  生成的 UUID 遵循标准 UUID 格式（例如，550e8400-e29b-41d4-a716-446655440000）。
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "action": { "type": "string", "const": "generate_uuid", "description": "生成 UUID 的操作" }
+      },
+      "required": ["action"],
+      "additionalProperties": false
+  }
+

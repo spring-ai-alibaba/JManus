@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.lynxe.tool;
 
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
@@ -38,6 +39,8 @@ import java.util.Map;
 public class FormInputTool extends AbstractBaseTool<FormInputTool.UserFormInput> {
 
 	private final ObjectMapper objectMapper;
+
+	private final ToolI18nService toolI18nService;
 
 	private static final Logger log = LoggerFactory.getLogger(FormInputTool.class);
 
@@ -344,8 +347,9 @@ public class FormInputTool extends AbstractBaseTool<FormInputTool.UserFormInput>
 
 	}
 
-	public FormInputTool(ObjectMapper objectMapper) {
+	public FormInputTool(ObjectMapper objectMapper, ToolI18nService toolI18nService) {
 		this.objectMapper = objectMapper;
+		this.toolI18nService = toolI18nService;
 	}
 
 	public enum InputState {
@@ -454,12 +458,12 @@ public class FormInputTool extends AbstractBaseTool<FormInputTool.UserFormInput>
 
 	@Override
 	public String getDescription() {
-		return getToolDescription();
+		return toolI18nService.getDescription("form-input-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return getToolParameters();
+		return toolI18nService.getParameters("form-input-tool");
 	}
 
 	@Override

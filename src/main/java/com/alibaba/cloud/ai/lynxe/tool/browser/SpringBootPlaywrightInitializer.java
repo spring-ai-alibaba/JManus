@@ -113,7 +113,29 @@ public class SpringBootPlaywrightInitializer {
 		Path browsersPath = Paths.get(browserPath);
 		if (Files.exists(browsersPath)) {
 			log.info("Playwright browsers found at: {}", browserPath);
-			System.setProperty("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1");
+			// Verify the directory is actually readable and contains browser binaries
+			try {
+				if (Files.isDirectory(browsersPath) && Files.isReadable(browsersPath)) {
+					// Check if chromium directory exists
+					boolean hasChromium = Files.list(browsersPath)
+						.anyMatch(p -> p.getFileName().toString().startsWith("chromium-"));
+					if (hasChromium) {
+						log.info("Chromium browser binaries found in: {}", browserPath);
+						System.setProperty("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1");
+					}
+					else {
+						log.warn(
+								"Browser directory exists but Chromium not found. Browsers will be downloaded on first use.");
+					}
+				}
+				else {
+					log.warn("Browser path exists but is not a readable directory: {}", browserPath);
+				}
+			}
+			catch (Exception e) {
+				log.warn("Error checking browser binaries: {}. Browsers will be downloaded on first use.",
+						e.getMessage());
+			}
 		}
 		else {
 			log.warn("Playwright browsers not found at: {}. They will be downloaded on first use.", browserPath);

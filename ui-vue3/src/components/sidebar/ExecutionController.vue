@@ -322,8 +322,6 @@ Content-Type: application/json
   "uploadedFiles": []
 }
 
-Note: serviceGroup is optional. Use it to disambiguate tools with the same name in different service groups.
-
 Response: {
   "planId": "${planId}",
   "status": "processing",
@@ -374,8 +372,6 @@ Content-Type: application/json
   "replacementParams": ${JSON.stringify(replacementParams, null, 2)},
   "uploadedFiles": []
 }
-
-Note: serviceGroup is optional. Use it to disambiguate tools with the same name in different service groups.
 
 Response: {
   "status": "completed",

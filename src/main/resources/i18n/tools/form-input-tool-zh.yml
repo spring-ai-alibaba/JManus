@@ -1,0 +1,57 @@
+description: |
+  创建交互式表单以收集用户输入。此工具允许您定义表单字段并通过 Web 界面从用户收集结构化数据。
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "title": {
+              "type": "string",
+              "description": "显示给用户的表单标题"
+          },
+          "description": {
+              "type": "string",
+              "description": "表单的描述以及正在收集的信息"
+          },
+          "inputs": {
+              "type": "array",
+              "items": {
+                  "type": "object",
+                  "properties": {
+                      "name": {
+                          "type": "string",
+                          "description": "输入字段的名称/ID"
+                      },
+                      "label": {
+                          "type": "string",
+                          "description": "输入字段的显示标签"
+                      },
+                      "type": {
+                          "type": "string",
+                          "enum": ["text", "number", "email", "password", "textarea", "select", "checkbox", "radio"],
+                          "description": "输入字段的类型"
+                      },
+                      "required": {
+                          "type": "boolean",
+                          "description": "此字段是否为必填项"
+                      },
+                      "placeholder": {
+                          "type": "string",
+                          "description": "输入字段的占位符文本"
+                      },
+                      "options": {
+                          "type": "array",
+                          "items": {
+                              "type": "string"
+                          },
+                          "description": "用于 select、checkbox 或 radio 输入的选项"
+                      }
+                  },
+                  "required": ["name", "label", "type"]
+              },
+              "description": "输入字段定义的数组"
+          }
+      },
+      "required": ["title", "description", "inputs"]
+  }
+

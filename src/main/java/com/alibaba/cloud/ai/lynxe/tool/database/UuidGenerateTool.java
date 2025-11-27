@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
@@ -31,8 +32,12 @@ public class UuidGenerateTool extends AbstractBaseTool<UuidGenerateRequest> {
 
 	private static final Logger log = LoggerFactory.getLogger(UuidGenerateTool.class);
 
-	public UuidGenerateTool(LynxeProperties lynxeProperties, ObjectMapper objectMapper) {
+	private final ToolI18nService toolI18nService;
+
+	public UuidGenerateTool(LynxeProperties lynxeProperties, ObjectMapper objectMapper,
+			ToolI18nService toolI18nService) {
 		// Constructor for dependency injection
+		this.toolI18nService = toolI18nService;
 	}
 
 	private final String name = "uuid_generate";
@@ -49,26 +54,12 @@ public class UuidGenerateTool extends AbstractBaseTool<UuidGenerateRequest> {
 
 	@Override
 	public String getDescription() {
-		return """
-				Generate a UUID (Universally Unique Identifier) string.
-				Use this tool when you need to generate a unique identifier.
-
-				The generated UUID follows the standard UUID format (e.g., 550e8400-e29b-41d4-a716-446655440000).
-				""";
+		return toolI18nService.getDescription("uuid-generate-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "properties": {
-				        "action": { "type": "string", "const": "generate_uuid", "description": "Action to generate UUID" }
-				    },
-				    "required": ["action"],
-				    "additionalProperties": false
-				}
-				""";
+		return toolI18nService.getParameters("uuid-generate-tool");
 	}
 
 	@Override
@@ -123,8 +114,8 @@ public class UuidGenerateTool extends AbstractBaseTool<UuidGenerateRequest> {
 		}
 	}
 
-	public static UuidGenerateTool getInstance(ObjectMapper objectMapper) {
-		return new UuidGenerateTool(null, objectMapper);
+	public static UuidGenerateTool getInstance(ObjectMapper objectMapper, ToolI18nService toolI18nService) {
+		return new UuidGenerateTool(null, objectMapper, toolI18nService);
 	}
 
 }

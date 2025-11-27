@@ -1,0 +1,15 @@
+description: |
+  Terminate the current execution step with structured data. Provide data in JSON format with 'message' field.
+
+parameters: |
+  {
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "Comprehensive termination message that should include all relevant facts, viewpoints, details, and conclusions from the execution step. This message should provide a complete summary of what was accomplished, any important observations, key findings, and final outcomes."
+      }
+    },
+    "required": ["message"]
+  }
+

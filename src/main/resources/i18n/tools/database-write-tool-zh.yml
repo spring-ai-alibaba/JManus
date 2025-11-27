@@ -1,0 +1,36 @@
+description: |
+  在数据库上执行写入操作（INSERT、UPDATE、DELETE、CREATE、DROP、ALTER）。
+  在需要修改数据库数据或结构时使用此工具。
+
+  操作：
+  - 'execute_write_sql': 使用预编译语句执行 INSERT、UPDATE、DELETE 或 DDL 语句
+
+  功能特性：
+  - 使用带参数化查询的预编译语句以防止 SQL 注入
+  - 在查询中使用 ? 占位符，并为安全参数绑定提供参数数组
+  - 支持所有数据类型，包括字符串、数字、布尔值和 null 值
+
+  示例：
+  - INSERT: query="INSERT INTO users (name, email) VALUES (?, ?)", parameters=["John", "john@example.com"]
+  - UPDATE: query="UPDATE users SET email = ? WHERE id = ?", parameters=["newemail@example.com", 123]
+  - DELETE: query="DELETE FROM users WHERE id = ?", parameters=[456]
+
+  重要提示：始终使用 ? 占位符并为数据值提供相应的参数数组。
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "action": { "type": "string", "const": "execute_write_sql" },
+          "query": { "type": "string", "description": "用于写入操作的 SQL 语句（INSERT、UPDATE、DELETE、ALTER 等）。使用 ? 占位符进行参数化查询。" },
+          "parameters": {
+              "type": "array",
+              "description": "预编译语句的可选参数值数组。值将绑定到查询中的 ? 占位符。",
+              "items": { "type": ["string", "number", "boolean", "null"] }
+          },
+          "datasourceName": { "type": "string", "description": "数据源名称，可选" }
+      },
+      "required": ["action", "query"],
+      "additionalProperties": false
+  }
+

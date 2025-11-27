@@ -1,0 +1,53 @@
+description: |
+  将文本文件（markdown、代码、HTML 等）拆分为更小的片段。此工具有助于将大型文本文件分解为可管理的块，同时保持内容的完整性。
+
+  重要提示：文件从 rootPlanId/shared/ 目录读取，与 GlobalFileOperator 和 MarkdownConverterTool 相同。例如，要拆分 rootPlanId/shared/projects.md，请使用 file_path "projects.md"。
+
+  支持的操作：
+  - split: 将文件拆分为 10 个较小的片段（尽可能按行均匀分配）
+    参数：file_path（必需，相对于 rootPlanId/shared/），header（可选 - 添加到每个拆分文件开头的文本）
+    输出文件保存在与源文件相同的目录中，使用索引前缀命名：0-filename.ext、1-filename.ext 等。
+  - count: 统计文件的总行数和字符大小
+    参数：file_path（必需，相对于 rootPlanId/shared/）
+
+parameters: |
+  {
+      "type": "object",
+      "oneOf": [
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "split"
+                  },
+                  "file_path": {
+                      "type": "string",
+                      "description": "要拆分的文件路径（相对于 rootPlanId/shared/ 目录，例如 'file.md' 或 'subdir/file.md'）"
+                  },
+                  "header": {
+                      "type": "string",
+                      "description": "可选，添加到每个拆分文件开头的标题文本"
+                  }
+              },
+              "required": ["action", "file_path"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "count"
+                  },
+                  "file_path": {
+                      "type": "string",
+                      "description": "要统计的文件路径（相对于 rootPlanId/shared/ 目录，例如 'file.md' 或 'subdir/file.md'）"
+                  }
+              },
+              "required": ["action", "file_path"],
+              "additionalProperties": false
+          }
+      ]
+  }
+

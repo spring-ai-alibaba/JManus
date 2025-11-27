@@ -415,6 +415,8 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 			thinkActRecord.setThinkInput(params.getThinkInput());
 			thinkActRecord.setThinkOutput(params.getThinkOutput());
 			thinkActRecord.setErrorMessage(params.getErrorMessage());
+			thinkActRecord.setInputCharCount(params.getInputCharCount());
+			thinkActRecord.setOutputCharCount(params.getOutputCharCount());
 
 			// Convert ActToolParam to ActToolInfoEntity and set the list
 			if (params.getActToolInfoList() != null && !params.getActToolInfoList().isEmpty()) {
@@ -714,6 +716,8 @@ public class NewRepoPlanExecutionRecorder implements PlanExecutionRecorder {
 				record.setThinkInput(entity.getThinkInput());
 				record.setThinkOutput(entity.getThinkOutput());
 				record.setErrorMessage(entity.getErrorMessage());
+				record.setInputCharCount(entity.getInputCharCount());
+				record.setOutputCharCount(entity.getOutputCharCount());
 
 				// Convert ActToolInfoEntity to ActToolInfo if available
 				if (entity.getActToolInfoList() != null && !entity.getActToolInfoList().isEmpty()) {

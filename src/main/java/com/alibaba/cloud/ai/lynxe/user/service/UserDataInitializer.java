@@ -15,6 +15,9 @@
  */
 package com.alibaba.cloud.ai.lynxe.user.service;
 
+import java.time.LocalDateTime;
+import java.util.Arrays;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -22,9 +25,6 @@ import org.springframework.stereotype.Component;
 
 import com.alibaba.cloud.ai.lynxe.user.model.po.UserEntity;
 import com.alibaba.cloud.ai.lynxe.user.repository.UserRepository;
-
-import java.time.LocalDateTime;
-import java.util.Arrays;
 
 /**
  * User data initializer to create default users Follows the same pattern as
@@ -59,12 +59,23 @@ public class UserDataInitializer implements CommandLineRunner {
 			defaultUser.setCreatedAt(LocalDateTime.now().minusDays(30));
 			defaultUser.setLastLogin(LocalDateTime.now().minusHours(2));
 			defaultUser.setPreferences(Arrays.asList("dark_mode", "notifications_enabled", "auto_save"));
+			defaultUser.setLanguage("zh"); // Set default language to Chinese
 
 			userRepository.save(defaultUser);
 			logger.info("Created default user: {}", defaultUser.getUsername());
 		}
 		else {
-			logger.info("Default user already exists, skipping creation");
+			logger.info("Default user already exists, checking language preference");
+			// Ensure default user (ID 1) has language set
+			java.util.Optional<UserEntity> defaultUserOpt = userRepository.findById(1L);
+			if (defaultUserOpt.isPresent()) {
+				UserEntity defaultUser = defaultUserOpt.get();
+				if (defaultUser.getLanguage() == null || defaultUser.getLanguage().trim().isEmpty()) {
+					defaultUser.setLanguage("zh");
+					userRepository.save(defaultUser);
+					logger.info("Initialized language preference to 'zh' for default user");
+				}
+			}
 		}
 
 		long userCount = userRepository.count();

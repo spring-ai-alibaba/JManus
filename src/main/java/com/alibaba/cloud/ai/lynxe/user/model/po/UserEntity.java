@@ -67,6 +67,9 @@ public class UserEntity {
 	@Column(name = "current_conversation_id")
 	private String currentConversationId;
 
+	@Column(name = "language")
+	private String language;
+
 	/**
 	 * Default constructor required by Hibernate/JPA
 	 */
@@ -152,6 +155,14 @@ public class UserEntity {
 
 	public void setCurrentConversationId(String currentConversationId) {
 		this.currentConversationId = currentConversationId;
+	}
+
+	public String getLanguage() {
+		return language;
+	}
+
+	public void setLanguage(String language) {
+		this.language = language;
 	}
 
 	@Override

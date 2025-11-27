@@ -35,6 +35,7 @@ import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.lynxe.runtime.executor.LevelBasedExecutorPool;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.mapreduce.ParallelExecutionTool.RegisterBatchInput;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -53,17 +54,25 @@ class ParallelExecutionToolAsyncTest {
 
 	private LevelBasedExecutorPool executorPool;
 
+	private ToolI18nService toolI18nService;
+
 	@BeforeEach
 	void setUp() {
 		objectMapper = new ObjectMapper();
 		toolCallbackMap = new HashMap<>();
 		planIdDispatcher = Mockito.mock(PlanIdDispatcher.class);
 		executorPool = Mockito.mock(LevelBasedExecutorPool.class);
+		toolI18nService = Mockito.mock(ToolI18nService.class);
 
 		Mockito.when(planIdDispatcher.generateToolCallId()).thenReturn("test-call-id-1");
 		Mockito.when(planIdDispatcher.generateParallelExecutionId()).thenReturn("test-parallel-id-1");
 
-		tool = new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher, executorPool);
+		// Mock i18n service to return empty strings for tests
+		Mockito.when(toolI18nService.getDescription(Mockito.anyString())).thenReturn("");
+		Mockito.when(toolI18nService.getParameters(Mockito.anyString())).thenReturn("{}");
+
+		tool = new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher, executorPool,
+				toolI18nService);
 	}
 
 	@Test
