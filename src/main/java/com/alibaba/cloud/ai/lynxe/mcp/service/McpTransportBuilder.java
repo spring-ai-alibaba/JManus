@@ -152,8 +152,8 @@ public class McpTransportBuilder {
 		String baseUrl = parsedUrl.getProtocol() + "://" + parsedUrl.getHost()
 				+ (parsedUrl.getPort() == -1 ? "" : ":" + parsedUrl.getPort());
 
-		String path = parsedUrl.getPath();
-		String sseEndpoint = path;
+		String file = parsedUrl.getFile();
+		String sseEndpoint = file;
 
 		// Remove leading slash
 		if (sseEndpoint.startsWith("/")) {
