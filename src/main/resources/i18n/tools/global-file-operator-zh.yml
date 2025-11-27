@@ -1,0 +1,180 @@
+description: |
+  对文本文件执行各种操作。此操作符提供对可在同一执行上下文中的所有子计划中访问的文件的访问。
+
+  关键词：全局文件、根目录、根文件夹、根计划目录、全局文件操作、根文件访问、跨计划文件。
+
+  支持的操作：
+  - delete: 删除现有文件，需要 file_path 参数
+  - list_files: 列出文件和目录，可选 file_path 参数（默认为根目录）
+  - replace: 替换文件中的特定文本，需要 source_text 和 target_text 参数
+  - get_text: 从文件的指定行范围获取内容，需要 start_line 和 end_line 参数
+    限制：每次调用最多 500 行，更多内容请使用多次调用
+  - get_all_text: 获取文件的所有内容
+    注意：如果文件内容太长，将自动存储在临时文件中并返回文件路径
+  - append: 将内容追加到文件，需要 content 参数
+  - count_words: 统计文件中的单词数
+  - grep: 在文件中搜索文本模式，类似于 Linux grep 命令
+    参数：pattern（必需）、case_sensitive（可选，默认 false）、whole_word（可选，默认 false）
+
+  功能特性：
+  - 在此处创建的文件可在执行上下文中的所有子计划中访问
+
+parameters: |
+  {
+      "type": "object",
+      "oneOf": [
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "delete"
+                  },
+                  "file_path": {
+                      "type": "string",
+                      "description": "相对文件路径（文件名或相对路径，例如 'file.txt' 或 'subdir/file.txt'）"
+                  }
+              },
+              "required": ["action", "file_path"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "list_files"
+                  },
+                  "file_path": {
+                      "type": "string",
+                      "description": "要列出的相对目录路径（可选，默认为根目录，例如 'subdir' 或空字符串表示根目录）"
+                  }
+              },
+              "required": ["action"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "replace"
+                  },
+                  "file_path": {
+                      "type": "string",
+                      "description": "相对文件路径（文件名或相对路径，例如 'file.txt' 或 'subdir/file.txt'）"
+                  },
+                  "source_text": {
+                      "type": "string",
+                      "description": "要替换的文本"
+                  },
+                  "target_text": {
+                      "type": "string",
+                      "description": "替换文本"
+                  }
+              },
+              "required": ["action", "file_path", "source_text", "target_text"],
+              "additionalProperties": false
+          },
+          {
+             "type": "object",
+             "properties": {
+                 "action": {
+                     "type": "string",
+                     "const": "get_text"
+                 },
+                 "file_path": {
+                     "type": "string",
+                     "description": "相对文件路径（文件名或相对路径，例如 'file.txt' 或 'subdir/file.txt'）"
+                 },
+                 "start_line": {
+                     "type": "integer",
+                     "description": "起始行号（从 1 开始）"
+                 },
+                 "end_line": {
+                     "type": "integer",
+                     "description": "结束行号（包含）。注意：每次调用最多 500 行"
+                 }
+             },
+             "required": ["action", "file_path", "start_line", "end_line"],
+             "additionalProperties": false
+         },
+         {
+             "type": "object",
+             "properties": {
+                 "action": {
+                     "type": "string",
+                     "const": "get_all_text"
+                 },
+                 "file_path": {
+                     "type": "string",
+                     "description": "相对文件路径（文件名或相对路径，例如 'file.txt' 或 'subdir/file.txt'）"
+                 }
+             },
+             "required": ["action", "file_path"],
+             "additionalProperties": false
+         },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "append"
+                  },
+                  "file_path": {
+                      "type": "string",
+                      "description": "相对文件路径（文件名或相对路径，例如 'file.txt' 或 'subdir/file.txt'）"
+                  },
+                  "content": {
+                      "type": "string",
+                      "description": "要追加到文件的内容"
+                  }
+              },
+              "required": ["action", "file_path", "content"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "count_words"
+                  },
+                  "file_path": {
+                      "type": "string",
+                      "description": "相对文件路径（文件名或相对路径，例如 'file.txt' 或 'subdir/file.txt'）"
+                  }
+              },
+              "required": ["action", "file_path"],
+              "additionalProperties": false
+          },
+          {
+              "type": "object",
+              "properties": {
+                  "action": {
+                      "type": "string",
+                      "const": "grep"
+                  },
+                  "file_path": {
+                      "type": "string",
+                      "description": "相对文件路径（文件名或相对路径，例如 'file.txt' 或 'subdir/file.txt'）"
+                  },
+                  "pattern": {
+                      "type": "string",
+                      "description": "要搜索的文本模式"
+                  },
+                  "case_sensitive": {
+                      "type": "boolean",
+                      "description": "是否执行区分大小写的搜索（默认：false）"
+                  },
+                  "whole_word": {
+                      "type": "boolean",
+                      "description": "是否仅匹配完整单词（默认：false）"
+                  }
+              },
+              "required": ["action", "file_path", "pattern"],
+              "additionalProperties": false
+          }
+      ]
+  }
+

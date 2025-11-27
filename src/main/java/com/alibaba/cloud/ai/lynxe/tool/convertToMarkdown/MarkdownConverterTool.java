@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -51,14 +52,17 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 
 	private final ObjectMapper objectMapper;
 
+	private final ToolI18nService toolI18nService;
+
 	public MarkdownConverterTool(UnifiedDirectoryManager directoryManager, PdfOcrProcessor ocrProcessor,
 			ImageOcrProcessor imageOcrProcessor, IExcelProcessingService excelProcessingService,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper, ToolI18nService toolI18nService) {
 		this.directoryManager = directoryManager;
 		this.ocrProcessor = ocrProcessor;
 		this.imageOcrProcessor = imageOcrProcessor;
 		this.excelProcessingService = excelProcessingService;
 		this.objectMapper = objectMapper;
+		this.toolI18nService = toolI18nService;
 	}
 
 	/**
@@ -295,27 +299,12 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 
 	@Override
 	public String getDescription() {
-		return "Converts various file types to Markdown format with intelligent processing. "
-				+ "**Core Strategy**: For Word documents (.doc, .docx), Excel files (.xlsx, .xls), and PDF files, "
-				+ "strictly follows a Markdown-first approach - first converts to Markdown format, "
-				+ "then processes the content for optimal readability and structure. "
-				+ "Supports image files (.jpg, .jpeg, .png, .gif) using OCR processing to extract text content. "
-				+ "Supports text files (.txt, .md, .json, .xml, .yaml, .yml, .log, .java, .py, .js, .html, .css) "
-				+ "with type-specific formatting. "
-				+ "The converted file will be saved with .md extension in the root plan shared directory (rootPlanId/shared/). "
-				+ "Additional requirements can be specified for custom conversion needs. "
-				+ "**Best Practice**: Always convert complex documents to Markdown first for better content analysis and processing.";
+		return toolI18nService.getDescription("markdown-converter-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return "{\"type\":\"object\"," + "\"properties\":{" + "\"filename\":{\"type\":\"string\","
-				+ "\"description\":\"Name of the file to convert to Markdown (must exist in root plan shared directory, rootPlanId/shared/)\"},"
-				+ "\"additionalRequirement\":{\"type\":\"string\","
-				+ "\"description\":\"Optional additional requirements for conversion (e.g., specific formatting, structure)\"},"
-				+ "\"forceLlmForPdf\":{\"type\":\"boolean\","
-				+ "\"description\":\"Optional flag to force using LLM/OCR for PDF processing instead of auto-detection. Only applies to PDF files.\","
-				+ "\"default\":false}" + "}," + "\"required\":[\"filename\"]}";
+		return toolI18nService.getParameters("markdown-converter-tool");
 	}
 
 	@Override

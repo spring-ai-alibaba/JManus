@@ -1,0 +1,15 @@
+description: |
+  Output a debug message. This tool allows you to log messages or output information during execution for debugging purposes.
+
+parameters: |
+  {
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "The debug message to output and return"
+      }
+    },
+    "required": ["message"]
+  }
+

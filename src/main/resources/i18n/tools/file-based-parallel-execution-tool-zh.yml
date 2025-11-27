@@ -1,0 +1,22 @@
+description: |
+  从文件（JSON 数组）读取 JSON 参数，并为每个参数集执行指定的工具。
+  文件必须包含单个 JSON 数组，其中每个元素是表示一个参数集的 JSON 对象。
+  如果工具需要 JSON 中不存在的参数，它们将被设置为空字符串。
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "file_name": {
+              "type": "string",
+              "description": "包含参数 JSON 数组的文件相对路径（每个元素是一个参数对象）"
+          },
+          "tool_name": {
+              "type": "string",
+              "description": "为每个参数集执行的工具名称"
+          }
+      },
+      "required": ["file_name", "tool_name"],
+      "additionalProperties": false
+  }
+

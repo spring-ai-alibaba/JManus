@@ -32,6 +32,7 @@ import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.AsyncToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.lynxe.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.mapreduce.ParallelExecutionTool.RegisterBatchInput;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -140,15 +141,19 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 
 	}
 
+	private final ToolI18nService toolI18nService;
+
 	// Store all function registries in a list (allows duplicates)
 	private final List<FunctionRegistry> functionRegistries = new ArrayList<>();
 
 	public ParallelExecutionTool(ObjectMapper objectMapper, Map<String, ToolCallBackContext> toolCallbackMap,
-			PlanIdDispatcher planIdDispatcher, LevelBasedExecutorPool levelBasedExecutorPool) {
+			PlanIdDispatcher planIdDispatcher, LevelBasedExecutorPool levelBasedExecutorPool,
+			ToolI18nService toolI18nService) {
 		this.objectMapper = objectMapper;
 		this.toolCallbackMap = toolCallbackMap;
 		this.planIdDispatcher = planIdDispatcher;
 		this.levelBasedExecutorPool = levelBasedExecutorPool;
+		this.toolI18nService = toolI18nService;
 	}
 
 	/**
@@ -170,46 +175,12 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 
 	@Override
 	public String getDescription() {
-		return "Manages parallel execution of multiple functions with batch registration and status tracking";
+		return toolI18nService.getDescription("parallel-execution-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "oneOf": [
-							{
-							"description": "Register multiple executions of the same tool in parallel",
-							"properties": {
-								"action": { "const": "registerBatch" },
-								"tool_name": { "type": "string", "description": "Tool name (same for all calls)" },
-								"functions": {
-								"type": "array",
-								"description": "Array of input parameters for the same tool",
-								"items": { "type": "object", "description": "Input parameters for one execution" }
-								}
-							},
-							"required": ["action", "tool_name", "functions"],
-							"additionalProperties": false
-							},
-							{
-							"properties": {
-								"action": { "const": "start" }
-							},
-							"required": ["action"],
-							"additionalProperties": false
-							},
-							{
-							"properties": {
-								"action": { "const": "clearPending" }
-							},
-							"required": ["action"],
-							"additionalProperties": false
-							}
-						]
-				}
-				""";
+		return toolI18nService.getParameters("parallel-execution-tool");
 	}
 
 	@Override

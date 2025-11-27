@@ -1,0 +1,15 @@
+description: |
+  输出调试消息。此工具允许您在执行过程中记录消息或输出信息，用于调试目的。
+
+parameters: |
+  {
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "要输出和返回的调试消息"
+      }
+    },
+    "required": ["message"]
+  }
+

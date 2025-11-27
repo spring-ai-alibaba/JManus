@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.GetDatasourceInfoAction;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.GetTableIndexAction;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.GetTableMetaAction;
@@ -38,10 +39,13 @@ public class DatabaseMetadataTool extends AbstractBaseTool<DatabaseRequest> {
 
 	private final ObjectMapper objectMapper;
 
+	private final ToolI18nService toolI18nService;
+
 	public DatabaseMetadataTool(LynxeProperties lynxeProperties, DataSourceService dataSourceService,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper, ToolI18nService toolI18nService) {
 		this.dataSourceService = dataSourceService;
 		this.objectMapper = objectMapper;
+		this.toolI18nService = toolI18nService;
 	}
 
 	public DataSourceService getDataSourceService() {
@@ -62,53 +66,12 @@ public class DatabaseMetadataTool extends AbstractBaseTool<DatabaseRequest> {
 
 	@Override
 	public String getDescription() {
-		return """
-				Get database metadata information including table structures, indexes, and datasource information.
-				Use this tool when you need to:
-				- 'get_table_meta': Get complete metadata of table structure, fields, indexes
-				- 'get_table_index': Get table index information
-				- 'get_datasource_info': Get data source information
-				""";
+		return toolI18nService.getDescription("database-metadata-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "oneOf": [
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": { "type": "string", "const": "get_table_meta" },
-				                "text": { "type": "string", "description": "Fuzzy search table description, leave empty to get all tables" },
-				                "datasourceName": { "type": "string", "description": "Data source name, optional" }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": { "type": "string", "const": "get_table_index" },
-				                "text": { "type": "string", "description": "Table name to search" },
-				                "datasourceName": { "type": "string", "description": "Data source name, optional" }
-				            },
-				            "required": ["action", "text"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": { "type": "string", "const": "get_datasource_info" },
-				                "datasourceName": { "type": "string", "description": "Data source name, leave empty to get all available data sources" }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				        }
-				    ]
-				}
-				""";
+		return toolI18nService.getParameters("database-metadata-tool");
 	}
 
 	@Override
@@ -216,8 +179,9 @@ public class DatabaseMetadataTool extends AbstractBaseTool<DatabaseRequest> {
 		}
 	}
 
-	public static DatabaseMetadataTool getInstance(DataSourceService dataSourceService, ObjectMapper objectMapper) {
-		return new DatabaseMetadataTool(null, dataSourceService, objectMapper);
+	public static DatabaseMetadataTool getInstance(DataSourceService dataSourceService, ObjectMapper objectMapper,
+			ToolI18nService toolI18nService) {
+		return new DatabaseMetadataTool(null, dataSourceService, objectMapper, toolI18nService);
 	}
 
 }

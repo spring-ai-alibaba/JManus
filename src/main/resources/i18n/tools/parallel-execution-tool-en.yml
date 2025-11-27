@@ -1,0 +1,38 @@
+description: |
+  Manages parallel execution of multiple functions with batch registration and status tracking.
+
+parameters: |
+  {
+      "type": "object",
+      "oneOf": [
+              {
+              "description": "Register multiple executions of the same tool in parallel",
+              "properties": {
+                  "action": { "const": "registerBatch" },
+                  "tool_name": { "type": "string", "description": "Tool name (same for all calls)" },
+                  "functions": {
+                  "type": "array",
+                  "description": "Array of input parameters for the same tool",
+                  "items": { "type": "object", "description": "Input parameters for one execution" }
+                  }
+              },
+              "required": ["action", "tool_name", "functions"],
+              "additionalProperties": false
+              },
+              {
+              "properties": {
+                  "action": { "const": "start" }
+              },
+              "required": ["action"],
+              "additionalProperties": false
+              },
+              {
+              "properties": {
+                  "action": { "const": "clearPending" }
+              },
+              "required": ["action"],
+              "additionalProperties": false
+              }
+          ]
+  }
+

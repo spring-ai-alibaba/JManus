@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.textOperator.TextFileService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -111,9 +112,13 @@ public class FileSplitterTool extends AbstractBaseTool<FileSplitterTool.FileSpli
 
 	private final ObjectMapper objectMapper;
 
-	public FileSplitterTool(TextFileService textFileService, ObjectMapper objectMapper) {
+	private final ToolI18nService toolI18nService;
+
+	public FileSplitterTool(TextFileService textFileService, ObjectMapper objectMapper,
+			ToolI18nService toolI18nService) {
 		this.textFileService = textFileService;
 		this.objectMapper = objectMapper;
+		this.toolI18nService = toolI18nService;
 	}
 
 	public ToolExecuteResult run(String toolInput) {
@@ -456,84 +461,12 @@ public class FileSplitterTool extends AbstractBaseTool<FileSplitterTool.FileSpli
 
 	@Override
 	public String getDescription() {
-		return """
-				Split text files (markdown, code, HTML, etc.) into smaller pieces. This tool helps break down
-				large text files into manageable chunks while preserving content completeness.
-
-				Important: Files are read from rootPlanId/shared/ directory, same as GlobalFileOperator and
-				MarkdownConverterTool. For example, to split rootPlanId/shared/projects.md, use file_path "projects.md".
-
-				Supported operations:
-				- split: Split a file into 10 smaller pieces (as evenly as possible by lines)
-				  Parameters: file_path (required, relative to rootPlanId/shared/), header (optional - text to add at the beginning of each split file)
-				  Output files are saved in the same directory as the source file, named with index prefix: 0-filename.ext, 1-filename.ext, etc.
-				- count: Count total lines and character size of a file
-				  Parameters: file_path (required, relative to rootPlanId/shared/)
-
-				Features:
-				- Splits files by lines to ensure content completeness
-				- Distributes lines as evenly as possible across 10 pieces
-				- Adds optional header to each split file
-				- Adds index number prefix to split file names (0-, 1-, 2-, etc.)
-				- Supports text file formats: markdown, code files, HTML, configuration files, etc.
-				- Files are read from and written to rootPlanId/shared/ directory
-
-				Supported file types:
-				- Text files (.txt, .md, .markdown)
-				- Programming files (.java, .py, .js, .ts, .cpp, .c, .h, .go, .rs, .php, .rb, .swift, .kt, .scala)
-				- Web files (.html, .htm, .mhtml, .css, .scss, .sass, .less)
-				- Configuration files (.json, .xml, .yaml, .yml, .properties, .conf, .ini)
-				- Scripts (.sql, .sh, .bat, .cmd)
-				- Build tools (.gradle, .pom, .mvn)
-				- Documentation (.csv, .rst, .adoc)
-				- Logs (.log)
-
-				""";
+		return toolI18nService.getDescription("file-splitter-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "oneOf": [
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "split"
-				                },
-				"file_path": {
-				    "type": "string",
-				    "description": "Path to the file to split (relative to rootPlanId/shared/ directory, e.g., 'file.md' or 'subdir/file.md')"
-				},
-				                "header": {
-				                    "type": "string",
-				                    "description": "Optional header text to add at the beginning of each split file"
-				                }
-				            },
-				            "required": ["action", "file_path"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "count"
-				                },
-				"file_path": {
-				    "type": "string",
-				    "description": "Path to the file to count (relative to rootPlanId/shared/ directory, e.g., 'file.md' or 'subdir/file.md')"
-				}
-				            },
-				            "required": ["action", "file_path"],
-				            "additionalProperties": false
-				        }
-				    ]
-				}
-				""";
+		return toolI18nService.getParameters("file-splitter-tool");
 	}
 
 	@Override

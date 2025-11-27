@@ -1,0 +1,15 @@
+description: |
+  终止当前执行步骤并返回结构化数据。以 JSON 格式提供数据，包含 'message' 字段。
+
+parameters: |
+  {
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "完整的终止消息，应包含执行步骤中的所有相关事实、观点、细节和结论。此消息应提供已完成内容的完整摘要、任何重要观察、关键发现和最终结果。"
+      }
+    },
+    "required": ["message"]
+  }
+

@@ -1,0 +1,44 @@
+description: |
+  目录操作工具，提供类似于 Linux 命令的文件系统操作。
+  支持递归列出文件（如 'ls -R'）和复制文件/目录（如 'cp -r'）。
+
+  操作：
+  - list/ls: 列出文件和目录，支持可选的递归遍历
+  - copy/cp: 递归复制文件和目录
+
+  功能特性：
+  - 递归目录遍历
+  - 文件模式过滤
+  - 详细文件信息（大小、时间戳）
+  - 错误处理和验证
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "action": {
+              "type": "string",
+              "enum": ["ls", "list", "cp", "copy"],
+              "description": "要执行的操作：ls/list 用于列出文件，cp/copy 用于复制文件"
+          },
+          "source_path": {
+              "type": "string",
+              "description": "操作的源路径（所有操作都需要）"
+          },
+          "target_path": {
+              "type": "string",
+              "description": "复制操作的目标路径（复制操作需要）"
+          },
+          "recursive": {
+              "type": "boolean",
+              "default": false,
+              "description": "是否执行递归操作（用于列出目录）"
+          },
+          "file_pattern": {
+              "type": "string",
+              "description": "用于按名称过滤文件的正则表达式模式"
+          }
+      },
+      "required": ["action", "source_path"]
+  }
+

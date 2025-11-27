@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
 import com.alibaba.cloud.ai.lynxe.tool.shortUrl.ShortUrlService;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -195,12 +196,15 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 	private final ShortUrlService shortUrlService;
 
+	private final ToolI18nService toolI18nService;
+
 	public GlobalFileOperator(TextFileService textFileService, SmartContentSavingService innerStorageService,
-			ObjectMapper objectMapper, ShortUrlService shortUrlService) {
+			ObjectMapper objectMapper, ShortUrlService shortUrlService, ToolI18nService toolI18nService) {
 		this.textFileService = textFileService;
 		this.innerStorageService = innerStorageService;
 		this.objectMapper = objectMapper;
 		this.shortUrlService = shortUrlService;
+		this.toolI18nService = toolI18nService;
 	}
 
 	public ToolExecuteResult run(String toolInput) {
@@ -903,194 +907,12 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 
 	@Override
 	public String getDescription() {
-		return """
-				Perform various operations on text files. This operator provides access to files
-				that can be accessed across all sub-plans within the same execution context.
-
-				Keywords: global files, root directory, root folder, root plan directory,
-				global file operations, root file access, cross-plan files.
-
-
-				Supported operations:
-				- delete: Delete an existing file, requires file_path parameter
-				- list_files: List files and directories, optional file_path parameter (defaults to root)
-				- replace: Replace specific text in file, requires source_text and target_text parameters
-				- get_text: Get content from specified line range in file, requires start_line and end_line parameters
-				  Limitation: Maximum 500 lines per call, use multiple calls for more content
-				- get_all_text: Get all content from file
-				  Note: If file content is too long, it will be automatically stored in temporary file and return file path
-				- append: Append content to file, requires content parameter
-				- count_words: Count words in file
-				- grep: Search for text patterns in file, similar to Linux grep command
-				  Parameters: pattern (required), case_sensitive (optional, default false), whole_word (optional, default false)
-
-				Features:
-				- Files created here are accessible by all sub-plans within the execution context
-
-				""";
+		return toolI18nService.getDescription("global-file-operator");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "oneOf": [
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "delete"
-				                },
-				                "file_path": {
-				                    "type": "string",
-				                    "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
-				                }
-				            },
-				            "required": ["action", "file_path"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "list_files"
-				                },
-				                "file_path": {
-				                    "type": "string",
-				                    "description": "Relative directory path to list (optional, defaults to root, e.g., 'subdir' or empty for root)"
-				                }
-				            },
-				            "required": ["action"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "replace"
-				                },
-				                "file_path": {
-				                    "type": "string",
-				                    "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
-				                },
-				                "source_text": {
-				                    "type": "string",
-				                    "description": "Text to be replaced"
-				                },
-				                "target_text": {
-				                    "type": "string",
-				                    "description": "Replacement text"
-				                }
-				            },
-				            "required": ["action", "file_path", "source_text", "target_text"],
-				            "additionalProperties": false
-				        },
-				        {
-				           "type": "object",
-				           "properties": {
-				               "action": {
-				                   "type": "string",
-				                   "const": "get_text"
-				               },
-				               "file_path": {
-				                   "type": "string",
-				                   "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
-				               },
-				               "start_line": {
-				                   "type": "integer",
-				                   "description": "Starting line number (starts from 1)"
-				               },
-				               "end_line": {
-				                   "type": "integer",
-				                   "description": "Ending line number (inclusive). Note: Maximum 500 lines per call"
-				               }
-				           },
-				           "required": ["action", "file_path", "start_line", "end_line"],
-				           "additionalProperties": false
-				       },
-				       {
-				           "type": "object",
-				           "properties": {
-				               "action": {
-				                   "type": "string",
-				                   "const": "get_all_text"
-				               },
-				               "file_path": {
-				                   "type": "string",
-				                   "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
-				               }
-				           },
-				           "required": ["action", "file_path"],
-				           "additionalProperties": false
-				       },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "append"
-				                },
-				                "file_path": {
-				                    "type": "string",
-				                    "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
-				                },
-				                "content": {
-				                    "type": "string",
-				                    "description": "Content to append to the file"
-				                }
-				            },
-				            "required": ["action", "file_path", "content"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "count_words"
-				                },
-				                "file_path": {
-				                    "type": "string",
-				                    "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
-				                }
-				            },
-				            "required": ["action", "file_path"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": {
-				                    "type": "string",
-				                    "const": "grep"
-				                },
-				                "file_path": {
-				                    "type": "string",
-				                    "description": "Relative file path (filename or relative path, e.g., 'file.txt' or 'subdir/file.txt')"
-				                },
-				                "pattern": {
-				                    "type": "string",
-				                    "description": "Text pattern to search for"
-				                },
-				                "case_sensitive": {
-				                    "type": "boolean",
-				                    "description": "Whether to perform case-sensitive search (default: false)"
-				                },
-				                "whole_word": {
-				                    "type": "boolean",
-				                    "description": "Whether to match whole words only (default: false)"
-				                }
-				            },
-				            "required": ["action", "file_path", "pattern"],
-				            "additionalProperties": false
-				        }
-				    ]
-				}
-				""";
+		return toolI18nService.getParameters("global-file-operator");
 	}
 
 	@Override

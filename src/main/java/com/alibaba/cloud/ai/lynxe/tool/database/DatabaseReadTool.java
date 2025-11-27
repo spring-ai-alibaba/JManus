@@ -28,6 +28,7 @@ import com.alibaba.cloud.ai.lynxe.tool.database.action.ExecuteSqlAction;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.ExecuteSqlToJsonFileAction;
 import com.alibaba.cloud.ai.lynxe.tool.database.action.GetTableNameAction;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
@@ -41,11 +42,14 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 
 	private final UnifiedDirectoryManager directoryManager;
 
+	private final ToolI18nService toolI18nService;
+
 	public DatabaseReadTool(LynxeProperties lynxeProperties, DataSourceService dataSourceService,
-			ObjectMapper objectMapper, UnifiedDirectoryManager directoryManager) {
+			ObjectMapper objectMapper, UnifiedDirectoryManager directoryManager, ToolI18nService toolI18nService) {
 		this.dataSourceService = dataSourceService;
 		this.objectMapper = objectMapper;
 		this.directoryManager = directoryManager;
+		this.toolI18nService = toolI18nService;
 	}
 
 	public DataSourceService getDataSourceService() {
@@ -66,57 +70,12 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 
 	@Override
 	public String getDescription() {
-		return """
-				Read and query database information, execute SELECT queries, and find table names.
-				Use this tool when you need to:
-				- 'execute_read_sql': Execute SELECT queries (read-only operations only)
-				- 'get_table_name': Find table names based on table comments
-				- 'execute_sql_to_json_file': Execute SELECT query and save results to JSON file
-
-				Important: When querying NULL values, use NULL keyword explicitly (e.g., WHERE email IS NULL).
-				""";
+		return toolI18nService.getDescription("database-read-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "oneOf": [
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": { "type": "string", "const": "execute_read_sql" },
-				                "query": { "type": "string", "description": "SELECT query statement to execute (read-only)" },
-				                "datasourceName": { "type": "string", "description": "Data source name, optional" }
-				            },
-				            "required": ["action", "query"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": { "type": "string", "const": "get_table_name" },
-				                "text": { "type": "string", "description": "Chinese table name or table description to search, supports single query only" },
-				                "datasourceName": { "type": "string", "description": "Data source name, optional" }
-				            },
-				            "required": ["action", "text"],
-				            "additionalProperties": false
-				        },
-				        {
-				            "type": "object",
-				            "properties": {
-				                "action": { "type": "string", "const": "execute_sql_to_json_file" },
-				                "query": { "type": "string", "description": "SELECT query statement to execute (read-only)" },
-				                "fileName": { "type": "string", "description": "File name (with relative path) to save JSON results, e.g., 'results.json' or 'data/query_results.json'" },
-				                "datasourceName": { "type": "string", "description": "Data source name, optional" }
-				            },
-				            "required": ["action", "query", "fileName"],
-				            "additionalProperties": false
-				        }
-				    ]
-				}
-				""";
+		return toolI18nService.getParameters("database-read-tool");
 	}
 
 	@Override
@@ -199,8 +158,8 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 	}
 
 	public static DatabaseReadTool getInstance(DataSourceService dataSourceService, ObjectMapper objectMapper,
-			UnifiedDirectoryManager directoryManager) {
-		return new DatabaseReadTool(null, dataSourceService, objectMapper, directoryManager);
+			UnifiedDirectoryManager directoryManager, ToolI18nService toolI18nService) {
+		return new DatabaseReadTool(null, dataSourceService, objectMapper, directoryManager, toolI18nService);
 	}
 
 }

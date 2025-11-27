@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.shortUrl.ShortUrlService;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,10 +45,11 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 
 	private final LynxeProperties lynxeProperties;
 
-	private static String getDescriptions(String expectedReturnInfo) {
+	private final ToolI18nService toolI18nService;
+
+	private static String getDescriptions(String expectedReturnInfo, ToolI18nService toolI18nService) {
 		// Simple description to avoid generating overly long content
-		return "Terminate the current execution step with structured data. "
-				+ "Provide data in JSON format with 'message' field.";
+		return toolI18nService.getDescription("terminate-tool");
 	}
 
 	private static String generateMessageField(String expectedReturnInfo) {
@@ -154,6 +156,7 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		this.shortUrlService = null;
 		this.lynxeProperties = null;
+		this.toolI18nService = null;
 	}
 
 	public TerminateTool(String planId, String expectedReturnInfo, ObjectMapper objectMapper) {
@@ -168,6 +171,7 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 		}
 		this.shortUrlService = null;
 		this.lynxeProperties = null;
+		this.toolI18nService = null;
 	}
 
 	public TerminateTool(String planId, String expectedReturnInfo, ObjectMapper objectMapper,
@@ -183,10 +187,11 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 		}
 		this.shortUrlService = shortUrlService;
 		this.lynxeProperties = null;
+		this.toolI18nService = null;
 	}
 
 	public TerminateTool(String planId, String expectedReturnInfo, ObjectMapper objectMapper,
-			ShortUrlService shortUrlService, LynxeProperties lynxeProperties) {
+			ShortUrlService shortUrlService, LynxeProperties lynxeProperties, ToolI18nService toolI18nService) {
 		this.currentPlanId = planId;
 		this.expectedReturnInfo = expectedReturnInfo;
 		if (objectMapper != null) {
@@ -198,6 +203,7 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 		}
 		this.shortUrlService = shortUrlService;
 		this.lynxeProperties = lynxeProperties;
+		this.toolI18nService = toolI18nService;
 	}
 
 	@Override
@@ -343,11 +349,27 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 
 	@Override
 	public String getDescription() {
-		return getDescriptions(this.expectedReturnInfo);
+		if (toolI18nService != null) {
+			return getDescriptions(this.expectedReturnInfo, this.toolI18nService);
+		}
+		// Fallback for old constructors
+		return "Terminate the current execution step with structured data. "
+				+ "Provide data in JSON format with 'message' field.";
 	}
 
 	@Override
 	public String getParameters() {
+		// For TerminateTool, parameters are dynamically generated based on expectedReturnInfo
+		if (toolI18nService != null) {
+			// We use the base parameters from i18n and modify if needed
+			String baseParams = toolI18nService.getParameters("terminate-tool");
+			if (expectedReturnInfo != null && !expectedReturnInfo.trim().isEmpty()) {
+				// Generate dynamic parameters based on expectedReturnInfo
+				return generateParametersJson(this.expectedReturnInfo);
+			}
+			return baseParams;
+		}
+		// Fallback for old constructors
 		return generateParametersJson(this.expectedReturnInfo);
 	}
 

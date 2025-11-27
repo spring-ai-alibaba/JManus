@@ -1,0 +1,22 @@
+description: |
+  Reads JSON parameters from a file (JSON array) and executes a specified tool for each parameter set.
+  The file must contain a single JSON array, where each element is a JSON object representing one parameter set.
+  If the tool requires parameters that are not present in the JSON, they will be set to empty string.
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "file_name": {
+              "type": "string",
+              "description": "Relative path to the file containing JSON array of parameters (each element is a parameter object)"
+          },
+          "tool_name": {
+              "type": "string",
+              "description": "Name of the tool to execute for each parameter set"
+          }
+      },
+      "required": ["file_name", "tool_name"],
+      "additionalProperties": false
+  }
+

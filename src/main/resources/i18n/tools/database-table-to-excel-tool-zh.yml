@@ -1,0 +1,37 @@
+description: |
+  将数据库表数据转换为 Excel 格式。
+  支持按表名或自定义 SQL 查询导出表数据。
+  Excel 文件将保存在根计划共享目录中。
+
+parameters: |
+  {
+      "type": "object",
+      "properties": {
+          "tableName": {
+              "type": "string",
+              "description": "要导出的表名（如果提供，将使用 SELECT * FROM tableName）"
+          },
+          "query": {
+              "type": "string",
+              "description": "要执行的自定义 SQL SELECT 查询（tableName 的替代方案）"
+          },
+          "datasourceName": {
+              "type": "string",
+              "description": "数据源名称，可选（如果未指定则使用默认值）"
+          },
+          "filename": {
+              "type": "string",
+              "description": "输出 Excel 文件名（例如 'table_export.xlsx'）。如果未提供，将从表名或查询生成"
+          },
+          "worksheetName": {
+              "type": "string",
+              "description": "Excel 文件中的工作表名称（默认：'Sheet1'）"
+          },
+          "parameters": {
+              "type": "array",
+              "description": "预编译语句的 SQL 参数（使用带 ? 占位符的查询时）"
+          }
+      },
+      "required": []
+  }
+

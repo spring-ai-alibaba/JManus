@@ -35,6 +35,7 @@ import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.AsyncToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,6 +59,8 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 	private final UnifiedDirectoryManager directoryManager;
 
 	private final ParallelExecutionService parallelExecutionService;
+
+	private final ToolI18nService toolI18nService;
 
 	/**
 	 * Input class for batch execution
@@ -92,11 +95,13 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 	}
 
 	public FileBasedParallelExecutionTool(ObjectMapper objectMapper, Map<String, ToolCallBackContext> toolCallbackMap,
-			UnifiedDirectoryManager directoryManager, ParallelExecutionService parallelExecutionService) {
+			UnifiedDirectoryManager directoryManager, ParallelExecutionService parallelExecutionService,
+			ToolI18nService toolI18nService) {
 		this.objectMapper = objectMapper;
 		this.toolCallbackMap = toolCallbackMap;
 		this.directoryManager = directoryManager;
 		this.parallelExecutionService = parallelExecutionService;
+		this.toolI18nService = toolI18nService;
 	}
 
 	/**
@@ -118,30 +123,12 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 
 	@Override
 	public String getDescription() {
-		return "Reads JSON parameters from a file (JSON array) and executes a specified tool for each parameter set. "
-				+ "The file must contain a single JSON array, where each element is a JSON object representing one parameter set. "
-				+ "If the tool requires parameters that are not present in the JSON, they will be set to empty string.";
+		return toolI18nService.getDescription("file-based-parallel-execution-tool");
 	}
 
 	@Override
 	public String getParameters() {
-		return """
-				{
-				    "type": "object",
-				    "properties": {
-				        "file_name": {
-				            "type": "string",
-				            "description": "Relative path to the file containing JSON array of parameters (each element is a parameter object)"
-				        },
-				        "tool_name": {
-				            "type": "string",
-				            "description": "Name of the tool to execute for each parameter set"
-				        }
-				    },
-				    "required": ["file_name", "tool_name"],
-				    "additionalProperties": false
-				}
-				""";
+		return toolI18nService.getParameters("file-based-parallel-execution-tool");
 	}
 
 	@Override
