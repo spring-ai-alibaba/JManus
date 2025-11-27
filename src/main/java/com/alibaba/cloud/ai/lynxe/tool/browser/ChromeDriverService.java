@@ -32,6 +32,8 @@ import org.springframework.stereotype.Service;
 import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
 import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
@@ -192,6 +194,39 @@ public class ChromeDriverService implements IChromeDriverService {
 		// Remove cleanup flag when driver is closed, so next time it will do cleanup
 		// again
 		initialCleanupDone.remove(planId);
+
+		// Clean up planId-specific userDataDir after browser is closed
+		// This prevents accumulation of browser profile directories
+		if (planId != null && sharedDir != null) {
+			try {
+				java.nio.file.Path planIdUserDataDir = java.nio.file.Paths.get(sharedDir, "planId-" + planId);
+				if (java.nio.file.Files.exists(planIdUserDataDir)) {
+					// Delete the planId-specific directory
+					// Use a recursive delete utility if available, or delete files manually
+					try {
+						java.nio.file.Files.walk(planIdUserDataDir).sorted(java.util.Comparator.reverseOrder())
+								.forEach(path -> {
+									try {
+										java.nio.file.Files.delete(path);
+									}
+									catch (java.io.IOException e) {
+										log.warn("Failed to delete file/directory during cleanup: {}", path, e);
+									}
+								});
+						log.info("Successfully cleaned up planId-specific userDataDir: {}", planIdUserDataDir);
+					}
+					catch (java.io.IOException e) {
+						log.warn("Failed to clean up planId-specific userDataDir for planId {}: {}", planId,
+								e.getMessage());
+					}
+				}
+			}
+			catch (Exception e) {
+				log.warn("Error during cleanup of planId-specific userDataDir for planId {}: {}", planId,
+						e.getMessage());
+				// Don't fail the close operation if cleanup fails
+			}
+		}
 	}
 
 	/**
@@ -383,16 +418,17 @@ public class ChromeDriverService implements IChromeDriverService {
 				// Continue anyway - Playwright will handle missing binaries
 			}
 
-			// Use sharedDir (extensions/playwright) as persistent userDataDir for history
-			// cleaning
+			// Use planId-specific userDataDir to allow multiple browser processes
+			// Each planId gets its own isolated userDataDir: extensions/playwright/planId-{planId}
+			// This prevents Chromium from locking the directory and allows multiple browsers
 			// Using launchPersistentContext() is the recommended Playwright way to handle
 			// persistent profiles
-			java.nio.file.Path userDataDirPath = java.nio.file.Paths.get(sharedDir);
+			java.nio.file.Path userDataDirPath = java.nio.file.Paths.get(sharedDir, "planId-" + planId);
 			try {
-				// Ensure the directory exists (it should already exist, but check anyway)
+				// Ensure the planId-specific directory exists
 				unifiedDirectoryManager.ensureDirectoryExists(userDataDirPath);
 				userDataDir = userDataDirPath.toString();
-				log.info("Configured persistent userDataDir: {}", userDataDir);
+				log.info("Configured planId-specific persistent userDataDir: {}", userDataDir);
 			}
 			catch (Exception e) {
 				log.warn("Failed to setup userDataDir, browser will use temporary profile: {}", e.getMessage());
@@ -538,6 +574,53 @@ public class ChromeDriverService implements IChromeDriverService {
 					browser = browserContext.browser();
 					if (browser == null) {
 						throw new RuntimeException("Browser context created but browser is null");
+					}
+
+					// Load shared cookies from storage-state.json if it exists
+					// This allows multiple browser instances to share cookies
+					if (hasStorageState && storageStatePath != null) {
+						try {
+							// Read and parse storage state JSON file
+							ObjectMapper objectMapper = new ObjectMapper();
+							JsonNode storageStateJson = objectMapper.readTree(storageStatePath.toFile());
+							JsonNode cookiesNode = storageStateJson.get("cookies");
+							if (cookiesNode != null && cookiesNode.isArray() && cookiesNode.size() > 0) {
+								// Convert JSON cookies to Playwright Cookie objects
+								List<com.microsoft.playwright.options.Cookie> cookies = new java.util.ArrayList<>();
+								for (JsonNode cookieNode : cookiesNode) {
+									com.microsoft.playwright.options.Cookie cookie = new com.microsoft.playwright.options.Cookie(
+											cookieNode.get("name").asText(), cookieNode.get("value").asText());
+									if (cookieNode.has("domain")) {
+										cookie.setDomain(cookieNode.get("domain").asText());
+									}
+									if (cookieNode.has("path")) {
+										cookie.setPath(cookieNode.get("path").asText());
+									}
+									if (cookieNode.has("expires")) {
+										cookie.setExpires(cookieNode.get("expires").asDouble());
+									}
+									if (cookieNode.has("httpOnly")) {
+										cookie.setHttpOnly(cookieNode.get("httpOnly").asBoolean());
+									}
+									if (cookieNode.has("secure")) {
+										cookie.setSecure(cookieNode.get("secure").asBoolean());
+									}
+									// Note: sameSite is typically handled automatically by Playwright
+									// when loading from storage state, so we skip manual setting
+									cookies.add(cookie);
+								}
+								if (!cookies.isEmpty()) {
+									browserContext.addCookies(cookies);
+									log.info("Loaded {} cookies from shared storage state: {}", cookies.size(),
+											storageStatePath);
+								}
+							}
+						}
+						catch (Exception e) {
+							log.warn("Failed to load shared cookies from storage state: {}. Continuing without shared cookies.",
+									e.getMessage());
+							// Continue without shared cookies - browser will still function
+						}
 					}
 				}
 				else {
