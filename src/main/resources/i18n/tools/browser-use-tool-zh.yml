@@ -7,7 +7,6 @@ description: |
   - 'input_text': 在元素中输入文本
   - 'key_enter': 按 Enter 键
   - 'screenshot': 捕获截图
-  - 'execute_js': 执行 JavaScript 代码
   - 'scroll': 向上/向下滚动页面
   - 'refresh': 刷新当前页面
   - 'new_tab': 使用指定 URL 打开新标签页
@@ -94,21 +93,6 @@ parameters: |
                   }
               },
               "required": ["action"],
-              "additionalProperties": false
-          },
-          {
-              "type": "object",
-              "properties": {
-                  "action": {
-                      "type": "string",
-                      "const": "execute_js"
-                  },
-                  "script": {
-                      "type": "string",
-                      "description": "要执行的 JavaScript 代码"
-                  }
-              },
-              "required": ["action", "script"],
               "additionalProperties": false
           },
           {

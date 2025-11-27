@@ -3,7 +3,7 @@ description: |
   Use this tool when you need to:
   - 'execute_read_sql': Execute SELECT queries (read-only operations only)
   - 'get_table_name': Find table names based on table comments
-  - 'execute_sql_to_json_file': Execute SELECT query and save results to JSON file
+  - 'execute_read_sql_to_json_file': Execute SELECT query and save results to JSON file
 
   Important: When querying NULL values, use NULL keyword explicitly (e.g., WHERE email IS NULL).
 
@@ -34,7 +34,7 @@ parameters: |
           {
               "type": "object",
               "properties": {
-                  "action": { "type": "string", "const": "execute_sql_to_json_file" },
+                  "action": { "type": "string", "const": "execute_read_sql_to_json_file" },
                   "query": { "type": "string", "description": "SELECT query statement to execute (read-only)" },
                   "fileName": { "type": "string", "description": "File name (with relative path) to save JSON results, e.g., 'results.json' or 'data/query_results.json'" },
                   "datasourceName": { "type": "string", "description": "Data source name, optional" }

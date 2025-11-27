@@ -7,7 +7,6 @@ description: |
   - 'input_text': Input text in element
   - 'key_enter': Press Enter key
   - 'screenshot': Capture screenshot
-  - 'execute_js': Execute JavaScript code
   - 'scroll': Scroll page up/down
   - 'refresh': Refresh current page
   - 'new_tab': Open new tab with specified URL
@@ -94,21 +93,6 @@ parameters: |
                   }
               },
               "required": ["action"],
-              "additionalProperties": false
-          },
-          {
-              "type": "object",
-              "properties": {
-                  "action": {
-                      "type": "string",
-                      "const": "execute_js"
-                  },
-                  "script": {
-                      "type": "string",
-                      "description": "JavaScript code to execute"
-                  }
-              },
-              "required": ["action", "script"],
               "additionalProperties": false
           },
           {

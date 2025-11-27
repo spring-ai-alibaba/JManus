@@ -3,7 +3,7 @@ description: |
   在需要以下操作时使用此工具：
   - 'execute_read_sql': 执行 SELECT 查询（仅只读操作）
   - 'get_table_name': 根据表注释查找表名
-  - 'execute_sql_to_json_file': 执行 SELECT 查询并将结果保存到 JSON 文件
+  - 'execute_read_sql_to_json_file': 执行 SELECT 查询并将结果保存到 JSON 文件
 
   重要提示：查询 NULL 值时，请显式使用 NULL 关键字（例如，WHERE email IS NULL）。
 
@@ -34,7 +34,7 @@ parameters: |
           {
               "type": "object",
               "properties": {
-                  "action": { "type": "string", "const": "execute_sql_to_json_file" },
+                  "action": { "type": "string", "const": "execute_read_sql_to_json_file" },
                   "query": { "type": "string", "description": "要执行的 SELECT 查询语句（只读）" },
                   "fileName": { "type": "string", "description": "保存 JSON 结果的文件名（带相对路径），例如 'results.json' 或 'data/query_results.json'" },
                   "datasourceName": { "type": "string", "description": "数据源名称，可选" }

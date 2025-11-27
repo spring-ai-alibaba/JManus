@@ -10,24 +10,6 @@ description: |
   - count: 统计文件的总行数和字符大小
     参数：file_path（必需，相对于 rootPlanId/shared/）
 
-  功能特性：
-  - 按行拆分文件以确保内容完整性
-  - 尽可能均匀地将行分配到 10 个片段中
-  - 为每个拆分文件添加可选标题
-  - 为拆分文件名添加索引号前缀（0-、1-、2- 等）
-  - 支持文本文件格式：markdown、代码文件、HTML、配置文件等
-  - 文件从 rootPlanId/shared/ 目录读取和写入
-
-  支持的文件类型：
-  - 文本文件（.txt、.md、.markdown）
-  - 编程文件（.java、.py、.js、.ts、.cpp、.c、.h、.go、.rs、.php、.rb、.swift、.kt、.scala）
-  - Web 文件（.html、.htm、.mhtml、.css、.scss、.sass、.less）
-  - 配置文件（.json、.xml、.yaml、.yml、.properties、.conf、.ini）
-  - 脚本（.sql、.sh、.bat、.cmd）
-  - 构建工具（.gradle、.pom、.mvn）
-  - 文档（.csv、.rst、.adoc）
-  - 日志（.log）
-
 parameters: |
   {
       "type": "object",

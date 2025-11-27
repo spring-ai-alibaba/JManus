@@ -12,24 +12,6 @@ description: |
   - count: Count total lines and character size of a file
     Parameters: file_path (required, relative to rootPlanId/shared/)
 
-  Features:
-  - Splits files by lines to ensure content completeness
-  - Distributes lines as evenly as possible across 10 pieces
-  - Adds optional header to each split file
-  - Adds index number prefix to split file names (0-, 1-, 2-, etc.)
-  - Supports text file formats: markdown, code files, HTML, configuration files, etc.
-  - Files are read from and written to rootPlanId/shared/ directory
-
-  Supported file types:
-  - Text files (.txt, .md, .markdown)
-  - Programming files (.java, .py, .js, .ts, .cpp, .c, .h, .go, .rs, .php, .rb, .swift, .kt, .scala)
-  - Web files (.html, .htm, .mhtml, .css, .scss, .sass, .less)
-  - Configuration files (.json, .xml, .yaml, .yml, .properties, .conf, .ini)
-  - Scripts (.sql, .sh, .bat, .cmd)
-  - Build tools (.gradle, .pom, .mvn)
-  - Documentation (.csv, .rst, .adoc)
-  - Logs (.log)
-
 parameters: |
   {
       "type": "object",

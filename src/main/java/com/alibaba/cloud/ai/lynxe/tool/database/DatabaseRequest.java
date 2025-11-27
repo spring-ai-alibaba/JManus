@@ -94,7 +94,7 @@ public class DatabaseRequest {
 	 * File name for saving SQL query results to JSON file
 	 *
 	 * <p>
-	 * Used when operation type is {@code execute_sql_to_json_file}. Specifies the file
+	 * Used when operation type is {@code execute_read_sql_to_json_file}. Specifies the file
 	 * name (with relative path) where the JSON result will be saved.
 	 * </p>
 	 */

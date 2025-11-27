@@ -101,7 +101,7 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 					return new ExecuteSqlAction().execute(request, dataSourceService);
 				case "get_table_name":
 					return new GetTableNameAction(objectMapper).execute(request, dataSourceService);
-				case "execute_sql_to_json_file":
+				case "execute_read_sql_to_json_file":
 					// Validate that it's a SELECT query
 					String sqlQuery = request.getQuery();
 					if (sqlQuery != null && !sqlQuery.trim().toUpperCase().startsWith("SELECT")) {
