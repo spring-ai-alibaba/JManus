@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.lynxe.runtime.executor.LevelBasedExecutorPool;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.lynxe.runtime.service.ServiceGroupIndexService;
 import com.alibaba.cloud.ai.lynxe.tool.AsyncToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.lynxe.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
@@ -49,11 +50,52 @@ public class ParallelExecutionService {
 
 	private final LevelBasedExecutorPool levelBasedExecutorPool;
 
+	private final ServiceGroupIndexService serviceGroupIndexService;
+
 	public ParallelExecutionService(ObjectMapper objectMapper, PlanIdDispatcher planIdDispatcher,
-			LevelBasedExecutorPool levelBasedExecutorPool) {
+			LevelBasedExecutorPool levelBasedExecutorPool, ServiceGroupIndexService serviceGroupIndexService) {
 		this.objectMapper = objectMapper;
 		this.planIdDispatcher = planIdDispatcher;
 		this.levelBasedExecutorPool = levelBasedExecutorPool;
+		this.serviceGroupIndexService = serviceGroupIndexService;
+	}
+
+	/**
+	 * Look up tool context using qualified key conversion
+	 * This method handles the conversion from raw tool name to qualified key format (toolName*index*)
+	 * based on serviceGroup, and provides fallback to original toolName if conversion fails.
+	 * @param toolName The raw tool name to look up
+	 * @param toolCallbackMap Map of tool callbacks
+	 * @return ToolCallBackContext if found, null otherwise
+	 */
+	public ToolCallBackContext lookupToolContext(String toolName, Map<String, ToolCallBackContext> toolCallbackMap) {
+		// Convert tool name to qualified key format (toolName*index*) if needed
+		// This handles the case where tools are registered with qualified keys based on serviceGroup
+		String lookupKey = toolName;
+		if (serviceGroupIndexService != null) {
+			try {
+				String convertedKey = serviceGroupIndexService.convertToolKeyToQualifiedKey(toolName);
+				if (convertedKey != null && !convertedKey.equals(toolName)) {
+					lookupKey = convertedKey;
+					logger.debug("Converted tool key from '{}' to '{}' for lookup", toolName, lookupKey);
+				}
+			}
+			catch (Exception e) {
+				logger.debug("Failed to convert tool key '{}' in lookupToolContext: {}", toolName, e.getMessage());
+			}
+		}
+
+		// Try lookup with converted key first, then fallback to original toolName
+		ToolCallBackContext toolContext = toolCallbackMap.get(lookupKey);
+		if (toolContext == null && !lookupKey.equals(toolName)) {
+			// Fallback to original toolName if converted key lookup failed
+			toolContext = toolCallbackMap.get(toolName);
+			if (toolContext != null) {
+				logger.debug("Found tool using original name '{}' after converted key '{}' failed", toolName, lookupKey);
+			}
+		}
+
+		return toolContext;
 	}
 
 	/**
@@ -67,8 +109,9 @@ public class ParallelExecutionService {
 	 */
 	public CompletableFuture<Map<String, Object>> executeTool(String toolName, Map<String, Object> params,
 			Map<String, ToolCallBackContext> toolCallbackMap, ToolContext toolContext, Integer index) {
-		// Get tool callback context
-		ToolCallBackContext toolContextBackend = toolCallbackMap.get(toolName);
+		// Use common lookup method
+		ToolCallBackContext toolContextBackend = lookupToolContext(toolName, toolCallbackMap);
+
 		if (toolContextBackend == null) {
 			Map<String, Object> errorResult = new HashMap<>();
 			if (index != null) {

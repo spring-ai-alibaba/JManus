@@ -10,7 +10,7 @@ description: |
   - 'scroll': Scroll page up/down
   - 'refresh': Refresh current page
   - 'new_tab': Open new tab with specified URL
-  - 'close_tab': Close current tab
+  - 'close_tab': Close specified tab (defaults to current tab)
   - 'switch_tab': Switch to specific tab
   - 'get_web_content': Get current page ARIA snapshot content
 
@@ -151,6 +151,10 @@ parameters: |
                   "action": {
                       "type": "string",
                       "const": "close_tab"
+                  },
+                  "tab_id": {
+                      "type": "integer",
+                      "description": "Tab ID to close (optional, defaults to current tab)"
                   }
               },
               "required": ["action"],
