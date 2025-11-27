@@ -148,8 +148,8 @@ public class DatabaseReadTool extends AbstractBaseTool<DatabaseRequest> {
 					if (sqlQuery != null && !sqlQuery.trim().toUpperCase().startsWith("SELECT")) {
 						return new ToolExecuteResult("Only SELECT queries are allowed in read-only mode");
 					}
-					return new ExecuteSqlToJsonFileAction(directoryManager, objectMapper, rootPlanId)
-						.execute(request, dataSourceService);
+					return new ExecuteSqlToJsonFileAction(directoryManager, objectMapper, rootPlanId).execute(request,
+							dataSourceService);
 				default:
 					return new ToolExecuteResult("Unknown action: " + action);
 			}

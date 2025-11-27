@@ -91,6 +91,12 @@ export interface ThinkActRecord {
   /** Error message if the cycle encountered problems */
   errorMessage?: string
 
+  /** Input character count (total characters in all messages sent to LLM) */
+  inputCharCount?: number
+
+  /** Output character count (total characters in LLM response) */
+  outputCharCount?: number
+
   /** Tool name used for action (if applicable) */
   toolName?: string
 

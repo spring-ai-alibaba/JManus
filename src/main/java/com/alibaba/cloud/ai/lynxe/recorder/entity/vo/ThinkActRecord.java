@@ -91,6 +91,12 @@ public class ThinkActRecord {
 	// Error message if the cycle encountered problems
 	private String errorMessage;
 
+	// Input character count (total characters in all messages sent to LLM)
+	private Integer inputCharCount;
+
+	// Output character count (total characters in LLM response)
+	private Integer outputCharCount;
+
 	// Tool name used for action (if applicable)
 	private String toolName;
 
@@ -276,6 +282,22 @@ public class ThinkActRecord {
 
 	public void setErrorMessage(String errorMessage) {
 		this.errorMessage = errorMessage;
+	}
+
+	public Integer getInputCharCount() {
+		return inputCharCount;
+	}
+
+	public void setInputCharCount(Integer inputCharCount) {
+		this.inputCharCount = inputCharCount;
+	}
+
+	public Integer getOutputCharCount() {
+		return outputCharCount;
+	}
+
+	public void setOutputCharCount(Integer outputCharCount) {
+		this.outputCharCount = outputCharCount;
 	}
 
 	public String getToolName() {

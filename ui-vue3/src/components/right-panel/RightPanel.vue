@@ -193,12 +193,44 @@
                     </h5>
                     <div class="think-content">
                       <div class="input">
-                        <span class="label">{{ t('rightPanel.input') }}:</span>
-                        <pre>{{ formatJson(tas.thinkInput) }}</pre>
+                        <div class="label-row">
+                          <span class="label">{{ t('rightPanel.input') }}:</span>
+                          <div class="label-actions">
+                            <button
+                              class="copy-btn"
+                              @click="copyToClipboard(tas.thinkInput)"
+                              :title="t('rightPanel.copyToClipboard')"
+                            >
+                              <Icon icon="carbon:copy" />
+                            </button>
+                            <span class="char-count-badge"
+                              >{{ tas.inputCharCount ?? 0 }} chars</span
+                            >
+                          </div>
+                        </div>
+                        <div class="pre-container">
+                          <pre>{{ formatJson(tas.thinkInput) }}</pre>
+                        </div>
                       </div>
                       <div class="output">
-                        <span class="label">{{ t('rightPanel.output') }}:</span>
-                        <pre>{{ formatJson(tas.thinkOutput) }}</pre>
+                        <div class="label-row">
+                          <span class="label">{{ t('rightPanel.output') }}:</span>
+                          <div class="label-actions">
+                            <button
+                              class="copy-btn"
+                              @click="copyToClipboard(tas.thinkOutput)"
+                              :title="t('rightPanel.copyToClipboard')"
+                            >
+                              <Icon icon="carbon:copy" />
+                            </button>
+                            <span class="char-count-badge"
+                              >{{ tas.outputCharCount ?? 0 }} chars</span
+                            >
+                          </div>
+                        </div>
+                        <div class="pre-container">
+                          <pre>{{ formatJson(tas.thinkOutput) }}</pre>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -405,6 +437,21 @@ const props = defineProps<Props>()
 
 const { t } = useI18n()
 const toast = useToast()
+
+// Copy to clipboard function
+const copyToClipboard = async (text: string | null | undefined) => {
+  if (!text) {
+    toast.error(t('rightPanel.copyFailed') || 'Failed to copy')
+    return
+  }
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.success(t('rightPanel.copySuccess') || 'Copied to clipboard')
+  } catch (error) {
+    console.error('Failed to copy to clipboard:', error)
+    toast.error(t('rightPanel.copyFailed') || 'Failed to copy')
+  }
+}
 
 // Use singleton composable for right panel state
 const rightPanel = useRightPanelSingleton()
@@ -1107,17 +1154,56 @@ defineExpose({
         margin-bottom: 0;
       }
 
+      .label-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+
       .label {
-        display: block;
         font-weight: 600;
         color: #888888;
-        margin-bottom: 4px;
         font-size: 12px;
+      }
+
+      .label-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .copy-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        padding: 4px 6px;
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 12px;
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.5);
+          border-color: rgba(255, 255, 255, 0.2);
+          color: rgba(255, 255, 255, 0.9);
+        }
+
+        &:active {
+          transform: scale(0.95);
+        }
       }
 
       .value {
         color: #cccccc;
         font-size: 14px;
+      }
+
+      .pre-container {
+        display: block;
       }
 
       pre {
@@ -1133,6 +1219,16 @@ defineExpose({
         line-height: 1.4;
         max-height: 200px;
         overflow-y: auto;
+      }
+
+      .char-count-badge {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 500;
       }
     }
   }

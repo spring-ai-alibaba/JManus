@@ -95,7 +95,7 @@ public class LlmService implements LynxeListener<ModelChangeEvent> {
 	private ChatMemoryRepository chatMemoryRepository;
 
 	@Autowired
-	private LlmTraceRecorder llmTraceRecorder;
+	private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
 	@Autowired(required = false)
 	private WebClient webClientWithDnsCache;
@@ -429,14 +429,18 @@ public class LlmService implements LynxeListener<ModelChangeEvent> {
 			@Override
 			public ResponseEntity<ChatCompletion> chatCompletionEntity(ChatCompletionRequest chatRequest,
 					MultiValueMap<String, String> additionalHttpHeader) {
-				llmTraceRecorder.recordRequest(chatRequest);
+				// Create a new LlmTraceRecorder instance for this request
+				LlmTraceRecorder recorder = new LlmTraceRecorder(objectMapper);
+				recorder.recordRequest(chatRequest);
 				return super.chatCompletionEntity(chatRequest, additionalHttpHeader);
 			}
 
 			@Override
 			public Flux<ChatCompletionChunk> chatCompletionStream(ChatCompletionRequest chatRequest,
 					MultiValueMap<String, String> additionalHttpHeader) {
-				llmTraceRecorder.recordRequest(chatRequest);
+				// Create a new LlmTraceRecorder instance for this request
+				LlmTraceRecorder recorder = new LlmTraceRecorder(objectMapper);
+				recorder.recordRequest(chatRequest);
 				return super.chatCompletionStream(chatRequest, additionalHttpHeader);
 			}
 		};

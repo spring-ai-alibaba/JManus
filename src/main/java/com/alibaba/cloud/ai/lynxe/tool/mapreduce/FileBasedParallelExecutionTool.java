@@ -259,8 +259,8 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 	}
 
 	/**
-	 * Read file and parse JSON array of parameters
-	 * File is located in root plan shared directory (same as MarkdownConverterTool)
+	 * Read file and parse JSON array of parameters File is located in root plan shared
+	 * directory (same as MarkdownConverterTool)
 	 */
 	private List<Map<String, Object>> readAndParseFile(String fileName) {
 		try {

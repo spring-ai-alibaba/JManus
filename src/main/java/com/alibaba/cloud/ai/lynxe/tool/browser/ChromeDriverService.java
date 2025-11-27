@@ -247,6 +247,22 @@ public class ChromeDriverService implements IChromeDriverService {
 	}
 
 	/**
+	 * Find planId for a given browser instance
+	 */
+	private String findPlanIdForBrowser(Browser browser) {
+		if (browser == null) {
+			return null;
+		}
+		for (java.util.Map.Entry<String, DriverWrapper> entry : drivers.entrySet()) {
+			DriverWrapper wrapper = entry.getValue();
+			if (wrapper != null && wrapper.getBrowser() == browser) {
+				return entry.getKey();
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Check if driver is healthy and responsive
 	 */
 	private boolean isDriverHealthy(DriverWrapper driver) {
@@ -347,6 +363,24 @@ public class ChromeDriverService implements IChromeDriverService {
 				throw new RuntimeException("Failed to get browser type", e);
 			}
 
+			// Validate browser binaries exist before launching (helps prevent crashes)
+			try {
+				String browserPath = System.getProperty("playwright.browsers.path");
+				if (browserPath != null) {
+					java.nio.file.Path browsersDir = java.nio.file.Paths.get(browserPath);
+					if (!java.nio.file.Files.exists(browsersDir)) {
+						log.warn("Browser binaries directory does not exist: {}. Playwright will download browsers on first use.", browserPath);
+					}
+					else {
+						log.debug("Browser binaries directory exists: {}", browserPath);
+					}
+				}
+			}
+			catch (Exception e) {
+				log.warn("Could not validate browser binaries path: {}", e.getMessage());
+				// Continue anyway - Playwright will handle missing binaries
+			}
+
 			// Use sharedDir (extensions/playwright) as persistent userDataDir for history
 			// cleaning
 			// Using launchPersistentContext() is the recommended Playwright way to handle
@@ -420,7 +454,14 @@ public class ChromeDriverService implements IChromeDriverService {
 																								// tasks
 						"--safebrowsing-disable-auto-update", // Disables safe browsing
 																// updates
-						"--enable-automation", "--password-store=basic", "--use-mock-keychain"));
+						"--enable-automation", "--password-store=basic", "--use-mock-keychain",
+						// macOS-specific crash prevention flags
+						"--disable-software-rasterizer", // Prevents GPU-related crashes on macOS
+						"--disable-accelerated-2d-canvas", // Prevents canvas rendering crashes
+						"--disable-accelerated-video-decode", // Prevents video decode crashes
+						"--disable-features=UseChromeOSDirectVideoDecoder", // Prevents video decoder crashes
+						"--disable-features=MediaFoundationRenderer", // Prevents media foundation crashes
+						"--js-flags=--max-old-space-size=4096")); // Limits JS memory to prevent OOM crashes
 
 				launchOptions.setArgs(args);
 
@@ -524,6 +565,20 @@ public class ChromeDriverService implements IChromeDriverService {
 				// Verify context is valid
 				if (browserContext == null) {
 					throw new RuntimeException("Browser context was created but is null");
+				}
+
+				// Set up browser crash listener for better error handling
+				if (browser != null) {
+					browser.onDisconnected((Browser disconnectedBrowser) -> {
+						log.error("Browser disconnected unexpectedly - possible crash detected");
+						// Mark driver as unhealthy for this planId
+						String disconnectedPlanId = findPlanIdForBrowser(disconnectedBrowser);
+						if (disconnectedPlanId != null) {
+							log.warn("Removing crashed browser driver for planId: {}", disconnectedPlanId);
+							drivers.remove(disconnectedPlanId);
+						}
+					});
+					log.debug("Browser crash listener registered");
 				}
 
 			}
