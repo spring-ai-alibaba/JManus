@@ -11,5 +11,5 @@ description: |
   **Best Practice**: Always convert complex documents to Markdown first for better content analysis and processing.
 
 parameters: |
-  {"type":"object","properties":{"filename":{"type":"string","description":"Name of the file to convert to Markdown (must exist in root plan directory, rootPlanId/)"},"additionalRequirement":{"type":"string","description":"Optional additional requirements for conversion (e.g., specific formatting, structure)"},"forceLlmForPdf":{"type":"boolean","description":"Optional flag to force using LLM/OCR for PDF processing instead of auto-detection. Only applies to PDF files.","default":false}},"required":["filename"]}
+  {"type":"object","properties":{"filename":{"type":"string","description":"Name of the file to convert to Markdown"},"additionalRequirement":{"type":"string","description":"Optional additional requirements for conversion (e.g., specific formatting, structure)"},"forceLlmForPdf":{"type":"boolean","description":"Optional flag to force using LLM/OCR for PDF processing instead of auto-detection. Only applies to PDF files.","default":false}},"required":["filename"]}
 

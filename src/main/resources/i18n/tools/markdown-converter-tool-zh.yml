@@ -10,5 +10,5 @@ description: |
   **最佳实践**：始终先将复杂文档转换为 Markdown，以便更好地分析和处理内容。
 
 parameters: |
-  {"type":"object","properties":{"filename":{"type":"string","description":"要转换为 Markdown 的文件名（必须存在于根计划目录中，rootPlanId/）"},"additionalRequirement":{"type":"string","description":"转换的可选其他要求（例如，特定格式、结构）"},"forceLlmForPdf":{"type":"boolean","description":"可选标志，强制使用 LLM/OCR 进行 PDF 处理而不是自动检测。仅适用于 PDF 文件。","default":false}},"required":["filename"]}
+  {"type":"object","properties":{"filename":{"type":"string","description":"要转换为 Markdown 的文件名"},"additionalRequirement":{"type":"string","description":"转换的可选其他要求（例如，特定格式、结构）"},"forceLlmForPdf":{"type":"boolean","description":"可选标志，强制使用 LLM/OCR 进行 PDF 处理而不是自动检测。仅适用于 PDF 文件。","default":false}},"required":["filename"]}
 

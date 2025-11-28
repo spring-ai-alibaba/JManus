@@ -103,7 +103,7 @@ public class ImageOcrProcessor {
 			if (imageRecognitionExecutorPool != null) {
 				CompletableFuture<String> ocrTask = imageRecognitionExecutorPool.submitTask(() -> {
 					log.info("Processing image with OCR");
-					return processImageWithOcrWithRetry(image, 1);
+					return processImageWithOcrWithRetry(image, 1, additionalRequirement);
 				});
 
 				try {
@@ -178,17 +178,6 @@ public class ImageOcrProcessor {
 		}
 	}
 
-	/**
-	 * Convert image file to text using OCR processing (backward compatibility method)
-	 * @param sourceFile The source image file
-	 * @param additionalRequirement Optional additional requirements for OCR processing
-	 * @param currentPlanId Current plan ID for file operations
-	 * @return ToolExecuteResult with OCR processing status and extracted text
-	 */
-	public ToolExecuteResult convertImageToTextWithOcr(Path sourceFile, String additionalRequirement,
-			String currentPlanId) {
-		return convertImageToTextWithOcr(sourceFile, additionalRequirement, currentPlanId, null);
-	}
 
 	/**
 	 * Load image from file and validate format
@@ -220,15 +209,16 @@ public class ImageOcrProcessor {
 	 * Process a single image with OCR using ChatClient with retry mechanism
 	 * @param image The BufferedImage to process
 	 * @param imageNumber The image number for logging
+	 * @param additionalRequirement Optional additional requirements for OCR processing
 	 * @return Extracted text or null if failed
 	 */
-	private String processImageWithOcrWithRetry(BufferedImage image, int imageNumber) {
+	private String processImageWithOcrWithRetry(BufferedImage image, int imageNumber, String additionalRequirement) {
 		int maxRetryAttempts = getConfiguredMaxRetryAttempts();
 
 		for (int attempt = 1; attempt <= maxRetryAttempts; attempt++) {
 			try {
 				log.debug("OCR attempt {} of {} for image {}", attempt, maxRetryAttempts, imageNumber);
-				String result = processImageWithOcr(image, imageNumber);
+				String result = processImageWithOcr(image, imageNumber, additionalRequirement);
 
 				if (result != null && !result.trim().isEmpty()) {
 					if (attempt > 1) {
@@ -268,8 +258,12 @@ public class ImageOcrProcessor {
 
 	/**
 	 * Process a single image with OCR using ChatClient
+	 * @param image The BufferedImage to process
+	 * @param imageNumber The image number for logging
+	 * @param additionalRequirement Optional additional requirements for OCR processing
+	 * @return Extracted text or null if failed
 	 */
-	private String processImageWithOcr(BufferedImage image, int imageNumber) {
+	private String processImageWithOcr(BufferedImage image, int imageNumber, String additionalRequirement) {
 		if (llmService == null) {
 			log.error("LlmService is not initialized, cannot perform OCR");
 			return null;
@@ -291,16 +285,22 @@ public class ImageOcrProcessor {
 			// Use configured model name from LynxeProperties
 			String modelName = getConfiguredModelName();
 			ChatOptions chatOptions = ChatOptions.builder().model(modelName).build();
+			
 			// Use ChatClient to process the image with OCR
+			// Include additional requirements in the system message if provided
 			String extractedText = chatClient.prompt()
 				.options(chatOptions)
-				.system(systemMessage -> systemMessage
-					.text("You are an OCR (Optical Character Recognition) specialist.")
-					.text("Extract all visible text content from the provided image.")
-					.text("Return only the extracted text without any additional formatting or descriptions.")
-					.text("Preserve the structure and layout of the text as much as possible.")
-					.text("Focus on accurate text recognition and maintain readability.")
-					.text("If no text is visible in the image, return ''(empty string) "))
+				.system(systemMessage -> {
+					systemMessage.text("You are an OCR (Optical Character Recognition) specialist.");
+					systemMessage.text("Extract all visible text content from the provided image.");
+					systemMessage.text("Return only the extracted text without any additional formatting or descriptions.");
+					systemMessage.text("Preserve the structure and layout of the text as much as possible.");
+					systemMessage.text("Focus on accurate text recognition and maintain readability.");
+					if (additionalRequirement != null && !additionalRequirement.trim().isEmpty()) {
+						systemMessage.text("Additional requirements: " + additionalRequirement);
+					}
+					systemMessage.text("If no text is visible in the image, return ''(empty string) ");
+				})
 				.user(userMessage -> userMessage.text("Please extract all text content from this image:")
 					.media(MimeTypeUtils.parseMimeType("image/" + imageFormatName.toLowerCase()),
 							new InputStreamResource(imageInputStream)))

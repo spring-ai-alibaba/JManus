@@ -152,7 +152,7 @@ public class LynxeProperties {
 	// Begin---------------------------------------------------------------------------------------------
 
 	@ConfigProperty(group = "lynxe", subGroup = "agent", key = "maxSteps", path = "lynxe.maxSteps",
-			description = "lynxe.agent.maxSteps.description", defaultValue = "200", inputType = ConfigInputType.NUMBER)
+			description = "lynxe.agent.maxSteps.description", defaultValue = "30", inputType = ConfigInputType.NUMBER)
 	private volatile Integer maxSteps;
 
 	public Integer getMaxSteps() {
