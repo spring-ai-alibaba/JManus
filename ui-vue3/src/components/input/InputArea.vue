@@ -510,6 +510,9 @@ const handleSend = async () => {
   historyIndex.value = -1
   originalInputBeforeHistory.value = ''
 
+  // Clear the input immediately for instant feedback
+  clearInput()
+
   // Prepare query with tool information if selected
   const query: InputMessage = {
     input: finalInput,
@@ -550,9 +553,6 @@ const handleSend = async () => {
     const errorMessage = error instanceof Error ? error.message : String(error)
     console.error('[InputArea] Send message failed:', errorMessage)
   }
-
-  // Clear the input but keep uploaded files and uploadKey for follow-up conversations
-  clearInput()
 }
 
 const handleStop = async () => {

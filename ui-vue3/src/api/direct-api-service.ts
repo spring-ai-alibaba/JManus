@@ -40,11 +40,12 @@ export class DirectApiService {
     })
   }
 
-  // Send simple chat message (no plan execution, just LLM chat)
+  // Send simple chat message with SSE streaming (no plan execution, just LLM chat)
   public static async sendChatMessage(
     query: InputMessage,
-    requestSource: 'VUE_DIALOG' | 'VUE_SIDEBAR' = 'VUE_DIALOG'
-  ): Promise<unknown> {
+    requestSource: 'VUE_DIALOG' | 'VUE_SIDEBAR' = 'VUE_DIALOG',
+    onChunk?: (chunk: { type: string; content?: string; conversationId?: string; message?: string }) => void
+  ): Promise<{ conversationId?: string; message?: string }> {
     return LlmCheckService.withLlmCheck(async () => {
       console.log('[DirectApiService] sendChatMessage called with:', {
         input: query.input,
@@ -80,18 +81,25 @@ export class DirectApiService {
       }
 
       console.log(
-        '[DirectApiService] Making request to:',
+        '[DirectApiService] Making SSE request to:',
         `${this.BASE_URL}/chat`
       )
       console.log('[DirectApiService] Request body:', requestBody)
 
       const response = await fetch(`${this.BASE_URL}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+        },
         body: JSON.stringify(requestBody),
       })
 
       console.log('[DirectApiService] Response status:', response.status, response.ok)
+      console.log('[DirectApiService] Response headers:', {
+        contentType: response.headers.get('Content-Type'),
+        transferEncoding: response.headers.get('Transfer-Encoding'),
+      })
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -99,8 +107,88 @@ export class DirectApiService {
         throw new Error(`Failed to send chat message: ${response.status}`)
       }
 
-      const result = await response.json()
-      console.log('[DirectApiService] sendChatMessage response:', result)
+      // Handle SSE streaming
+      if (!response.body) {
+        throw new Error('Response body is null')
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let conversationId: string | undefined
+      let accumulatedMessage = ''
+
+      console.log('[DirectApiService] Starting to read SSE stream...')
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          console.log('[DirectApiService] Read chunk:', { done, valueLength: value?.length })
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          console.log('[DirectApiService] Buffer length:', buffer.length, 'content:', buffer.substring(0, 200))
+          const lines = buffer.split('\n\n')
+          buffer = lines.pop() || '' // Keep incomplete line in buffer
+          console.log('[DirectApiService] Split into', lines.length, 'lines, buffer remaining:', buffer.length)
+
+          for (const line of lines) {
+            console.log('[DirectApiService] Processing line:', line)
+            if (line.startsWith('data:')) {
+              // Handle both 'data:' and 'data: ' formats
+              const data = line.startsWith('data: ') ? line.slice(6) : line.slice(5)
+              console.log('[DirectApiService] Extracted data:', data)
+              try {
+                const parsed = JSON.parse(data) as {
+                  type: string
+                  content?: string
+                  conversationId?: string
+                  message?: string
+                }
+                console.log('[DirectApiService] Parsed SSE event:', parsed)
+
+                if (parsed.type === 'start' && parsed.conversationId) {
+                  conversationId = parsed.conversationId
+                  console.log('[DirectApiService] Got start event with conversationId:', conversationId)
+                  if (onChunk) {
+                    onChunk({ type: 'start', conversationId: parsed.conversationId })
+                  }
+                } else if (parsed.type === 'chunk' && parsed.content) {
+                  accumulatedMessage += parsed.content
+                  console.log('[DirectApiService] Got chunk, accumulated length:', accumulatedMessage.length)
+                  if (onChunk) {
+                    onChunk({ type: 'chunk', content: parsed.content })
+                  }
+                } else if (parsed.type === 'done') {
+                  console.log('[DirectApiService] Got done event')
+                  if (onChunk) {
+                    onChunk({ type: 'done' })
+                  }
+                } else if (parsed.type === 'error') {
+                  console.error('[DirectApiService] Got error event:', parsed.message)
+                  if (onChunk) {
+                    onChunk({ type: 'error', message: parsed.message || 'Streaming error occurred' })
+                  }
+                  // Break the loop to stop processing
+                  reader.releaseLock()
+                  throw new Error(parsed.message || 'Streaming error occurred')
+                }
+              } catch (parseError) {
+                console.error('[DirectApiService] Error parsing SSE data:', parseError, 'Data:', data)
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock()
+      }
+
+      const result: { conversationId?: string; message?: string } = {}
+      if (conversationId) {
+        result.conversationId = conversationId
+      }
+      result.message = accumulatedMessage || 'No response received'
+      console.log('[DirectApiService] sendChatMessage completed:', result)
       return result
     })
   }

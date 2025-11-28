@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,6 +45,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.event.LynxeListener;
@@ -988,123 +990,200 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 	}
 
 	/**
-	 * Simple chat endpoint for standard LLM chat without plan execution
+	 * Simple chat endpoint for standard LLM chat without plan execution with SSE streaming
 	 * @param request Request containing input message, conversationId (optional), uploadedFiles (optional), uploadKey (optional)
-	 * @return Chat response with conversationId and message content
+	 * @return SSE stream with incremental text chunks
 	 */
-	@PostMapping("/chat")
-	public ResponseEntity<Map<String, Object>> chat(@RequestBody Map<String, Object> request) {
+	@PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	public SseEmitter chat(@RequestBody Map<String, Object> request) {
 		String input = (String) request.get("input");
 		if (input == null || input.trim().isEmpty()) {
-			return ResponseEntity.badRequest().body(Map.of("error", "Input message cannot be empty"));
+			SseEmitter errorEmitter = new SseEmitter(5000L);
+			try {
+				Map<String, Object> errorData = new HashMap<>();
+				errorData.put("type", "error");
+				errorData.put("message", "Input message cannot be empty");
+				errorEmitter.send(SseEmitter.event().data(objectMapper.writeValueAsString(errorData)));
+				errorEmitter.complete();
+			}
+			catch (Exception e) {
+				errorEmitter.completeWithError(e);
+			}
+			return errorEmitter;
 		}
 
 		RequestSource requestSource = getRequestSource(request);
-		logger.info("📡 [{}] Received chat request", requestSource.name());
+		logger.info("📡 [{}] Received chat streaming request", requestSource.name());
 
-		try {
-			// Validate or generate conversationId
-			String conversationId = validateOrGenerateConversationId((String) request.get("conversationId"),
-					requestSource);
+		// Create SSE emitter with 5 minute timeout
+		SseEmitter emitter = new SseEmitter(300000L);
+		StringBuilder accumulatedText = new StringBuilder();
 
-			// Build message list with conversation history
-			List<Message> messages = new java.util.ArrayList<>();
+		// Register timeout and error handlers before starting async task to avoid race condition
+		emitter.onTimeout(() -> {
+			logger.warn("SSE emitter timeout");
+			emitter.complete();
+		});
 
-			// Retrieve conversation history if conversationId exists and conversation memory is enabled
-			if (lynxeProperties != null && lynxeProperties.getEnableConversationMemory() && memoryService != null
-					&& conversationId != null && !conversationId.trim().isEmpty()) {
-				try {
-					org.springframework.ai.chat.memory.ChatMemory conversationMemory = llmService
-							.getConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId);
-					List<Message> conversationHistory = conversationMemory.get(conversationId);
-					if (conversationHistory != null && !conversationHistory.isEmpty()) {
-						logger.debug("Adding {} conversation history messages for conversationId: {}",
-								conversationHistory.size(), conversationId);
-						messages.addAll(conversationHistory);
+		emitter.onError((ex) -> {
+			logger.error("SSE emitter error", ex);
+			emitter.completeWithError(ex);
+		});
+
+		// Execute asynchronously
+		CompletableFuture.runAsync(() -> {
+			try {
+				// Validate or generate conversationId
+				String conversationId = validateOrGenerateConversationId((String) request.get("conversationId"),
+						requestSource);
+
+				// Send initial event with conversationId
+				Map<String, Object> startData = new HashMap<>();
+				startData.put("type", "start");
+				startData.put("conversationId", conversationId);
+				emitter.send(SseEmitter.event().data(objectMapper.writeValueAsString(startData)));
+
+				// Build message list with conversation history
+				List<Message> messages = new java.util.ArrayList<>();
+
+				// Retrieve conversation history if conversationId exists and conversation memory is enabled
+				if (lynxeProperties != null && lynxeProperties.getEnableConversationMemory() && memoryService != null
+						&& conversationId != null && !conversationId.trim().isEmpty()) {
+					try {
+						org.springframework.ai.chat.memory.ChatMemory conversationMemory = llmService
+								.getConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId);
+						List<Message> conversationHistory = conversationMemory.get(conversationId);
+						if (conversationHistory != null && !conversationHistory.isEmpty()) {
+							logger.debug("Adding {} conversation history messages for conversationId: {}",
+									conversationHistory.size(), conversationId);
+							messages.addAll(conversationHistory);
+						}
+					}
+					catch (Exception e) {
+						logger.warn("Failed to retrieve conversation history for conversationId: {}. Continuing without it.",
+								conversationId, e);
 					}
 				}
-				catch (Exception e) {
-					logger.warn("Failed to retrieve conversation history for conversationId: {}. Continuing without it.",
-							conversationId, e);
+
+				// Add user message
+				UserMessage userMessage = new UserMessage(input);
+				messages.add(userMessage);
+
+				// Save user message to conversation memory
+				if (lynxeProperties != null && lynxeProperties.getEnableConversationMemory() && conversationId != null
+						&& !conversationId.trim().isEmpty()) {
+					try {
+						llmService.addToConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId,
+								userMessage);
+						logger.debug("Saved user message to conversation memory for conversationId: {}", conversationId);
+					}
+					catch (Exception e) {
+						logger.warn("Failed to save user message to conversation memory for conversationId: {}",
+								conversationId, e);
+					}
 				}
+
+				// Call LLM with simple chat (no tools, no plan execution)
+				ChatClient chatClient = llmService.getDiaChatClient();
+				Prompt prompt = new Prompt(messages);
+
+				// Calculate input character count
+				int inputCharCount = messages.stream().mapToInt(message -> {
+					String text = message.getText();
+					return (text != null && !text.trim().isEmpty()) ? text.length() : 0;
+				}).sum();
+				logger.info("Chat input character count: {}", inputCharCount);
+
+				// Process streaming response and send chunks as they arrive
+				ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt(prompt);
+				Flux<ChatResponse> responseFlux = requestSpec.stream().chatResponse();
+
+				// Subscribe to flux and send chunks via SSE
+				responseFlux.doOnNext(chatResponse -> {
+					try {
+						if (chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null) {
+							String text = chatResponse.getResult().getOutput().getText();
+							if (text != null && !text.isEmpty()) {
+								accumulatedText.append(text);
+
+								// Send chunk event
+								Map<String, Object> chunkData = new HashMap<>();
+								chunkData.put("type", "chunk");
+								chunkData.put("content", text);
+								emitter.send(SseEmitter.event().data(objectMapper.writeValueAsString(chunkData)));
+							}
+						}
+					}
+					catch (Exception e) {
+						logger.error("Error sending SSE chunk", e);
+					}
+				}).doOnComplete(() -> {
+					try {
+						String finalText = accumulatedText.toString();
+						if (finalText == null || finalText.trim().isEmpty()) {
+							finalText = "No response generated";
+						}
+
+						// Save assistant response to conversation memory
+						if (lynxeProperties != null && lynxeProperties.getEnableConversationMemory()
+								&& conversationId != null && !conversationId.trim().isEmpty()) {
+							try {
+								AssistantMessage assistantMessage = new AssistantMessage(finalText);
+								llmService.addToConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId,
+										assistantMessage);
+								logger.debug("Saved assistant response to conversation memory for conversationId: {}",
+										conversationId);
+							}
+							catch (Exception e) {
+								logger.warn("Failed to save assistant response to conversation memory for conversationId: {}",
+										conversationId, e);
+							}
+						}
+
+						// Send completion event
+						Map<String, Object> doneData = new HashMap<>();
+						doneData.put("type", "done");
+						emitter.send(SseEmitter.event().data(objectMapper.writeValueAsString(doneData)));
+						emitter.complete();
+
+						logger.info("Chat streaming completed for conversationId: {}, response length: {}", conversationId,
+								finalText.length());
+					}
+					catch (Exception e) {
+						logger.error("Error completing SSE stream", e);
+						emitter.completeWithError(e);
+					}
+				}).doOnError(error -> {
+					logger.error("Error in chat streaming", error);
+					try {
+						Map<String, Object> errorData = new HashMap<>();
+						errorData.put("type", "error");
+						errorData.put("message", error.getMessage() != null ? error.getMessage() : "Streaming error occurred");
+						emitter.send(SseEmitter.event().data(objectMapper.writeValueAsString(errorData)));
+						emitter.completeWithError(error);
+					}
+					catch (Exception e) {
+						emitter.completeWithError(e);
+					}
+				}).subscribe();
+
 			}
-
-			// Add user message
-			UserMessage userMessage = new UserMessage(input);
-			messages.add(userMessage);
-
-			// Save user message to conversation memory
-			if (lynxeProperties != null && lynxeProperties.getEnableConversationMemory() && conversationId != null
-					&& !conversationId.trim().isEmpty()) {
+			catch (Exception e) {
+				logger.error("Failed to process chat streaming request", e);
 				try {
-					llmService.addToConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId,
-							userMessage);
-					logger.debug("Saved user message to conversation memory for conversationId: {}", conversationId);
+					Map<String, Object> errorData = new HashMap<>();
+					errorData.put("type", "error");
+					errorData.put("message", "Failed to process chat request: " + e.getMessage());
+					emitter.send(SseEmitter.event().data(objectMapper.writeValueAsString(errorData)));
+					emitter.completeWithError(e);
 				}
-				catch (Exception e) {
-					logger.warn("Failed to save user message to conversation memory for conversationId: {}",
-							conversationId, e);
-				}
-			}
-
-			// Call LLM with simple chat (no tools, no plan execution)
-			ChatClient chatClient = llmService.getDiaChatClient();
-			Prompt prompt = new Prompt(messages);
-
-			// Calculate input character count
-			int inputCharCount = messages.stream().mapToInt(message -> {
-				String text = message.getText();
-				return (text != null && !text.trim().isEmpty()) ? text.length() : 0;
-			}).sum();
-			logger.info("Chat input character count: {}", inputCharCount);
-
-			// Process streaming response
-			ChatClient.ChatClientRequestSpec requestSpec = chatClient.prompt(prompt);
-			Flux<ChatResponse> responseFlux = requestSpec.stream().chatResponse();
-			boolean isDebugModel = lynxeProperties != null && lynxeProperties.getDebugDetail() != null
-					&& lynxeProperties.getDebugDetail();
-			String responseText = streamingResponseHandler.processStreamingTextResponse(responseFlux, "Chat response",
-					conversationId, isDebugModel, inputCharCount);
-
-			// Get response text
-			if (responseText == null || responseText.trim().isEmpty()) {
-				responseText = "No response generated";
-			}
-
-			// Save assistant response to conversation memory
-			if (lynxeProperties != null && lynxeProperties.getEnableConversationMemory() && conversationId != null
-					&& !conversationId.trim().isEmpty()) {
-				try {
-					AssistantMessage assistantMessage = new AssistantMessage(responseText);
-					llmService.addToConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId,
-							assistantMessage);
-					logger.debug("Saved assistant response to conversation memory for conversationId: {}",
-							conversationId);
-				}
-				catch (Exception e) {
-					logger.warn("Failed to save assistant response to conversation memory for conversationId: {}",
-							conversationId, e);
+				catch (Exception ex) {
+					emitter.completeWithError(ex);
 				}
 			}
+		});
 
-			// Build response
-			Map<String, Object> response = new HashMap<>();
-			response.put("conversationId", conversationId);
-			response.put("message", responseText);
-			response.put("status", "completed");
-
-			logger.info("Chat request completed for conversationId: {}, response length: {}", conversationId,
-					responseText.length());
-
-			return ResponseEntity.ok(response);
-
-		}
-		catch (Exception e) {
-			logger.error("Failed to process chat request", e);
-			Map<String, Object> errorResponse = new HashMap<>();
-			errorResponse.put("error", "Failed to process chat request: " + e.getMessage());
-			return ResponseEntity.internalServerError().body(errorResponse);
-		}
+		return emitter;
 	}
 
 }
