@@ -23,9 +23,9 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -243,22 +243,20 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 				return null;
 			}
 
-			// Get the root plan directory and resolve to shared subdirectory (same as
-			// GlobalFileOperator)
+			// Get the root plan directory (same as GlobalFileOperator)
 			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
-			Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
-			// Resolve file path within the shared directory
-			Path filePath = sharedDirectory.resolve(filename).normalize();
+			// Resolve file path within the root plan directory
+			Path filePath = rootPlanDirectory.resolve(filename).normalize();
 
-			// Ensure the path stays within the shared directory
-			if (!filePath.startsWith(sharedDirectory)) {
-				log.warn("File path is outside shared directory: {}", filename);
+			// Ensure the path stays within the root plan directory
+			if (!filePath.startsWith(rootPlanDirectory)) {
+				log.warn("File path is outside root plan directory: {}", filename);
 				return null;
 			}
 
 			if (Files.exists(filePath)) {
-				log.info("Found file in root plan shared directory: {}", filename);
+				log.info("Found file in root plan directory: {}", filename);
 				return filePath;
 			}
 

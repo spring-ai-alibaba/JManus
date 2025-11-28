@@ -1,7 +1,7 @@
 description: |
   Convert database table data to Excel format.
   Supports exporting table data by table name or custom SQL query.
-  The Excel file will be saved in the root plan shared directory.
+  The Excel file will be saved in the root plan directory.
 
 parameters: |
   {

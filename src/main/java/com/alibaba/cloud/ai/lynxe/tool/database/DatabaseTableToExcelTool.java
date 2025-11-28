@@ -33,9 +33,9 @@ import org.springframework.stereotype.Component;
 import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -351,18 +351,17 @@ public class DatabaseTableToExcelTool extends AbstractBaseTool<DatabaseTableToEx
 	}
 
 	/**
-	 * Get file path in shared directory
+	 * Get file path in root plan directory
 	 */
 	private String getFilePath(String planId, String filename) {
 		try {
 			java.nio.file.Path rootPlanDir = directoryManager.getRootPlanDirectory(planId);
-			java.nio.file.Path sharedDir = rootPlanDir.resolve("shared");
-			java.nio.file.Path filePath = sharedDir.resolve(filename).normalize();
+			java.nio.file.Path filePath = rootPlanDir.resolve(filename).normalize();
 
-			// Ensure the path stays within the shared directory
-			if (!filePath.startsWith(sharedDir)) {
-				log.warn("File path is outside shared directory: {}", filename);
-				return "shared/" + filename;
+			// Ensure the path stays within the root plan directory
+			if (!filePath.startsWith(rootPlanDir)) {
+				log.warn("File path is outside root plan directory: {}", filename);
+				return filename;
 			}
 
 			// Return relative path from root plan directory
@@ -370,7 +369,7 @@ public class DatabaseTableToExcelTool extends AbstractBaseTool<DatabaseTableToEx
 		}
 		catch (Exception e) {
 			log.error("Error getting file path: {}", filename, e);
-			return "shared/" + filename;
+			return filename;
 		}
 	}
 

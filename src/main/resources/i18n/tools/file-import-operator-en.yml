@@ -4,7 +4,7 @@ description: |
   from the source path to the current directory.
 
   Keywords: import files, copy files, file import, directory import, bulk import,
-  file migration, shared files import.
+  file migration, files import.
 
   Operation:
   - import: Import all files and subdirectories from real_path to current directory

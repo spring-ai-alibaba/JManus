@@ -200,7 +200,7 @@ public class FileSplitterTool extends AbstractBaseTool<FileSplitterTool.FileSpli
 
 	/**
 	 * Validate and get the absolute path for the file. Files are read from
-	 * rootPlanId/shared/ directory, same as GlobalFileOperator and MarkdownConverterTool.
+	 * rootPlanId/ directory, same as GlobalFileOperator and MarkdownConverterTool.
 	 */
 	private Path validateFilePath(String filePath) throws IOException {
 		if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {
@@ -215,22 +215,21 @@ public class FileSplitterTool extends AbstractBaseTool<FileSplitterTool.FileSpli
 		// Normalize the file path (remove leading slashes, similar to GlobalFileOperator)
 		String normalizedPath = normalizeFilePath(filePath);
 
-		// Get the root plan directory and resolve to shared subdirectory
+		// Get the root plan directory
 		// Same approach as GlobalFileOperator and MarkdownConverterTool
 		Path rootPlanDirectory = textFileService.getRootPlanDirectory(this.rootPlanId);
-		Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
-		// Resolve file path within the shared directory
-		Path absolutePath = sharedDirectory.resolve(normalizedPath).normalize();
+		// Resolve file path within the root plan directory
+		Path absolutePath = rootPlanDirectory.resolve(normalizedPath).normalize();
 
-		// Ensure the path stays within the shared directory
-		if (!absolutePath.startsWith(sharedDirectory)) {
-			throw new IOException("Access denied: File path must be within the shared directory");
+		// Ensure the path stays within the root plan directory
+		if (!absolutePath.startsWith(rootPlanDirectory)) {
+			throw new IOException("Access denied: File path must be within the root plan directory");
 		}
 
 		if (!Files.exists(absolutePath)) {
 			throw new IOException("File does not exist: " + filePath
-					+ ". Please ensure the file exists in the root plan shared directory (rootPlanId/shared/).");
+					+ ". Please ensure the file exists in the root plan directory (rootPlanId/).");
 		}
 
 		if (!Files.isRegularFile(absolutePath)) {

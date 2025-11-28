@@ -256,22 +256,20 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 				return null;
 			}
 
-			// Get the root plan directory and resolve to shared subdirectory (same as
-			// MarkdownConverterTool)
+			// Get the root plan directory (same as MarkdownConverterTool)
 			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
-			Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
-			// Resolve file path within the shared directory
-			Path filePath = sharedDirectory.resolve(fileName).normalize();
+			// Resolve file path within the root plan directory
+			Path filePath = rootPlanDirectory.resolve(fileName).normalize();
 
-			// Ensure the path stays within the shared directory
-			if (!filePath.startsWith(sharedDirectory)) {
-				logger.warn("File path is outside shared directory: {}", fileName);
+			// Ensure the path stays within the root plan directory
+			if (!filePath.startsWith(rootPlanDirectory)) {
+				logger.warn("File path is outside root plan directory: {}", fileName);
 				return null;
 			}
 
 			if (!Files.exists(filePath)) {
-				logger.error("File not found in root plan shared directory: {} (full path: {})", fileName, filePath);
+				logger.error("File not found in root plan directory: {} (full path: {})", fileName, filePath);
 				return null;
 			}
 
@@ -310,7 +308,7 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 	}
 
 	/**
-	 * Save complete result JSON to file in shared directory
+	 * Save complete result JSON to file in root plan directory
 	 * @param result Complete result map
 	 * @param fileName Output file name
 	 * @return Saved file path (relative) or null if failed
@@ -322,20 +320,18 @@ public class FileBasedParallelExecutionTool extends AbstractBaseTool<FileBasedPa
 				return null;
 			}
 
-			// Get root plan directory and resolve to shared subdirectory (same as
-			// MarkdownConverterTool)
+			// Get root plan directory (same as MarkdownConverterTool)
 			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
-			Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
-			// Ensure shared directory exists
-			Files.createDirectories(sharedDirectory);
+			// Ensure root plan directory exists
+			Files.createDirectories(rootPlanDirectory);
 
-			// Resolve file path within the shared directory
-			Path filePath = sharedDirectory.resolve(fileName).normalize();
+			// Resolve file path within the root plan directory
+			Path filePath = rootPlanDirectory.resolve(fileName).normalize();
 
-			// Ensure the path stays within the shared directory
-			if (!filePath.startsWith(sharedDirectory)) {
-				logger.warn("File path is outside shared directory: {}", fileName);
+			// Ensure the path stays within the root plan directory
+			if (!filePath.startsWith(rootPlanDirectory)) {
+				logger.warn("File path is outside root plan directory: {}", fileName);
 				return null;
 			}
 

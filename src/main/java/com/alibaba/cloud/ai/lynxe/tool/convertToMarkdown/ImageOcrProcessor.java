@@ -15,6 +15,17 @@
  */
 package com.alibaba.cloud.ai.lynxe.tool.convertToMarkdown;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import javax.imageio.ImageIO;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -27,16 +38,6 @@ import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.runtime.executor.ImageRecognitionExecutorPool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Image OCR Processor using OpenAI Image Model
@@ -329,8 +330,7 @@ public class ImageOcrProcessor {
 	private boolean ocrFileExists(String currentPlanId, String ocrFilename) {
 		try {
 			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path sharedDir = rootPlanDir.resolve("shared");
-			Path ocrFile = sharedDir.resolve(ocrFilename);
+			Path ocrFile = rootPlanDir.resolve(ocrFilename);
 			return Files.exists(ocrFile);
 		}
 		catch (Exception e) {
@@ -356,8 +356,7 @@ public class ImageOcrProcessor {
 	private Path saveOcrResult(String content, String filename, String currentPlanId) {
 		try {
 			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path sharedDir = rootPlanDir.resolve("shared");
-			Path outputFile = sharedDir.resolve(filename);
+			Path outputFile = rootPlanDir.resolve(filename);
 
 			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
 					StandardOpenOption.TRUNCATE_EXISTING);
