@@ -101,6 +101,17 @@
               {{ t('mcpService.publishAsHttpServiceDescription') }}
             </div>
           </div>
+
+          <!-- Enable In Conversation Option -->
+          <div class="conversation-publish-option">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="publishInConversation" class="checkbox-input" />
+              <span class="checkbox-text">{{ t('mcpService.enableInConversation') }}</span>
+            </label>
+            <div class="checkbox-description">
+              {{ t('mcpService.enableInConversationDescription') }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -186,6 +197,7 @@ const deleting = ref(false)
 // Service publishing options
 const publishAsHttpService = ref(false)
 const publishAsInternalToolcall = ref(true) // Default to true
+const publishInConversation = ref(false) // Default to false
 
 // Parameter requirements from plan template
 const parameterRequirements = ref<ParameterRequirements>({
@@ -221,6 +233,7 @@ const initializeFormData = () => {
     formData.userRequest = toolConfig.toolDescription || ''
     publishAsHttpService.value = toolConfig.enableHttpService ?? false
     publishAsInternalToolcall.value = toolConfig.enableInternalToolcall ?? true
+    publishInConversation.value = toolConfig.enableInConversation ?? false
 
     // Load parameters from inputSchema if available, otherwise use parameter requirements
     if (
@@ -240,6 +253,7 @@ const initializeFormData = () => {
     formData.userRequest = ''
     publishAsHttpService.value = false
     publishAsInternalToolcall.value = true
+    publishInConversation.value = false
     // Only reset parameters when not loaded from plan template
     if (!parameterRequirements.value.hasParameters) {
       formData.parameters = []
@@ -451,6 +465,7 @@ const handlePublish = async () => {
     templateConfig.setToolDescriptionWithGuard(formData.userRequest.trim())
     templateConfig.setEnableInternalToolcallWithGuard(publishAsInternalToolcall.value)
     templateConfig.setEnableHttpServiceWithGuard(publishAsHttpService.value)
+    templateConfig.setEnableInConversationWithGuard(publishInConversation.value)
     templateConfig.setInputSchemaWithGuard(inputSchema)
 
     // Save the plan template with updated toolConfig
@@ -1279,7 +1294,8 @@ defineExpose({
 
 .mcp-publish-option,
 .http-publish-option,
-.internal-toolcall-publish-option {
+.internal-toolcall-publish-option,
+.conversation-publish-option {
   display: flex;
   flex-direction: column;
   gap: 8px;

@@ -1,5 +1,5 @@
 {
-  "title": "Default User Input Processing(don't delete this plan)",
+  "title": "Default User Input Processing",
   "steps": [
     {
       "stepRequirement": "<<userRequirement>>",
@@ -14,11 +14,11 @@
   "accessLevel": "readOnly",
   "serviceGroup": "inited-toolcall",
   "toolConfig": {
-    "toolName": "Default User Input Processing(don't delete this plan)",
+    "toolName": "Default User Input Processing",
     "toolDescription": "This is a default user input plan, do not delete this plan",
     "enableInternalToolcall": true,
     "enableHttpService": false,
-    "enableMcpService": false,
+    "enableInConversation": true,
     "publishStatus": "PUBLISHED",
     "inputSchema": [
       {

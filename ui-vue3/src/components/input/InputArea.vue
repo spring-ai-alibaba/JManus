@@ -170,6 +170,11 @@ const loadInnerTools = async () => {
         continue
       }
 
+      // Check if it's enabled for conversation use
+      if (!tool.enableInConversation) {
+        continue
+      }
+
       // Parse inputSchema to count parameters
       try {
         const inputSchema = JSON.parse(tool.inputSchema || '[]')

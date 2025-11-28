@@ -61,8 +61,8 @@ public class FuncAgentToolEntity {
 	@Column(name = "enable_http_service", nullable = false)
 	private Boolean enableHttpService = false;
 
-	@Column(name = "enable_mcp_service", nullable = false)
-	private Boolean enableMcpService = false;
+	@Column(name = "enable_in_conversation", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+	private Boolean enableInConversation = false;
 
 	@Column(name = "service_group", length = 100)
 	private String serviceGroup;
@@ -82,7 +82,7 @@ public class FuncAgentToolEntity {
 		this.updateTime = LocalDateTime.now();
 		this.enableInternalToolcall = false;
 		this.enableHttpService = false;
-		this.enableMcpService = false;
+		this.enableInConversation = false;
 		this.accessLevel = PlanTemplateAccessLevel.EDITABLE;
 	}
 
@@ -143,12 +143,12 @@ public class FuncAgentToolEntity {
 		this.enableHttpService = enableHttpService;
 	}
 
-	public Boolean getEnableMcpService() {
-		return enableMcpService;
+	public Boolean getEnableInConversation() {
+		return enableInConversation;
 	}
 
-	public void setEnableMcpService(Boolean enableMcpService) {
-		this.enableMcpService = enableMcpService;
+	public void setEnableInConversation(Boolean enableInConversation) {
+		this.enableInConversation = enableInConversation;
 	}
 
 	public LocalDateTime getCreateTime() {
@@ -203,8 +203,8 @@ public class FuncAgentToolEntity {
 	public String toString() {
 		return "FuncAgentToolEntity{" + "id=" + id + ", planTemplateId='" + planTemplateId + '\'' + ", toolName='"
 				+ toolName + '\'' + ", toolDescription='" + toolDescription + '\'' + ", enableInternalToolcall="
-				+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableMcpService="
-				+ enableMcpService + ", serviceGroup='" + serviceGroup + '\'' + ", accessLevel=" + accessLevel
+				+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableInConversation="
+				+ enableInConversation + ", serviceGroup='" + serviceGroup + '\'' + ", accessLevel=" + accessLevel
 				+ ", createTime=" + createTime + ", updateTime=" + updateTime + '}';
 	}
 

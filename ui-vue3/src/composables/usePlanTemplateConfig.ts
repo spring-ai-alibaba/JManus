@@ -117,6 +117,13 @@ export function usePlanTemplateConfig() {
     config.toolConfig.enableHttpService = enable
   }
 
+  const setEnableInConversation = (enable: boolean) => {
+    if (!config.toolConfig) {
+      config.toolConfig = {}
+    }
+    config.toolConfig.enableInConversation = enable
+  }
+
   const setInputSchema = (inputSchema: InputSchemaParam[]) => {
     if (!config.toolConfig) {
       config.toolConfig = {}
@@ -448,7 +455,7 @@ export function usePlanTemplateConfig() {
       inputSchema: string
       enableInternalToolcall: boolean
       enableHttpService: boolean
-      enableMcpService: boolean
+      enableInConversation: boolean
       serviceGroup?: string
     }> = []
 
@@ -478,7 +485,7 @@ export function usePlanTemplateConfig() {
         inputSchema: string
         enableInternalToolcall: boolean
         enableHttpService: boolean
-        enableMcpService: boolean
+        enableInConversation: boolean
         serviceGroup?: string
       } = {
         toolName: template.title || '',
@@ -487,7 +494,7 @@ export function usePlanTemplateConfig() {
         inputSchema: inputSchemaJson,
         enableInternalToolcall: toolConfig.enableInternalToolcall ?? true,
         enableHttpService: toolConfig.enableHttpService ?? false,
-        enableMcpService: toolConfig.enableMcpService ?? false,
+        enableInConversation: toolConfig.enableInConversation ?? false,
       }
 
       if (template.serviceGroup) {
@@ -554,6 +561,12 @@ export function usePlanTemplateConfig() {
     })
   }
 
+  const setEnableInConversationWithGuard = (enable: boolean) => {
+    return withUpdateGuard(() => {
+      setEnableInConversation(enable)
+    })
+  }
+
   const setInputSchemaWithGuard = (inputSchema: InputSchemaParam[]) => {
     return withUpdateGuard(() => {
       setInputSchema(inputSchema)
@@ -589,6 +602,7 @@ export function usePlanTemplateConfig() {
     setToolDescription,
     setEnableInternalToolcall,
     setEnableHttpService,
+    setEnableInConversation,
     setInputSchema,
     setConfig,
 
@@ -598,6 +612,7 @@ export function usePlanTemplateConfig() {
     setToolDescriptionWithGuard,
     setEnableInternalToolcallWithGuard,
     setEnableHttpServiceWithGuard,
+    setEnableInConversationWithGuard,
     setInputSchemaWithGuard,
     withUpdateGuard,
 

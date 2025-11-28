@@ -171,28 +171,6 @@
           </div>
         </div>
       </div>
-
-      <!-- MCP Call wrapper - only show when enableMcpService is true -->
-      <div
-        v-if="templateConfig.selectedTemplate.value?.toolConfig?.enableMcpService"
-        class="call-example-wrapper"
-      >
-        <div class="call-example-header">
-          <h4 class="call-example-title">{{ t('sidebar.mcpCall') }}</h4>
-          <p class="call-example-description">{{ t('sidebar.mcpCallDescription') }}</p>
-        </div>
-        <div class="mcp-call-wrapper">
-          <div class="call-info">
-            <div class="call-method">{{ t('sidebar.mcpServiceCall') }}</div>
-            <div class="call-endpoint">{{ t('sidebar.mcpEndpoint') }}: /mcp/execute</div>
-            <div class="call-description">{{ t('sidebar.mcpCallUsage') }}</div>
-            <div class="call-example">
-              <strong>{{ t('sidebar.usage') }}:</strong>
-              <pre class="example-code">{{ t('sidebar.mcpCallExample') }}</pre>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -387,7 +365,7 @@ const isAnyServiceEnabled = computed(() => {
   return (
     toolConfig?.enableInternalToolcall ??
     toolConfig?.enableHttpService ??
-    toolConfig?.enableMcpService ??
+    toolConfig?.enableInConversation ??
     false
   )
 })

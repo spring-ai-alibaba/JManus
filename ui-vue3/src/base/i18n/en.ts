@@ -1369,6 +1369,9 @@ const words: I18nType = {
     publishAsInternalToolcall: 'Publish as Internal Toolcall',
     publishAsInternalToolcallDescription:
       'When checked, this will be published as an internal tool that can be used by agents in their tool configuration',
+    enableInConversation: 'Enable in Conversation',
+    enableInConversationDescription:
+      'When checked, this tool will be available for use in conversation mode, allowing the AI to call this function during chat interactions. You also need to enable "Publish as Internal Toolcall" at the same time',
     publishing: 'Publishing...',
     delete: 'Delete',
     deleting: 'Deleting...',

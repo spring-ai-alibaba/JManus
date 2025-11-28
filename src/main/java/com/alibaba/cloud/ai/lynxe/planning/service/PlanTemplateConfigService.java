@@ -276,7 +276,7 @@ public class PlanTemplateConfigService {
 				template.setInputSchema("[]");
 				template.setEnableInternalToolcall(false);
 				template.setEnableHttpService(false);
-				template.setEnableMcpService(false);
+				template.setEnableInConversation(false);
 				// Set accessLevel from configVO, default to EDITABLE
 				PlanTemplateAccessLevel accessLevel = configVO.getAccessLevel();
 				template.setAccessLevel(accessLevel != null ? accessLevel : PlanTemplateAccessLevel.EDITABLE);
@@ -493,8 +493,8 @@ public class PlanTemplateConfigService {
 						? toolConfig.getEnableInternalToolcall() : false);
 				existingEntity.setEnableHttpService(
 						toolConfig.getEnableHttpService() != null ? toolConfig.getEnableHttpService() : false);
-				existingEntity.setEnableMcpService(
-						toolConfig.getEnableMcpService() != null ? toolConfig.getEnableMcpService() : false);
+				existingEntity.setEnableInConversation(
+						toolConfig.getEnableInConversation() != null ? toolConfig.getEnableInConversation() : false);
 			}
 
 			FuncAgentToolEntity savedEntity = funcAgentToolRepository.save(existingEntity);
@@ -642,8 +642,8 @@ public class PlanTemplateConfigService {
 					toolConfig.getEnableInternalToolcall() != null ? toolConfig.getEnableInternalToolcall() : false);
 			entity.setEnableHttpService(
 					toolConfig.getEnableHttpService() != null ? toolConfig.getEnableHttpService() : false);
-			entity.setEnableMcpService(
-					toolConfig.getEnableMcpService() != null ? toolConfig.getEnableMcpService() : false);
+			entity.setEnableInConversation(
+					toolConfig.getEnableInConversation() != null ? toolConfig.getEnableInConversation() : false);
 
 			FuncAgentToolEntity savedEntity = funcAgentToolRepository.save(entity);
 			log.info("Successfully saved FuncAgentToolEntity: {} with ID: {}", savedEntity.getToolDescription(),
@@ -1009,7 +1009,7 @@ public class PlanTemplateConfigService {
 		toolConfig.setToolDescription(entity.getToolDescription());
 		toolConfig.setEnableInternalToolcall(entity.getEnableInternalToolcall());
 		toolConfig.setEnableHttpService(entity.getEnableHttpService());
-		toolConfig.setEnableMcpService(entity.getEnableMcpService());
+		toolConfig.setEnableInConversation(entity.getEnableInConversation());
 
 		// Parse inputSchema JSON string to InputSchemaParam list
 		if (entity.getInputSchema() != null && !entity.getInputSchema().trim().isEmpty()) {

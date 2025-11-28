@@ -1297,6 +1297,9 @@ const words: I18nType = {
     publishAsInternalToolcall: '发布为内部工具调用',
     publishAsInternalToolcallDescription:
       '勾选后将发布为内部工具，可以在智能体配置中添加此工具并使用',
+    enableInConversation: '在对话中启用',
+    enableInConversationDescription:
+      '勾选后，此工具将在对话模式中可用，允许AI在聊天交互过程中调用此功能，你需要同时打开发布为内部工具',
     publishing: '发布中...',
     delete: '删除',
     deleting: '删除中...',
