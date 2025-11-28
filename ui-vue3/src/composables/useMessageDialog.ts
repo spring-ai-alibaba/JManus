@@ -322,8 +322,8 @@ export function useMessageDialog() {
           'VUE_DIALOG'
         )) as typeof response
       } else {
-        // Use default plan template
-        response = (await DirectApiService.sendMessageWithDefaultPlan(
+        // Use simple chat mode
+        response = (await DirectApiService.sendChatMessage(
           query,
           'VUE_DIALOG'
         )) as typeof response
@@ -362,12 +362,12 @@ export function useMessageDialog() {
         planExecution.handlePlanExecutionRequested(newRootPlanId)
         console.log('[useMessageDialog] Root plan ID set and tracking started:', newRootPlanId)
       } else {
-        // Direct response mode
+        // Chat mode - direct response
         const updates: Partial<ChatMessage> = {
           content: response.message || response.result || 'No response received',
           isStreaming: false,
+          thinking: '',
         }
-        // Only set thinking if it exists, don't set undefined
         updateMessageInDialog(targetDialog.id, assistantMessage.id, updates)
       }
 

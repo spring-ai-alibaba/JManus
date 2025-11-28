@@ -49,7 +49,7 @@
           :title="$t('input.selectionTitle')"
           :disabled="isLoadingTools || isDisabled"
         >
-          <option value="">{{ $t('input.defaultFuncAgent') }}</option>
+          <option value="chat">{{ $t('input.chatMode') }}</option>
           <option v-for="option in selectionOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
@@ -135,7 +135,7 @@ const currentPlaceholder = computed(() => {
 })
 const uploadedFiles = ref<string[]>([])
 const uploadKey = ref<string | null>(null)
-const selectedOption = ref('')
+const selectedOption = ref('chat') // Default to chat mode
 const innerToolOptions = ref<InnerToolOption[]>([])
 const isLoadingTools = ref(false)
 // Flag to prevent watcher from saving during restoration from localStorage
@@ -525,8 +525,8 @@ const handleSend = async () => {
     console.log('[InputArea] No uploadKey available for message')
   }
 
-  // Check if a tool is selected
-  if (selectedOption.value) {
+  // Check if a tool is selected (not chat mode)
+  if (selectedOption.value && selectedOption.value !== 'chat') {
     const selectedTool = innerToolOptions.value.find(tool => tool.value === selectedOption.value)
 
     if (selectedTool) {

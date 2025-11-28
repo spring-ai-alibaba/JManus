@@ -791,7 +791,7 @@ const words: I18nType = {
     planMode: 'Func-Agent Mode',
     selectionTitle: 'Select Option',
     selectPlaceholder: 'Please select',
-    defaultFuncAgent: 'Use Default FuncAgent to Process Conversation',
+    chatMode: 'Ask',
     waiting: 'Waiting for user input...',
     maxLength: 'Max Length',
     charactersRemaining: 'Characters Remaining',

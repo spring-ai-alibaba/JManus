@@ -743,7 +743,7 @@ const words: I18nType = {
     planMode: 'Func-Agent模式',
     selectionTitle: '选择选项',
     selectPlaceholder: '请选择',
-    defaultFuncAgent: '使用默认FuncAgent处理对话',
+    chatMode: 'Ask',
     waiting: '等待用户输入...',
     maxLength: '最大长度',
     charactersRemaining: '剩余字符',

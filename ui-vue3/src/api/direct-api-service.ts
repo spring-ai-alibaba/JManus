@@ -40,27 +40,69 @@ export class DirectApiService {
     })
   }
 
-  // Send task using executeByToolNameAsync with default plan template
-  public static async sendMessageWithDefaultPlan(
+  // Send simple chat message (no plan execution, just LLM chat)
+  public static async sendChatMessage(
     query: InputMessage,
     requestSource: 'VUE_DIALOG' | 'VUE_SIDEBAR' = 'VUE_DIALOG'
   ): Promise<unknown> {
-    // Use default plan template ID as toolName
-    const toolName = 'default-plan-id-001000222'
+    return LlmCheckService.withLlmCheck(async () => {
+      console.log('[DirectApiService] sendChatMessage called with:', {
+        input: query.input,
+        uploadedFiles: query.uploadedFiles,
+        uploadKey: query.uploadKey,
+        requestSource,
+      })
 
-    // Create replacement parameters with user input
-    const replacementParams = {
-      userRequirement: query.input,
-    }
+      const requestBody: Record<string, unknown> = {
+        input: query.input,
+        requestSource: requestSource,
+      }
 
-    // Note: conversationId will be included from memoryStore in executeByToolName
-    return this.executeByToolName(
-      toolName,
-      replacementParams,
-      query.uploadedFiles,
-      query.uploadKey,
-      requestSource
-    )
+      // Include conversationId from memoryStore if available
+      if (memoryStore.conversationId) {
+        requestBody.conversationId = memoryStore.conversationId
+        console.log(
+          '[DirectApiService] Including conversationId from memoryStore:',
+          memoryStore.conversationId
+        )
+      }
+
+      // Include uploaded files if present
+      if (query.uploadedFiles && query.uploadedFiles.length > 0) {
+        requestBody.uploadedFiles = query.uploadedFiles
+        console.log('[DirectApiService] Including uploaded files:', query.uploadedFiles.length)
+      }
+
+      // Include uploadKey if present
+      if (query.uploadKey) {
+        requestBody.uploadKey = query.uploadKey
+        console.log('[DirectApiService] Including uploadKey:', query.uploadKey)
+      }
+
+      console.log(
+        '[DirectApiService] Making request to:',
+        `${this.BASE_URL}/chat`
+      )
+      console.log('[DirectApiService] Request body:', requestBody)
+
+      const response = await fetch(`${this.BASE_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      })
+
+      console.log('[DirectApiService] Response status:', response.status, response.ok)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('[DirectApiService] Request failed:', errorText)
+        throw new Error(`Failed to send chat message: ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log('[DirectApiService] sendChatMessage response:', result)
+      return result
+    })
   }
 
   // Unified method to execute by tool name (replaces both sendMessageWithDefaultPlan and PlanActApiService.executePlan)
