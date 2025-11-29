@@ -308,6 +308,7 @@ export function useMessageDialog() {
       const extendedQuery = query as InputMessage & {
         toolName?: string
         replacementParams?: Record<string, string>
+        serviceGroup?: string
       }
 
       let response: { planId?: string; conversationId?: string; message?: string; result?: string }
@@ -319,7 +320,8 @@ export function useMessageDialog() {
           extendedQuery.replacementParams as Record<string, string>,
           query.uploadedFiles,
           query.uploadKey,
-          'VUE_DIALOG'
+          'VUE_DIALOG',
+          extendedQuery.serviceGroup
         )) as typeof response
 
       // Update conversationId if present (persisted)

@@ -111,6 +111,7 @@ interface InnerToolOption {
   toolName: string
   planTemplateId: string
   paramName: string
+  serviceGroup?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -181,12 +182,17 @@ const loadInnerTools = async () => {
         if (Array.isArray(inputSchema) && inputSchema.length === 1) {
           // Exactly one parameter
           const param = inputSchema[0]
+          // Format value as serviceGroup.toolName or just toolName if serviceGroup is missing
+          const value = tool.serviceGroup
+            ? `${tool.serviceGroup}.${tool.toolName}`
+            : tool.toolName
           filteredTools.push({
-            value: tool.planTemplateId,
-            label: `${tool.toolName} (${param.name})`,
+            value: value,
+            label: tool.toolName,
             toolName: tool.toolName,
             planTemplateId: tool.planTemplateId,
             paramName: param.name,
+            serviceGroup: tool.serviceGroup,
           })
         }
       } catch (e) {
@@ -537,12 +543,18 @@ const handleSend = async () => {
       const extendedQuery = query as InputMessage & {
         toolName?: string
         replacementParams?: Record<string, string>
+        serviceGroup?: string
       }
-      extendedQuery.toolName = selectedTool.planTemplateId
+      // Use toolName instead of planTemplateId
+      extendedQuery.toolName = selectedTool.toolName
+      // Include serviceGroup if available
+      if (selectedTool.serviceGroup) {
+        extendedQuery.serviceGroup = selectedTool.serviceGroup
+      }
       extendedQuery.replacementParams = {
         [selectedTool.paramName]: finalInput,
       }
-      console.log('[InputArea] Sending message with tool:', selectedTool.toolName)
+      console.log('[InputArea] Sending message with tool:', selectedTool.toolName, 'serviceGroup:', selectedTool.serviceGroup)
     }
   }
 
