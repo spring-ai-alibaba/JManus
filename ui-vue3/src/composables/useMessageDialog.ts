@@ -322,46 +322,46 @@ export function useMessageDialog() {
           'VUE_DIALOG'
         )) as typeof response
 
-        // Update conversationId if present (persisted)
-        if (response.conversationId) {
-          // Maintain conversationId independently (persisted)
-          conversationId.value = response.conversationId
-          // Also set on dialog for reference
-          targetDialog.conversationId = response.conversationId
-          memoryStore.setConversationId(response.conversationId)
-          console.log('[useMessageDialog] Conversation ID set:', response.conversationId)
-        }
+      // Update conversationId if present (persisted)
+      if (response.conversationId) {
+        // Maintain conversationId independently (persisted)
+        conversationId.value = response.conversationId
+        // Also set on dialog for reference
+        targetDialog.conversationId = response.conversationId
+        memoryStore.setConversationId(response.conversationId)
+        console.log('[useMessageDialog] Conversation ID set:', response.conversationId)
+      }
 
-        // Update assistant message with response
-        if (response.planId) {
-          // Plan execution mode
-          const newRootPlanId = response.planId
-          // Maintain rootPlanId independently (not persisted)
-          rootPlanId.value = newRootPlanId
-          // Also set on dialog for reference
-          targetDialog.planId = newRootPlanId
+      // Update assistant message with response
+      if (response.planId) {
+        // Plan execution mode
+        const newRootPlanId = response.planId
+        // Maintain rootPlanId independently (not persisted)
+        rootPlanId.value = newRootPlanId
+        // Also set on dialog for reference
+        targetDialog.planId = newRootPlanId
 
-          updateMessageInDialog(targetDialog.id, assistantMessage.id, {
-            thinking: 'Planning execution...',
-            planExecution: {
-              currentPlanId: newRootPlanId,
-              rootPlanId: newRootPlanId,
-              status: 'running',
-            },
-            isStreaming: false,
-          })
+        updateMessageInDialog(targetDialog.id, assistantMessage.id, {
+          thinking: 'Planning execution...',
+          planExecution: {
+            currentPlanId: newRootPlanId,
+            rootPlanId: newRootPlanId,
+            status: 'running',
+          },
+          isStreaming: false,
+        })
 
-          // Actively notify usePlanExecution to track this plan
-          planExecution.handlePlanExecutionRequested(newRootPlanId)
-          console.log('[useMessageDialog] Root plan ID set and tracking started:', newRootPlanId)
-        } else {
-          // Direct response mode
-          const updates: Partial<ChatMessage> = {
-            content: response.message || response.result || 'No response received',
-            isStreaming: false,
+        // Actively notify usePlanExecution to track this plan
+        planExecution.handlePlanExecutionRequested(newRootPlanId)
+        console.log('[useMessageDialog] Root plan ID set and tracking started:', newRootPlanId)
+      } else {
+        // Direct response mode
+        const updates: Partial<ChatMessage> = {
+          content: response.message || response.result || 'No response received',
+          isStreaming: false,
             thinking: '',
-          }
-          updateMessageInDialog(targetDialog.id, assistantMessage.id, updates)
+        }
+        updateMessageInDialog(targetDialog.id, assistantMessage.id, updates)
         }
       } else {
         // Use simple chat mode with streaming
