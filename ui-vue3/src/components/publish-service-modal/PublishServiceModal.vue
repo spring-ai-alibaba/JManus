@@ -80,17 +80,6 @@
       <!-- Service Publishing Options -->
       <div class="form-section">
         <div class="service-publish-options">
-          <!-- Internal Toolcall Publishing Option -->
-          <div class="internal-toolcall-publish-option">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="publishAsInternalToolcall" class="checkbox-input" />
-              <span class="checkbox-text">{{ t('mcpService.publishAsInternalToolcall') }}</span>
-            </label>
-            <div class="checkbox-description">
-              {{ t('mcpService.publishAsInternalToolcallDescription') }}
-            </div>
-          </div>
-
           <!-- HTTP POST Service Publishing Option -->
           <div class="http-publish-option">
             <label class="checkbox-label">
@@ -230,9 +219,15 @@ const initializeFormData = () => {
 
   if (toolConfig) {
     // Load from existing toolConfig
-    formData.userRequest = toolConfig.toolDescription || ''
+    // Auto-fill tool description with plan template title if empty
+    let toolDescription = toolConfig.toolDescription || ''
+    if (!toolDescription.trim()) {
+      toolDescription = templateConfig.getTitle() || ''
+    }
+    formData.userRequest = toolDescription
     publishAsHttpService.value = toolConfig.enableHttpService ?? false
-    publishAsInternalToolcall.value = toolConfig.enableInternalToolcall ?? true
+    // Always set publishAsInternalToolcall to true
+    publishAsInternalToolcall.value = true
     publishInConversation.value = toolConfig.enableInConversation ?? false
 
     // Load parameters from inputSchema if available, otherwise use parameter requirements
@@ -243,15 +238,18 @@ const initializeFormData = () => {
     ) {
       formData.parameters = toolConfig.inputSchema.map(param => ({
         name: param.name || '',
-        description: param.description || '',
+        // Auto-fill description with parameter name if empty
+        description: param.description || param.name || '',
       }))
     } else if (!parameterRequirements.value.hasParameters) {
       formData.parameters = []
     }
   } else {
     // Initialize with defaults
-    formData.userRequest = ''
+    // Auto-fill tool description with plan template title
+    formData.userRequest = templateConfig.getTitle() || ''
     publishAsHttpService.value = false
+    // Always set publishAsInternalToolcall to true
     publishAsInternalToolcall.value = true
     publishInConversation.value = false
     // Only reset parameters when not loaded from plan template
@@ -292,10 +290,10 @@ const loadParameterRequirements = async () => {
         }
       })
 
-      // Merge: use existing description if available, otherwise use empty string
+      // Merge: use existing description if available, otherwise use parameter name as default
       formData.parameters = requirements.parameters.map(param => ({
         name: param,
-        description: existingParamsMap.get(param) || '',
+        description: existingParamsMap.get(param) || param,
       }))
       console.log(
         '[PublishModal] Updated formData.parameters with requirements:',
@@ -351,8 +349,8 @@ const mergeParametersWithBackend = (): Array<{ name: string; description: string
       const formParam = formData.parameters.find(p => p.name === paramName)
       const formDescription = formParam?.description || ''
 
-      // If formData has description, use it; otherwise try backend; otherwise empty
-      const description = formDescription || backendParamsMap.get(paramName) || ''
+      // If formData has description, use it; otherwise try backend; otherwise use parameter name as default
+      const description = formDescription || backendParamsMap.get(paramName) || paramName
 
       return {
         name: paramName,
@@ -1294,7 +1292,6 @@ defineExpose({
 
 .mcp-publish-option,
 .http-publish-option,
-.internal-toolcall-publish-option,
 .conversation-publish-option {
   display: flex;
   flex-direction: column;

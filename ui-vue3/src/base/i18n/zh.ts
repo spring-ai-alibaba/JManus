@@ -794,7 +794,7 @@ const words: I18nType = {
     clearParams: '清空参数',
     parameterRequirements: '参数要求',
     parameterRequirementsHelp:
-      '你可以在模版编辑器的 "任务要求" 栏目里面通过<<参数名>>的方式植入可变参数（可以是多个），当选择保存以后，就可以在后面的发布服务中使用这些可变参数了',
+      '在模版编辑器的 "任务要求" 栏目中，你可以通过<<参数名>>的方式定义可变参数（可以是多个），用于告知模型你的函数需要什么格式的输入。默认描述为参数名称。',
     clearAllParams: '清空所有参数',
     noParametersRequired: '此计划模板不需要任何参数',
     fillAllRequiredParameters: '请填写所有必需的参数',
@@ -1275,7 +1275,7 @@ const words: I18nType = {
     toolDescriptionRequired: '工具描述 *',
     toolDescriptionPlaceholder: '请输入工具描述',
     toolDescriptionDescription:
-      '告知模型，在什么时候需要使用这个工具，写的越详细（什么时候选择，什么时候不选择），模型选工具的准确性越高。',
+      '告知模型，在什么时候需要使用这个工具，写的越详细，模型选工具的准确性越高。默认值是工具名称',
     serviceGroup: '服务组',
     serviceGroupPlaceholder: '请输入服务组',
     serviceGroupDescription: '用来分组工具，方便你从大量工具里面找到你的那个工具。',
@@ -1299,7 +1299,7 @@ const words: I18nType = {
       '勾选后将发布为内部工具，可以在智能体配置中添加此工具并使用',
     enableInConversation: '在对话中启用',
     enableInConversationDescription:
-      '勾选后，此工具将在对话模式中可用，允许AI在聊天交互过程中调用此功能，你需要同时打开发布为内部工具',
+      '勾选后，此工具将在对话模式中可用，允许AI在聊天交互过程中调用此功能。',
     publishing: '发布中...',
     delete: '删除',
     deleting: '删除中...',

@@ -844,7 +844,7 @@ const words: I18nType = {
     clearParams: 'Clear Parameters',
     parameterRequirements: 'Parameter Requirements',
     parameterRequirementsHelp:
-      'You can embed variable parameters in the "task requirements section" using <<parameter_name>> format. After saving, these variable parameters can be used in the subsequent service publishing.',
+      'In the template editor\'s "Task Requirements" section, you can define variable parameters using <<parameter_name>> format (multiple parameters are allowed) to inform the model what format of input your function requires. The default description is the parameter name.',
     clearAllParams: 'Clear All Parameters',
     noParametersRequired: 'This plan template does not require any parameters',
     fillAllRequiredParameters: 'Please fill in all required parameters',
@@ -1343,7 +1343,7 @@ const words: I18nType = {
     toolDescriptionRequired: 'Tool Description *',
     toolDescriptionPlaceholder: 'Please enter tool description',
     toolDescriptionDescription:
-      'Tell the model when to use this tool. The more detailed you write (when to choose, when not to choose), the more accurate the model will be in selecting tools.',
+      'Tell the model when to use this tool. The more detailed you write, the more accurate the model will be in selecting tools. Default value is the tool name.',
     serviceGroup: 'Service Group',
     serviceGroupPlaceholder: 'Please enter service group',
     serviceGroupDescription:
@@ -1371,7 +1371,7 @@ const words: I18nType = {
       'When checked, this will be published as an internal tool that can be used by agents in their tool configuration',
     enableInConversation: 'Enable in Conversation',
     enableInConversationDescription:
-      'When checked, this tool will be available for use in conversation mode, allowing the AI to call this function during chat interactions. You also need to enable "Publish as Internal Toolcall" at the same time',
+      'When checked, this tool will be available for use in conversation mode, allowing the AI to call this function during chat interactions.',
     publishing: 'Publishing...',
     delete: 'Delete',
     deleting: 'Deleting...',

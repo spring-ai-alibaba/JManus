@@ -233,7 +233,12 @@ public class PlanTemplateConfigService {
 				Map<String, Object> paramSchema = new HashMap<>();
 				paramSchema.put("name", param.getName());
 				paramSchema.put("type", param.getType() != null ? param.getType() : "string");
-				paramSchema.put("description", param.getDescription());
+				// Auto-fill description with parameter name if empty
+				String description = param.getDescription();
+				if (description == null || description.trim().isEmpty()) {
+					description = param.getName() != null ? param.getName() : "";
+				}
+				paramSchema.put("description", description);
 				paramSchema.put("required", param.getRequired() != null ? param.getRequired() : true);
 				inputSchemaArray.add(paramSchema);
 			}
@@ -277,6 +282,7 @@ public class PlanTemplateConfigService {
 				template.setEnableInternalToolcall(false);
 				template.setEnableHttpService(false);
 				template.setEnableInConversation(false);
+				template.setEnableMcpService(false);
 				// Set accessLevel from configVO, default to EDITABLE
 				PlanTemplateAccessLevel accessLevel = configVO.getAccessLevel();
 				template.setAccessLevel(accessLevel != null ? accessLevel : PlanTemplateAccessLevel.EDITABLE);
@@ -486,15 +492,21 @@ public class PlanTemplateConfigService {
 
 			PlanTemplateConfigVO.ToolConfigVO toolConfig = configVO.getToolConfig();
 			if (toolConfig != null) {
-				existingEntity
-					.setToolDescription(toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
+				// Auto-fill tool description with plan template title if empty
+				String toolDescription = toolConfig.getToolDescription();
+				if (toolDescription == null || toolDescription.trim().isEmpty()) {
+					toolDescription = configVO.getTitle() != null ? configVO.getTitle() : "";
+				}
+				existingEntity.setToolDescription(toolDescription);
 				existingEntity.setInputSchema(convertInputSchemaListToJson(toolConfig.getInputSchema()));
-				existingEntity.setEnableInternalToolcall(toolConfig.getEnableInternalToolcall() != null
-						? toolConfig.getEnableInternalToolcall() : false);
+				// Force enableInternalToolcall to true
+				existingEntity.setEnableInternalToolcall(true);
 				existingEntity.setEnableHttpService(
 						toolConfig.getEnableHttpService() != null ? toolConfig.getEnableHttpService() : false);
 				existingEntity.setEnableInConversation(
 						toolConfig.getEnableInConversation() != null ? toolConfig.getEnableInConversation() : false);
+				// Set enableMcpService to false by default for backward compatibility
+				existingEntity.setEnableMcpService(false);
 			}
 
 			FuncAgentToolEntity savedEntity = funcAgentToolRepository.save(existingEntity);
@@ -632,18 +644,25 @@ public class PlanTemplateConfigService {
 			FuncAgentToolEntity entity = new FuncAgentToolEntity();
 			entity.setToolName(toolName);
 			entity.setServiceGroup(serviceGroup != null && !serviceGroup.isEmpty() ? serviceGroup : "ungrouped");
-			entity.setToolDescription(toolConfig.getToolDescription() != null ? toolConfig.getToolDescription() : "");
+			// Auto-fill tool description with plan template title if empty
+			String toolDescription = toolConfig.getToolDescription();
+			if (toolDescription == null || toolDescription.trim().isEmpty()) {
+				toolDescription = configVO.getTitle() != null ? configVO.getTitle() : "";
+			}
+			entity.setToolDescription(toolDescription);
 			entity.setInputSchema(convertInputSchemaListToJson(toolConfig.getInputSchema()));
 			entity.setPlanTemplateId(configVO.getPlanTemplateId());
 			// Set accessLevel from configVO, default to EDITABLE
 			PlanTemplateAccessLevel accessLevel = configVO.getAccessLevel();
 			entity.setAccessLevel(accessLevel != null ? accessLevel : PlanTemplateAccessLevel.EDITABLE);
-			entity.setEnableInternalToolcall(
-					toolConfig.getEnableInternalToolcall() != null ? toolConfig.getEnableInternalToolcall() : false);
+			// Force enableInternalToolcall to true
+			entity.setEnableInternalToolcall(true);
 			entity.setEnableHttpService(
 					toolConfig.getEnableHttpService() != null ? toolConfig.getEnableHttpService() : false);
 			entity.setEnableInConversation(
 					toolConfig.getEnableInConversation() != null ? toolConfig.getEnableInConversation() : false);
+			// Set enableMcpService to false by default for backward compatibility
+			entity.setEnableMcpService(false);
 
 			FuncAgentToolEntity savedEntity = funcAgentToolRepository.save(entity);
 			log.info("Successfully saved FuncAgentToolEntity: {} with ID: {}", savedEntity.getToolDescription(),

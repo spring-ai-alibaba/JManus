@@ -64,6 +64,9 @@ public class FuncAgentToolEntity {
 	@Column(name = "enable_in_conversation", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
 	private Boolean enableInConversation = false;
 
+	@Column(name = "enable_mcp_service", nullable = false)
+	private Boolean enableMcpService = false;
+
 	@Column(name = "service_group", length = 100)
 	private String serviceGroup;
 
@@ -83,6 +86,7 @@ public class FuncAgentToolEntity {
 		this.enableInternalToolcall = false;
 		this.enableHttpService = false;
 		this.enableInConversation = false;
+		this.enableMcpService = false;
 		this.accessLevel = PlanTemplateAccessLevel.EDITABLE;
 	}
 
@@ -151,6 +155,14 @@ public class FuncAgentToolEntity {
 		this.enableInConversation = enableInConversation;
 	}
 
+	public Boolean getEnableMcpService() {
+		return enableMcpService;
+	}
+
+	public void setEnableMcpService(Boolean enableMcpService) {
+		this.enableMcpService = enableMcpService;
+	}
+
 	public LocalDateTime getCreateTime() {
 		return createTime;
 	}
@@ -204,8 +216,9 @@ public class FuncAgentToolEntity {
 		return "FuncAgentToolEntity{" + "id=" + id + ", planTemplateId='" + planTemplateId + '\'' + ", toolName='"
 				+ toolName + '\'' + ", toolDescription='" + toolDescription + '\'' + ", enableInternalToolcall="
 				+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableInConversation="
-				+ enableInConversation + ", serviceGroup='" + serviceGroup + '\'' + ", accessLevel=" + accessLevel
-				+ ", createTime=" + createTime + ", updateTime=" + updateTime + '}';
+				+ enableInConversation + ", enableMcpService=" + enableMcpService + ", serviceGroup='" + serviceGroup
+				+ '\'' + ", accessLevel=" + accessLevel + ", createTime=" + createTime + ", updateTime=" + updateTime
+				+ '}';
 	}
 
 }
