@@ -335,7 +335,7 @@ public class PlanningFactory {
 				// qualified names
 				FunctionToolCallback<?, ToolExecuteResult> functionToolcallback = FunctionToolCallback
 					.builder(qualifiedKey, toolDefinition)
-					.description(toolDefinition.getDescription())
+					.description(toolDefinition.getDescriptionWithServiceGroup())
 					.inputSchema(toolDefinition.getParameters())
 					.inputType(toolDefinition.getInputType())
 					.toolMetadata(ToolMetadata.builder().returnDirect(toolDefinition.isReturnDirect()).build())
