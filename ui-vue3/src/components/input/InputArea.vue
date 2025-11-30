@@ -205,7 +205,7 @@ const loadInnerTools = async () => {
 
     // Restore selected tool from localStorage and validate it still exists
     const savedTool = localStorage.getItem('inputAreaSelectedTool')
-    if (savedTool) {
+    if (savedTool && savedTool.trim() !== '') {
       // Only check if tools are loaded (avoid clearing selection if list is empty during loading)
       if (filteredTools.length > 0) {
         const toolExists = filteredTools.some(tool => tool.value === savedTool)
@@ -220,11 +220,11 @@ const loadInnerTools = async () => {
             isRestoringSelection.value = false
           }
         } else {
-          console.log('[InputArea] Saved tool no longer available, clearing selection')
+          console.log('[InputArea] Saved tool no longer available, resetting to chat mode')
           localStorage.removeItem('inputAreaSelectedTool')
-          // Only clear if current selection matches the saved one (avoid clearing user's new selection)
+          // Only reset if current selection matches the saved one (avoid clearing user's new selection)
           if (selectedOption.value === savedTool) {
-            selectedOption.value = ''
+            selectedOption.value = 'chat'
           }
         }
       } else {

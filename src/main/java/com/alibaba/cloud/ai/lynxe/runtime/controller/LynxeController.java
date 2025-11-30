@@ -210,8 +210,7 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 	}
 
 	/**
-	 * Execute plan by tool name asynchronously If tool is not published, treat toolName
-	 * as planTemplateId
+	 * Execute plan by tool name asynchronously
 	 * @param request Request containing tool name and parameters
 	 * @return Task ID and status
 	 */
@@ -229,22 +228,14 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 		// Extract serviceGroup from request (optional)
 		String serviceGroup = (String) request.get("serviceGroup");
 
-		String planTemplateId = null;
-
-		// First, try to find the coordinator tool by tool name and serviceGroup
-		planTemplateId = getPlanTemplateIdFromTool(toolName, serviceGroup);
-		if (planTemplateId != null) {
-			// Tool is published, get plan template ID from coordinator tool
-			logger.info("Found published tool: {} with plan template ID: {}", toolName, planTemplateId);
+		// Get plan template ID from coordinator tool
+		String planTemplateId = getPlanTemplateIdFromTool(toolName, serviceGroup);
+		if (planTemplateId == null) {
+			return ResponseEntity.badRequest().body(Map.of("error", "Tool not found with name: " + toolName));
 		}
-		else {
-			// Tool is not published, treat toolName as planTemplateId
-			planTemplateId = toolName;
-			logger.info("Tool not published, using toolName as planTemplateId: {}", planTemplateId);
-		}
-
-		if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
-			return ResponseEntity.badRequest().body(Map.of("error", "No plan template ID found for tool: " + toolName));
+		if (planTemplateId.trim().isEmpty()) {
+			return ResponseEntity.badRequest()
+				.body(Map.of("error", "No plan template ID associated with tool: " + toolName));
 		}
 
 		try {

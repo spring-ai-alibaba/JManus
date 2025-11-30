@@ -699,11 +699,11 @@ public class PlanTemplateConfigService {
 	}
 
 	/**
-	 * Get plan template ID from tool name and optional service group Only returns plan
-	 * template ID if HTTP service is enabled for the tool
+	 * Get plan template ID from tool name and optional service group Returns plan template
+	 * ID if HTTP service or in-conversation service is enabled for the tool
 	 * @param toolName Tool name (FuncAgentToolEntity.toolName)
 	 * @param serviceGroup Optional service group to disambiguate tools with same name
-	 * @return Plan template ID if found and HTTP service is enabled, null otherwise
+	 * @return Plan template ID if found and (HTTP service or in-conversation service is enabled), null otherwise
 	 */
 	public String getPlanTemplateIdFromToolName(String toolName, String serviceGroup) {
 		try {
@@ -714,7 +714,9 @@ public class PlanTemplateConfigService {
 				if (toolEntity.isPresent()) {
 					FuncAgentToolEntity entity = toolEntity.get();
 					Boolean isHttpEnabled = entity.getEnableHttpService();
-					if (isHttpEnabled != null && isHttpEnabled) {
+					Boolean isInConversationEnabled = entity.getEnableInConversation();
+					if ((isHttpEnabled != null && isHttpEnabled)
+							|| (isInConversationEnabled != null && isInConversationEnabled)) {
 						return entity.getPlanTemplateId();
 					}
 				}
@@ -728,7 +730,9 @@ public class PlanTemplateConfigService {
 			}
 			FuncAgentToolEntity toolEntity = toolEntities.get(0);
 			Boolean isHttpEnabled = toolEntity.getEnableHttpService();
-			if (isHttpEnabled == null || !isHttpEnabled) {
+			Boolean isInConversationEnabled = toolEntity.getEnableInConversation();
+			if ((isHttpEnabled == null || !isHttpEnabled)
+					&& (isInConversationEnabled == null || !isInConversationEnabled)) {
 				return null;
 			}
 			return toolEntity.getPlanTemplateId();
