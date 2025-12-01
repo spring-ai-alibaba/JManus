@@ -202,17 +202,19 @@ public class ChromeDriverService implements IChromeDriverService {
 				java.nio.file.Path planIdUserDataDir = java.nio.file.Paths.get(sharedDir, "planId-" + planId);
 				if (java.nio.file.Files.exists(planIdUserDataDir)) {
 					// Delete the planId-specific directory
-					// Use a recursive delete utility if available, or delete files manually
+					// Use a recursive delete utility if available, or delete files
+					// manually
 					try {
-						java.nio.file.Files.walk(planIdUserDataDir).sorted(java.util.Comparator.reverseOrder())
-								.forEach(path -> {
-									try {
-										java.nio.file.Files.delete(path);
-									}
-									catch (java.io.IOException e) {
-										log.warn("Failed to delete file/directory during cleanup: {}", path, e);
-									}
-								});
+						java.nio.file.Files.walk(planIdUserDataDir)
+							.sorted(java.util.Comparator.reverseOrder())
+							.forEach(path -> {
+								try {
+									java.nio.file.Files.delete(path);
+								}
+								catch (java.io.IOException e) {
+									log.warn("Failed to delete file/directory during cleanup: {}", path, e);
+								}
+							});
 						log.info("Successfully cleaned up planId-specific userDataDir: {}", planIdUserDataDir);
 					}
 					catch (java.io.IOException e) {
@@ -419,8 +421,10 @@ public class ChromeDriverService implements IChromeDriverService {
 			}
 
 			// Use planId-specific userDataDir to allow multiple browser processes
-			// Each planId gets its own isolated userDataDir: extensions/playwright/planId-{planId}
-			// This prevents Chromium from locking the directory and allows multiple browsers
+			// Each planId gets its own isolated userDataDir:
+			// extensions/playwright/planId-{planId}
+			// This prevents Chromium from locking the directory and allows multiple
+			// browsers
 			// Using launchPersistentContext() is the recommended Playwright way to handle
 			// persistent profiles
 			java.nio.file.Path userDataDirPath = java.nio.file.Paths.get(sharedDir, "planId-" + planId);
@@ -605,8 +609,10 @@ public class ChromeDriverService implements IChromeDriverService {
 									if (cookieNode.has("secure")) {
 										cookie.setSecure(cookieNode.get("secure").asBoolean());
 									}
-									// Note: sameSite is typically handled automatically by Playwright
-									// when loading from storage state, so we skip manual setting
+									// Note: sameSite is typically handled automatically
+									// by Playwright
+									// when loading from storage state, so we skip manual
+									// setting
 									cookies.add(cookie);
 								}
 								if (!cookies.isEmpty()) {
@@ -617,9 +623,11 @@ public class ChromeDriverService implements IChromeDriverService {
 							}
 						}
 						catch (Exception e) {
-							log.warn("Failed to load shared cookies from storage state: {}. Continuing without shared cookies.",
+							log.warn(
+									"Failed to load shared cookies from storage state: {}. Continuing without shared cookies.",
 									e.getMessage());
-							// Continue without shared cookies - browser will still function
+							// Continue without shared cookies - browser will still
+							// function
 						}
 					}
 				}

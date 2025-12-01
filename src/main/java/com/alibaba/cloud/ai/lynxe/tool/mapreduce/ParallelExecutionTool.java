@@ -316,9 +316,9 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 
 	/**
 	 * Execute registered functions in parallel using ParallelExecutionService
-	 * Asynchronous version - does NOT block on .join() Returns CompletableFuture
-	 * instead of blocking for results. This prevents thread pool starvation in nested
-	 * parallel execution scenarios.
+	 * Asynchronous version - does NOT block on .join() Returns CompletableFuture instead
+	 * of blocking for results. This prevents thread pool starvation in nested parallel
+	 * execution scenarios.
 	 * @param parentToolContext Tool execution context
 	 * @return CompletableFuture that completes with the execution result
 	 */

@@ -93,7 +93,8 @@ public class CloseTabAction extends BrowserAction {
 		// If closing the last remaining page, navigate to about:blank instead of closing
 		if (isLastPage && pageToClose == currentPage) {
 			try {
-				// Navigate to about:blank directly (better than closing and creating new page)
+				// Navigate to about:blank directly (better than closing and creating new
+				// page)
 				pageToClose.navigate("about:blank");
 				logger.debug("Navigated last tab to about:blank instead of closing");
 				return new ToolExecuteResult("Successfully navigated to blank page (last tab preserved)");
@@ -104,7 +105,8 @@ public class CloseTabAction extends BrowserAction {
 			}
 		}
 
-		// If closing current page and it's not the last page, find another open page to switch to
+		// If closing current page and it's not the last page, find another open page to
+		// switch to
 		Page newCurrentPage = null;
 		if (pageToClose == currentPage && !isLastPage) {
 			newCurrentPage = findFirstOpenPageExcept(currentPage, openPages);
@@ -123,12 +125,13 @@ public class CloseTabAction extends BrowserAction {
 				logger.warn("Page close() was called but page is not yet closed");
 			}
 
-			// If we closed the current page (but not the last one), switch to another page
+			// If we closed the current page (but not the last one), switch to another
+			// page
 			if (newCurrentPage != null) {
 				getDriverWrapper().setCurrentPage(newCurrentPage);
 				logger.debug("Switched to page: {}", newCurrentPage.url());
-				return new ToolExecuteResult(
-						"Successfully closed current tab and switched to tab " + getTabIndex(newCurrentPage, openPages));
+				return new ToolExecuteResult("Successfully closed current tab and switched to tab "
+						+ getTabIndex(newCurrentPage, openPages));
 			}
 			else {
 				// Closed a different tab, current page remains

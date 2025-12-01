@@ -234,8 +234,8 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	}
 
 	/**
-	 * Find file in root plan directory (same as GlobalFileOperator)
-	 * Checks root plan directory first, then subplan directory if applicable
+	 * Find file in root plan directory (same as GlobalFileOperator) Checks root plan
+	 * directory first, then subplan directory if applicable
 	 */
 	private Path findFileInRootPlan(String filename) {
 		try {
@@ -244,7 +244,8 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 				return null;
 			}
 
-			// Normalize the file path to remove plan ID prefixes and relative path indicators
+			// Normalize the file path to remove plan ID prefixes and relative path
+			// indicators
 			String normalizedPath = normalizeFilePath(filename);
 
 			// Get the root plan directory (same as GlobalFileOperator)
@@ -265,7 +266,8 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 				return rootPlanPath;
 			}
 
-			// If currentPlanId exists and differs from rootPlanId, check subplan directory
+			// If currentPlanId exists and differs from rootPlanId, check subplan
+			// directory
 			if (this.currentPlanId != null && !this.currentPlanId.isEmpty()
 					&& !this.currentPlanId.equals(this.rootPlanId)) {
 				Path subplanDirectory = rootPlanDirectory.resolve(this.currentPlanId);
@@ -291,8 +293,8 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	}
 
 	/**
-	 * Normalize file path by removing plan ID prefixes and relative path indicators
-	 * (same as GlobalFileOperator)
+	 * Normalize file path by removing plan ID prefixes and relative path indicators (same
+	 * as GlobalFileOperator)
 	 */
 	private String normalizeFilePath(String filePath) {
 		if (filePath == null || filePath.isEmpty()) {

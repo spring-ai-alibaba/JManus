@@ -981,8 +981,10 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 	}
 
 	/**
-	 * Simple chat endpoint for standard LLM chat without plan execution with SSE streaming
-	 * @param request Request containing input message, conversationId (optional), uploadedFiles (optional), uploadKey (optional)
+	 * Simple chat endpoint for standard LLM chat without plan execution with SSE
+	 * streaming
+	 * @param request Request containing input message, conversationId (optional),
+	 * uploadedFiles (optional), uploadKey (optional)
 	 * @return SSE stream with incremental text chunks
 	 */
 	@PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -1010,7 +1012,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 		SseEmitter emitter = new SseEmitter(300000L);
 		StringBuilder accumulatedText = new StringBuilder();
 
-		// Register timeout and error handlers before starting async task to avoid race condition
+		// Register timeout and error handlers before starting async task to avoid race
+		// condition
 		emitter.onTimeout(() -> {
 			logger.warn("SSE emitter timeout");
 			emitter.complete();
@@ -1037,12 +1040,13 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 				// Build message list with conversation history
 				List<Message> messages = new java.util.ArrayList<>();
 
-				// Retrieve conversation history if conversationId exists and conversation memory is enabled
+				// Retrieve conversation history if conversationId exists and conversation
+				// memory is enabled
 				if (lynxeProperties != null && lynxeProperties.getEnableConversationMemory() && memoryService != null
 						&& conversationId != null && !conversationId.trim().isEmpty()) {
 					try {
 						org.springframework.ai.chat.memory.ChatMemory conversationMemory = llmService
-								.getConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId);
+							.getConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId);
 						List<Message> conversationHistory = conversationMemory.get(conversationId);
 						if (conversationHistory != null && !conversationHistory.isEmpty()) {
 							logger.debug("Adding {} conversation history messages for conversationId: {}",
@@ -1051,7 +1055,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 						}
 					}
 					catch (Exception e) {
-						logger.warn("Failed to retrieve conversation history for conversationId: {}. Continuing without it.",
+						logger.warn(
+								"Failed to retrieve conversation history for conversationId: {}. Continuing without it.",
 								conversationId, e);
 					}
 				}
@@ -1066,7 +1071,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 					try {
 						llmService.addToConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId,
 								userMessage);
-						logger.debug("Saved user message to conversation memory for conversationId: {}", conversationId);
+						logger.debug("Saved user message to conversation memory for conversationId: {}",
+								conversationId);
 					}
 					catch (Exception e) {
 						logger.warn("Failed to save user message to conversation memory for conversationId: {}",
@@ -1120,13 +1126,14 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 								&& conversationId != null && !conversationId.trim().isEmpty()) {
 							try {
 								AssistantMessage assistantMessage = new AssistantMessage(finalText);
-								llmService.addToConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId,
-										assistantMessage);
+								llmService.addToConversationMemoryWithLimit(lynxeProperties.getMaxMemory(),
+										conversationId, assistantMessage);
 								logger.debug("Saved assistant response to conversation memory for conversationId: {}",
 										conversationId);
 							}
 							catch (Exception e) {
-								logger.warn("Failed to save assistant response to conversation memory for conversationId: {}",
+								logger.warn(
+										"Failed to save assistant response to conversation memory for conversationId: {}",
 										conversationId, e);
 							}
 						}
@@ -1137,8 +1144,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 						emitter.send(SseEmitter.event().data(objectMapper.writeValueAsString(doneData)));
 						emitter.complete();
 
-						logger.info("Chat streaming completed for conversationId: {}, response length: {}", conversationId,
-								finalText.length());
+						logger.info("Chat streaming completed for conversationId: {}, response length: {}",
+								conversationId, finalText.length());
 					}
 					catch (Exception e) {
 						logger.error("Error completing SSE stream", e);
@@ -1149,7 +1156,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 					try {
 						Map<String, Object> errorData = new HashMap<>();
 						errorData.put("type", "error");
-						errorData.put("message", error.getMessage() != null ? error.getMessage() : "Streaming error occurred");
+						errorData.put("message",
+								error.getMessage() != null ? error.getMessage() : "Streaming error occurred");
 						emitter.send(SseEmitter.event().data(objectMapper.writeValueAsString(errorData)));
 						emitter.completeWithError(error);
 					}

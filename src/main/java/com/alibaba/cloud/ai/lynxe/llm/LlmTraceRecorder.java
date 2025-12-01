@@ -70,9 +70,11 @@ public class LlmTraceRecorder {
 					}
 					catch (IllegalStateException e) {
 						// Content is not a string (e.g., contains media/images)
-						// For media content, we can't easily count characters, so we skip it
+						// For media content, we can't easily count characters, so we skip
+						// it
 						// or use a placeholder count. For now, we'll skip it.
-						selfLogger.debug("Message contains non-string content (likely media), skipping character count");
+						selfLogger
+							.debug("Message contains non-string content (likely media), skipping character count");
 					}
 				}
 			}

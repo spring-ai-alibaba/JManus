@@ -467,10 +467,11 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 		// Get root plan directory
 		Path rootPlanDirectory = textFileService.getRootPlanDirectory(this.rootPlanId);
 
-		// For GlobalFileOperator, check root plan directory first, then subplan directory if applicable
+		// For GlobalFileOperator, check root plan directory first, then subplan directory
+		// if applicable
 		// This allows accessing files in root plan directory even when in subplan context
 		Path rootPlanPath = rootPlanDirectory.resolve(normalizedPath).normalize();
-		
+
 		// Ensure root plan path stays within root plan directory
 		if (!rootPlanPath.startsWith(rootPlanDirectory)) {
 			throw new IOException("Access denied: Invalid file path");
@@ -566,7 +567,8 @@ public class GlobalFileOperator extends AbstractBaseTool<GlobalFileOperator.Glob
 			String normalizedPath = normalizeFilePath(directoryPath != null ? directoryPath : "");
 
 			// For list_files, always use root plan directory as the base
-			// This allows listing directories like "linked_external" that exist at root plan level
+			// This allows listing directories like "linked_external" that exist at root
+			// plan level
 			Path rootPlanDirectory = textFileService.getRootPlanDirectory(this.rootPlanId);
 
 			// If a subdirectory path is provided, resolve it within root plan directory

@@ -48,7 +48,8 @@ public interface ToolCallBiFunctionDef<I> extends BiFunction<I, ToolContext, Too
 
 	/**
 	 * Get the description information of the tool with service group appended
-	 * @return Returns the functional description of the tool with service group appended at the end
+	 * @return Returns the functional description of the tool with service group appended
+	 * at the end
 	 */
 	String getDescriptionWithServiceGroup();
 

@@ -199,8 +199,8 @@ public class FileSplitterTool extends AbstractBaseTool<FileSplitterTool.FileSpli
 	}
 
 	/**
-	 * Validate and get the absolute path for the file. Files are read from
-	 * rootPlanId/ directory, same as GlobalFileOperator and MarkdownConverterTool.
+	 * Validate and get the absolute path for the file. Files are read from rootPlanId/
+	 * directory, same as GlobalFileOperator and MarkdownConverterTool.
 	 */
 	private Path validateFilePath(String filePath) throws IOException {
 		if (this.rootPlanId == null || this.rootPlanId.isEmpty()) {

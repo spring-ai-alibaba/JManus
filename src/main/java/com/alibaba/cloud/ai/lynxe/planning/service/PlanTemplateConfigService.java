@@ -699,11 +699,12 @@ public class PlanTemplateConfigService {
 	}
 
 	/**
-	 * Get plan template ID from tool name and optional service group Returns plan template
-	 * ID if HTTP service or in-conversation service is enabled for the tool
+	 * Get plan template ID from tool name and optional service group Returns plan
+	 * template ID if HTTP service or in-conversation service is enabled for the tool
 	 * @param toolName Tool name (FuncAgentToolEntity.toolName)
 	 * @param serviceGroup Optional service group to disambiguate tools with same name
-	 * @return Plan template ID if found and (HTTP service or in-conversation service is enabled), null otherwise
+	 * @return Plan template ID if found and (HTTP service or in-conversation service is
+	 * enabled), null otherwise
 	 */
 	public String getPlanTemplateIdFromToolName(String toolName, String serviceGroup) {
 		try {

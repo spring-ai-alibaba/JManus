@@ -178,7 +178,6 @@ public class ImageOcrProcessor {
 		}
 	}
 
-
 	/**
 	 * Load image from file and validate format
 	 * @param sourceFile The source image file
@@ -285,22 +284,20 @@ public class ImageOcrProcessor {
 			// Use configured model name from LynxeProperties
 			String modelName = getConfiguredModelName();
 			ChatOptions chatOptions = ChatOptions.builder().model(modelName).build();
-			
+
 			// Use ChatClient to process the image with OCR
 			// Include additional requirements in the system message if provided
-			String extractedText = chatClient.prompt()
-				.options(chatOptions)
-				.system(systemMessage -> {
-					systemMessage.text("You are an OCR (Optical Character Recognition) specialist.");
-					systemMessage.text("Extract all visible text content from the provided image.");
-					systemMessage.text("Return only the extracted text without any additional formatting or descriptions.");
-					systemMessage.text("Preserve the structure and layout of the text as much as possible.");
-					systemMessage.text("Focus on accurate text recognition and maintain readability.");
-					if (additionalRequirement != null && !additionalRequirement.trim().isEmpty()) {
-						systemMessage.text("Additional requirements: " + additionalRequirement);
-					}
-					systemMessage.text("If no text is visible in the image, return ''(empty string) ");
-				})
+			String extractedText = chatClient.prompt().options(chatOptions).system(systemMessage -> {
+				systemMessage.text("You are an OCR (Optical Character Recognition) specialist.");
+				systemMessage.text("Extract all visible text content from the provided image.");
+				systemMessage.text("Return only the extracted text without any additional formatting or descriptions.");
+				systemMessage.text("Preserve the structure and layout of the text as much as possible.");
+				systemMessage.text("Focus on accurate text recognition and maintain readability.");
+				if (additionalRequirement != null && !additionalRequirement.trim().isEmpty()) {
+					systemMessage.text("Additional requirements: " + additionalRequirement);
+				}
+				systemMessage.text("If no text is visible in the image, return ''(empty string) ");
+			})
 				.user(userMessage -> userMessage.text("Please extract all text content from this image:")
 					.media(MimeTypeUtils.parseMimeType("image/" + imageFormatName.toLowerCase()),
 							new InputStreamResource(imageInputStream)))
