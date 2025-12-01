@@ -183,9 +183,7 @@ const loadInnerTools = async () => {
           // Exactly one parameter
           const param = inputSchema[0]
           // Format value as serviceGroup.toolName or just toolName if serviceGroup is missing
-          const value = tool.serviceGroup
-            ? `${tool.serviceGroup}.${tool.toolName}`
-            : tool.toolName
+          const value = tool.serviceGroup ? `${tool.serviceGroup}.${tool.toolName}` : tool.toolName
           const toolOption: InnerToolOption = {
             value: value,
             label: tool.toolName,
@@ -558,7 +556,12 @@ const handleSend = async () => {
       extendedQuery.replacementParams = {
         [selectedTool.paramName]: finalInput,
       }
-      console.log('[InputArea] Sending message with tool:', selectedTool.toolName, 'serviceGroup:', selectedTool.serviceGroup)
+      console.log(
+        '[InputArea] Sending message with tool:',
+        selectedTool.toolName,
+        'serviceGroup:',
+        selectedTool.serviceGroup
+      )
     }
   }
 
