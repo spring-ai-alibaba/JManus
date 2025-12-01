@@ -81,21 +81,19 @@ public class WriteCurrentWebContentAction extends BrowserAction {
 				return new ToolExecuteResult("Error: Root Plan ID is not available");
 			}
 
-			// Use TextFileService to get the root plan directory and resolve to shared
-			// subdirectory
-			// Similar to GlobalFileOperator, files are stored in rootPlanId/shared/
+			// Use TextFileService to get the root plan directory
+			// Similar to GlobalFileOperator, files are stored in rootPlanId/
 			Path rootPlanDirectory = textFileService.getRootPlanDirectory(rootPlanId);
-			Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
-			// Ensure shared directory exists
-			Files.createDirectories(sharedDirectory);
+			// Ensure root plan directory exists
+			Files.createDirectories(rootPlanDirectory);
 
-			// Create file path within shared directory
-			Path filePath = sharedDirectory.resolve(fileName).normalize();
+			// Create file path within root plan directory
+			Path filePath = rootPlanDirectory.resolve(fileName).normalize();
 
-			// Verify the path stays within the shared directory (security check)
-			if (!filePath.startsWith(sharedDirectory)) {
-				return new ToolExecuteResult("Error: File path is outside the shared directory");
+			// Verify the path stays within the root plan directory (security check)
+			if (!filePath.startsWith(rootPlanDirectory)) {
+				return new ToolExecuteResult("Error: File path is outside the root plan directory");
 			}
 
 			// Format state content as YAML-like string

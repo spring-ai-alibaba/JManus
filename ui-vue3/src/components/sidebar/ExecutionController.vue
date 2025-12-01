@@ -30,18 +30,45 @@
         <!-- Show parameter fields only if there are parameters -->
         <div v-if="parameterRequirements.hasParameters" class="parameter-fields">
           <div
-            v-for="param in parameterRequirements.parameters"
+            v-for="(param, index) in parameterRequirements.parameters"
             :key="param"
             class="parameter-field"
           >
-            <label class="parameter-label">
-              {{ param }}
-              <span class="required">*</span>
-            </label>
+            <div class="parameter-label-row">
+              <label class="parameter-label">
+                {{ param }}
+                <span class="required">*</span>
+              </label>
+              <!-- Unified parameter history navigation - only show on first parameter -->
+              <div v-if="index === 0 && hasParameterHistory()" class="parameter-history-navigation">
+                <div class="history-navigation-controls">
+                  <button
+                    type="button"
+                    class="history-btn history-btn-up"
+                    :title="t('sidebar.historyUp')"
+                    :disabled="getToolHistoryIndex() >= getHistoryCount() - 1"
+                    @click="navigateParameterSetHistory('up')"
+                  >
+                    <Icon icon="carbon:chevron-up" width="12" />
+                  </button>
+                  <button
+                    type="button"
+                    class="history-btn history-btn-down"
+                    :title="t('sidebar.historyDown')"
+                    @click="navigateParameterSetHistory('down')"
+                  >
+                    <Icon icon="carbon:chevron-down" width="12" />
+                  </button>
+                </div>
+              </div>
+            </div>
             <input
               v-model="parameterValues[param]"
               class="parameter-input"
-              :class="{ error: parameterErrors[param] }"
+              :class="{
+                error: parameterErrors[param],
+                'viewing-history': getToolHistoryIndex() >= 0,
+              }"
               :placeholder="t('sidebar.enterValueFor', { param })"
               @input="updateParameterValue(param, ($event.target as HTMLInputElement).value)"
               required
@@ -171,28 +198,6 @@
           </div>
         </div>
       </div>
-
-      <!-- MCP Call wrapper - only show when enableMcpService is true -->
-      <div
-        v-if="templateConfig.selectedTemplate.value?.toolConfig?.enableMcpService"
-        class="call-example-wrapper"
-      >
-        <div class="call-example-header">
-          <h4 class="call-example-title">{{ t('sidebar.mcpCall') }}</h4>
-          <p class="call-example-description">{{ t('sidebar.mcpCallDescription') }}</p>
-        </div>
-        <div class="mcp-call-wrapper">
-          <div class="call-info">
-            <div class="call-method">{{ t('sidebar.mcpServiceCall') }}</div>
-            <div class="call-endpoint">{{ t('sidebar.mcpEndpoint') }}: /mcp/execute</div>
-            <div class="call-description">{{ t('sidebar.mcpCallUsage') }}</div>
-            <div class="call-example">
-              <strong>{{ t('sidebar.usage') }}:</strong>
-              <pre class="example-code">{{ t('sidebar.mcpCallExample') }}</pre>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -220,6 +225,7 @@ import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { useToast } from '@/plugins/useToast'
+import { parameterHistoryStore } from '@/stores/parameterHistory'
 import { templateStore } from '@/stores/templateStore'
 import type { PlanData, PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
@@ -264,6 +270,8 @@ const parameterErrors = ref<Record<string, string>>({})
 const isValidationError = ref(false)
 const isExecutingPlan = ref(false) // Flag to prevent parameter reload during execution
 const lastPlanId = ref<string | null>(null) // Track last returned plan ID
+const lastRefreshTimestamp = ref<number>(0) // Track last refresh time for debouncing
+const REFRESH_DEBOUNCE_MS = 500 // Debounce time for parameter refresh
 
 // Computed property: whether to show publish MCP service button
 const showPublishButton = computed(() => {
@@ -387,7 +395,7 @@ const isAnyServiceEnabled = computed(() => {
   return (
     toolConfig?.enableInternalToolcall ??
     toolConfig?.enableHttpService ??
-    toolConfig?.enableMcpService ??
+    toolConfig?.enableInConversation ??
     false
   )
 })
@@ -539,6 +547,9 @@ const proceedWithExecution = async () => {
     return
   }
 
+  // Save current parameter set to history before execution
+  saveParameterSetToHistory()
+
   try {
     // Get plan data from templateConfig
     if (!templateConfig.selectedTemplate.value) {
@@ -570,6 +581,19 @@ const proceedWithExecution = async () => {
 
     const title = templateConfig.selectedTemplate.value.title ?? config.title ?? 'Execution Plan'
 
+    // Extract toolName and serviceGroup from template for API execution
+    const toolName = templateConfig.selectedTemplate.value?.title || config.title || ''
+    const serviceGroup =
+      templateConfig.selectedTemplate.value?.serviceGroup || config.serviceGroup || undefined
+
+    // Validate toolName is present
+    if (!toolName || toolName.trim() === '') {
+      console.error('[ExecutionController] ❌ Tool name is required but not found')
+      toast.error(t('sidebar.toolNameRequired') || 'Tool name is required for execution')
+      isExecutingPlan.value = false
+      return
+    }
+
     // Pass replacement parameters if available
     const replacementParams =
       parameterRequirements.value.hasParameters && Object.keys(parameterValues.value).length > 0
@@ -578,6 +602,7 @@ const proceedWithExecution = async () => {
 
     console.log('[ExecutionController] 🔄 Replacement params:', replacementParams)
     console.log('[ExecutionController] 📋 Prepared plan data:', JSON.stringify(planData, null, 2))
+    console.log('[ExecutionController] 🔧 Tool name:', toolName, 'Service group:', serviceGroup)
 
     // Build final payload with plan data
     const finalPayload: PlanExecutionRequestPayload = {
@@ -587,6 +612,8 @@ const proceedWithExecution = async () => {
       replacementParams,
       uploadedFiles: uploadedFiles.value,
       uploadKey: uploadKey.value,
+      toolName,
+      serviceGroup,
     }
 
     console.log(
@@ -730,8 +757,30 @@ const clearExecutionParams = () => {
   // Execution params are now managed internally, no need to emit
 }
 
+// Helper function to compare parameter lists
+const areParameterListsEqual = (params1: string[], params2: string[]): boolean => {
+  if (params1.length !== params2.length) {
+    return false
+  }
+  const sorted1 = [...params1].sort()
+  const sorted2 = [...params2].sort()
+  return sorted1.every((param, index) => param === sorted2[index])
+}
+
 // Refresh parameter requirements (called after save)
 const refreshParameterRequirements = async () => {
+  // Check if we should skip refresh due to debouncing
+  const now = Date.now()
+  if (now - lastRefreshTimestamp.value < REFRESH_DEBOUNCE_MS) {
+    console.log(
+      '[ExecutionController] ⏸️ Skipping refresh - too soon after last refresh (debounced)'
+    )
+    return
+  }
+
+  // Store current parameter list for comparison
+  const currentParams = [...parameterRequirements.value.parameters]
+
   // Add a delay to ensure the backend has processed the new template and committed the transaction
   // Also ensure selectedTemplate has been updated by templateConfig.save()
   await new Promise(resolve => setTimeout(resolve, 1500))
@@ -750,6 +799,23 @@ const refreshParameterRequirements = async () => {
 
   // Reload parameter requirements
   await loadParameterRequirements()
+
+  // Update refresh timestamp
+  lastRefreshTimestamp.value = now
+
+  // Compare old and new parameter lists
+  const newParams = [...parameterRequirements.value.parameters]
+  if (areParameterListsEqual(currentParams, newParams)) {
+    console.log(
+      '[ExecutionController] ✅ Parameter list unchanged, values preserved:',
+      JSON.stringify(parameterValues.value, null, 2)
+    )
+  } else {
+    console.log(
+      '[ExecutionController] 🔄 Parameter list changed:',
+      JSON.stringify({ old: currentParams, new: newParams }, null, 2)
+    )
+  }
 }
 
 // Load parameter requirements when plan template changes
@@ -775,6 +841,13 @@ const loadParameterRequirements = async () => {
     return
   }
 
+  // Preserve current parameter values before clearing to prevent data loss
+  const preservedValues = { ...parameterValues.value }
+  console.log(
+    '[ExecutionController] 💾 Preserved parameter values before reload:',
+    JSON.stringify(preservedValues, null, 2)
+  )
+
   // Clear previous data immediately to prevent stale data display
   parameterRequirements.value = {
     parameters: [],
@@ -795,10 +868,11 @@ const loadParameterRequirements = async () => {
 
     parameterRequirements.value = requirements
 
-    // Initialize parameter values
+    // Initialize parameter values, restoring preserved values for parameters that still exist
     const newValues: Record<string, string> = {}
     requirements.parameters.forEach(param => {
-      newValues[param] = parameterValues.value[param] || ''
+      // Restore preserved value if it exists, otherwise use empty string
+      newValues[param] = preservedValues[param] || ''
     })
     parameterValues.value = newValues
 
@@ -826,14 +900,24 @@ const loadParameterRequirements = async () => {
       hasParameters: false,
       requirements: '',
     }
-    // Clear parameter values when there's an error to prevent stale data
-    parameterValues.value = {}
+    // Restore preserved values on error to prevent data loss
+    // Only restore if we have previous requirements with matching parameters
+    const previousParams = Object.keys(preservedValues)
+    if (previousParams.length > 0) {
+      console.log(
+        '[ExecutionController] 🔄 Restoring preserved values on error:',
+        JSON.stringify(preservedValues, null, 2)
+      )
+      parameterValues.value = { ...preservedValues }
+    } else {
+      parameterValues.value = {}
+    }
     console.log(
       '[ExecutionController] 🔄 Reset parameterRequirements due to error:',
       JSON.stringify(parameterRequirements.value, null, 2)
     )
     console.log(
-      '[ExecutionController] 🔄 Cleared parameterValues:',
+      '[ExecutionController] 🔄 Restored parameterValues:',
       JSON.stringify(parameterValues.value, null, 2)
     )
   } finally {
@@ -848,6 +932,11 @@ const updateParameterValue = (paramName: string, value: string) => {
   // Clear error for this parameter when user starts typing
   if (parameterErrors.value[paramName]) {
     delete parameterErrors.value[paramName]
+  }
+  // Reset tool-level navigation index when user manually types (viewing current, not history)
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (planTemplateId) {
+    parameterHistoryStore.setToolHistoryIndex(planTemplateId, -1)
   }
   updateExecutionParamsFromParameters()
 }
@@ -886,6 +975,150 @@ const updateExecutionParamsFromParameters = () => {
   // Execution params are now managed internally, no need to emit
 }
 
+// Save current parameter set to history
+const saveParameterSetToHistory = () => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
+    console.log('[ExecutionController] ⚠️ No planTemplateId, skipping history save')
+    return
+  }
+
+  // Only save if there are parameters
+  if (
+    !parameterRequirements.value.hasParameters ||
+    Object.keys(parameterValues.value).length === 0
+  ) {
+    console.log('[ExecutionController] ⚠️ No parameters to save to history')
+    return
+  }
+
+  // Create a copy of current parameter values
+  const currentSet = { ...parameterValues.value }
+
+  // Save to persistent store (store handles deduplication)
+  parameterHistoryStore.saveParameterSet(planTemplateId, currentSet)
+
+  console.log(
+    '[ExecutionController] 💾 Saved parameter set to history:',
+    JSON.stringify(currentSet, null, 2)
+  )
+
+  // Reset tool-level navigation index to -1 (viewing current, not history)
+  parameterHistoryStore.resetParamHistoryNavigation(planTemplateId)
+}
+
+// Reset tool navigation index
+const resetParamHistoryNavigation = () => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (planTemplateId) {
+    parameterHistoryStore.resetParamHistoryNavigation(planTemplateId)
+  }
+}
+
+// Navigate through parameter history for all parameters together
+const navigateParameterSetHistory = (direction: 'up' | 'down') => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
+    console.log('[ExecutionController] ⚠️ No planTemplateId, cannot navigate history')
+    return
+  }
+
+  const history = parameterHistoryStore.getHistory(planTemplateId)
+  if (!history || history.length === 0) {
+    console.log('[ExecutionController] ⚠️ No history available for navigation')
+    return
+  }
+
+  // Get current navigation index for this tool (-1 means viewing current)
+  const currentIndex = parameterHistoryStore.getToolHistoryIndex(planTemplateId)
+
+  // Calculate new index based on direction
+  let newIndex: number
+  if (direction === 'up') {
+    // Up means going to older history (higher index in array, since most recent is at index 0)
+    if (currentIndex === -1) {
+      // Currently viewing current value, go to most recent history (index 0)
+      newIndex = 0
+    } else if (currentIndex < history.length - 1) {
+      // Go to next older entry
+      newIndex = currentIndex + 1
+    } else {
+      // Already at oldest, stay there
+      newIndex = currentIndex
+    }
+  } else {
+    // Down means going to newer history (lower index in array)
+    if (currentIndex === -1) {
+      // Currently viewing current value, cannot go down
+      return
+    } else if (currentIndex > 0) {
+      // Go to next newer entry
+      newIndex = currentIndex - 1
+    } else {
+      // At most recent history (index 0), go to empty args
+      newIndex = -1
+      // Clear all parameter values
+      Object.keys(parameterValues.value).forEach(param => {
+        parameterValues.value[param] = ''
+      })
+      parameterHistoryStore.setToolHistoryIndex(planTemplateId, -1)
+      updateExecutionParamsFromParameters()
+      console.log('[ExecutionController] 📜 Cleared all parameter values')
+      return
+    }
+  }
+
+  // Update all parameter values from history if not viewing current
+  if (newIndex >= 0 && newIndex < history.length) {
+    const historySet = parameterHistoryStore.getParameterSetFromHistory(planTemplateId, newIndex)
+    if (historySet) {
+      // Update all parameter values from the history set
+      Object.keys(historySet).forEach(param => {
+        parameterValues.value[param] = historySet[param]
+      })
+      parameterHistoryStore.setToolHistoryIndex(planTemplateId, newIndex)
+      updateExecutionParamsFromParameters()
+      console.log(
+        `[ExecutionController] 📜 Navigated to history index ${newIndex}:`,
+        JSON.stringify(historySet, null, 2)
+      )
+    }
+  } else if (newIndex === -1) {
+    // Reset to current value (just reset index, values remain as user typed)
+    parameterHistoryStore.setToolHistoryIndex(planTemplateId, -1)
+    console.log('[ExecutionController] 📜 Reset to current values')
+  }
+}
+
+// Check if tool has history available
+const hasParameterHistory = (): boolean => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
+    return false
+  }
+
+  return parameterHistoryStore.hasParameterHistory(planTemplateId)
+}
+
+// Get current history index for the tool
+const getToolHistoryIndex = (): number => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
+    return -1
+  }
+  return parameterHistoryStore.getToolHistoryIndex(planTemplateId)
+}
+
+// Get history count for current tool
+const getHistoryCount = (): number => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
+    return 0
+  }
+  const history = parameterHistoryStore.getHistory(planTemplateId)
+  return history ? history.length : 0
+}
+
 // Watch for changes in plan template ID
 watch(
   () => templateConfig.currentPlanTemplateId.value,
@@ -896,6 +1129,9 @@ watch(
         console.log('[ExecutionController] ⏸️ Skipping parameter reload - plan is executing')
         return
       }
+
+      // Reset parameter history navigation when template changes
+      resetParamHistoryNavigation()
 
       console.log('[ExecutionController] 🔄 Template ID changed, will reload parameters')
       // If this is a new template ID (not from initial load), retry loading parameters
@@ -924,6 +1160,15 @@ watch(
       // Skip if currently executing
       if (isExecutingPlan.value) {
         console.log('[ExecutionController] ⏸️ Skipping parameter reload - plan is executing')
+        return
+      }
+
+      // Check debounce to prevent rapid successive refreshes
+      const now = Date.now()
+      if (now - lastRefreshTimestamp.value < REFRESH_DEBOUNCE_MS) {
+        console.log(
+          '[ExecutionController] ⏸️ Skipping parameter refresh - debounced (too soon after last refresh)'
+        )
         return
       }
 
@@ -1042,6 +1287,13 @@ defineExpose({
     flex-direction: column;
     gap: 6px;
 
+    .parameter-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
     .parameter-label {
       font-size: 11px;
       color: rgba(255, 255, 255, 0.8);
@@ -1080,6 +1332,95 @@ defineExpose({
       &.error {
         border-color: #ff6b6b;
         box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+      }
+
+      &.viewing-history {
+        background: rgba(102, 126, 234, 0.15);
+        border-color: rgba(102, 126, 234, 0.4);
+      }
+    }
+
+    .parameter-history-navigation {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+    }
+
+    .history-navigation-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+
+      .history-position {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.6);
+        min-width: 32px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .history-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+
+        &:hover:not(:disabled) {
+          background: rgba(102, 126, 234, 0.3);
+          border-color: rgba(102, 126, 234, 0.5);
+          color: rgba(255, 255, 255, 1);
+        }
+
+        &:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+      }
+    }
+
+    .parameter-history-controls {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+
+      .history-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+          background: rgba(102, 126, 234, 0.3);
+          border-color: rgba(102, 126, 234, 0.5);
+          color: white;
+          transform: translateY(-1px);
+        }
+
+        &:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        &:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
       }
     }
 

@@ -17,6 +17,7 @@
 package com.alibaba.cloud.ai.lynxe.recorder.service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -439,6 +440,12 @@ public class PlanHierarchyReaderService {
 
 		logger.debug("Found {} matching sub-plans for agent execution ID: {}", matchingSubPlans.size(),
 				agentExecutionId);
+
+		// Sort sub-plans by startTime in ascending order (earliest first)
+		// Sub-plans with null startTime will be placed at the end
+		matchingSubPlans.sort(Comparator.comparing(PlanExecutionRecord::getStartTime,
+				Comparator.nullsLast(Comparator.naturalOrder())));
+
 		return matchingSubPlans;
 	}
 

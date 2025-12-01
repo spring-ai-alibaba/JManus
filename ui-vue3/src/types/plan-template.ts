@@ -62,7 +62,7 @@ export interface ToolConfigVO {
   toolDescription?: string
   enableInternalToolcall?: boolean
   enableHttpService?: boolean
-  enableMcpService?: boolean
+  enableInConversation?: boolean
   publishStatus?: string
   inputSchema?: InputSchemaParam[]
 }

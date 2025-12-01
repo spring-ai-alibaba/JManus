@@ -121,7 +121,7 @@ public class PdfOcrProcessor {
 
 					CompletableFuture<String> ocrTask = imageRecognitionExecutorPool.submitTask(() -> {
 						log.info("Processing page {} of {} with OCR", pageIndex + 1, pageImages.size());
-						return processImageWithOcrWithRetry(pageImage, pageIndex + 1);
+						return processImageWithOcrWithRetry(pageImage, pageIndex + 1, additionalRequirement);
 					});
 
 					ocrTasks.add(ocrTask);
@@ -391,15 +391,16 @@ public class PdfOcrProcessor {
 	 * Process a single image with OCR using ChatClient with retry mechanism
 	 * @param image The BufferedImage to process
 	 * @param pageNumber The page number for logging
+	 * @param additionalRequirement Optional additional requirements for OCR processing
 	 * @return Extracted text or null if failed
 	 */
-	private String processImageWithOcrWithRetry(BufferedImage image, int pageNumber) {
+	private String processImageWithOcrWithRetry(BufferedImage image, int pageNumber, String additionalRequirement) {
 		int maxRetryAttempts = getConfiguredMaxRetryAttempts();
 
 		for (int attempt = 1; attempt <= maxRetryAttempts; attempt++) {
 			try {
 				log.debug("OCR attempt {} of {} for page {}", attempt, maxRetryAttempts, pageNumber);
-				String result = processImageWithOcr(image, pageNumber);
+				String result = processImageWithOcr(image, pageNumber, additionalRequirement);
 
 				if (result != null && !result.trim().isEmpty()) {
 					if (attempt > 1) {
@@ -439,8 +440,12 @@ public class PdfOcrProcessor {
 
 	/**
 	 * Process a single image with OCR using ChatClient
+	 * @param image The BufferedImage to process
+	 * @param pageNumber The page number for logging
+	 * @param additionalRequirement Optional additional requirements for OCR processing
+	 * @return Extracted text or null if failed
 	 */
-	private String processImageWithOcr(BufferedImage image, int pageNumber) {
+	private String processImageWithOcr(BufferedImage image, int pageNumber, String additionalRequirement) {
 		if (llmService == null) {
 			log.error("LlmService is not initialized, cannot perform OCR");
 			return null;
@@ -463,16 +468,20 @@ public class PdfOcrProcessor {
 			// Use configured model name from LynxeProperties
 			String modelName = getConfiguredModelName();
 			ChatOptions chatOptions = ChatOptions.builder().model(modelName).build();
+
 			// Use ChatClient to process the image with OCR
-			String extractedText = chatClient.prompt()
-				.options(chatOptions)
-				.system(systemMessage -> systemMessage
-					.text("You are an OCR (Optical Character Recognition) specialist.")
-					.text("Extract all visible text content from the provided image.")
-					.text("Return only the extracted text without any additional formatting or descriptions.")
-					.text("Preserve the structure and layout of the text as much as possible.")
-					.text("Focus on accurate text recognition and maintain readability.")
-					.text("If no text is visible in the image, return ''(empty string) "))
+			// Include additional requirements in the system message if provided
+			String extractedText = chatClient.prompt().options(chatOptions).system(systemMessage -> {
+				systemMessage.text("You are an OCR (Optical Character Recognition) specialist.");
+				systemMessage.text("Extract all visible text content from the provided image.");
+				systemMessage.text("Return only the extracted text without any additional formatting or descriptions.");
+				systemMessage.text("Preserve the structure and layout of the text as much as possible.");
+				systemMessage.text("Focus on accurate text recognition and maintain readability.");
+				if (additionalRequirement != null && !additionalRequirement.trim().isEmpty()) {
+					systemMessage.text("Additional requirements: " + additionalRequirement);
+				}
+				systemMessage.text("If no text is visible in the image, return ''(empty string) ");
+			})
 				.user(userMessage -> userMessage.text("Please extract all text content from this image:")
 					.media(MimeTypeUtils.parseMimeType("image/" + imageFormatName.toLowerCase()),
 							new InputStreamResource(imageInputStream)))
@@ -503,8 +512,7 @@ public class PdfOcrProcessor {
 	private boolean ocrFileExists(String currentPlanId, String ocrFilename) {
 		try {
 			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path sharedDir = currentPlanDir.resolve("shared");
-			Path ocrFile = sharedDir.resolve(ocrFilename);
+			Path ocrFile = currentPlanDir.resolve(ocrFilename);
 			return Files.exists(ocrFile);
 		}
 		catch (Exception e) {
@@ -544,8 +552,7 @@ public class PdfOcrProcessor {
 	private Path saveOcrResult(String content, String filename, String currentPlanId) {
 		try {
 			Path currentPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path sharedDir = currentPlanDir.resolve("shared");
-			Path outputFile = sharedDir.resolve(filename);
+			Path outputFile = currentPlanDir.resolve(filename);
 
 			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
 					StandardOpenOption.TRUNCATE_EXISTING);

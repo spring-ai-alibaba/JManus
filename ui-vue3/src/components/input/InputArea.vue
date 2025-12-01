@@ -49,7 +49,7 @@
           :title="$t('input.selectionTitle')"
           :disabled="isLoadingTools || isDisabled"
         >
-          <option value="">{{ $t('input.defaultFuncAgent') }}</option>
+          <option value="chat">{{ $t('input.chatMode') }}</option>
           <option v-for="option in selectionOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
@@ -111,6 +111,7 @@ interface InnerToolOption {
   toolName: string
   planTemplateId: string
   paramName: string
+  serviceGroup?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -135,7 +136,7 @@ const currentPlaceholder = computed(() => {
 })
 const uploadedFiles = ref<string[]>([])
 const uploadKey = ref<string | null>(null)
-const selectedOption = ref('')
+const selectedOption = ref('chat') // Default to chat mode
 const innerToolOptions = ref<InnerToolOption[]>([])
 const isLoadingTools = ref(false)
 // Flag to prevent watcher from saving during restoration from localStorage
@@ -170,19 +171,33 @@ const loadInnerTools = async () => {
         continue
       }
 
+      // Check if it's enabled for conversation use
+      if (!tool.enableInConversation) {
+        continue
+      }
+
       // Parse inputSchema to count parameters
       try {
         const inputSchema = JSON.parse(tool.inputSchema || '[]')
         if (Array.isArray(inputSchema) && inputSchema.length === 1) {
           // Exactly one parameter
           const param = inputSchema[0]
-          filteredTools.push({
-            value: tool.planTemplateId,
-            label: `${tool.toolName} (${param.name})`,
+          // Format value as serviceGroup.toolName or just toolName if serviceGroup is missing
+          const value = tool.serviceGroup
+            ? `${tool.serviceGroup}.${tool.toolName}`
+            : tool.toolName
+          const toolOption: InnerToolOption = {
+            value: value,
+            label: tool.toolName,
             toolName: tool.toolName,
             planTemplateId: tool.planTemplateId,
             paramName: param.name,
-          })
+          }
+          // Only include serviceGroup if it's defined
+          if (tool.serviceGroup) {
+            toolOption.serviceGroup = tool.serviceGroup
+          }
+          filteredTools.push(toolOption)
         }
       } catch (e) {
         console.warn('[InputArea] Failed to parse inputSchema for tool:', tool.toolName, e)
@@ -194,7 +209,7 @@ const loadInnerTools = async () => {
 
     // Restore selected tool from localStorage and validate it still exists
     const savedTool = localStorage.getItem('inputAreaSelectedTool')
-    if (savedTool) {
+    if (savedTool && savedTool.trim() !== '') {
       // Only check if tools are loaded (avoid clearing selection if list is empty during loading)
       if (filteredTools.length > 0) {
         const toolExists = filteredTools.some(tool => tool.value === savedTool)
@@ -209,11 +224,11 @@ const loadInnerTools = async () => {
             isRestoringSelection.value = false
           }
         } else {
-          console.log('[InputArea] Saved tool no longer available, clearing selection')
+          console.log('[InputArea] Saved tool no longer available, resetting to chat mode')
           localStorage.removeItem('inputAreaSelectedTool')
-          // Only clear if current selection matches the saved one (avoid clearing user's new selection)
+          // Only reset if current selection matches the saved one (avoid clearing user's new selection)
           if (selectedOption.value === savedTool) {
-            selectedOption.value = ''
+            selectedOption.value = 'chat'
           }
         }
       } else {
@@ -505,6 +520,9 @@ const handleSend = async () => {
   historyIndex.value = -1
   originalInputBeforeHistory.value = ''
 
+  // Clear the input immediately for instant feedback
+  clearInput()
+
   // Prepare query with tool information if selected
   const query: InputMessage = {
     input: finalInput,
@@ -520,8 +538,8 @@ const handleSend = async () => {
     console.log('[InputArea] No uploadKey available for message')
   }
 
-  // Check if a tool is selected
-  if (selectedOption.value) {
+  // Check if a tool is selected (not chat mode)
+  if (selectedOption.value && selectedOption.value !== 'chat') {
     const selectedTool = innerToolOptions.value.find(tool => tool.value === selectedOption.value)
 
     if (selectedTool) {
@@ -529,12 +547,18 @@ const handleSend = async () => {
       const extendedQuery = query as InputMessage & {
         toolName?: string
         replacementParams?: Record<string, string>
+        serviceGroup?: string
       }
-      extendedQuery.toolName = selectedTool.planTemplateId
+      // Use toolName instead of planTemplateId
+      extendedQuery.toolName = selectedTool.toolName
+      // Include serviceGroup if available
+      if (selectedTool.serviceGroup) {
+        extendedQuery.serviceGroup = selectedTool.serviceGroup
+      }
       extendedQuery.replacementParams = {
         [selectedTool.paramName]: finalInput,
       }
-      console.log('[InputArea] Sending message with tool:', selectedTool.toolName)
+      console.log('[InputArea] Sending message with tool:', selectedTool.toolName, 'serviceGroup:', selectedTool.serviceGroup)
     }
   }
 
@@ -545,9 +569,6 @@ const handleSend = async () => {
     const errorMessage = error instanceof Error ? error.message : String(error)
     console.error('[InputArea] Send message failed:', errorMessage)
   }
-
-  // Clear the input but keep uploaded files and uploadKey for follow-up conversations
-  clearInput()
 }
 
 const handleStop = async () => {

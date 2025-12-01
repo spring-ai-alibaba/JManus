@@ -80,9 +80,9 @@ import com.alibaba.cloud.ai.lynxe.tool.database.UuidGenerateTool;
 import com.alibaba.cloud.ai.lynxe.tool.dirOperator.DirectoryOperator;
 import com.alibaba.cloud.ai.lynxe.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.innerStorage.SmartContentSavingService;
 import com.alibaba.cloud.ai.lynxe.tool.jsxGenerator.JsxGeneratorOperator;
-import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.mapreduce.FileBasedParallelExecutionTool;
 import com.alibaba.cloud.ai.lynxe.tool.mapreduce.FileSplitterTool;
 import com.alibaba.cloud.ai.lynxe.tool.mapreduce.ParallelExecutionService;
@@ -279,7 +279,7 @@ public class PlanningFactory {
 			// toolDefinitions.add(new PythonExecute());
 			toolDefinitions.add(new FormInputTool(objectMapper, toolI18nService));
 			toolDefinitions.add(new ParallelExecutionTool(objectMapper, toolCallbackMap, planIdDispatcher,
-					levelBasedExecutorPool, toolI18nService));
+					levelBasedExecutorPool, toolI18nService, serviceGroupIndexService, parallelExecutionService));
 			toolDefinitions.add(new FileBasedParallelExecutionTool(objectMapper, toolCallbackMap,
 					unifiedDirectoryManager, parallelExecutionService, toolI18nService));
 			toolDefinitions.add(new CronTool(cronService, objectMapper, toolI18nService));
@@ -335,7 +335,7 @@ public class PlanningFactory {
 				// qualified names
 				FunctionToolCallback<?, ToolExecuteResult> functionToolcallback = FunctionToolCallback
 					.builder(qualifiedKey, toolDefinition)
-					.description(toolDefinition.getDescription())
+					.description(toolDefinition.getDescriptionWithServiceGroup())
 					.inputSchema(toolDefinition.getParameters())
 					.inputType(toolDefinition.getInputType())
 					.toolMetadata(ToolMetadata.builder().returnDirect(toolDefinition.isReturnDirect()).build())

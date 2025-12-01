@@ -23,9 +23,9 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
-import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.excelProcessor.IExcelProcessingService;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
+import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -127,11 +127,11 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 				return new ToolExecuteResult("Error: File has no extension: " + filename);
 			}
 
-			// Step 3: Find the file in root plan shared directory
+			// Step 3: Find the file in root plan directory
 			Path sourceFile = findFileInRootPlan(filename);
 			if (sourceFile == null || !Files.exists(sourceFile)) {
 				return new ToolExecuteResult("Error: File not found: " + filename
-						+ ". Please ensure the file exists in the root plan shared directory (rootPlanId/shared/).");
+						+ ". Please ensure the file exists in the root plan directory (rootPlanId/).");
 			}
 
 			// Step 4: Dispatch to appropriate processor
@@ -234,7 +234,8 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 	}
 
 	/**
-	 * Find file in root plan shared directory (same as GlobalFileOperator)
+	 * Find file in root plan directory (same as GlobalFileOperator) Checks root plan
+	 * directory first, then subplan directory if applicable
 	 */
 	private Path findFileInRootPlan(String filename) {
 		try {
@@ -243,32 +244,80 @@ public class MarkdownConverterTool extends AbstractBaseTool<MarkdownConverterToo
 				return null;
 			}
 
-			// Get the root plan directory and resolve to shared subdirectory (same as
-			// GlobalFileOperator)
+			// Normalize the file path to remove plan ID prefixes and relative path
+			// indicators
+			String normalizedPath = normalizeFilePath(filename);
+
+			// Get the root plan directory (same as GlobalFileOperator)
 			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
-			Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
-			// Resolve file path within the shared directory
-			Path filePath = sharedDirectory.resolve(filename).normalize();
+			// Check root plan directory first
+			Path rootPlanPath = rootPlanDirectory.resolve(normalizedPath).normalize();
 
-			// Ensure the path stays within the shared directory
-			if (!filePath.startsWith(sharedDirectory)) {
-				log.warn("File path is outside shared directory: {}", filename);
+			// Ensure the path stays within the root plan directory
+			if (!rootPlanPath.startsWith(rootPlanDirectory)) {
+				log.warn("File path is outside root plan directory: {}", filename);
 				return null;
 			}
 
-			if (Files.exists(filePath)) {
-				log.info("Found file in root plan shared directory: {}", filename);
-				return filePath;
+			// If file exists in root plan directory, use it
+			if (Files.exists(rootPlanPath)) {
+				log.info("Found file in root plan directory: {}", filename);
+				return rootPlanPath;
 			}
 
-			log.warn("File not found in root plan shared directory: {}", filename);
+			// If currentPlanId exists and differs from rootPlanId, check subplan
+			// directory
+			if (this.currentPlanId != null && !this.currentPlanId.isEmpty()
+					&& !this.currentPlanId.equals(this.rootPlanId)) {
+				Path subplanDirectory = rootPlanDirectory.resolve(this.currentPlanId);
+				Path subplanPath = subplanDirectory.resolve(normalizedPath).normalize();
+
+				// Ensure subplan path stays within subplan directory
+				if (subplanPath.startsWith(subplanDirectory)) {
+					// If file exists in subplan directory, use it
+					if (Files.exists(subplanPath)) {
+						log.info("Found file in subplan directory: {}", filename);
+						return subplanPath;
+					}
+				}
+			}
+
+			log.warn("File not found in root plan directory: {}", filename);
 			return null;
 		}
 		catch (Exception e) {
 			log.error("Error finding file: {}", filename, e);
 			return null;
 		}
+	}
+
+	/**
+	 * Normalize file path by removing plan ID prefixes and relative path indicators (same
+	 * as GlobalFileOperator)
+	 */
+	private String normalizeFilePath(String filePath) {
+		if (filePath == null || filePath.isEmpty()) {
+			return filePath;
+		}
+
+		// Remove leading slashes and relative path indicators
+		String normalized = filePath.trim();
+		while (normalized.startsWith("/")) {
+			normalized = normalized.substring(1);
+		}
+
+		// Remove "./" prefix if present
+		if (normalized.startsWith("./")) {
+			normalized = normalized.substring(2);
+		}
+
+		// Remove plan ID prefix (e.g., "plan-1763035234741/")
+		if (normalized.matches("^plan-[^/]+/.*")) {
+			normalized = normalized.replaceFirst("^plan-[^/]+/", "");
+		}
+
+		return normalized;
 	}
 
 	/**

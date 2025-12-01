@@ -91,4 +91,21 @@ public abstract class AbstractBaseTool<I> implements ToolCallBiFunctionDef<I> {
 	 */
 	public abstract ToolExecuteResult run(I input);
 
+	/**
+	 * Get the description information of the tool with service group appended Default
+	 * implementation appends serviceGroup to the description if serviceGroup is not null
+	 * or empty
+	 * @return Returns the functional description of the tool with service group appended
+	 * at the end
+	 */
+	@Override
+	public String getDescriptionWithServiceGroup() {
+		String description = getDescription();
+		String serviceGroup = getServiceGroup();
+		if (serviceGroup != null && !serviceGroup.trim().isEmpty()) {
+			return description + ". Service group: " + serviceGroup;
+		}
+		return description;
+	}
+
 }

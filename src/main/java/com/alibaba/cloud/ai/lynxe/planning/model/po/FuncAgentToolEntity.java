@@ -61,6 +61,9 @@ public class FuncAgentToolEntity {
 	@Column(name = "enable_http_service", nullable = false)
 	private Boolean enableHttpService = false;
 
+	@Column(name = "enable_in_conversation", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+	private Boolean enableInConversation = false;
+
 	@Column(name = "enable_mcp_service", nullable = false)
 	private Boolean enableMcpService = false;
 
@@ -82,6 +85,7 @@ public class FuncAgentToolEntity {
 		this.updateTime = LocalDateTime.now();
 		this.enableInternalToolcall = false;
 		this.enableHttpService = false;
+		this.enableInConversation = false;
 		this.enableMcpService = false;
 		this.accessLevel = PlanTemplateAccessLevel.EDITABLE;
 	}
@@ -141,6 +145,14 @@ public class FuncAgentToolEntity {
 
 	public void setEnableHttpService(Boolean enableHttpService) {
 		this.enableHttpService = enableHttpService;
+	}
+
+	public Boolean getEnableInConversation() {
+		return enableInConversation;
+	}
+
+	public void setEnableInConversation(Boolean enableInConversation) {
+		this.enableInConversation = enableInConversation;
 	}
 
 	public Boolean getEnableMcpService() {
@@ -203,9 +215,10 @@ public class FuncAgentToolEntity {
 	public String toString() {
 		return "FuncAgentToolEntity{" + "id=" + id + ", planTemplateId='" + planTemplateId + '\'' + ", toolName='"
 				+ toolName + '\'' + ", toolDescription='" + toolDescription + '\'' + ", enableInternalToolcall="
-				+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableMcpService="
-				+ enableMcpService + ", serviceGroup='" + serviceGroup + '\'' + ", accessLevel=" + accessLevel
-				+ ", createTime=" + createTime + ", updateTime=" + updateTime + '}';
+				+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableInConversation="
+				+ enableInConversation + ", enableMcpService=" + enableMcpService + ", serviceGroup='" + serviceGroup
+				+ '\'' + ", accessLevel=" + accessLevel + ", createTime=" + createTime + ", updateTime=" + updateTime
+				+ '}';
 	}
 
 }

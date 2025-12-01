@@ -791,7 +791,7 @@ const words: I18nType = {
     planMode: 'Func-Agent Mode',
     selectionTitle: 'Select Option',
     selectPlaceholder: 'Please select',
-    defaultFuncAgent: 'Use Default FuncAgent to Process Conversation',
+    chatMode: 'Ask',
     waiting: 'Waiting for user input...',
     maxLength: 'Max Length',
     charactersRemaining: 'Characters Remaining',
@@ -843,8 +843,10 @@ const words: I18nType = {
       'When executing repeatedly, you can set some content in Step 2 as variables, then specify the specific values for those variables here. For example, set "Variable1" in the JSON, then set "Variable1=Alibaba" here to achieve function parameter-like effects.',
     clearParams: 'Clear Parameters',
     parameterRequirements: 'Parameter Requirements',
+    historyUp: 'Previous value',
+    historyDown: 'Next value',
     parameterRequirementsHelp:
-      'You can embed variable parameters in the "task requirements section" using <<parameter_name>> format. After saving, these variable parameters can be used in the subsequent service publishing.',
+      'In the template editor\'s "Task Requirements" section, you can define variable parameters using <<parameter_name>> format (multiple parameters are allowed) to inform the model what format of input your function requires. The default description is the parameter name.',
     clearAllParams: 'Clear All Parameters',
     noParametersRequired: 'This plan template does not require any parameters',
     fillAllRequiredParameters: 'Please fill in all required parameters',
@@ -852,6 +854,7 @@ const words: I18nType = {
     statusApiUrl: 'Status Query API',
     executing: 'Executing...',
     executePlan: 'Execute Plan',
+    toolNameRequired: 'Tool name is required. Please ensure the template is properly configured',
     executionInProgress:
       'A task is currently executing. Please wait for it to complete before starting a new one',
     publishMcpService: 'Publish as Tool Service',
@@ -1343,7 +1346,7 @@ const words: I18nType = {
     toolDescriptionRequired: 'Tool Description *',
     toolDescriptionPlaceholder: 'Please enter tool description',
     toolDescriptionDescription:
-      'Tell the model when to use this tool. The more detailed you write (when to choose, when not to choose), the more accurate the model will be in selecting tools.',
+      'Tell the model when to use this tool. The more detailed you write, the more accurate the model will be in selecting tools. Default value is the tool name.',
     serviceGroup: 'Service Group',
     serviceGroupPlaceholder: 'Please enter service group',
     serviceGroupDescription:
@@ -1369,6 +1372,9 @@ const words: I18nType = {
     publishAsInternalToolcall: 'Publish as Internal Toolcall',
     publishAsInternalToolcallDescription:
       'When checked, this will be published as an internal tool that can be used by agents in their tool configuration',
+    enableInConversation: 'Enable in Conversation',
+    enableInConversationDescription:
+      'When checked, this tool will be available for use in conversation mode, allowing the AI to call this function during chat interactions.',
     publishing: 'Publishing...',
     delete: 'Delete',
     deleting: 'Deleting...',

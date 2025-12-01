@@ -308,6 +308,7 @@ export function useMessageDialog() {
       const extendedQuery = query as InputMessage & {
         toolName?: string
         replacementParams?: Record<string, string>
+        serviceGroup?: string
       }
 
       let response: { planId?: string; conversationId?: string; message?: string; result?: string }
@@ -319,15 +320,9 @@ export function useMessageDialog() {
           extendedQuery.replacementParams as Record<string, string>,
           query.uploadedFiles,
           query.uploadKey,
-          'VUE_DIALOG'
+          'VUE_DIALOG',
+          extendedQuery.serviceGroup
         )) as typeof response
-      } else {
-        // Use default plan template
-        response = (await DirectApiService.sendMessageWithDefaultPlan(
-          query,
-          'VUE_DIALOG'
-        )) as typeof response
-      }
 
       // Update conversationId if present (persisted)
       if (response.conversationId) {
@@ -366,9 +361,74 @@ export function useMessageDialog() {
         const updates: Partial<ChatMessage> = {
           content: response.message || response.result || 'No response received',
           isStreaming: false,
+            thinking: '',
         }
-        // Only set thinking if it exists, don't set undefined
         updateMessageInDialog(targetDialog.id, assistantMessage.id, updates)
+        }
+      } else {
+        // Use simple chat mode with streaming
+        // Start streaming
+        startStreaming(assistantMessage.id)
+
+        // Initialize content
+        let accumulatedContent = ''
+
+        // Handle streaming chunks
+        response = (await DirectApiService.sendChatMessage(
+          query,
+          'VUE_DIALOG',
+          (chunk) => {
+            if (!targetDialog || !assistantMessage) return
+
+            if (chunk.type === 'start' && chunk.conversationId) {
+              // Update conversationId if present (persisted)
+              conversationId.value = chunk.conversationId
+              targetDialog.conversationId = chunk.conversationId
+              memoryStore.setConversationId(chunk.conversationId)
+              console.log('[useMessageDialog] Conversation ID set from stream:', chunk.conversationId)
+            } else if (chunk.type === 'chunk' && chunk.content) {
+              // Append chunk to accumulated content
+              accumulatedContent += chunk.content
+              // Update message content incrementally
+              updateMessageInDialog(targetDialog.id, assistantMessage.id, {
+                content: accumulatedContent,
+                isStreaming: true,
+                thinking: '',
+              })
+            } else if (chunk.type === 'done') {
+              // Stop streaming
+              stopStreaming(assistantMessage.id)
+              // Final update
+              updateMessageInDialog(targetDialog.id, assistantMessage.id, {
+                content: accumulatedContent || 'No response received',
+                isStreaming: false,
+                thinking: '',
+              })
+            } else if (chunk.type === 'error') {
+              // Handle error
+              stopStreaming(assistantMessage.id)
+              updateMessageInDialog(targetDialog.id, assistantMessage.id, {
+                content: `Error: ${chunk.message || 'Streaming error occurred'}`,
+                error: chunk.message || 'Streaming error occurred',
+                isStreaming: false,
+              })
+            }
+          }
+        )) as typeof response
+
+        // Ensure streaming is stopped and final content is set
+        stopStreaming(assistantMessage.id)
+        if (response.conversationId) {
+          conversationId.value = response.conversationId
+          targetDialog.conversationId = response.conversationId
+          memoryStore.setConversationId(response.conversationId)
+        }
+        // Final update with complete message
+        updateMessageInDialog(targetDialog.id, assistantMessage.id, {
+          content: response.message || accumulatedContent || 'No response received',
+          isStreaming: false,
+          thinking: '',
+        })
       }
 
       return {
@@ -472,16 +532,19 @@ export function useMessageDialog() {
       }
       addMessageToDialog(targetDialog.id, assistantMessage)
 
-      // Get plan template ID
-      const planTemplateId = payload.planData.planTemplateId
-      if (!planTemplateId || planTemplateId === null) {
-        throw new Error('Plan template ID is required')
+      // Get toolName and serviceGroup from payload (required for API execution)
+      const toolName = payload.toolName
+      const serviceGroup = payload.serviceGroup
+
+      if (!toolName || toolName.trim() === '') {
+        throw new Error('Tool name is required for plan execution')
       }
 
       // Call PlanActApiService.executePlan
       // Note: DirectApiService.executeByToolName will automatically include conversationId from memoryStore
       const response = (await PlanActApiService.executePlan(
-        planTemplateId as string,
+        toolName,
+        serviceGroup,
         payload.params,
         payload.uploadedFiles,
         payload.replacementParams,

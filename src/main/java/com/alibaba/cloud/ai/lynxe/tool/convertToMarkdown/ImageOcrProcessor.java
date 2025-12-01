@@ -15,6 +15,17 @@
  */
 package com.alibaba.cloud.ai.lynxe.tool.convertToMarkdown;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import javax.imageio.ImageIO;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -27,16 +38,6 @@ import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.runtime.executor.ImageRecognitionExecutorPool;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Image OCR Processor using OpenAI Image Model
@@ -102,7 +103,7 @@ public class ImageOcrProcessor {
 			if (imageRecognitionExecutorPool != null) {
 				CompletableFuture<String> ocrTask = imageRecognitionExecutorPool.submitTask(() -> {
 					log.info("Processing image with OCR");
-					return processImageWithOcrWithRetry(image, 1);
+					return processImageWithOcrWithRetry(image, 1, additionalRequirement);
 				});
 
 				try {
@@ -178,18 +179,6 @@ public class ImageOcrProcessor {
 	}
 
 	/**
-	 * Convert image file to text using OCR processing (backward compatibility method)
-	 * @param sourceFile The source image file
-	 * @param additionalRequirement Optional additional requirements for OCR processing
-	 * @param currentPlanId Current plan ID for file operations
-	 * @return ToolExecuteResult with OCR processing status and extracted text
-	 */
-	public ToolExecuteResult convertImageToTextWithOcr(Path sourceFile, String additionalRequirement,
-			String currentPlanId) {
-		return convertImageToTextWithOcr(sourceFile, additionalRequirement, currentPlanId, null);
-	}
-
-	/**
 	 * Load image from file and validate format
 	 * @param sourceFile The source image file
 	 * @return BufferedImage or null if failed
@@ -219,15 +208,16 @@ public class ImageOcrProcessor {
 	 * Process a single image with OCR using ChatClient with retry mechanism
 	 * @param image The BufferedImage to process
 	 * @param imageNumber The image number for logging
+	 * @param additionalRequirement Optional additional requirements for OCR processing
 	 * @return Extracted text or null if failed
 	 */
-	private String processImageWithOcrWithRetry(BufferedImage image, int imageNumber) {
+	private String processImageWithOcrWithRetry(BufferedImage image, int imageNumber, String additionalRequirement) {
 		int maxRetryAttempts = getConfiguredMaxRetryAttempts();
 
 		for (int attempt = 1; attempt <= maxRetryAttempts; attempt++) {
 			try {
 				log.debug("OCR attempt {} of {} for image {}", attempt, maxRetryAttempts, imageNumber);
-				String result = processImageWithOcr(image, imageNumber);
+				String result = processImageWithOcr(image, imageNumber, additionalRequirement);
 
 				if (result != null && !result.trim().isEmpty()) {
 					if (attempt > 1) {
@@ -267,8 +257,12 @@ public class ImageOcrProcessor {
 
 	/**
 	 * Process a single image with OCR using ChatClient
+	 * @param image The BufferedImage to process
+	 * @param imageNumber The image number for logging
+	 * @param additionalRequirement Optional additional requirements for OCR processing
+	 * @return Extracted text or null if failed
 	 */
-	private String processImageWithOcr(BufferedImage image, int imageNumber) {
+	private String processImageWithOcr(BufferedImage image, int imageNumber, String additionalRequirement) {
 		if (llmService == null) {
 			log.error("LlmService is not initialized, cannot perform OCR");
 			return null;
@@ -290,16 +284,20 @@ public class ImageOcrProcessor {
 			// Use configured model name from LynxeProperties
 			String modelName = getConfiguredModelName();
 			ChatOptions chatOptions = ChatOptions.builder().model(modelName).build();
+
 			// Use ChatClient to process the image with OCR
-			String extractedText = chatClient.prompt()
-				.options(chatOptions)
-				.system(systemMessage -> systemMessage
-					.text("You are an OCR (Optical Character Recognition) specialist.")
-					.text("Extract all visible text content from the provided image.")
-					.text("Return only the extracted text without any additional formatting or descriptions.")
-					.text("Preserve the structure and layout of the text as much as possible.")
-					.text("Focus on accurate text recognition and maintain readability.")
-					.text("If no text is visible in the image, return ''(empty string) "))
+			// Include additional requirements in the system message if provided
+			String extractedText = chatClient.prompt().options(chatOptions).system(systemMessage -> {
+				systemMessage.text("You are an OCR (Optical Character Recognition) specialist.");
+				systemMessage.text("Extract all visible text content from the provided image.");
+				systemMessage.text("Return only the extracted text without any additional formatting or descriptions.");
+				systemMessage.text("Preserve the structure and layout of the text as much as possible.");
+				systemMessage.text("Focus on accurate text recognition and maintain readability.");
+				if (additionalRequirement != null && !additionalRequirement.trim().isEmpty()) {
+					systemMessage.text("Additional requirements: " + additionalRequirement);
+				}
+				systemMessage.text("If no text is visible in the image, return ''(empty string) ");
+			})
 				.user(userMessage -> userMessage.text("Please extract all text content from this image:")
 					.media(MimeTypeUtils.parseMimeType("image/" + imageFormatName.toLowerCase()),
 							new InputStreamResource(imageInputStream)))
@@ -329,8 +327,7 @@ public class ImageOcrProcessor {
 	private boolean ocrFileExists(String currentPlanId, String ocrFilename) {
 		try {
 			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path sharedDir = rootPlanDir.resolve("shared");
-			Path ocrFile = sharedDir.resolve(ocrFilename);
+			Path ocrFile = rootPlanDir.resolve(ocrFilename);
 			return Files.exists(ocrFile);
 		}
 		catch (Exception e) {
@@ -356,8 +353,7 @@ public class ImageOcrProcessor {
 	private Path saveOcrResult(String content, String filename, String currentPlanId) {
 		try {
 			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path sharedDir = rootPlanDir.resolve("shared");
-			Path outputFile = sharedDir.resolve(filename);
+			Path outputFile = rootPlanDir.resolve(filename);
 
 			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
 					StandardOpenOption.TRUNCATE_EXISTING);
