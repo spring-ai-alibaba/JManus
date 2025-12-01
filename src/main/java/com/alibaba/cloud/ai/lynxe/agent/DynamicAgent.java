@@ -1027,8 +1027,9 @@ public class DynamicAgent extends ReActAgent {
 				}
 				else {
 					// It's a Map but no "output" field or output is not a string,
-					// re-serialize as-is
-					return objectMapper.writeValueAsString(jsonObject);
+					// Convert to LinkedHashMap to preserve order, then re-serialize
+					Object convertedObject = convertToLinkedHashMap(jsonObject);
+					return objectMapper.writeValueAsString(convertedObject);
 				}
 			}
 			// If the parsed object is a String, it means the input was a JSON string
@@ -1051,8 +1052,9 @@ public class DynamicAgent extends ReActAgent {
 				}
 			}
 			else {
-				// It's already a JSON object, re-serialize it
-				return objectMapper.writeValueAsString(jsonObject);
+				// It's already a JSON object, convert to LinkedHashMap to preserve order, then re-serialize
+				Object convertedObject = convertToLinkedHashMap(jsonObject);
+				return objectMapper.writeValueAsString(convertedObject);
 			}
 		}
 		catch (Exception e) {
