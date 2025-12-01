@@ -242,6 +242,8 @@ const parameterErrors = ref<Record<string, string>>({})
 const isValidationError = ref(false)
 const isExecutingPlan = ref(false) // Flag to prevent parameter reload during execution
 const lastPlanId = ref<string | null>(null) // Track last returned plan ID
+const lastRefreshTimestamp = ref<number>(0) // Track last refresh time for debouncing
+const REFRESH_DEBOUNCE_MS = 500 // Debounce time for parameter refresh
 
 // Computed property: whether to show publish MCP service button
 const showPublishButton = computed(() => {
@@ -708,8 +710,30 @@ const clearExecutionParams = () => {
   // Execution params are now managed internally, no need to emit
 }
 
+// Helper function to compare parameter lists
+const areParameterListsEqual = (params1: string[], params2: string[]): boolean => {
+  if (params1.length !== params2.length) {
+    return false
+  }
+  const sorted1 = [...params1].sort()
+  const sorted2 = [...params2].sort()
+  return sorted1.every((param, index) => param === sorted2[index])
+}
+
 // Refresh parameter requirements (called after save)
 const refreshParameterRequirements = async () => {
+  // Check if we should skip refresh due to debouncing
+  const now = Date.now()
+  if (now - lastRefreshTimestamp.value < REFRESH_DEBOUNCE_MS) {
+    console.log(
+      '[ExecutionController] ⏸️ Skipping refresh - too soon after last refresh (debounced)'
+    )
+    return
+  }
+
+  // Store current parameter list for comparison
+  const currentParams = [...parameterRequirements.value.parameters]
+
   // Add a delay to ensure the backend has processed the new template and committed the transaction
   // Also ensure selectedTemplate has been updated by templateConfig.save()
   await new Promise(resolve => setTimeout(resolve, 1500))
@@ -728,6 +752,23 @@ const refreshParameterRequirements = async () => {
 
   // Reload parameter requirements
   await loadParameterRequirements()
+
+  // Update refresh timestamp
+  lastRefreshTimestamp.value = now
+
+  // Compare old and new parameter lists
+  const newParams = [...parameterRequirements.value.parameters]
+  if (areParameterListsEqual(currentParams, newParams)) {
+    console.log(
+      '[ExecutionController] ✅ Parameter list unchanged, values preserved:',
+      JSON.stringify(parameterValues.value, null, 2)
+    )
+  } else {
+    console.log(
+      '[ExecutionController] 🔄 Parameter list changed:',
+      JSON.stringify({ old: currentParams, new: newParams }, null, 2)
+    )
+  }
 }
 
 // Load parameter requirements when plan template changes
@@ -753,6 +794,13 @@ const loadParameterRequirements = async () => {
     return
   }
 
+  // Preserve current parameter values before clearing to prevent data loss
+  const preservedValues = { ...parameterValues.value }
+  console.log(
+    '[ExecutionController] 💾 Preserved parameter values before reload:',
+    JSON.stringify(preservedValues, null, 2)
+  )
+
   // Clear previous data immediately to prevent stale data display
   parameterRequirements.value = {
     parameters: [],
@@ -773,10 +821,11 @@ const loadParameterRequirements = async () => {
 
     parameterRequirements.value = requirements
 
-    // Initialize parameter values
+    // Initialize parameter values, restoring preserved values for parameters that still exist
     const newValues: Record<string, string> = {}
     requirements.parameters.forEach(param => {
-      newValues[param] = parameterValues.value[param] || ''
+      // Restore preserved value if it exists, otherwise use empty string
+      newValues[param] = preservedValues[param] || ''
     })
     parameterValues.value = newValues
 
@@ -804,14 +853,24 @@ const loadParameterRequirements = async () => {
       hasParameters: false,
       requirements: '',
     }
-    // Clear parameter values when there's an error to prevent stale data
-    parameterValues.value = {}
+    // Restore preserved values on error to prevent data loss
+    // Only restore if we have previous requirements with matching parameters
+    const previousParams = Object.keys(preservedValues)
+    if (previousParams.length > 0) {
+      console.log(
+        '[ExecutionController] 🔄 Restoring preserved values on error:',
+        JSON.stringify(preservedValues, null, 2)
+      )
+      parameterValues.value = { ...preservedValues }
+    } else {
+      parameterValues.value = {}
+    }
     console.log(
       '[ExecutionController] 🔄 Reset parameterRequirements due to error:',
       JSON.stringify(parameterRequirements.value, null, 2)
     )
     console.log(
-      '[ExecutionController] 🔄 Cleared parameterValues:',
+      '[ExecutionController] 🔄 Restored parameterValues:',
       JSON.stringify(parameterValues.value, null, 2)
     )
   } finally {
@@ -902,6 +961,15 @@ watch(
       // Skip if currently executing
       if (isExecutingPlan.value) {
         console.log('[ExecutionController] ⏸️ Skipping parameter reload - plan is executing')
+        return
+      }
+
+      // Check debounce to prevent rapid successive refreshes
+      const now = Date.now()
+      if (now - lastRefreshTimestamp.value < REFRESH_DEBOUNCE_MS) {
+        console.log(
+          '[ExecutionController] ⏸️ Skipping parameter refresh - debounced (too soon after last refresh)'
+        )
         return
       }
 
