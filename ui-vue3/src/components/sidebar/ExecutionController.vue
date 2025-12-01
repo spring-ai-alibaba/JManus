@@ -30,33 +30,36 @@
         <!-- Show parameter fields only if there are parameters -->
         <div v-if="parameterRequirements.hasParameters" class="parameter-fields">
           <div
-            v-for="param in parameterRequirements.parameters"
+            v-for="(param, index) in parameterRequirements.parameters"
             :key="param"
             class="parameter-field"
           >
-            <div class="parameter-label-wrapper">
+            <div class="parameter-label-row">
               <label class="parameter-label">
                 {{ param }}
                 <span class="required">*</span>
               </label>
-              <!-- Parameter history navigation buttons -->
-              <div v-if="hasParameterHistory(param)" class="parameter-history-controls">
-                <button
-                  type="button"
-                  class="history-btn history-btn-up"
-                  :title="t('sidebar.historyUp')"
-                  @click="navigateParamHistory(param, 'up')"
-                >
-                  <Icon icon="carbon:chevron-up" width="12" />
-                </button>
-                <button
-                  type="button"
-                  class="history-btn history-btn-down"
-                  :title="t('sidebar.historyDown')"
-                  @click="navigateParamHistory(param, 'down')"
-                >
-                  <Icon icon="carbon:chevron-down" width="12" />
-                </button>
+              <!-- Unified parameter history navigation - only show on first parameter -->
+              <div v-if="index === 0 && hasParameterHistory()" class="parameter-history-navigation">
+                <div class="history-navigation-controls">
+                  <button
+                    type="button"
+                    class="history-btn history-btn-up"
+                    :title="t('sidebar.historyUp')"
+                    :disabled="getToolHistoryIndex() >= getHistoryCount() - 1"
+                    @click="navigateParameterSetHistory('up')"
+                  >
+                    <Icon icon="carbon:chevron-up" width="12" />
+                  </button>
+                  <button
+                    type="button"
+                    class="history-btn history-btn-down"
+                    :title="t('sidebar.historyDown')"
+                    @click="navigateParameterSetHistory('down')"
+                  >
+                    <Icon icon="carbon:chevron-down" width="12" />
+                  </button>
+                </div>
               </div>
             </div>
             <input
@@ -64,7 +67,7 @@
               class="parameter-input"
               :class="{
                 error: parameterErrors[param],
-                'viewing-history': getParamHistoryIndex(param) >= 0,
+                'viewing-history': getToolHistoryIndex() >= 0,
               }"
               :placeholder="t('sidebar.enterValueFor', { param })"
               @input="updateParameterValue(param, ($event.target as HTMLInputElement).value)"
@@ -930,8 +933,11 @@ const updateParameterValue = (paramName: string, value: string) => {
   if (parameterErrors.value[paramName]) {
     delete parameterErrors.value[paramName]
   }
-  // Reset navigation index when user manually types (viewing current, not history)
-  parameterHistoryStore.setParamHistoryIndex(paramName, -1)
+  // Reset tool-level navigation index when user manually types (viewing current, not history)
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (planTemplateId) {
+    parameterHistoryStore.setToolHistoryIndex(planTemplateId, -1)
+  }
   updateExecutionParamsFromParameters()
 }
 
@@ -997,17 +1003,20 @@ const saveParameterSetToHistory = () => {
     JSON.stringify(currentSet, null, 2)
   )
 
-  // Reset all parameter navigation indices to -1 (viewing current, not history)
-  resetParamHistoryNavigation()
+  // Reset tool-level navigation index to -1 (viewing current, not history)
+  parameterHistoryStore.resetParamHistoryNavigation(planTemplateId)
 }
 
-// Reset all parameter navigation indices
+// Reset tool navigation index
 const resetParamHistoryNavigation = () => {
-  parameterHistoryStore.resetParamHistoryNavigation()
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (planTemplateId) {
+    parameterHistoryStore.resetParamHistoryNavigation(planTemplateId)
+  }
 }
 
-// Navigate through parameter history for a specific parameter
-const navigateParamHistory = (paramName: string, direction: 'up' | 'down') => {
+// Navigate through parameter history for all parameters together
+const navigateParameterSetHistory = (direction: 'up' | 'down') => {
   const planTemplateId = templateConfig.currentPlanTemplateId.value
   if (!planTemplateId) {
     console.log('[ExecutionController] ⚠️ No planTemplateId, cannot navigate history')
@@ -1020,8 +1029,8 @@ const navigateParamHistory = (paramName: string, direction: 'up' | 'down') => {
     return
   }
 
-  // Get current navigation index for this parameter (-1 means viewing current)
-  const currentIndex = parameterHistoryStore.getParamHistoryIndex(paramName)
+  // Get current navigation index for this tool (-1 means viewing current)
+  const currentIndex = parameterHistoryStore.getToolHistoryIndex(planTemplateId)
 
   // Calculate new index based on direction
   let newIndex: number
@@ -1046,47 +1055,68 @@ const navigateParamHistory = (paramName: string, direction: 'up' | 'down') => {
       // Go to next newer entry
       newIndex = currentIndex - 1
     } else {
-      // At most recent history, go back to current (-1)
+      // At most recent history (index 0), go to empty args
       newIndex = -1
+      // Clear all parameter values
+      Object.keys(parameterValues.value).forEach(param => {
+        parameterValues.value[param] = ''
+      })
+      parameterHistoryStore.setToolHistoryIndex(planTemplateId, -1)
+      updateExecutionParamsFromParameters()
+      console.log('[ExecutionController] 📜 Cleared all parameter values')
+      return
     }
   }
 
-  // Update parameter value from history if not viewing current
+  // Update all parameter values from history if not viewing current
   if (newIndex >= 0 && newIndex < history.length) {
-    const historyValue = parameterHistoryStore.getParamValueFromHistory(
-      planTemplateId,
-      paramName,
-      newIndex
-    )
-    if (historyValue !== undefined) {
-      parameterValues.value[paramName] = historyValue
-      parameterHistoryStore.setParamHistoryIndex(paramName, newIndex)
+    const historySet = parameterHistoryStore.getParameterSetFromHistory(planTemplateId, newIndex)
+    if (historySet) {
+      // Update all parameter values from the history set
+      Object.keys(historySet).forEach(param => {
+        parameterValues.value[param] = historySet[param]
+      })
+      parameterHistoryStore.setToolHistoryIndex(planTemplateId, newIndex)
       updateExecutionParamsFromParameters()
       console.log(
-        `[ExecutionController] 📜 Navigated ${paramName} to history index ${newIndex}:`,
-        historyValue
+        `[ExecutionController] 📜 Navigated to history index ${newIndex}:`,
+        JSON.stringify(historySet, null, 2)
       )
     }
   } else if (newIndex === -1) {
-    // Reset to current value (but we don't know what "current" is, so just reset index)
-    parameterHistoryStore.setParamHistoryIndex(paramName, -1)
-    console.log(`[ExecutionController] 📜 Reset ${paramName} to current value`)
+    // Reset to current value (just reset index, values remain as user typed)
+    parameterHistoryStore.setToolHistoryIndex(planTemplateId, -1)
+    console.log('[ExecutionController] 📜 Reset to current values')
   }
 }
 
-// Check if a parameter has history available
-const hasParameterHistory = (paramName: string): boolean => {
+// Check if tool has history available
+const hasParameterHistory = (): boolean => {
   const planTemplateId = templateConfig.currentPlanTemplateId.value
   if (!planTemplateId) {
     return false
   }
 
-  return parameterHistoryStore.hasParameterHistory(planTemplateId, paramName)
+  return parameterHistoryStore.hasParameterHistory(planTemplateId)
 }
 
-// Get current history index for a parameter
-const getParamHistoryIndex = (paramName: string): number => {
-  return parameterHistoryStore.getParamHistoryIndex(paramName)
+// Get current history index for the tool
+const getToolHistoryIndex = (): number => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
+    return -1
+  }
+  return parameterHistoryStore.getToolHistoryIndex(planTemplateId)
+}
+
+// Get history count for current tool
+const getHistoryCount = (): number => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
+    return 0
+  }
+  const history = parameterHistoryStore.getHistory(planTemplateId)
+  return history ? history.length : 0
 }
 
 // Watch for changes in plan template ID
@@ -1257,7 +1287,7 @@ defineExpose({
     flex-direction: column;
     gap: 6px;
 
-    .parameter-label-wrapper {
+    .parameter-label-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -1307,6 +1337,53 @@ defineExpose({
       &.viewing-history {
         background: rgba(102, 126, 234, 0.15);
         border-color: rgba(102, 126, 234, 0.4);
+      }
+    }
+
+    .parameter-history-navigation {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+    }
+
+    .history-navigation-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+
+      .history-position {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.6);
+        min-width: 32px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .history-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+
+        &:hover:not(:disabled) {
+          background: rgba(102, 126, 234, 0.3);
+          border-color: rgba(102, 126, 234, 0.5);
+          color: rgba(255, 255, 255, 1);
+        }
+
+        &:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
       }
     }
 

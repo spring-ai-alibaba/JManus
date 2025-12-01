@@ -24,13 +24,13 @@ export class ParameterHistoryStore {
   // Stores up to 5 unique parameter sets per tool
   private parameterHistory: Map<string, Array<Record<string, string>>> = new Map()
 
-  // Navigation state: Map<paramName, historyIndex>
-  // Tracks which history index each parameter is currently viewing (-1 means viewing current, not history)
-  private paramHistoryIndices: Map<string, number> = new Map()
+  // Navigation state: Map<planTemplateId, historyIndex>
+  // Tracks which history index the tool is currently viewing (-1 means viewing current, not history)
+  private toolHistoryIndices: Map<string, number> = new Map()
 
   // LocalStorage key for persisting parameter history
   private readonly PARAMETER_HISTORY_KEY = 'parameterHistory'
-  private readonly PARAM_HISTORY_INDICES_KEY = 'paramHistoryIndices'
+  private readonly TOOL_HISTORY_INDICES_KEY = 'toolHistoryIndices'
 
   // Maximum number of parameter sets to store per tool
   readonly MAX_HISTORY_SIZE = 5
@@ -51,15 +51,23 @@ export class ParameterHistoryStore {
         const parsed = JSON.parse(savedHistory)
         // Convert array format back to Map
         this.parameterHistory = new Map(Object.entries(parsed))
-        console.log('[ParameterHistoryStore] Loaded parameter history from localStorage:', this.parameterHistory.size, 'tools')
+        console.log(
+          '[ParameterHistoryStore] Loaded parameter history from localStorage:',
+          this.parameterHistory.size,
+          'tools'
+        )
       }
 
       // Load navigation indices
-      const savedIndices = localStorage.getItem(this.PARAM_HISTORY_INDICES_KEY)
+      const savedIndices = localStorage.getItem(this.TOOL_HISTORY_INDICES_KEY)
       if (savedIndices) {
         const parsed = JSON.parse(savedIndices)
-        this.paramHistoryIndices = new Map(Object.entries(parsed))
-        console.log('[ParameterHistoryStore] Loaded parameter history indices from localStorage:', this.paramHistoryIndices.size, 'parameters')
+        this.toolHistoryIndices = new Map(Object.entries(parsed))
+        console.log(
+          '[ParameterHistoryStore] Loaded tool history indices from localStorage:',
+          this.toolHistoryIndices.size,
+          'tools'
+        )
       }
     } catch (error) {
       console.warn('[ParameterHistoryStore] Failed to load from localStorage:', error)
@@ -77,9 +85,9 @@ export class ParameterHistoryStore {
       console.log('[ParameterHistoryStore] Saved parameter history to localStorage')
 
       // Save navigation indices
-      const indicesObj = Object.fromEntries(this.paramHistoryIndices)
-      localStorage.setItem(this.PARAM_HISTORY_INDICES_KEY, JSON.stringify(indicesObj))
-      console.log('[ParameterHistoryStore] Saved parameter history indices to localStorage')
+      const indicesObj = Object.fromEntries(this.toolHistoryIndices)
+      localStorage.setItem(this.TOOL_HISTORY_INDICES_KEY, JSON.stringify(indicesObj))
+      console.log('[ParameterHistoryStore] Saved tool history indices to localStorage')
     } catch (error) {
       console.warn('[ParameterHistoryStore] Failed to save to localStorage:', error)
     }
@@ -93,15 +101,11 @@ export class ParameterHistoryStore {
   }
 
   /**
-   * Check if a parameter has history available
+   * Check if a tool has history available
    */
-  hasParameterHistory(planTemplateId: string, paramName: string): boolean {
+  hasParameterHistory(planTemplateId: string): boolean {
     const history = this.parameterHistory.get(planTemplateId)
-    if (!history || history.length === 0) {
-      return false
-    }
-    // Check if any history entry has this parameter
-    return history.some(entry => entry[paramName] !== undefined)
+    return history !== undefined && history.length > 0
   }
 
   /**
@@ -172,46 +176,49 @@ export class ParameterHistoryStore {
   }
 
   /**
-   * Get current history index for a parameter
+   * Get current history index for a tool
    */
-  getParamHistoryIndex(paramName: string): number {
-    return this.paramHistoryIndices.get(paramName) ?? -1
+  getToolHistoryIndex(planTemplateId: string): number {
+    return this.toolHistoryIndices.get(planTemplateId) ?? -1
   }
 
   /**
-   * Set history index for a parameter
+   * Set history index for a tool
    */
-  setParamHistoryIndex(paramName: string, index: number): void {
-    this.paramHistoryIndices.set(paramName, index)
+  setToolHistoryIndex(planTemplateId: string, index: number): void {
+    this.toolHistoryIndices.set(planTemplateId, index)
     // Save to localStorage
     this.saveToStorage()
   }
 
   /**
-   * Reset all parameter navigation indices
+   * Reset tool navigation index
    */
-  resetParamHistoryNavigation(): void {
-    this.paramHistoryIndices.clear()
+  resetParamHistoryNavigation(planTemplateId?: string): void {
+    if (planTemplateId) {
+      this.toolHistoryIndices.delete(planTemplateId)
+      console.log('[ParameterHistoryStore] Reset history navigation index for', planTemplateId)
+    } else {
+      this.toolHistoryIndices.clear()
+      console.log('[ParameterHistoryStore] Reset all tool history navigation indices')
+    }
     // Save to localStorage
     this.saveToStorage()
-    console.log('[ParameterHistoryStore] Reset all parameter history navigation indices')
   }
 
   /**
-   * Get parameter value from history at specific index
+   * Get complete parameter set from history at specific index
    */
-  getParamValueFromHistory(
+  getParameterSetFromHistory(
     planTemplateId: string,
-    paramName: string,
     historyIndex: number
-  ): string | undefined {
+  ): Record<string, string> | undefined {
     const history = this.parameterHistory.get(planTemplateId)
     if (!history || historyIndex < 0 || historyIndex >= history.length) {
       return undefined
     }
 
-    const historyEntry = history[historyIndex]
-    return historyEntry?.[paramName]
+    return history[historyIndex]
   }
 
   /**
@@ -229,7 +236,7 @@ export class ParameterHistoryStore {
    */
   clearAllHistory(): void {
     this.parameterHistory.clear()
-    this.paramHistoryIndices.clear()
+    this.toolHistoryIndices.clear()
     // Save to localStorage
     this.saveToStorage()
     console.log('[ParameterHistoryStore] Cleared all history')
@@ -243,18 +250,19 @@ const storeInstance = new ParameterHistoryStore()
 export const parameterHistoryStore = reactive({
   // Methods that expose store functionality
   getHistory: (planTemplateId: string) => storeInstance.getHistory(planTemplateId),
-  hasParameterHistory: (planTemplateId: string, paramName: string) =>
-    storeInstance.hasParameterHistory(planTemplateId, paramName),
+  hasParameterHistory: (planTemplateId: string) =>
+    storeInstance.hasParameterHistory(planTemplateId),
   saveParameterSet: (planTemplateId: string, paramSet: Record<string, string>) =>
     storeInstance.saveParameterSet(planTemplateId, paramSet),
-  getParamHistoryIndex: (paramName: string) => storeInstance.getParamHistoryIndex(paramName),
-  setParamHistoryIndex: (paramName: string, index: number) =>
-    storeInstance.setParamHistoryIndex(paramName, index),
-  resetParamHistoryNavigation: () => storeInstance.resetParamHistoryNavigation(),
-  getParamValueFromHistory: (planTemplateId: string, paramName: string, historyIndex: number) =>
-    storeInstance.getParamValueFromHistory(planTemplateId, paramName, historyIndex),
+  getToolHistoryIndex: (planTemplateId: string) =>
+    storeInstance.getToolHistoryIndex(planTemplateId),
+  setToolHistoryIndex: (planTemplateId: string, index: number) =>
+    storeInstance.setToolHistoryIndex(planTemplateId, index),
+  resetParamHistoryNavigation: (planTemplateId?: string) =>
+    storeInstance.resetParamHistoryNavigation(planTemplateId),
+  getParameterSetFromHistory: (planTemplateId: string, historyIndex: number) =>
+    storeInstance.getParameterSetFromHistory(planTemplateId, historyIndex),
   clearHistory: (planTemplateId: string) => storeInstance.clearHistory(planTemplateId),
   clearAllHistory: () => storeInstance.clearAllHistory(),
   MAX_HISTORY_SIZE: storeInstance.MAX_HISTORY_SIZE,
 })
-
