@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +70,7 @@ import com.alibaba.cloud.ai.lynxe.tool.TerminateTool;
 import com.alibaba.cloud.ai.lynxe.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.workspace.conversation.service.MemoryService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.micrometer.common.util.StringUtils;
@@ -934,6 +936,38 @@ public class DynamicAgent extends ReActAgent {
 	}
 
 	/**
+	 * Recursively convert HashMap to LinkedHashMap to preserve insertion order
+	 * @param obj The object that may contain HashMaps
+	 * @return Object with all HashMaps converted to LinkedHashMaps
+	 */
+	private Object convertToLinkedHashMap(Object obj) {
+		if (obj == null) {
+			return null;
+		}
+
+		if (obj instanceof Map<?, ?> map) {
+			// Convert HashMap to LinkedHashMap
+			Map<String, Object> linkedMap = new LinkedHashMap<>();
+			for (Map.Entry<?, ?> entry : map.entrySet()) {
+				if (entry.getKey() instanceof String key) {
+					linkedMap.put(key, convertToLinkedHashMap(entry.getValue()));
+				}
+			}
+			return linkedMap;
+		}
+		else if (obj instanceof List<?> list) {
+			// Recursively process list items
+			List<Object> linkedList = new ArrayList<>();
+			for (Object item : list) {
+				linkedList.add(convertToLinkedHashMap(item));
+			}
+			return linkedList;
+		}
+
+		return obj;
+	}
+
+	/**
 	 * Process tool result to remove escaped JSON if it's a valid JSON string. This fixes
 	 * the issue where DefaultToolCallingManager returns escaped JSON strings.
 	 * @param result The raw tool result string
@@ -947,8 +981,17 @@ public class DynamicAgent extends ReActAgent {
 		// Try to parse and re-serialize if it's a valid JSON string
 		// This removes escaping that might have been added by DefaultToolCallingManager
 		try {
-			// First, try to parse as JSON object
-			Object jsonObject = objectMapper.readValue(result, Object.class);
+			// First, try to parse as JSON object using LinkedHashMap to preserve order
+			// Try as Map first, if it fails, fall back to Object.class
+			Object jsonObject;
+			try {
+				jsonObject = objectMapper.readValue(result, new TypeReference<LinkedHashMap<String, Object>>() {
+				});
+			}
+			catch (Exception e) {
+				// If parsing as Map fails, try as generic Object
+				jsonObject = objectMapper.readValue(result, Object.class);
+			}
 
 			// Check if it's a Map with "output" field (from DefaultToolCallingManager
 			// format)
@@ -957,11 +1000,17 @@ public class DynamicAgent extends ReActAgent {
 				if (outputValue instanceof String outputString) {
 					// The output field contains an escaped JSON string, parse it
 					try {
-						Object innerJsonObject = objectMapper.readValue(outputString, Object.class);
+						// Use TypeReference with LinkedHashMap to preserve property order
+						Object innerJsonObject = objectMapper.readValue(outputString,
+								new TypeReference<LinkedHashMap<String, Object>>() {
+								});
+						// Recursively convert any nested HashMaps to LinkedHashMaps
+						innerJsonObject = convertToLinkedHashMap(innerJsonObject);
 						// Create a new map with the parsed inner JSON object, preserving
 						// the "output" field
-						Map<String, Object> resultMap = new HashMap<>();
-						// Copy all entries from the original map
+						// Use LinkedHashMap to preserve insertion order
+						Map<String, Object> resultMap = new LinkedHashMap<>();
+						// Copy all entries from the original map (preserve order if it's already LinkedHashMap)
 						for (Map.Entry<?, ?> entry : map.entrySet()) {
 							if (entry.getKey() instanceof String key) {
 								resultMap.put(key, entry.getValue());
@@ -987,7 +1036,12 @@ public class DynamicAgent extends ReActAgent {
 			else if (jsonObject instanceof String jsonString) {
 				// Try to parse the inner JSON string
 				try {
-					Object innerJsonObject = objectMapper.readValue(jsonString, Object.class);
+					// Use TypeReference with LinkedHashMap to preserve property order
+					Object innerJsonObject = objectMapper.readValue(jsonString,
+							new TypeReference<LinkedHashMap<String, Object>>() {
+							});
+					// Recursively convert any nested HashMaps to LinkedHashMaps
+					innerJsonObject = convertToLinkedHashMap(innerJsonObject);
 					// Re-serialize the inner JSON object
 					return objectMapper.writeValueAsString(innerJsonObject);
 				}
