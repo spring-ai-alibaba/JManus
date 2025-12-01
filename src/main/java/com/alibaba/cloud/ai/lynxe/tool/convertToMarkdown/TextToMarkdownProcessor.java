@@ -15,16 +15,16 @@
  */
 package com.alibaba.cloud.ai.lynxe.tool.convertToMarkdown;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 
 /**
  * Text to Markdown Processor
@@ -106,8 +106,8 @@ public class TextToMarkdownProcessor {
 	private boolean markdownFileExists(String currentPlanId, String markdownFilename) {
 		try {
 			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path sharedDir = rootPlanDir.resolve("shared");
-			Path markdownFile = sharedDir.resolve(markdownFilename);
+			Path targetDir = rootPlanDir;
+			Path markdownFile = rootPlanDir.resolve(markdownFilename);
 			return Files.exists(markdownFile);
 		}
 		catch (Exception e) {
@@ -381,8 +381,8 @@ public class TextToMarkdownProcessor {
 	private Path saveMarkdownFile(String content, String filename, String currentPlanId) {
 		try {
 			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path sharedDir = rootPlanDir.resolve("shared");
-			Path outputFile = sharedDir.resolve(filename);
+			Path targetDir = rootPlanDir;
+			Path outputFile = rootPlanDir.resolve(filename);
 
 			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
 					StandardOpenOption.TRUNCATE_EXISTING);

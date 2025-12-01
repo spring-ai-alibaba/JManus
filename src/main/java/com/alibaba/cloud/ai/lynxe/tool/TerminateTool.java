@@ -16,6 +16,7 @@
 package com.alibaba.cloud.ai.lynxe.tool;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -278,7 +279,8 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 			}
 		}
 
-		Map<String, Object> result = new java.util.HashMap<>();
+		// Use LinkedHashMap to preserve insertion order
+		Map<String, Object> result = new LinkedHashMap<>();
 		for (Map.Entry<String, Object> entry : input.entrySet()) {
 			Object value = entry.getValue();
 			Object processedValue = replaceShortUrlsInValue(value);
@@ -328,8 +330,11 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 		// properly
 		// by Jackson when included in other JSON objects
 		try {
+			// Convert input Map to LinkedHashMap recursively to preserve property order
+			// This ensures nested objects (e.g., in arrays) also preserve order
+			Object orderedInput = convertToLinkedHashMap(input);
 			// Note: NON_EMPTY is set by default, so we don't need to set it twice
-			String jsonString = objectMapper.writeValueAsString(input);
+			String jsonString = objectMapper.writeValueAsString(orderedInput);
 			// Return the JSON string - when this is later serialized as a field value,
 			// Jackson will properly escape it, but we want it to be stored as JSON object
 			// not as escaped string, so we return it directly
@@ -340,6 +345,41 @@ public class TerminateTool extends AbstractBaseTool<Map<String, Object>> impleme
 			// Fallback to simple string representation
 			return input.toString();
 		}
+	}
+
+	/**
+	 * Recursively convert HashMap to LinkedHashMap to preserve insertion order
+	 * @param obj The object that may contain HashMaps
+	 * @return Object with all HashMaps converted to LinkedHashMaps
+	 */
+	private Object convertToLinkedHashMap(Object obj) {
+		if (obj == null) {
+			return null;
+		}
+
+		if (obj instanceof Map<?, ?> map) {
+			// Convert HashMap to LinkedHashMap, preserving entry order
+			// Use LinkedHashMap to maintain insertion order from the original map
+			Map<String, Object> linkedMap = new LinkedHashMap<>();
+			// Iterate over entries - if input is LinkedHashMap, order is preserved
+			// If input is HashMap, we preserve whatever order iteration gives us
+			for (Map.Entry<?, ?> entry : map.entrySet()) {
+				if (entry.getKey() instanceof String key) {
+					linkedMap.put(key, convertToLinkedHashMap(entry.getValue()));
+				}
+			}
+			return linkedMap;
+		}
+		else if (obj instanceof List<?> list) {
+			// Recursively process list items
+			List<Object> linkedList = new ArrayList<>();
+			for (Object item : list) {
+				linkedList.add(convertToLinkedHashMap(item));
+			}
+			return linkedList;
+		}
+
+		return obj;
 	}
 
 	@Override

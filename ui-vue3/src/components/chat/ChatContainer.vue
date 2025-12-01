@@ -272,10 +272,14 @@ const handleUserInputSubmit = (message: ChatMessageType, inputData: Record<strin
 onMounted(() => {
   // Initial prompt processing removed - handled by parent component
 
-  // Auto-scroll to bottom when new messages are added
+  // Auto-scroll to bottom when new messages are added (but not during streaming updates)
   watch(
     messages,
     () => {
+      // Don't auto-scroll during incremental streaming updates
+      if (streamingMessageId.value) {
+        return
+      }
       nextTick(() => {
         autoScrollToBottom()
       })

@@ -71,4 +71,8 @@ export interface PlanExecutionRequestPayload {
   uploadedFiles?: string[] | undefined
   /** Optional upload session key */
   uploadKey?: string | null | undefined
+  /** Tool name (from template.title) for API execution */
+  toolName?: string | undefined
+  /** Service group (from template.serviceGroup) for API execution */
+  serviceGroup?: string | undefined
 }

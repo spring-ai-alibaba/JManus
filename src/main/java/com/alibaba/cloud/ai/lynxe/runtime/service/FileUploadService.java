@@ -394,8 +394,8 @@ public class FileUploadService {
 	/**
 	 * Synchronize uploaded files from upload directory to plan execution directory This
 	 * method copies files from upload_files/uploadKey to
-	 * extensions/inner_storage/rootPlanId/shared/ Files are stored in the shared
-	 * directory so they can be accessed by GlobalFileOperator
+	 * extensions/inner_storage/rootPlanId/ Files are stored in the root plan directory so
+	 * they can be accessed by GlobalFileOperator
 	 * @param uploadKey The upload key for the uploaded files
 	 * @param rootPlanId The root plan ID for the target directory
 	 * @return List of synchronized file information
@@ -417,11 +417,11 @@ public class FileUploadService {
 			return new ArrayList<>();
 		}
 
-		// Get target directory (extensions/inner_storage/rootPlanId/shared/)
-		// Files are synced to shared directory so they can be accessed by
+		// Get target directory (extensions/inner_storage/rootPlanId/)
+		// Files are synced to root plan directory so they can be accessed by
 		// GlobalFileOperator
 		Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
-		Path targetDirectory = rootPlanDirectory.resolve("shared");
+		Path targetDirectory = rootPlanDirectory;
 
 		// Ensure target directory exists
 		directoryManager.ensureDirectoryExists(targetDirectory);
@@ -544,12 +544,12 @@ public class FileUploadService {
 			throw new IllegalArgumentException("Root plan ID cannot be null or empty");
 		}
 
-		// Get files from shared directory where they are synced
+		// Get files from root plan directory where they are synced
 		Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
-		Path planDirectory = rootPlanDirectory.resolve("shared");
+		Path planDirectory = rootPlanDirectory;
 
 		if (!Files.exists(planDirectory)) {
-			logger.info("Shared directory not found for rootPlanId: {}", rootPlanId);
+			logger.info("Root plan directory not found for rootPlanId: {}", rootPlanId);
 			return new ArrayList<>();
 		}
 

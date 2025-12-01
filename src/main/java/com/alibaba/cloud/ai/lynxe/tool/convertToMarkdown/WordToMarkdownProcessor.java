@@ -142,8 +142,7 @@ public class WordToMarkdownProcessor {
 	private boolean markdownFileExists(String currentPlanId, String markdownFilename) {
 		try {
 			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path sharedDir = rootPlanDir.resolve("shared");
-			Path markdownFile = sharedDir.resolve(markdownFilename);
+			Path markdownFile = rootPlanDir.resolve(markdownFilename);
 			return Files.exists(markdownFile);
 		}
 		catch (Exception e) {
@@ -170,8 +169,7 @@ public class WordToMarkdownProcessor {
 	private Path createImageFolder(String currentPlanId, String imageFolderName) {
 		try {
 			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path sharedDir = rootPlanDir.resolve("shared");
-			Path imageFolder = sharedDir.resolve(imageFolderName);
+			Path imageFolder = rootPlanDir.resolve(imageFolderName);
 			Files.createDirectories(imageFolder);
 			return imageFolder;
 		}
@@ -373,8 +371,7 @@ public class WordToMarkdownProcessor {
 	private Path saveMarkdownFile(String content, String filename, String currentPlanId) {
 		try {
 			Path rootPlanDir = directoryManager.getRootPlanDirectory(currentPlanId);
-			Path sharedDir = rootPlanDir.resolve("shared");
-			Path outputFile = sharedDir.resolve(filename);
+			Path outputFile = rootPlanDir.resolve(filename);
 
 			Files.write(outputFile, content.getBytes("UTF-8"), StandardOpenOption.CREATE,
 					StandardOpenOption.TRUNCATE_EXISTING);

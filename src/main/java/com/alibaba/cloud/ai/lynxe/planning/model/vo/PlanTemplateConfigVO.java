@@ -274,7 +274,7 @@ public class PlanTemplateConfigVO {
 
 		private Boolean enableHttpService;
 
-		private Boolean enableMcpService;
+		private Boolean enableInConversation;
 
 		private String publishStatus;
 
@@ -284,9 +284,9 @@ public class PlanTemplateConfigVO {
 		 * Default constructor
 		 */
 		public ToolConfigVO() {
-			this.enableInternalToolcall = false;
+			this.enableInternalToolcall = true;
 			this.enableHttpService = false;
-			this.enableMcpService = false;
+			this.enableInConversation = false;
 			this.publishStatus = "PUBLISHED";
 			this.inputSchema = new ArrayList<>();
 		}
@@ -317,12 +317,12 @@ public class PlanTemplateConfigVO {
 			this.enableHttpService = enableHttpService;
 		}
 
-		public Boolean getEnableMcpService() {
-			return enableMcpService;
+		public Boolean getEnableInConversation() {
+			return enableInConversation;
 		}
 
-		public void setEnableMcpService(Boolean enableMcpService) {
-			this.enableMcpService = enableMcpService;
+		public void setEnableInConversation(Boolean enableInConversation) {
+			this.enableInConversation = enableInConversation;
 		}
 
 		public String getPublishStatus() {
@@ -344,8 +344,8 @@ public class PlanTemplateConfigVO {
 		@Override
 		public String toString() {
 			return "ToolConfigVO{" + "toolDescription='" + toolDescription + '\'' + ", enableInternalToolcall="
-					+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableMcpService="
-					+ enableMcpService + ", publishStatus='" + publishStatus + '\'' + ", inputSchema=" + inputSchema
+					+ enableInternalToolcall + ", enableHttpService=" + enableHttpService + ", enableInConversation="
+					+ enableInConversation + ", publishStatus='" + publishStatus + '\'' + ", inputSchema=" + inputSchema
 					+ '}';
 		}
 

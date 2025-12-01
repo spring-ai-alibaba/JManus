@@ -24,7 +24,8 @@ export class PlanActApiService {
 
   // Execute generated plan using LynxeController.executeByToolNameAsync
   public static async executePlan(
-    planTemplateId: string,
+    toolName: string,
+    serviceGroup: string | undefined,
     rawParam?: string,
     uploadedFiles?: string[],
     replacementParams?: Record<string, string>,
@@ -33,7 +34,8 @@ export class PlanActApiService {
   ): Promise<unknown> {
     return LlmCheckService.withLlmCheck(async () => {
       console.log('[PlanActApiService] executePlan called with:', {
-        planTemplateId,
+        toolName,
+        serviceGroup,
         rawParam,
         uploadedFiles,
         replacementParams,
@@ -52,11 +54,12 @@ export class PlanActApiService {
 
       // Use the unified DirectApiService method (default to VUE_SIDEBAR for plan execution)
       return await DirectApiService.executeByToolName(
-        planTemplateId,
+        toolName,
         replacementParams,
         uploadedFiles,
         uploadKey,
-        requestSource
+        requestSource,
+        serviceGroup
       )
     })
   }

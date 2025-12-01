@@ -6,10 +6,10 @@ description: |
   Supports image files (.jpg, .jpeg, .png, .gif) using OCR processing to extract text content.
   Supports text files (.txt, .md, .json, .xml, .yaml, .yml, .log, .java, .py, .js, .html, .css)
   with type-specific formatting.
-  The converted file will be saved with .md extension in the root plan shared directory (rootPlanId/shared/).
+  The converted file will be saved with .md extension in the root plan directory (rootPlanId/).
   Additional requirements can be specified for custom conversion needs.
   **Best Practice**: Always convert complex documents to Markdown first for better content analysis and processing.
 
 parameters: |
-  {"type":"object","properties":{"filename":{"type":"string","description":"Name of the file to convert to Markdown (must exist in root plan shared directory, rootPlanId/shared/)"},"additionalRequirement":{"type":"string","description":"Optional additional requirements for conversion (e.g., specific formatting, structure)"},"forceLlmForPdf":{"type":"boolean","description":"Optional flag to force using LLM/OCR for PDF processing instead of auto-detection. Only applies to PDF files.","default":false}},"required":["filename"]}
+  {"type":"object","properties":{"filename":{"type":"string","description":"Name of the file to convert to Markdown"},"additionalRequirement":{"type":"string","description":"Optional additional requirements for conversion (e.g., specific formatting, structure)"},"forceLlmForPdf":{"type":"boolean","description":"Optional flag to force using LLM/OCR for PDF processing instead of auto-detection. Only applies to PDF files.","default":false}},"required":["filename"]}
 

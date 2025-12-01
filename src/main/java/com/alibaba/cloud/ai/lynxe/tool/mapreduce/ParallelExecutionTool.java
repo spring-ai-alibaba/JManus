@@ -28,9 +28,9 @@ import org.springframework.ai.chat.model.ToolContext;
 import com.alibaba.cloud.ai.lynxe.planning.PlanningFactory.ToolCallBackContext;
 import com.alibaba.cloud.ai.lynxe.runtime.executor.LevelBasedExecutorPool;
 import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
+import com.alibaba.cloud.ai.lynxe.runtime.service.ServiceGroupIndexService;
 import com.alibaba.cloud.ai.lynxe.tool.AbstractBaseTool;
 import com.alibaba.cloud.ai.lynxe.tool.AsyncToolCallBiFunctionDef;
-import com.alibaba.cloud.ai.lynxe.tool.ToolCallBiFunctionDef;
 import com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult;
 import com.alibaba.cloud.ai.lynxe.tool.i18n.ToolI18nService;
 import com.alibaba.cloud.ai.lynxe.tool.mapreduce.ParallelExecutionTool.RegisterBatchInput;
@@ -57,7 +57,11 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 
 	private final PlanIdDispatcher planIdDispatcher;
 
+	// levelBasedExecutorPool is now handled by ParallelExecutionService
+	@SuppressWarnings("unused")
 	private final LevelBasedExecutorPool levelBasedExecutorPool;
+
+	private final ParallelExecutionService parallelExecutionService;
 
 	/**
 	 * Registry entry for a function
@@ -148,12 +152,14 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 
 	public ParallelExecutionTool(ObjectMapper objectMapper, Map<String, ToolCallBackContext> toolCallbackMap,
 			PlanIdDispatcher planIdDispatcher, LevelBasedExecutorPool levelBasedExecutorPool,
-			ToolI18nService toolI18nService) {
+			ToolI18nService toolI18nService, ServiceGroupIndexService serviceGroupIndexService,
+			ParallelExecutionService parallelExecutionService) {
 		this.objectMapper = objectMapper;
 		this.toolCallbackMap = toolCallbackMap;
 		this.planIdDispatcher = planIdDispatcher;
 		this.levelBasedExecutorPool = levelBasedExecutorPool;
 		this.toolI18nService = toolI18nService;
+		this.parallelExecutionService = parallelExecutionService;
 	}
 
 	/**
@@ -309,10 +315,10 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 	}
 
 	/**
-	 * Execute registered functions in parallel (following DefaultToolCallingManager
-	 * pattern) Asynchronous version - does NOT block on .join() Returns CompletableFuture
-	 * instead of blocking for results. This prevents thread pool starvation in nested
-	 * parallel execution scenarios.
+	 * Execute registered functions in parallel using ParallelExecutionService
+	 * Asynchronous version - does NOT block on .join() Returns CompletableFuture instead
+	 * of blocking for results. This prevents thread pool starvation in nested parallel
+	 * execution scenarios.
 	 * @param parentToolContext Tool execution context
 	 * @return CompletableFuture that completes with the execution result
 	 */
@@ -322,307 +328,101 @@ public class ParallelExecutionTool extends AbstractBaseTool<RegisterBatchInput>
 				return CompletableFuture.completedFuture(new ToolExecuteResult("No functions registered"));
 			}
 
-			List<CompletableFuture<Void>> futures = new ArrayList<>();
-			int executedCount = 0;
+			// Collect pending functions and create execution requests
+			List<FunctionRegistry> pendingFunctions = new ArrayList<>();
+			List<ParallelExecutionService.ParallelExecutionRequest> executions = new ArrayList<>();
 
-			// Extract parent toolCallId from the context if available (propagate to
-			// sub-calls)
-			String parentToolCallId = null;
-			try {
-				if (parentToolContext != null && parentToolContext.getContext() != null) {
-					Object v = parentToolContext.getContext().get("toolcallId");
-					if (v != null) {
-						parentToolCallId = String.valueOf(v);
-						logger.debug("Using parent toolCallId from context: {} (async)", parentToolCallId);
-					}
-				}
-			}
-			catch (Exception ignore) {
-				// ignore extraction errors, we'll fallback to generated IDs per call
-			}
-
-			// Execute all pending functions in parallel
 			for (FunctionRegistry function : functionRegistries) {
 				// A function is pending if it has no result yet
 				if (function.getResult() != null) {
 					continue; // Skip already executed functions
 				}
 
+				// Check if tool exists before adding to execution list
 				String toolName = function.getToolName();
-				ToolCallBackContext toolContext = toolCallbackMap.get(toolName);
+				ToolCallBackContext toolContext = parallelExecutionService.lookupToolContext(toolName, toolCallbackMap);
 
 				if (toolContext == null) {
 					logger.warn("Tool not found in callback map: {} (async)", toolName);
 					function.setResult(new ToolExecuteResult("Tool not found: " + toolName));
-					executedCount++;
 					continue;
 				}
 
-				ToolCallBiFunctionDef<?> functionInstance = toolContext.getFunctionInstance();
-				Map<String, Object> input = function.getInput();
-
-				// Use parent toolCallId if present so sub-plans can link via hierarchy;
-				// otherwise generate a new one for this call
-				String toolCallId = (parentToolCallId != null) ? parentToolCallId
-						: planIdDispatcher.generateToolCallId();
-				// Propagate planDepth if present in parent ToolContext
-				Integer tmpDepth = null;
-				try {
-					if (parentToolContext != null && parentToolContext.getContext() != null) {
-						Object d = parentToolContext.getContext().get("planDepth");
-						if (d instanceof Number) {
-							tmpDepth = ((Number) d).intValue();
-						}
-						else if (d instanceof String) {
-							tmpDepth = Integer.parseInt((String) d);
-						}
-					}
-				}
-				catch (Exception ignore) {
-				}
-				final Integer propagatedPlanDepth = tmpDepth;
-				executedCount++;
-
-				// Determine the depth level for executor pool selection (default to 0)
-				final int depthLevel = (propagatedPlanDepth != null) ? propagatedPlanDepth : 0;
-
-				// Check if the tool supports async execution to avoid nested blocking
-				boolean isAsyncTool = functionInstance instanceof AsyncToolCallBiFunctionDef;
-
-				// Execute the function asynchronously using level-based executor if
-				// available
-				CompletableFuture<Void> future;
-				if (levelBasedExecutorPool != null) {
-					// Use level-based executor pool
-					if (isAsyncTool) {
-						// For async tools, call applyAsync directly in a non-blocking way
-						logger.debug("Executing async-capable function: {} at depth level: {}", toolName, depthLevel);
-
-						// Get the expected input type for this tool
-						Class<?> inputType = functionInstance.getInputType();
-
-						// Convert Map<String, Object> to the expected input type
-						Object convertedInput;
-						try {
-							if (inputType == Map.class || Map.class.isAssignableFrom(inputType)) {
-								convertedInput = input;
-							}
-							else {
-								convertedInput = objectMapper.convertValue(input, inputType);
-							}
-						}
-						catch (Exception e) {
-							logger.error("Error converting input for async function {} at depth level {}: {}", toolName,
-									depthLevel, e.getMessage(), e);
-							function.setResult(new ToolExecuteResult("Error: " + e.getMessage()));
-							future = CompletableFuture.completedFuture(null);
-							futures.add(future);
-							continue;
-						}
-
-						// Call applyAsync for async tools - this returns a future that
-						// resolves without blocking
-						@SuppressWarnings("unchecked")
-						AsyncToolCallBiFunctionDef<Object> asyncTool = (AsyncToolCallBiFunctionDef<Object>) functionInstance;
-						ToolContext context = new ToolContext(
-								propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
-										: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth));
-
-						// Convert the result future to Void future for consistency
-						future = asyncTool.applyAsync(convertedInput, context).thenAccept(result -> {
-							function.setResult(result);
-							logger.debug("Completed async execution for function: {} at depth level: {}", toolName,
-									depthLevel);
-						}).exceptionally(e -> {
-							logger.error("Error executing async function {} at depth level {}: {}", toolName,
-									depthLevel, e.getMessage(), e);
-							function.setResult(new ToolExecuteResult("Error: " + e.getMessage()));
-							return null;
-						});
-					}
-					else {
-						// For sync tools, use submitTask as before
-						future = levelBasedExecutorPool.submitTask(depthLevel, () -> {
-							try {
-								logger.debug("Executing function: {} at depth level: {} (async mode)", toolName,
-										depthLevel);
-
-								// Get the expected input type for this tool
-								Class<?> inputType = functionInstance.getInputType();
-
-								// Convert Map<String, Object> to the expected input type
-								Object convertedInput;
-								if (inputType == Map.class || Map.class.isAssignableFrom(inputType)) {
-									// Tool accepts Map directly, no conversion needed
-									convertedInput = input;
-								}
-								else {
-									// Convert Map to the target type using ObjectMapper
-									convertedInput = objectMapper.convertValue(input, inputType);
-								}
-
-								// Call the function using apply method with toolCallId in
-								// ToolContext
-								// Use unchecked cast since we've converted to the correct
-								// type
-								@SuppressWarnings("unchecked")
-								ToolExecuteResult result = ((ToolCallBiFunctionDef<Object>) functionInstance).apply(
-										convertedInput,
-										new ToolContext(propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
-												: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth)));
-
-								function.setResult(result);
-								logger.debug("Completed execution for function: {} at depth level: {} (async mode)",
-										toolName, depthLevel);
-							}
-							catch (Exception e) {
-								logger.error("Error executing function {} at depth level {} (async): {}", toolName,
-										depthLevel, e.getMessage(), e);
-								function.setResult(new ToolExecuteResult("Error: " + e.getMessage()));
-							}
-						});
-					}
-				}
-				else {
-					// Fallback to default ForkJoinPool if level-based executor is not
-					// available
-					if (isAsyncTool) {
-						// For async tools, call applyAsync directly
-						logger.debug("Executing async-capable function: {} (using default executor)", toolName);
-
-						// Get the expected input type for this tool
-						Class<?> inputType = functionInstance.getInputType();
-
-						// Convert Map<String, Object> to the expected input type
-						Object convertedInput;
-						try {
-							if (inputType == Map.class || Map.class.isAssignableFrom(inputType)) {
-								convertedInput = input;
-							}
-							else {
-								convertedInput = objectMapper.convertValue(input, inputType);
-							}
-						}
-						catch (Exception e) {
-							logger.error("Error converting input for async function {}: {}", toolName, e.getMessage(),
-									e);
-							function.setResult(new ToolExecuteResult("Error: " + e.getMessage()));
-							future = CompletableFuture.completedFuture(null);
-							futures.add(future);
-							continue;
-						}
-
-						// Call applyAsync for async tools - no blocking
-						@SuppressWarnings("unchecked")
-						AsyncToolCallBiFunctionDef<Object> asyncTool = (AsyncToolCallBiFunctionDef<Object>) functionInstance;
-						ToolContext context = new ToolContext(
-								propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
-										: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth));
-
-						// Convert to Void future for consistency
-						future = asyncTool.applyAsync(convertedInput, context).thenAccept(result -> {
-							function.setResult(result);
-							logger.debug("Completed async execution for function: {}", toolName);
-						}).exceptionally(e -> {
-							logger.error("Error executing async function {}: {}", toolName, e.getMessage(), e);
-							function.setResult(new ToolExecuteResult("Error: " + e.getMessage()));
-							return null;
-						});
-					}
-					else {
-						// For sync tools, use runAsync as before
-						future = CompletableFuture.runAsync(() -> {
-							try {
-								logger.debug("Executing function: {} (using default executor, async mode)", toolName);
-
-								// Get the expected input type for this tool
-								Class<?> inputType = functionInstance.getInputType();
-
-								// Convert Map<String, Object> to the expected input type
-								Object convertedInput;
-								if (inputType == Map.class || Map.class.isAssignableFrom(inputType)) {
-									// Tool accepts Map directly, no conversion needed
-									convertedInput = input;
-								}
-								else {
-									// Convert Map to the target type using ObjectMapper
-									convertedInput = objectMapper.convertValue(input, inputType);
-								}
-
-								// Call the function using apply method with toolCallId in
-								// ToolContext
-								// Use unchecked cast since we've converted to the correct
-								// type
-								@SuppressWarnings("unchecked")
-								ToolExecuteResult result = ((ToolCallBiFunctionDef<Object>) functionInstance).apply(
-										convertedInput,
-										new ToolContext(propagatedPlanDepth == null ? Map.of("toolcallId", toolCallId)
-												: Map.of("toolcallId", toolCallId, "planDepth", propagatedPlanDepth)));
-
-								function.setResult(result);
-								logger.debug("Completed execution for function: {} (async mode)", toolName);
-							}
-							catch (Exception e) {
-								logger.error("Error executing function {} (async): {}", toolName, e.getMessage(), e);
-								function.setResult(new ToolExecuteResult("Error: " + e.getMessage()));
-							}
-						});
-					}
-				}
-
-				futures.add(future);
+				// Add to pending list and create execution request
+				pendingFunctions.add(function);
+				executions.add(new ParallelExecutionService.ParallelExecutionRequest(toolName, function.getInput()));
 			}
 
-			if (futures.isEmpty()) {
+			if (executions.isEmpty()) {
 				return CompletableFuture.completedFuture(new ToolExecuteResult("No pending functions to execute"));
 			}
 
-			final int finalExecutedCount = executedCount;
+			// Use ParallelExecutionService to execute all tools in parallel
+			return parallelExecutionService.executeToolsInParallel(executions, toolCallbackMap, parentToolContext)
+				.thenApply(results -> {
+					// Map results back to FunctionRegistry objects
+					for (int i = 0; i < pendingFunctions.size() && i < results.size(); i++) {
+						FunctionRegistry function = pendingFunctions.get(i);
+						Map<String, Object> result = results.get(i);
 
-			// ✅ KEY CHANGE: Use thenApply instead of .join() to avoid blocking!
-			return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).thenApply(v -> {
-				// This lambda executes AFTER all futures complete (callback)
-				// Collect results with richer details, using unique id instead of
-				// toolName/input
-				List<Map<String, Object>> results = new ArrayList<>();
-				for (FunctionRegistry function : functionRegistries) {
-					if (function.getResult() != null) {
-						Map<String, Object> item = new HashMap<>();
-						item.put("id", function.getId());
-						item.put("status", "COMPLETED");
-						String output = null;
-						try {
-							output = function.getResult().getOutput();
+						String status = (String) result.get("status");
+						if ("SUCCESS".equals(status)) {
+							Object outputObj = result.get("output");
+							String output = outputObj != null ? outputObj.toString() : "No output";
 							// Remove excessive escaping from JSON strings
 							if (output != null) {
 								output = output.replace("\\\"", "\"").replace("\\\\", "\\");
 							}
+							function.setResult(new ToolExecuteResult(output));
 						}
-						catch (Exception ignore) {
+						else {
+							Object errorObj = result.get("error");
+							String error = errorObj != null ? errorObj.toString() : "Unknown error";
+							function.setResult(new ToolExecuteResult("Error: " + error));
 						}
-						if (output == null) {
-							output = "No output";
-						}
-						item.put("output", output);
-						results.add(item);
 					}
-				}
 
-				Map<String, Object> result = new HashMap<>();
-				result.put("results", results);
-				result.put("message", "Successfully executed " + finalExecutedCount + " functions");
-				try {
-					return new ToolExecuteResult(objectMapper.writeValueAsString(result));
-				}
-				catch (JsonProcessingException e) {
-					logger.error("Error serializing result (async): {}", e.getMessage(), e);
-					return new ToolExecuteResult("Successfully executed " + finalExecutedCount + " functions");
-				}
-			}).exceptionally(ex -> {
-				// Handle any exceptions that occur during execution
-				logger.error("Error in async execution: {}", ex.getMessage(), ex);
-				return new ToolExecuteResult("Error starting execution: " + ex.getMessage());
-			});
+					// Build result with function IDs
+					List<Map<String, Object>> resultList = new ArrayList<>();
+					for (FunctionRegistry function : functionRegistries) {
+						if (function.getResult() != null) {
+							Map<String, Object> item = new HashMap<>();
+							item.put("id", function.getId());
+							item.put("status", "COMPLETED");
+							String output = null;
+							try {
+								output = function.getResult().getOutput();
+								// Remove excessive escaping from JSON strings
+								if (output != null) {
+									output = output.replace("\\\"", "\"").replace("\\\\", "\\");
+								}
+							}
+							catch (Exception ignore) {
+							}
+							if (output == null) {
+								output = "No output";
+							}
+							item.put("output", output);
+							resultList.add(item);
+						}
+					}
+
+					Map<String, Object> finalResult = new HashMap<>();
+					finalResult.put("results", resultList);
+					finalResult.put("message", "Successfully executed " + executions.size() + " functions");
+					try {
+						return new ToolExecuteResult(objectMapper.writeValueAsString(finalResult));
+					}
+					catch (JsonProcessingException e) {
+						logger.error("Error serializing result (async): {}", e.getMessage(), e);
+						return new ToolExecuteResult("Successfully executed " + executions.size() + " functions");
+					}
+				})
+				.exceptionally(ex -> {
+					// Handle any exceptions that occur during execution
+					logger.error("Error in async execution: {}", ex.getMessage(), ex);
+					return new ToolExecuteResult("Error starting execution: " + ex.getMessage());
+				});
 		}
 		catch (Exception e) {
 			logger.error("Error starting async execution: {}", e.getMessage(), e);

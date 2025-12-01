@@ -227,22 +227,20 @@ public class ExecuteSqlToJsonFileAction extends AbstractDatabaseAction {
 						+ "\nError: rootPlanId is required for saving files");
 			}
 
-			// Get root plan directory and resolve to shared subdirectory (same as
-			// MarkdownConverterTool)
+			// Get root plan directory (same as MarkdownConverterTool)
 			Path rootPlanDirectory = directoryManager.getRootPlanDirectory(rootPlanId);
-			Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
-			// Ensure shared directory exists
-			Files.createDirectories(sharedDirectory);
+			// Ensure root plan directory exists
+			Files.createDirectories(rootPlanDirectory);
 
-			// Resolve file path within the shared directory
-			Path filePath = sharedDirectory.resolve(fileName).normalize();
+			// Resolve file path within the root plan directory
+			Path filePath = rootPlanDirectory.resolve(fileName).normalize();
 
-			// Ensure the path stays within the shared directory
-			if (!filePath.startsWith(sharedDirectory)) {
-				log.warn("File path is outside shared directory: {}", fileName);
+			// Ensure the path stays within the root plan directory
+			if (!filePath.startsWith(rootPlanDirectory)) {
+				log.warn("File path is outside root plan directory: {}", fileName);
 				return new ToolExecuteResult("Datasource: " + (datasourceName != null ? datasourceName : "default")
-						+ "\nError: File path is outside shared directory");
+						+ "\nError: File path is outside root plan directory");
 			}
 
 			// Convert to JSON string with pretty printing

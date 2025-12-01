@@ -10,7 +10,7 @@ description: |
   - 'scroll': 向上/向下滚动页面
   - 'refresh': 刷新当前页面
   - 'new_tab': 使用指定 URL 打开新标签页
-  - 'close_tab': 关闭当前标签页
+  - 'close_tab': 关闭指定标签页（默认关闭当前标签页）
   - 'switch_tab': 切换到特定标签页
   - 'get_web_content': 获取当前页面 ARIA 快照内容
 
@@ -151,6 +151,10 @@ parameters: |
                   "action": {
                       "type": "string",
                       "const": "close_tab"
+                  },
+                  "tab_id": {
+                      "type": "integer",
+                      "description": "要关闭的标签页 ID（可选，默认关闭当前标签页）"
                   }
               },
               "required": ["action"],

@@ -47,6 +47,13 @@ public interface ToolCallBiFunctionDef<I> extends BiFunction<I, ToolContext, Too
 	String getDescription();
 
 	/**
+	 * Get the description information of the tool with service group appended
+	 * @return Returns the functional description of the tool with service group appended
+	 * at the end
+	 */
+	String getDescriptionWithServiceGroup();
+
+	/**
 	 * Get the parameter definition schema of the tool
 	 * @return Returns JSON format parameter definition schema
 	 */

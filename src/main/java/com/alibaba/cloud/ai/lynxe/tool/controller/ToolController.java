@@ -82,7 +82,7 @@ public class ToolController {
 				}
 				tool.setKey(toolKey);
 				tool.setName(toolName); // Keep just the tool name for display
-				tool.setDescription(functionInstance.getDescription());
+				tool.setDescription(functionInstance.getDescriptionWithServiceGroup());
 				tool.setEnabled(true);
 				tool.setServiceGroup(serviceGroup);
 				tool.setSelectable(functionInstance.isSelectable());

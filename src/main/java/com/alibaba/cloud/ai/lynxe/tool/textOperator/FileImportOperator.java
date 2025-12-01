@@ -95,7 +95,7 @@ public class FileImportOperator extends AbstractBaseTool<FileImportOperator.File
 	}
 
 	/**
-	 * Import all files and subdirectories from realPath to root-plan-id/shared/
+	 * Import all files and subdirectories from realPath to root-plan-id/
 	 * @param realPath The real file system path to import from
 	 * @return ToolExecuteResult with import status
 	 */
@@ -114,24 +114,23 @@ public class FileImportOperator extends AbstractBaseTool<FileImportOperator.File
 				return new ToolExecuteResult("Error: Source path does not exist: " + realPath);
 			}
 
-			// Get the shared directory
+			// Get the root plan directory
 			Path rootPlanDirectory = textFileService.getRootPlanDirectory(this.rootPlanId);
-			Path sharedDirectory = rootPlanDirectory.resolve("shared");
 
-			// Ensure shared directory exists
-			Files.createDirectories(sharedDirectory);
+			// Ensure root plan directory exists
+			Files.createDirectories(rootPlanDirectory);
 
-			// Determine target path in shared directory
+			// Determine target path in root plan directory
 			Path targetPath;
 			if (Files.isDirectory(sourcePath)) {
-				// If source is a directory, copy its contents to shared directory
+				// If source is a directory, copy its contents to root plan directory
 				// Use the directory name as the target folder name
 				String sourceDirName = sourcePath.getFileName().toString();
-				targetPath = sharedDirectory.resolve(sourceDirName);
+				targetPath = rootPlanDirectory.resolve(sourceDirName);
 			}
 			else {
-				// If source is a file, copy it directly to shared directory
-				targetPath = sharedDirectory.resolve(sourcePath.getFileName());
+				// If source is a file, copy it directly to root plan directory
+				targetPath = rootPlanDirectory.resolve(sourcePath.getFileName());
 			}
 
 			List<String> importedFiles = new ArrayList<>();
@@ -192,7 +191,7 @@ public class FileImportOperator extends AbstractBaseTool<FileImportOperator.File
 				result.append("\nErrors: ").append(errors.size()).append(" file(s) failed to import");
 			}
 
-			log.info("Imported {} files and {} directories from {} to shared/", importedFiles.size(),
+			log.info("Imported {} files and {} directories from {} to root plan directory", importedFiles.size(),
 					importedDirs.size(), realPath);
 
 			return new ToolExecuteResult(result.toString());

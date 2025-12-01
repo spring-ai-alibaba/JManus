@@ -29,27 +29,16 @@
           <div class="sub-plan-id">{{ subPlan.currentPlanId }}</div>
         </div>
       </div>
-      <div class="sub-plan-meta">
-        <div class="sub-plan-status-badge" :class="getSubPlanStatusClass()">
-          {{ getSubPlanStatusText() }}
-        </div>
-        <div v-if="subPlan.parentActToolCall" class="trigger-tool">
-          <Icon icon="carbon:function" class="trigger-icon" />
-          <span class="trigger-text">{{ subPlan.parentActToolCall.name }}</span>
-        </div>
-      </div>
     </div>
 
-    <!-- Sub-plan progress -->
-    <div v-if="subPlan.agentExecutionSequence?.length" class="sub-plan-progress">
-      <div class="progress-info">
-        <span class="progress-text">
-          {{ $t('chat.progress') }}: {{ getSubPlanCompletedCount() }} /
-          {{ subPlan.agentExecutionSequence.length }}
-        </span>
-        <div class="progress-bar">
-          <div class="progress-fill" :style="{ width: getSubPlanProgress() + '%' }"></div>
-        </div>
+    <!-- Sub-plan meta (status badge and trigger tool) -->
+    <div class="sub-plan-meta">
+      <div v-if="subPlan.parentActToolCall" class="trigger-tool">
+        <Icon icon="carbon:function" class="trigger-icon" />
+        <span class="trigger-text">{{ subPlan.parentActToolCall.name }}</span>
+      </div>
+      <div class="sub-plan-status-badge" :class="getSubPlanStatusClass()">
+        {{ getSubPlanStatusText() }}
       </div>
     </div>
 
@@ -287,18 +276,20 @@ const getSubPlanStatusIcon = (): string => {
   }
 }
 
-const getSubPlanProgress = (): number => {
-  if (!props.subPlan.agentExecutionSequence?.length) return 0
-  if (props.subPlan.completed) return 100
+// Unused function - kept for potential future use
+// const getSubPlanProgress = (): number => {
+//   if (!props.subPlan.agentExecutionSequence?.length) return 0
+//   if (props.subPlan.completed) return 100
+//
+//   const completedCount = getSubPlanCompletedCount()
+//   return Math.min(100, (completedCount / props.subPlan.agentExecutionSequence.length) * 100)
+// }
 
-  const completedCount = getSubPlanCompletedCount()
-  return Math.min(100, (completedCount / props.subPlan.agentExecutionSequence.length) * 100)
-}
-
-const getSubPlanCompletedCount = (): number => {
-  if (!props.subPlan.agentExecutionSequence?.length) return 0
-  return props.subPlan.agentExecutionSequence.filter(agent => agent.status === 'FINISHED').length
-}
+// Unused function - kept for potential future use
+// const getSubPlanCompletedCount = (): number => {
+//   if (!props.subPlan.agentExecutionSequence?.length) return 0
+//   return props.subPlan.agentExecutionSequence.filter(agent => agent.status === 'FINISHED').length
+// }
 
 // Agent preview status methods
 const getAgentPreviewStatusClass = (status?: ExecutionStatus): string => {
@@ -483,30 +474,38 @@ const handleNestedStepSelected = (stepId: string) => {
         }
       }
     }
+  }
 
-    .sub-plan-meta {
+  .sub-plan-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    .trigger-tool {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
+      padding: 2px 6px;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 4px;
+      font-size: 10px;
+      flex: 1;
+      min-width: 0;
 
-      .trigger-tool {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 2px 6px;
-        background: rgba(102, 126, 234, 0.1);
-        border-radius: 4px;
+      .trigger-icon {
         font-size: 10px;
+        color: #667eea;
+        flex-shrink: 0;
+      }
 
-        .trigger-icon {
-          font-size: 10px;
-          color: #667eea;
-        }
-
-        .trigger-text {
-          color: #cccccc;
-          font-weight: 500;
-        }
+      .trigger-text {
+        color: #cccccc;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
       }
     }
 
@@ -515,6 +514,7 @@ const handleNestedStepSelected = (stepId: string) => {
       border-radius: 8px;
       font-size: 10px;
       font-weight: 500;
+      flex-shrink: 0;
 
       &.completed {
         background: rgba(34, 197, 94, 0.2);
@@ -534,32 +534,6 @@ const handleNestedStepSelected = (stepId: string) => {
       &.pending {
         background: rgba(156, 163, 175, 0.2);
         color: #9ca3af;
-      }
-    }
-  }
-
-  .sub-plan-progress {
-    margin-bottom: 8px;
-
-    .progress-info {
-      .progress-text {
-        color: #aaaaaa;
-        font-size: 10px;
-        margin-bottom: 4px;
-      }
-
-      .progress-bar {
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 4px;
-        height: 4px;
-        overflow: hidden;
-
-        .progress-fill {
-          height: 100%;
-          background: linear-gradient(90deg, #667eea, #764ba2);
-          transition: width 0.3s ease;
-          border-radius: 4px;
-        }
       }
     }
   }
