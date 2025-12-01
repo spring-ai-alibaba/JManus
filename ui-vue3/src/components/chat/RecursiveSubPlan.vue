@@ -285,10 +285,11 @@ const getSubPlanStatusIcon = (): string => {
 //   return Math.min(100, (completedCount / props.subPlan.agentExecutionSequence.length) * 100)
 // }
 
-const getSubPlanCompletedCount = (): number => {
-  if (!props.subPlan.agentExecutionSequence?.length) return 0
-  return props.subPlan.agentExecutionSequence.filter(agent => agent.status === 'FINISHED').length
-}
+// Unused function - kept for potential future use
+// const getSubPlanCompletedCount = (): number => {
+//   if (!props.subPlan.agentExecutionSequence?.length) return 0
+//   return props.subPlan.agentExecutionSequence.filter(agent => agent.status === 'FINISHED').length
+// }
 
 // Agent preview status methods
 const getAgentPreviewStatusClass = (status?: ExecutionStatus): string => {
