@@ -1010,7 +1010,8 @@ public class DynamicAgent extends ReActAgent {
 						// the "output" field
 						// Use LinkedHashMap to preserve insertion order
 						Map<String, Object> resultMap = new LinkedHashMap<>();
-						// Copy all entries from the original map (preserve order if it's already LinkedHashMap)
+						// Copy all entries from the original map (preserve order if it's
+						// already LinkedHashMap)
 						for (Map.Entry<?, ?> entry : map.entrySet()) {
 							if (entry.getKey() instanceof String key) {
 								resultMap.put(key, entry.getValue());
@@ -1052,7 +1053,8 @@ public class DynamicAgent extends ReActAgent {
 				}
 			}
 			else {
-				// It's already a JSON object, convert to LinkedHashMap to preserve order, then re-serialize
+				// It's already a JSON object, convert to LinkedHashMap to preserve order,
+				// then re-serialize
 				Object convertedObject = convertToLinkedHashMap(jsonObject);
 				return objectMapper.writeValueAsString(convertedObject);
 			}
