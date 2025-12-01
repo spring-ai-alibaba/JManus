@@ -34,14 +34,38 @@
             :key="param"
             class="parameter-field"
           >
-            <label class="parameter-label">
-              {{ param }}
-              <span class="required">*</span>
-            </label>
+            <div class="parameter-label-wrapper">
+              <label class="parameter-label">
+                {{ param }}
+                <span class="required">*</span>
+              </label>
+              <!-- Parameter history navigation buttons -->
+              <div v-if="hasParameterHistory(param)" class="parameter-history-controls">
+                <button
+                  type="button"
+                  class="history-btn history-btn-up"
+                  :title="t('sidebar.historyUp')"
+                  @click="navigateParamHistory(param, 'up')"
+                >
+                  <Icon icon="carbon:chevron-up" width="12" />
+                </button>
+                <button
+                  type="button"
+                  class="history-btn history-btn-down"
+                  :title="t('sidebar.historyDown')"
+                  @click="navigateParamHistory(param, 'down')"
+                >
+                  <Icon icon="carbon:chevron-down" width="12" />
+                </button>
+              </div>
+            </div>
             <input
               v-model="parameterValues[param]"
               class="parameter-input"
-              :class="{ error: parameterErrors[param] }"
+              :class="{
+                error: parameterErrors[param],
+                'viewing-history': getParamHistoryIndex(param) >= 0,
+              }"
               :placeholder="t('sidebar.enterValueFor', { param })"
               @input="updateParameterValue(param, ($event.target as HTMLInputElement).value)"
               required
@@ -198,6 +222,7 @@ import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
 import { useToast } from '@/plugins/useToast'
+import { parameterHistoryStore } from '@/stores/parameterHistory'
 import { templateStore } from '@/stores/templateStore'
 import type { PlanData, PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
@@ -519,6 +544,9 @@ const proceedWithExecution = async () => {
     return
   }
 
+  // Save current parameter set to history before execution
+  saveParameterSetToHistory()
+
   try {
     // Get plan data from templateConfig
     if (!templateConfig.selectedTemplate.value) {
@@ -550,6 +578,19 @@ const proceedWithExecution = async () => {
 
     const title = templateConfig.selectedTemplate.value.title ?? config.title ?? 'Execution Plan'
 
+    // Extract toolName and serviceGroup from template for API execution
+    const toolName = templateConfig.selectedTemplate.value?.title || config.title || ''
+    const serviceGroup =
+      templateConfig.selectedTemplate.value?.serviceGroup || config.serviceGroup || undefined
+
+    // Validate toolName is present
+    if (!toolName || toolName.trim() === '') {
+      console.error('[ExecutionController] ❌ Tool name is required but not found')
+      toast.error(t('sidebar.toolNameRequired') || 'Tool name is required for execution')
+      isExecutingPlan.value = false
+      return
+    }
+
     // Pass replacement parameters if available
     const replacementParams =
       parameterRequirements.value.hasParameters && Object.keys(parameterValues.value).length > 0
@@ -558,6 +599,7 @@ const proceedWithExecution = async () => {
 
     console.log('[ExecutionController] 🔄 Replacement params:', replacementParams)
     console.log('[ExecutionController] 📋 Prepared plan data:', JSON.stringify(planData, null, 2))
+    console.log('[ExecutionController] 🔧 Tool name:', toolName, 'Service group:', serviceGroup)
 
     // Build final payload with plan data
     const finalPayload: PlanExecutionRequestPayload = {
@@ -567,6 +609,8 @@ const proceedWithExecution = async () => {
       replacementParams,
       uploadedFiles: uploadedFiles.value,
       uploadKey: uploadKey.value,
+      toolName,
+      serviceGroup,
     }
 
     console.log(
@@ -886,6 +930,8 @@ const updateParameterValue = (paramName: string, value: string) => {
   if (parameterErrors.value[paramName]) {
     delete parameterErrors.value[paramName]
   }
+  // Reset navigation index when user manually types (viewing current, not history)
+  parameterHistoryStore.setParamHistoryIndex(paramName, -1)
   updateExecutionParamsFromParameters()
 }
 
@@ -923,6 +969,126 @@ const updateExecutionParamsFromParameters = () => {
   // Execution params are now managed internally, no need to emit
 }
 
+// Save current parameter set to history
+const saveParameterSetToHistory = () => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
+    console.log('[ExecutionController] ⚠️ No planTemplateId, skipping history save')
+    return
+  }
+
+  // Only save if there are parameters
+  if (
+    !parameterRequirements.value.hasParameters ||
+    Object.keys(parameterValues.value).length === 0
+  ) {
+    console.log('[ExecutionController] ⚠️ No parameters to save to history')
+    return
+  }
+
+  // Create a copy of current parameter values
+  const currentSet = { ...parameterValues.value }
+
+  // Save to persistent store (store handles deduplication)
+  parameterHistoryStore.saveParameterSet(planTemplateId, currentSet)
+
+  console.log(
+    '[ExecutionController] 💾 Saved parameter set to history:',
+    JSON.stringify(currentSet, null, 2)
+  )
+
+  // Reset all parameter navigation indices to -1 (viewing current, not history)
+  resetParamHistoryNavigation()
+}
+
+// Reset all parameter navigation indices
+const resetParamHistoryNavigation = () => {
+  parameterHistoryStore.resetParamHistoryNavigation()
+}
+
+// Navigate through parameter history for a specific parameter
+const navigateParamHistory = (paramName: string, direction: 'up' | 'down') => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
+    console.log('[ExecutionController] ⚠️ No planTemplateId, cannot navigate history')
+    return
+  }
+
+  const history = parameterHistoryStore.getHistory(planTemplateId)
+  if (!history || history.length === 0) {
+    console.log('[ExecutionController] ⚠️ No history available for navigation')
+    return
+  }
+
+  // Get current navigation index for this parameter (-1 means viewing current)
+  const currentIndex = parameterHistoryStore.getParamHistoryIndex(paramName)
+
+  // Calculate new index based on direction
+  let newIndex: number
+  if (direction === 'up') {
+    // Up means going to older history (higher index in array, since most recent is at index 0)
+    if (currentIndex === -1) {
+      // Currently viewing current value, go to most recent history (index 0)
+      newIndex = 0
+    } else if (currentIndex < history.length - 1) {
+      // Go to next older entry
+      newIndex = currentIndex + 1
+    } else {
+      // Already at oldest, stay there
+      newIndex = currentIndex
+    }
+  } else {
+    // Down means going to newer history (lower index in array)
+    if (currentIndex === -1) {
+      // Currently viewing current value, cannot go down
+      return
+    } else if (currentIndex > 0) {
+      // Go to next newer entry
+      newIndex = currentIndex - 1
+    } else {
+      // At most recent history, go back to current (-1)
+      newIndex = -1
+    }
+  }
+
+  // Update parameter value from history if not viewing current
+  if (newIndex >= 0 && newIndex < history.length) {
+    const historyValue = parameterHistoryStore.getParamValueFromHistory(
+      planTemplateId,
+      paramName,
+      newIndex
+    )
+    if (historyValue !== undefined) {
+      parameterValues.value[paramName] = historyValue
+      parameterHistoryStore.setParamHistoryIndex(paramName, newIndex)
+      updateExecutionParamsFromParameters()
+      console.log(
+        `[ExecutionController] 📜 Navigated ${paramName} to history index ${newIndex}:`,
+        historyValue
+      )
+    }
+  } else if (newIndex === -1) {
+    // Reset to current value (but we don't know what "current" is, so just reset index)
+    parameterHistoryStore.setParamHistoryIndex(paramName, -1)
+    console.log(`[ExecutionController] 📜 Reset ${paramName} to current value`)
+  }
+}
+
+// Check if a parameter has history available
+const hasParameterHistory = (paramName: string): boolean => {
+  const planTemplateId = templateConfig.currentPlanTemplateId.value
+  if (!planTemplateId) {
+    return false
+  }
+
+  return parameterHistoryStore.hasParameterHistory(planTemplateId, paramName)
+}
+
+// Get current history index for a parameter
+const getParamHistoryIndex = (paramName: string): number => {
+  return parameterHistoryStore.getParamHistoryIndex(paramName)
+}
+
 // Watch for changes in plan template ID
 watch(
   () => templateConfig.currentPlanTemplateId.value,
@@ -933,6 +1099,9 @@ watch(
         console.log('[ExecutionController] ⏸️ Skipping parameter reload - plan is executing')
         return
       }
+
+      // Reset parameter history navigation when template changes
+      resetParamHistoryNavigation()
 
       console.log('[ExecutionController] 🔄 Template ID changed, will reload parameters')
       // If this is a new template ID (not from initial load), retry loading parameters
@@ -1088,6 +1257,13 @@ defineExpose({
     flex-direction: column;
     gap: 6px;
 
+    .parameter-label-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
     .parameter-label {
       font-size: 11px;
       color: rgba(255, 255, 255, 0.8);
@@ -1126,6 +1302,48 @@ defineExpose({
       &.error {
         border-color: #ff6b6b;
         box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+      }
+
+      &.viewing-history {
+        background: rgba(102, 126, 234, 0.15);
+        border-color: rgba(102, 126, 234, 0.4);
+      }
+    }
+
+    .parameter-history-controls {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+
+      .history-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+          background: rgba(102, 126, 234, 0.3);
+          border-color: rgba(102, 126, 234, 0.5);
+          color: white;
+          transform: translateY(-1px);
+        }
+
+        &:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        &:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
       }
     }
 

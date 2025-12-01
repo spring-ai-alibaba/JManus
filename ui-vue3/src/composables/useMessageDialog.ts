@@ -532,16 +532,19 @@ export function useMessageDialog() {
       }
       addMessageToDialog(targetDialog.id, assistantMessage)
 
-      // Get plan template ID
-      const planTemplateId = payload.planData.planTemplateId
-      if (!planTemplateId || planTemplateId === null) {
-        throw new Error('Plan template ID is required')
+      // Get toolName and serviceGroup from payload (required for API execution)
+      const toolName = payload.toolName
+      const serviceGroup = payload.serviceGroup
+
+      if (!toolName || toolName.trim() === '') {
+        throw new Error('Tool name is required for plan execution')
       }
 
       // Call PlanActApiService.executePlan
       // Note: DirectApiService.executeByToolName will automatically include conversationId from memoryStore
       const response = (await PlanActApiService.executePlan(
-        planTemplateId as string,
+        toolName,
+        serviceGroup,
         payload.params,
         payload.uploadedFiles,
         payload.replacementParams,

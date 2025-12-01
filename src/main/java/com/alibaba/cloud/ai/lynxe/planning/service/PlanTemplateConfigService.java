@@ -713,12 +713,7 @@ public class PlanTemplateConfigService {
 					.findByServiceGroupAndToolName(serviceGroup, toolName);
 				if (toolEntity.isPresent()) {
 					FuncAgentToolEntity entity = toolEntity.get();
-					Boolean isHttpEnabled = entity.getEnableHttpService();
-					Boolean isInConversationEnabled = entity.getEnableInConversation();
-					if ((isHttpEnabled != null && isHttpEnabled)
-							|| (isInConversationEnabled != null && isInConversationEnabled)) {
-						return entity.getPlanTemplateId();
-					}
+					return entity.getPlanTemplateId();
 				}
 				return null; // Not found with serviceGroup
 			}

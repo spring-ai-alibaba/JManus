@@ -843,6 +843,8 @@ const words: I18nType = {
       'When executing repeatedly, you can set some content in Step 2 as variables, then specify the specific values for those variables here. For example, set "Variable1" in the JSON, then set "Variable1=Alibaba" here to achieve function parameter-like effects.',
     clearParams: 'Clear Parameters',
     parameterRequirements: 'Parameter Requirements',
+    historyUp: 'Previous value',
+    historyDown: 'Next value',
     parameterRequirementsHelp:
       'In the template editor\'s "Task Requirements" section, you can define variable parameters using <<parameter_name>> format (multiple parameters are allowed) to inform the model what format of input your function requires. The default description is the parameter name.',
     clearAllParams: 'Clear All Parameters',
@@ -852,6 +854,7 @@ const words: I18nType = {
     statusApiUrl: 'Status Query API',
     executing: 'Executing...',
     executePlan: 'Execute Plan',
+    toolNameRequired: 'Tool name is required. Please ensure the template is properly configured',
     executionInProgress:
       'A task is currently executing. Please wait for it to complete before starting a new one',
     publishMcpService: 'Publish as Tool Service',
