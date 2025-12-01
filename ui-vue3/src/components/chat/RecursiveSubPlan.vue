@@ -276,13 +276,14 @@ const getSubPlanStatusIcon = (): string => {
   }
 }
 
-const getSubPlanProgress = (): number => {
-  if (!props.subPlan.agentExecutionSequence?.length) return 0
-  if (props.subPlan.completed) return 100
-
-  const completedCount = getSubPlanCompletedCount()
-  return Math.min(100, (completedCount / props.subPlan.agentExecutionSequence.length) * 100)
-}
+// Unused function - kept for potential future use
+// const getSubPlanProgress = (): number => {
+//   if (!props.subPlan.agentExecutionSequence?.length) return 0
+//   if (props.subPlan.completed) return 100
+//
+//   const completedCount = getSubPlanCompletedCount()
+//   return Math.min(100, (completedCount / props.subPlan.agentExecutionSequence.length) * 100)
+// }
 
 const getSubPlanCompletedCount = (): number => {
   if (!props.subPlan.agentExecutionSequence?.length) return 0

@@ -186,14 +186,18 @@ const loadInnerTools = async () => {
           const value = tool.serviceGroup
             ? `${tool.serviceGroup}.${tool.toolName}`
             : tool.toolName
-          filteredTools.push({
+          const toolOption: InnerToolOption = {
             value: value,
             label: tool.toolName,
             toolName: tool.toolName,
             planTemplateId: tool.planTemplateId,
             paramName: param.name,
-            serviceGroup: tool.serviceGroup,
-          })
+          }
+          // Only include serviceGroup if it's defined
+          if (tool.serviceGroup) {
+            toolOption.serviceGroup = tool.serviceGroup
+          }
+          filteredTools.push(toolOption)
         }
       } catch (e) {
         console.warn('[InputArea] Failed to parse inputSchema for tool:', tool.toolName, e)
