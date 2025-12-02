@@ -15,12 +15,11 @@
  */
 package com.alibaba.cloud.ai.lynxe.llm;
 
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.alibaba.cloud.ai.lynxe.event.LynxeListener;
+import com.alibaba.cloud.ai.lynxe.event.ModelChangeEvent;
+import com.alibaba.cloud.ai.lynxe.model.entity.DynamicModelEntity;
+import com.alibaba.cloud.ai.lynxe.model.repository.DynamicModelRepository;
+import io.micrometer.observation.ObservationRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -45,14 +44,13 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import com.alibaba.cloud.ai.lynxe.event.LynxeListener;
-import com.alibaba.cloud.ai.lynxe.event.ModelChangeEvent;
-import com.alibaba.cloud.ai.lynxe.model.entity.DynamicModelEntity;
-import com.alibaba.cloud.ai.lynxe.model.repository.DynamicModelRepository;
-
-import io.micrometer.observation.ObservationRegistry;
 import reactor.core.publisher.Flux;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class LlmService implements LynxeListener<ModelChangeEvent> {
@@ -422,8 +420,22 @@ public class LlmService implements LynxeListener<ModelChangeEvent> {
 
 		String completionsPath = dynamicModelEntity.getCompletionsPath();
 
+		// Configure ObjectMapper to handle unknown enum values (for compatibility with old API responses)
+		com.fasterxml.jackson.databind.ObjectMapper compatibleMapper = objectMapper.copy();
+		compatibleMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
+		compatibleMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+		// Configure RestClient.Builder with custom ObjectMapper
+		RestClient.Builder customRestClientBuilder = restClientBuilder
+				.messageConverters(converters -> {
+					converters.removeIf(converter -> converter instanceof org.springframework.http.converter.json.MappingJackson2HttpMessageConverter);
+					org.springframework.http.converter.json.MappingJackson2HttpMessageConverter jsonConverter =
+							new org.springframework.http.converter.json.MappingJackson2HttpMessageConverter(compatibleMapper);
+					converters.add(0, jsonConverter);
+				});
+
 		return new OpenAiApi(dynamicModelEntity.getBaseUrl(), new SimpleApiKey(dynamicModelEntity.getApiKey()),
-				multiValueMap, completionsPath, "/v1/embeddings", restClientBuilder, enhancedWebClientBuilder,
+				multiValueMap, completionsPath, "/v1/embeddings", customRestClientBuilder, enhancedWebClientBuilder,
 				RetryUtils.DEFAULT_RESPONSE_ERROR_HANDLER) {
 
 			@Override
