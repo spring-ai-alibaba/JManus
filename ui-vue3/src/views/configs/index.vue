@@ -44,7 +44,7 @@
             :class="{ active: activeCategory === item.key }"
             @click="handleNavClick(item.key)"
           >
-            <!-- 使用 Ant Design 图标作为主要方案 -->
+            <!-- Use Ant Design icons as the primary solution -->
             <component
               :is="getAntIcon(item.key)"
               style="
@@ -171,7 +171,7 @@ const handleNavClick = (categoryKey: string) => {
   })
 }
 
-// 获取 Ant Design 图标
+// Get Ant Design icons
 const getAntIcon = (key: string) => {
   const antIcons: Record<string, typeof SettingOutlined> = {
     basic: SettingOutlined,

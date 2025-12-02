@@ -23,10 +23,10 @@ import 'ant-design-vue/dist/reset.css'
 import App from './App.vue'
 import router from './router'
 
-// 配置 Iconify
+// Configure Iconify
 import { addAPIProvider } from '@iconify/vue'
 
-// 添加备用 API 提供者
+// Add fallback API providers
 addAPIProvider('', {
   resources: ['https://api.iconify.design', 'https://api.unisvg.com', 'https://api.simplesvg.com'],
 })
