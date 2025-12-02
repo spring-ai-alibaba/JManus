@@ -334,7 +334,6 @@ Response: {
   "planId": "${planId}",
   "status": "processing",
   "message": "Task submitted, processing",
-  "memoryId": "ABC12345",
   "toolName": "${toolName}",
   "planTemplateId": "${planTemplateId}"
 }

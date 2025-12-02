@@ -260,7 +260,7 @@ const loadMessages = async () => {
 }
 
 const selectMemory = (conversationId: string) => {
-  memoryStore.selectMemory(conversationId)
+  memoryStore.selectConversation(conversationId)
   emit('memory-selected')
 }
 
@@ -362,8 +362,13 @@ const confirmDelete = async () => {
     await MemoryApiService.deleteMemory(currentDeleteId.value)
     messages.value = messages.value.filter(msg => msg.conversation_id !== currentDeleteId.value)
     handleSearch()
+    // Clear selected conversation if the deleted one was selected
+    if (memoryStore.conversationId === currentDeleteId.value) {
+      memoryStore.clearSelectedConversation()
+    }
+    // If no messages left, clear selection
     if (messages.value.length === 0) {
-      memoryStore.clearMemoryId()
+      memoryStore.clearSelectedConversation()
     }
     showDeleteModal.value = false
     currentDeleteId.value = null

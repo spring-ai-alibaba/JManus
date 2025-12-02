@@ -455,7 +455,12 @@ export function useMessageDialog() {
         error: errorMessage,
       }
     } finally {
-      isLoading.value = false
+      // Only reset isLoading if no plan execution is in progress
+      // If a planId was returned, isLoading will be reset by watchEffect when plan completes
+      if (!response?.planId) {
+        isLoading.value = false
+      }
+      // If planId exists, let watchEffect handle the reset when plan completes
     }
   }
 

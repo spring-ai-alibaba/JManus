@@ -60,7 +60,6 @@ export interface MessageDialog {
  */
 export interface InputMessage {
   input: string
-  memoryId?: string
   uploadedFiles?: string[]
   uploadKey?: string
 }

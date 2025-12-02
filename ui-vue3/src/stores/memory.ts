@@ -22,7 +22,6 @@ export interface MemoryEmits {
 export class MemoryStore {
   // Basic state
   isCollapsed = false
-  selectMemoryId = ''
   conversationId: string | null = null
   loadMessages = () => {}
   intervalId: number | undefined = undefined
@@ -79,21 +78,22 @@ export class MemoryStore {
     }
   }
 
-  selectMemory(memoryId: string) {
+  /**
+   * Select a conversation (replaces selectMemory)
+   * @param conversationId The conversation ID to select
+   */
+  selectConversation(conversationId: string) {
     this.toggleSidebar()
-    this.selectMemoryId = memoryId
+    this.conversationId = conversationId
+    this.saveConversationIdToStorage()
   }
 
-  setMemory(memoryId: string) {
-    this.selectMemoryId = memoryId
-  }
-
-  defaultMemoryId() {
-    this.selectMemoryId = this.generateRandomId()
-  }
-
-  clearMemoryId() {
-    this.selectMemoryId = ''
+  /**
+   * Clear the selected conversation (replaces clearMemoryId)
+   */
+  clearSelectedConversation() {
+    this.conversationId = null
+    this.saveConversationIdToStorage()
   }
 
   setConversationId(conversationId: string | null) {

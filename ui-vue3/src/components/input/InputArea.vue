@@ -526,7 +526,6 @@ const handleSend = async () => {
   // Prepare query with tool information if selected
   const query: InputMessage = {
     input: finalInput,
-    memoryId: memoryStore.selectMemoryId,
     uploadedFiles: uploadedFiles.value,
   }
 
