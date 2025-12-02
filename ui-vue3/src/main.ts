@@ -23,6 +23,14 @@ import 'ant-design-vue/dist/reset.css'
 import App from './App.vue'
 import router from './router'
 
+// Configure Iconify
+import { addAPIProvider } from '@iconify/vue'
+
+// Add fallback API providers
+addAPIProvider('', {
+  resources: ['https://api.iconify.design', 'https://api.unisvg.com', 'https://api.simplesvg.com'],
+})
+
 import 'nprogress/nprogress.css'
 import Vue3ColorPicker from 'vue3-colorpicker'
 import 'vue3-colorpicker/style.css'
