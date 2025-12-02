@@ -44,11 +44,15 @@
             :class="{ active: activeCategory === item.key }"
             @click="handleNavClick(item.key)"
           >
-            <Icon
-              :icon="item.icon"
-              width="20"
-              height="20"
-              style="display: inline-block; flex-shrink: 0"
+            <!-- 使用 Ant Design 图标作为主要方案 -->
+            <component
+              :is="getAntIcon(item.key)"
+              style="
+                display: inline-block;
+                flex-shrink: 0;
+                color: rgba(255, 255, 255, 0.8);
+                font-size: 20px;
+              "
             />
             <span>{{ item.label }}</span>
           </div>
@@ -68,6 +72,14 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
+import {
+  SettingOutlined,
+  BuildOutlined,
+  ToolOutlined,
+  DatabaseOutlined,
+  FolderOutlined,
+  FileTextOutlined,
+} from '@ant-design/icons-vue'
 import BasicConfig from './basicConfig.vue'
 import ModelConfig from './modelConfig.vue'
 import McpConfig from './mcpConfig.vue'
@@ -157,6 +169,19 @@ const handleNavClick = (categoryKey: string) => {
     },
     query: route.query,
   })
+}
+
+// 获取 Ant Design 图标
+const getAntIcon = (key: string) => {
+  const antIcons: Record<string, typeof SettingOutlined> = {
+    basic: SettingOutlined,
+    model: BuildOutlined,
+    mcp: ToolOutlined,
+    database: DatabaseOutlined,
+    namespace: FolderOutlined,
+    planTemplate: FileTextOutlined,
+  }
+  return antIcons[key] || SettingOutlined
 }
 </script>
 

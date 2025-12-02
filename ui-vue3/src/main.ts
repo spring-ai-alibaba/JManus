@@ -23,6 +23,14 @@ import 'ant-design-vue/dist/reset.css'
 import App from './App.vue'
 import router from './router'
 
+// 配置 Iconify
+import { addAPIProvider } from '@iconify/vue'
+
+// 添加备用 API 提供者
+addAPIProvider('', {
+  resources: ['https://api.iconify.design', 'https://api.unisvg.com', 'https://api.simplesvg.com'],
+})
+
 import 'nprogress/nprogress.css'
 import Vue3ColorPicker from 'vue3-colorpicker'
 import 'vue3-colorpicker/style.css'
