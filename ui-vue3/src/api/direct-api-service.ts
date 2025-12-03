@@ -44,7 +44,12 @@ export class DirectApiService {
   public static async sendChatMessage(
     query: InputMessage,
     requestSource: 'VUE_DIALOG' | 'VUE_SIDEBAR' = 'VUE_DIALOG',
-    onChunk?: (chunk: { type: string; content?: string; conversationId?: string; message?: string }) => void
+    onChunk?: (chunk: {
+      type: string
+      content?: string
+      conversationId?: string
+      message?: string
+    }) => void
   ): Promise<{ conversationId?: string; message?: string }> {
     return LlmCheckService.withLlmCheck(async () => {
       console.log('[DirectApiService] sendChatMessage called with:', {
@@ -80,10 +85,7 @@ export class DirectApiService {
         console.log('[DirectApiService] Including uploadKey:', query.uploadKey)
       }
 
-      console.log(
-        '[DirectApiService] Making SSE request to:',
-        `${this.BASE_URL}/chat`
-      )
+      console.log('[DirectApiService] Making SSE request to:', `${this.BASE_URL}/chat`)
       console.log('[DirectApiService] Request body:', requestBody)
 
       const response = await fetch(`${this.BASE_URL}/chat`, {
@@ -127,10 +129,20 @@ export class DirectApiService {
           if (done) break
 
           buffer += decoder.decode(value, { stream: true })
-          console.log('[DirectApiService] Buffer length:', buffer.length, 'content:', buffer.substring(0, 200))
+          console.log(
+            '[DirectApiService] Buffer length:',
+            buffer.length,
+            'content:',
+            buffer.substring(0, 200)
+          )
           const lines = buffer.split('\n\n')
           buffer = lines.pop() || '' // Keep incomplete line in buffer
-          console.log('[DirectApiService] Split into', lines.length, 'lines, buffer remaining:', buffer.length)
+          console.log(
+            '[DirectApiService] Split into',
+            lines.length,
+            'lines, buffer remaining:',
+            buffer.length
+          )
 
           for (const line of lines) {
             console.log('[DirectApiService] Processing line:', line)
@@ -149,13 +161,19 @@ export class DirectApiService {
 
                 if (parsed.type === 'start' && parsed.conversationId) {
                   conversationId = parsed.conversationId
-                  console.log('[DirectApiService] Got start event with conversationId:', conversationId)
+                  console.log(
+                    '[DirectApiService] Got start event with conversationId:',
+                    conversationId
+                  )
                   if (onChunk) {
                     onChunk({ type: 'start', conversationId: parsed.conversationId })
                   }
                 } else if (parsed.type === 'chunk' && parsed.content) {
                   accumulatedMessage += parsed.content
-                  console.log('[DirectApiService] Got chunk, accumulated length:', accumulatedMessage.length)
+                  console.log(
+                    '[DirectApiService] Got chunk, accumulated length:',
+                    accumulatedMessage.length
+                  )
                   if (onChunk) {
                     onChunk({ type: 'chunk', content: parsed.content })
                   }
@@ -167,14 +185,22 @@ export class DirectApiService {
                 } else if (parsed.type === 'error') {
                   console.error('[DirectApiService] Got error event:', parsed.message)
                   if (onChunk) {
-                    onChunk({ type: 'error', message: parsed.message || 'Streaming error occurred' })
+                    onChunk({
+                      type: 'error',
+                      message: parsed.message || 'Streaming error occurred',
+                    })
                   }
                   // Break the loop to stop processing
                   reader.releaseLock()
                   throw new Error(parsed.message || 'Streaming error occurred')
                 }
               } catch (parseError) {
-                console.error('[DirectApiService] Error parsing SSE data:', parseError, 'Data:', data)
+                console.error(
+                  '[DirectApiService] Error parsing SSE data:',
+                  parseError,
+                  'Data:',
+                  data
+                )
               }
             }
           }

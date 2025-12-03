@@ -28,7 +28,7 @@ export class TemplateStore {
   hasTaskRequirementModified = false
 
   // Organization method: 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc'
-  organizationMethod: 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc' = 'by_time'
+  organizationMethod: 'by_time' | 'by_abc' | 'by_group_time' | 'by_group_abc' = 'by_group_time'
 
   // Template service group mapping (templateId -> serviceGroup)
   templateServiceGroups: Map<string, string> = new Map()

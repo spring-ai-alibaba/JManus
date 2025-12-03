@@ -14,8 +14,84 @@
  * limitations under the License.
  */
 
-import { computed } from 'vue'
 import type { ChatMessage } from '@/types/message-dialog'
+import DOMPurify from 'dompurify'
+import hljs from 'highlight.js'
+import { marked } from 'marked'
+import { computed } from 'vue'
+
+// Configure marked options
+marked.setOptions({
+  breaks: true, // Convert line breaks to <br>
+  gfm: true, // Enable GitHub Flavored Markdown
+})
+
+// Configure marked extension for code blocks with syntax highlighting
+// In marked v16, we use extensions to customize rendering
+marked.use({
+  renderer: {
+    code(token: { text?: string; raw?: string; code?: string; lang?: string; language?: string }) {
+      try {
+        // Handle different token formats from marked v16
+        let codeText = ''
+        let language: string | undefined
+
+        // In marked v16, token is an object with 'text' and 'lang' properties
+        if (token && typeof token === 'object') {
+          codeText = token.text || token.raw || token.code || ''
+          language = token.lang || token.language
+        } else if (typeof token === 'string') {
+          // Fallback: if token is a string (shouldn't happen in v16, but handle it)
+          codeText = token
+        } else {
+          // Last resort: convert to string
+          console.warn('[useMessageFormatting] Unexpected token format:', typeof token, token)
+          codeText = String(token || '')
+        }
+
+        // Ensure codeText is a string
+        if (typeof codeText !== 'string') {
+          console.warn(
+            '[useMessageFormatting] Code text is not a string:',
+            typeof codeText,
+            codeText
+          )
+          codeText = String(codeText || '')
+        }
+
+        // If language is specified, try to highlight it
+        if (language && typeof language === 'string' && hljs.getLanguage(language)) {
+          try {
+            const highlighted = hljs.highlight(codeText, { language }).value
+            return `<pre><code class="hljs language-${language}">${highlighted}</code></pre>`
+          } catch (err) {
+            console.warn('[useMessageFormatting] Highlight.js error:', err)
+          }
+        }
+        // Fallback: escape HTML and wrap in pre/code
+        const escaped = codeText
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;')
+        return `<pre><code>${escaped}</code></pre>`
+      } catch (error) {
+        console.error('[useMessageFormatting] Error in code renderer:', error, token)
+        // Ultimate fallback - escape all HTML entities properly
+        // Note: & must be escaped first to avoid double-encoding
+        const safeText = String(token?.text || token?.raw || token || '')
+        const escaped = safeText
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;')
+        return `<pre><code>${escaped}</code></pre>`
+      }
+    },
+  },
+})
 
 /**
  * Message formatting utilities
@@ -27,12 +103,57 @@ export function useMessageFormatting() {
   const formatResponseText = (text: string): string => {
     if (!text) return ''
 
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/\n/g, '<br>')
-      .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+    try {
+      // Convert markdown to HTML using marked
+      const html = marked.parse(text) as string
+
+      // Sanitize HTML to prevent XSS attacks
+      const sanitized = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: [
+          'p',
+          'br',
+          'strong',
+          'em',
+          'u',
+          's',
+          'code',
+          'pre',
+          'h1',
+          'h2',
+          'h3',
+          'h4',
+          'h5',
+          'h6',
+          'ul',
+          'ol',
+          'li',
+          'blockquote',
+          'a',
+          'img',
+          'table',
+          'thead',
+          'tbody',
+          'tr',
+          'th',
+          'td',
+          'hr',
+          'div',
+          'span',
+        ],
+        ALLOWED_ATTR: ['href', 'title', 'alt', 'src', 'class', 'target', 'rel'],
+        ALLOW_DATA_ATTR: false,
+      })
+
+      return sanitized
+    } catch (error) {
+      console.error('[useMessageFormatting] Error formatting markdown:', error)
+      // Fallback to plain text with escaped HTML
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>')
+    }
   }
 
   /**

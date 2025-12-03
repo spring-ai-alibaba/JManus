@@ -540,6 +540,8 @@ const handleImportExistingPlan = async (event: Event) => {
     onReload: async () => {
       // Reload template list
       await templateStore.loadPlanTemplateList()
+      // Reload available tools to show newly imported tools and dependencies
+      await availableToolsStore.loadAvailableTools()
     },
     onSingleTemplateImported: async template => {
       // If only one template was imported, select it
