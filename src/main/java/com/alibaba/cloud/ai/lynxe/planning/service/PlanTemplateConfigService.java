@@ -60,6 +60,9 @@ public class PlanTemplateConfigService {
 	@Autowired(required = false)
 	private com.alibaba.cloud.ai.lynxe.planning.repository.PlanTemplateVersionRepository planTemplateVersionRepository;
 
+	@Autowired
+	private com.alibaba.cloud.ai.lynxe.runtime.service.IPlanIdDispatcher planIdDispatcher;
+
 	/**
 	 * Prepare PlanTemplateConfigVO with toolConfig This method ensures toolConfig is
 	 * properly set with input schema
@@ -418,6 +421,15 @@ public class PlanTemplateConfigService {
 		if (planTemplateId == null || planTemplateId.trim().isEmpty()) {
 			throw new PlanTemplateConfigException("VALIDATION_ERROR",
 					"planTemplateId is required in PlanTemplateConfigVO");
+		}
+
+		// Check if planTemplateId starts with "new-" and replace it with backend-generated ID
+		if (planTemplateId.startsWith("new-")) {
+			String newPlanTemplateId = planIdDispatcher.generatePlanTemplateId();
+			log.info("Frontend provided planTemplateId '{}' starts with 'new-', replacing with backend-generated ID: {}",
+					planTemplateId, newPlanTemplateId);
+			configVO.setPlanTemplateId(newPlanTemplateId);
+			planTemplateId = newPlanTemplateId;
 		}
 
 		log.info("Creating or updating coordinator tool from PlanTemplateConfigVO for planTemplateId: {}",

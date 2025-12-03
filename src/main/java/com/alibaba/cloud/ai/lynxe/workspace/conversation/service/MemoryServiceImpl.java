@@ -171,7 +171,7 @@ public class MemoryServiceImpl implements MemoryService {
 		// 4. Thread ID to handle concurrent conversation creation
 		long timestamp = System.nanoTime();
 		int randomComponent = (int) (Math.random() * 10000);
-		long threadId = Thread.currentThread().getId();
+		long threadId = Thread.currentThread().threadId();
 
 		String conversationId = String.format("%s%d_%d_%d", conversationPrefix, timestamp, randomComponent, threadId);
 
