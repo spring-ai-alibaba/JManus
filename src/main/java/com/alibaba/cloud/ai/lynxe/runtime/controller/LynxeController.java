@@ -43,7 +43,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -154,6 +153,7 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 
 	@Autowired
 	private com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager unifiedDirectoryManager;
+
 
 	public LynxeController(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
@@ -930,7 +930,7 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 			return null;
 		}
 
-		if (!StringUtils.hasText(conversationId)) {
+		if (!org.springframework.util.StringUtils.hasText(conversationId)) {
 			// Generate conversation ID for VUE_DIALOG and VUE_SIDEBAR requests
 			// Both should use the same conversation memory
 			if (requestSource == RequestSource.VUE_DIALOG || requestSource == RequestSource.VUE_SIDEBAR) {
@@ -1019,11 +1019,15 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 				return new UserMessage(input);
 			}
 
-			// Filter for image files and create Media objects
+			// Process files using MarkdownConverterTool processors
 			List<Media> mediaList = new ArrayList<>();
+			StringBuilder enhancedInput = new StringBuilder(input);
 			Path uploadDirectory = unifiedDirectoryManager.getWorkingDirectory()
 				.resolve("uploaded_files")
 				.resolve(uploadKey);
+
+			// Use uploadKey as temporary planId for file processing
+			String tempPlanId = uploadKey;
 
 			for (com.alibaba.cloud.ai.lynxe.runtime.entity.vo.FileUploadResult.FileInfo fileInfo : uploadedFiles) {
 				// Skip failed uploads
@@ -1038,42 +1042,67 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 					continue;
 				}
 
-				// Filter for image MIME types
-				if (isImageMimeType(mimeType)) {
-					try {
-						Path filePath = uploadDirectory.resolve(fileInfo.getOriginalName());
-						if (!Files.exists(filePath) || !Files.isRegularFile(filePath)) {
-							logger.warn("File not found or not a regular file: {}", filePath);
-							continue;
-						}
+				Path filePath = uploadDirectory.resolve(fileInfo.getOriginalName());
 
-						Resource fileResource = new FileSystemResource(filePath);
-						org.springframework.util.MimeType springMimeType = org.springframework.util.MimeTypeUtils
-							.parseMimeType(mimeType);
-						Media media = new Media(springMimeType, fileResource);
-						mediaList.add(media);
-						logger.debug("Added image media: {} with MIME type: {}", fileInfo.getOriginalName(), mimeType);
+				if (!Files.exists(filePath) || !Files.isRegularFile(filePath)) {
+					logger.warn("File not found or not a regular file: {}", filePath);
+					continue;
+				}
+
+				// Process file using MarkdownConverterTool logic
+				try {
+					String fileExtension = getFileExtension(fileInfo.getOriginalName());
+					if (fileExtension.isEmpty()) {
+						logger.debug("Skipping file with no extension: {}", fileInfo.getOriginalName());
+						continue;
 					}
-					catch (Exception e) {
-						logger.warn("Failed to create Media object for file: {}", fileInfo.getOriginalName(), e);
-						// Continue with other files
+
+					String ext = fileExtension.toLowerCase().substring(1);
+					String extractedText = processFileWithMarkdownConverter(filePath, ext, tempPlanId, fileInfo.getOriginalName());
+
+					if (extractedText != null && !extractedText.trim().isEmpty()) {
+						enhancedInput.append("\n\n--- Content from file: ").append(fileInfo.getOriginalName())
+							.append(" ---\n\n").append(extractedText);
+						logger.info("Extracted {} characters from file: {}", extractedText.length(),
+								fileInfo.getOriginalName());
+					}
+					else {
+						// For image files, if text extraction fails or returns empty, try to add as Media
+						if (isImageExtension(ext)) {
+							try {
+								Resource fileResource = new FileSystemResource(filePath);
+								org.springframework.util.MimeType springMimeType = org.springframework.util.MimeTypeUtils
+									.parseMimeType(mimeType);
+								Media media = new Media(springMimeType, fileResource);
+								mediaList.add(media);
+								logger.debug("Added image media: {} with MIME type: {}", fileInfo.getOriginalName(),
+										mimeType);
+							}
+							catch (Exception e) {
+								logger.warn("Failed to create Media object for file: {}", fileInfo.getOriginalName(), e);
+							}
+						}
+						else {
+							logger.warn("No content extracted from file: {}", fileInfo.getOriginalName());
+						}
 					}
 				}
-				else {
-					logger.debug("Skipping non-image file: {} with MIME type: {}", fileInfo.getOriginalName(),
-							mimeType);
+				catch (Exception e) {
+					logger.warn("Failed to process file: {}", fileInfo.getOriginalName(), e);
+					// Continue with other files
 				}
 			}
 
 			// Build UserMessage with text and media
+			String finalInput = enhancedInput.toString();
 			if (mediaList.isEmpty()) {
 				logger.debug("No image files found, creating text-only UserMessage");
-				return new UserMessage(input);
+				return new UserMessage(finalInput);
 			}
 
 			logger.info("Creating UserMessage with {} image(s) for uploadKey: {}", mediaList.size(), uploadKey);
 			var builder = UserMessage.builder();
-			builder.text(input);
+			builder.text(finalInput);
 			for (Media media : mediaList) {
 				builder.media(media);
 			}
@@ -1096,18 +1125,133 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 	}
 
 	/**
-	 * Check if MIME type represents an image
-	 * @param mimeType MIME type string
-	 * @return true if MIME type is an image type
+	 * Process file using MarkdownConverterTool processors
+	 * @param filePath Path to the file
+	 * @param extension File extension (without dot, e.g., "pdf", "jpg")
+	 * @param planId Plan ID for file operations (using uploadKey as temp planId)
+	 * @param filename Original filename for logging
+	 * @return Extracted text content or null if extraction fails
 	 */
-	private boolean isImageMimeType(String mimeType) {
-		if (mimeType == null || mimeType.trim().isEmpty()) {
+	private String processFileWithMarkdownConverter(Path filePath, String extension, String planId, String filename) {
+		try {
+			logger.debug("Processing file with MarkdownConverter: {} (extension: {})", filename, extension);
+
+			// Create processors (similar to MarkdownConverterTool)
+			com.alibaba.cloud.ai.lynxe.tool.convertToMarkdown.PdfToMarkdownProcessor pdfProcessor = null;
+			com.alibaba.cloud.ai.lynxe.tool.convertToMarkdown.ImageOcrProcessor imageProcessor = null;
+			com.alibaba.cloud.ai.lynxe.tool.convertToMarkdown.TextToMarkdownProcessor textProcessor = null;
+
+			// Initialize processors if needed
+			if (llmService != null && lynxeProperties != null) {
+				com.alibaba.cloud.ai.lynxe.runtime.executor.ImageRecognitionExecutorPool executorPool = new com.alibaba.cloud.ai.lynxe.runtime.executor.ImageRecognitionExecutorPool(
+						lynxeProperties);
+				com.alibaba.cloud.ai.lynxe.tool.convertToMarkdown.PdfOcrProcessor pdfOcrProcessor = new com.alibaba.cloud.ai.lynxe.tool.convertToMarkdown.PdfOcrProcessor(
+						unifiedDirectoryManager, llmService, lynxeProperties, executorPool);
+				pdfProcessor = new com.alibaba.cloud.ai.lynxe.tool.convertToMarkdown.PdfToMarkdownProcessor(
+						unifiedDirectoryManager, pdfOcrProcessor);
+				imageProcessor = new com.alibaba.cloud.ai.lynxe.tool.convertToMarkdown.ImageOcrProcessor(
+						unifiedDirectoryManager, llmService, lynxeProperties, executorPool);
+			}
+
+			// Text processor is always available
+			textProcessor = new com.alibaba.cloud.ai.lynxe.tool.convertToMarkdown.TextToMarkdownProcessor(
+					unifiedDirectoryManager);
+
+			// Dispatch to appropriate processor based on file extension
+			com.alibaba.cloud.ai.lynxe.tool.code.ToolExecuteResult result = switch (extension) {
+				case "pdf" -> {
+					if (pdfProcessor != null) {
+						yield pdfProcessor.convertToMarkdown(filePath, null, planId, false);
+					}
+					yield null;
+				}
+				case "jpg", "jpeg", "png", "gif" -> {
+					if (imageProcessor != null) {
+						String markdownFilename = generateMarkdownFilename(filename);
+						yield imageProcessor.convertImageToTextWithOcr(filePath, null, planId, markdownFilename);
+					}
+					yield null;
+				}
+				case "txt", "md", "json", "xml", "yaml", "yml", "log", "java", "py", "js", "html", "css" ->
+					textProcessor.convertToMarkdown(filePath, null, planId);
+				default -> {
+					logger.debug("Unsupported file extension for text extraction: {}", extension);
+					yield null;
+				}
+			};
+
+			if (result == null) {
+				return null;
+			}
+
+			// Extract text from ToolExecuteResult
+			String output = result.getOutput();
+			if (output == null || output.trim().isEmpty()) {
+				return null;
+			}
+
+			// Try to extract actual content from the result
+			// ToolExecuteResult may contain metadata, try to extract the actual content
+			if (output.contains("**Content**:\n\n")) {
+				int contentIndex = output.indexOf("**Content**:\n\n") + "**Content**:\n\n".length();
+				return output.substring(contentIndex).trim();
+			}
+
+			// If result indicates success, try to read the generated markdown file
+			if (output.toLowerCase().contains("successfully")) {
+				String markdownFilename = generateMarkdownFilename(filename);
+				Path markdownFile = unifiedDirectoryManager.getRootPlanDirectory(planId).resolve(markdownFilename);
+				if (Files.exists(markdownFile)) {
+					try {
+						return Files.readString(markdownFile);
+					}
+					catch (IOException e) {
+						logger.warn("Failed to read generated markdown file: {}", markdownFile, e);
+					}
+				}
+			}
+
+			// Return the output as-is if we can't extract better content
+			return output;
+
+		}
+		catch (Exception e) {
+			logger.error("Error processing file with MarkdownConverter: {}", filename, e);
+			return null;
+		}
+	}
+
+	/**
+	 * Get file extension including the dot
+	 */
+	private String getFileExtension(String fileName) {
+		int lastDotIndex = fileName.lastIndexOf('.');
+		return lastDotIndex > 0 ? fileName.substring(lastDotIndex) : "";
+	}
+
+	/**
+	 * Generate markdown filename by replacing extension with .md
+	 */
+	private String generateMarkdownFilename(String originalFilename) {
+		int lastDotIndex = originalFilename.lastIndexOf('.');
+		if (lastDotIndex > 0) {
+			return originalFilename.substring(0, lastDotIndex) + ".md";
+		}
+		return originalFilename + ".md";
+	}
+
+	/**
+	 * Check if file extension represents an image
+	 * @param extension File extension (without dot, e.g., "jpg", "png")
+	 * @return true if extension is an image type
+	 */
+	private boolean isImageExtension(String extension) {
+		if (extension == null || extension.trim().isEmpty()) {
 			return false;
 		}
-		String lowerMimeType = mimeType.toLowerCase().trim();
-		return lowerMimeType.startsWith("image/") && (lowerMimeType.equals("image/png")
-				|| lowerMimeType.equals("image/jpeg") || lowerMimeType.equals("image/jpg")
-				|| lowerMimeType.equals("image/webp") || lowerMimeType.equals("image/gif"));
+		String lowerExt = extension.toLowerCase().trim();
+		return lowerExt.equals("jpg") || lowerExt.equals("jpeg") || lowerExt.equals("png") || lowerExt.equals("gif")
+				|| lowerExt.equals("webp");
 	}
 
 	/**
