@@ -15,6 +15,10 @@
  */
 package com.alibaba.cloud.ai.lynxe.runtime.controller;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,9 +34,12 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.content.Media;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -141,6 +148,12 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 	@Autowired
 	@Lazy
 	private StreamingResponseHandler streamingResponseHandler;
+
+	@Autowired
+	private com.alibaba.cloud.ai.lynxe.runtime.service.FileUploadService fileUploadService;
+
+	@Autowired
+	private com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager unifiedDirectoryManager;
 
 	public LynxeController(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
@@ -981,6 +994,123 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 	}
 
 	/**
+	 * Create UserMessage with multi-media support (images)
+	 * @param input Text input from user
+	 * @param request Request map containing uploadKey (optional)
+	 * @return UserMessage with text and media if available
+	 */
+	private UserMessage createUserMessageWithMedia(String input, Map<String, Object> request) {
+		// Extract uploadKey from request
+		String uploadKey = (String) request.get("uploadKey");
+
+		// If no uploadKey, return simple text message (backward compatibility)
+		if (uploadKey == null || uploadKey.trim().isEmpty()) {
+			logger.debug("No uploadKey provided, creating text-only UserMessage");
+			return new UserMessage(input);
+		}
+
+		try {
+			// Get uploaded files for this uploadKey
+			List<com.alibaba.cloud.ai.lynxe.runtime.entity.vo.FileUploadResult.FileInfo> uploadedFiles = fileUploadService
+				.getUploadedFiles(uploadKey);
+
+			if (uploadedFiles == null || uploadedFiles.isEmpty()) {
+				logger.debug("No uploaded files found for uploadKey: {}, creating text-only UserMessage", uploadKey);
+				return new UserMessage(input);
+			}
+
+			// Filter for image files and create Media objects
+			List<Media> mediaList = new ArrayList<>();
+			Path uploadDirectory = unifiedDirectoryManager.getWorkingDirectory()
+				.resolve("uploaded_files")
+				.resolve(uploadKey);
+
+			for (com.alibaba.cloud.ai.lynxe.runtime.entity.vo.FileUploadResult.FileInfo fileInfo : uploadedFiles) {
+				// Skip failed uploads
+				if (!fileInfo.isSuccess()) {
+					logger.debug("Skipping failed file: {}", fileInfo.getOriginalName());
+					continue;
+				}
+
+				String mimeType = fileInfo.getType();
+				if (mimeType == null || mimeType.trim().isEmpty()) {
+					logger.debug("Skipping file with no MIME type: {}", fileInfo.getOriginalName());
+					continue;
+				}
+
+				// Filter for image MIME types
+				if (isImageMimeType(mimeType)) {
+					try {
+						Path filePath = uploadDirectory.resolve(fileInfo.getOriginalName());
+						if (!Files.exists(filePath) || !Files.isRegularFile(filePath)) {
+							logger.warn("File not found or not a regular file: {}", filePath);
+							continue;
+						}
+
+						Resource fileResource = new FileSystemResource(filePath);
+						org.springframework.util.MimeType springMimeType = org.springframework.util.MimeTypeUtils
+							.parseMimeType(mimeType);
+						Media media = new Media(springMimeType, fileResource);
+						mediaList.add(media);
+						logger.debug("Added image media: {} with MIME type: {}", fileInfo.getOriginalName(), mimeType);
+					}
+					catch (Exception e) {
+						logger.warn("Failed to create Media object for file: {}", fileInfo.getOriginalName(), e);
+						// Continue with other files
+					}
+				}
+				else {
+					logger.debug("Skipping non-image file: {} with MIME type: {}", fileInfo.getOriginalName(),
+							mimeType);
+				}
+			}
+
+			// Build UserMessage with text and media
+			if (mediaList.isEmpty()) {
+				logger.debug("No image files found, creating text-only UserMessage");
+				return new UserMessage(input);
+			}
+
+			logger.info("Creating UserMessage with {} image(s) for uploadKey: {}", mediaList.size(), uploadKey);
+			var builder = UserMessage.builder();
+			builder.text(input);
+			for (Media media : mediaList) {
+				builder.media(media);
+			}
+			return builder.build();
+
+		}
+		catch (IllegalArgumentException e) {
+			logger.warn("Invalid uploadKey format: {}, creating text-only UserMessage", uploadKey, e);
+			return new UserMessage(input);
+		}
+		catch (IOException e) {
+			logger.warn("Failed to load uploaded files for uploadKey: {}, creating text-only UserMessage", uploadKey, e);
+			return new UserMessage(input);
+		}
+		catch (Exception e) {
+			logger.error("Unexpected error while processing media files for uploadKey: {}, creating text-only UserMessage",
+					uploadKey, e);
+			return new UserMessage(input);
+		}
+	}
+
+	/**
+	 * Check if MIME type represents an image
+	 * @param mimeType MIME type string
+	 * @return true if MIME type is an image type
+	 */
+	private boolean isImageMimeType(String mimeType) {
+		if (mimeType == null || mimeType.trim().isEmpty()) {
+			return false;
+		}
+		String lowerMimeType = mimeType.toLowerCase().trim();
+		return lowerMimeType.startsWith("image/") && (lowerMimeType.equals("image/png")
+				|| lowerMimeType.equals("image/jpeg") || lowerMimeType.equals("image/jpg")
+				|| lowerMimeType.equals("image/webp") || lowerMimeType.equals("image/gif"));
+	}
+
+	/**
 	 * Simple chat endpoint for standard LLM chat without plan execution with SSE
 	 * streaming
 	 * @param request Request containing input message, conversationId (optional),
@@ -1061,8 +1191,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 					}
 				}
 
-				// Add user message
-				UserMessage userMessage = new UserMessage(input);
+				// Add user message with multi-media support
+				UserMessage userMessage = createUserMessageWithMedia(input, request);
 				messages.add(userMessage);
 
 				// Save user message to conversation memory

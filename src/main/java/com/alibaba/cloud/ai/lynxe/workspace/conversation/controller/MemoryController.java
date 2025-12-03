@@ -15,7 +15,9 @@
  */
 package com.alibaba.cloud.ai.lynxe.workspace.conversation.controller;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -140,55 +142,69 @@ public class MemoryController {
 	}
 
 	/**
-	 * Get conversation history (plan execution records) for a specific conversation ID
+	 * Get conversation history (plan execution records and chat messages) for a specific conversation ID
 	 * @param conversationId The conversation ID
-	 * @return List of plan execution records for this conversation
+	 * @return List of plan execution records for this conversation, including chat messages
 	 */
 	@GetMapping("/{conversationId}/history")
 	public ResponseEntity<?> getConversationHistory(@PathVariable String conversationId) {
 		try {
 			logger.info("Retrieving conversation history for conversationId: {}", conversationId);
 
-			// Get the memory entity to find all associated rootPlanIds
-			Memory memory = memoryService.singleMemory(conversationId);
-			if (memory == null) {
-				logger.warn("No memory found for conversationId: {}", conversationId);
-				return ResponseEntity.ok(new ArrayList<>());
-			}
+			List<PlanExecutionRecord> allRecords = new ArrayList<>();
 
-			List<String> rootPlanIds = memory.getRootPlanIds();
-			if (rootPlanIds == null || rootPlanIds.isEmpty()) {
-				logger.info("No plan execution records found for conversationId: {}", conversationId);
-				return ResponseEntity.ok(new ArrayList<>());
-			}
+			// Get plan execution records
+			try {
+				Memory memory = memoryService.singleMemory(conversationId);
+				if (memory != null) {
+					List<String> rootPlanIds = memory.getRootPlanIds();
+					if (rootPlanIds != null && !rootPlanIds.isEmpty()) {
+						logger.info("Found {} rootPlanIds for conversationId: {}", rootPlanIds.size(), conversationId);
 
-			logger.info("Found {} rootPlanIds for conversationId: {}", rootPlanIds.size(), conversationId);
+						// Retrieve all plan execution records for these rootPlanIds
+						List<PlanExecutionRecord> planRecords = rootPlanIds.stream().map(rootPlanId -> {
+							try {
+								PlanExecutionRecord record = planHierarchyReaderService.readPlanTreeByRootId(rootPlanId);
+								if (record == null) {
+									logger.warn("No plan execution record found for rootPlanId: {}", rootPlanId);
+								}
+								return record;
+							}
+							catch (Exception e) {
+								logger.error("Error retrieving plan record for rootPlanId: {}", rootPlanId, e);
+								return null;
+							}
+						})
+							.filter(record -> record != null) // Filter out null records
+							.collect(Collectors.toList());
 
-			// Retrieve all plan execution records for these rootPlanIds
-			List<PlanExecutionRecord> planRecords = rootPlanIds.stream().map(rootPlanId -> {
-				try {
-					PlanExecutionRecord record = planHierarchyReaderService.readPlanTreeByRootId(rootPlanId);
-					if (record == null) {
-						logger.warn("No plan execution record found for rootPlanId: {}", rootPlanId);
+						allRecords.addAll(planRecords);
+						logger.info("Retrieved {} plan execution records", planRecords.size());
 					}
-					return record;
 				}
-				catch (Exception e) {
-					logger.error("Error retrieving plan record for rootPlanId: {}", rootPlanId, e);
-					return null;
+			}
+			catch (IllegalArgumentException e) {
+				logger.debug("No memory found for conversationId: {}, will check for chat messages only",
+						conversationId);
+			}
+
+			// Get chat messages and convert to PlanExecutionRecord format
+			List<PlanExecutionRecord> chatRecords = memoryService.getChatMessagesAsPlanRecords(conversationId);
+			allRecords.addAll(chatRecords);
+			logger.info("Retrieved {} chat message records", chatRecords.size());
+
+			// Sort all records by startTime to maintain chronological order
+			allRecords.sort(Comparator.comparing((PlanExecutionRecord record) -> {
+				if (record.getStartTime() != null) {
+					return record.getStartTime();
 				}
-			})
-				.filter(record -> record != null) // Filter out null records
-				.collect(Collectors.toList());
+				return LocalDateTime.MIN;
+			}));
 
-			logger.info("Successfully retrieved {} plan execution records for conversationId: {}", planRecords.size(),
-					conversationId);
+			logger.info("Successfully retrieved {} total records ({} plan records + {} chat records) for conversationId: {}",
+					allRecords.size(), allRecords.size() - chatRecords.size(), chatRecords.size(), conversationId);
 
-			return ResponseEntity.ok(planRecords);
-		}
-		catch (IllegalArgumentException e) {
-			logger.warn("Conversation not found: {}", conversationId);
-			return ResponseEntity.ok(new ArrayList<>());
+			return ResponseEntity.ok(allRecords);
 		}
 		catch (Exception e) {
 			logger.error("Error retrieving conversation history for conversationId: {}", conversationId, e);
