@@ -14,25 +14,23 @@
  * limitations under the License.
  */
 
-import { computed } from 'vue'
-import { marked } from 'marked'
+import type { ChatMessage } from '@/types/message-dialog'
 import DOMPurify from 'dompurify'
 import hljs from 'highlight.js'
-import type { ChatMessage } from '@/types/message-dialog'
+import { marked } from 'marked'
+import { computed } from 'vue'
 
 // Configure marked options
 marked.setOptions({
   breaks: true, // Convert line breaks to <br>
   gfm: true, // Enable GitHub Flavored Markdown
-  headerIds: false, // Disable header IDs for security
-  mangle: false, // Disable email obfuscation
 })
 
 // Configure marked extension for code blocks with syntax highlighting
 // In marked v16, we use extensions to customize rendering
 marked.use({
   renderer: {
-    code(token: any) {
+    code(token: { text?: string; raw?: string; code?: string; lang?: string; language?: string }) {
       try {
         // Handle different token formats from marked v16
         let codeText = ''
@@ -53,7 +51,11 @@ marked.use({
 
         // Ensure codeText is a string
         if (typeof codeText !== 'string') {
-          console.warn('[useMessageFormatting] Code text is not a string:', typeof codeText, codeText)
+          console.warn(
+            '[useMessageFormatting] Code text is not a string:',
+            typeof codeText,
+            codeText
+          )
           codeText = String(codeText || '')
         }
 
@@ -76,9 +78,16 @@ marked.use({
         return `<pre><code>${escaped}</code></pre>`
       } catch (error) {
         console.error('[useMessageFormatting] Error in code renderer:', error, token)
-        // Ultimate fallback
+        // Ultimate fallback - escape all HTML entities properly
+        // Note: & must be escaped first to avoid double-encoding
         const safeText = String(token?.text || token?.raw || token || '')
-        return `<pre><code>${safeText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`
+        const escaped = safeText
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;')
+        return `<pre><code>${escaped}</code></pre>`
       }
     },
   },
