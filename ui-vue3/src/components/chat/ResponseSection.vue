@@ -95,6 +95,8 @@ import { Icon } from '@iconify/vue'
 import { useMessageFormatting } from './composables/useMessageFormatting'
 import UserInputForm from './UserInputForm.vue'
 import type { UserInputWaitState } from '@/types/plan-execution-record'
+// Import highlight.js CSS for syntax highlighting
+import 'highlight.js/styles/atom-one-dark.css'
 
 interface Props {
   content?: string
@@ -195,7 +197,55 @@ const handleUserInputSubmitted = (inputData: Record<string, unknown>) => {
         color: #ffffff;
         line-height: 1.6;
         font-size: 14px;
+        word-wrap: break-word;
 
+        // Headings
+        :deep(h1),
+        :deep(h2),
+        :deep(h3),
+        :deep(h4),
+        :deep(h5),
+        :deep(h6) {
+          margin: 16px 0 8px 0;
+          font-weight: 600;
+          color: #ffffff;
+          line-height: 1.4;
+        }
+
+        :deep(h1) {
+          font-size: 24px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding-bottom: 8px;
+        }
+
+        :deep(h2) {
+          font-size: 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding-bottom: 6px;
+        }
+
+        :deep(h3) {
+          font-size: 18px;
+        }
+
+        :deep(h4) {
+          font-size: 16px;
+        }
+
+        :deep(h5) {
+          font-size: 14px;
+        }
+
+        :deep(h6) {
+          font-size: 12px;
+        }
+
+        // Paragraphs
+        :deep(p) {
+          margin: 8px 0;
+        }
+
+        // Text formatting
         :deep(strong) {
           font-weight: 600;
           color: #ffffff;
@@ -206,28 +256,134 @@ const handleUserInputSubmitted = (inputData: Record<string, unknown>) => {
           color: #cccccc;
         }
 
-        :deep(code) {
+        :deep(u) {
+          text-decoration: underline;
+        }
+
+        :deep(s) {
+          text-decoration: line-through;
+        }
+
+        // Inline code
+        :deep(code:not(pre code)) {
           background: rgba(0, 0, 0, 0.3);
           padding: 2px 6px;
           border-radius: 4px;
-          font-family: 'Monaco', 'Menlo', monospace;
+          font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
           font-size: 13px;
           color: #8be9fd;
         }
 
+        // Code blocks
         :deep(pre) {
           background: rgba(0, 0, 0, 0.4);
           padding: 12px;
           border-radius: 8px;
           overflow-x: auto;
-          margin: 8px 0;
+          margin: 12px 0;
+          border: 1px solid rgba(255, 255, 255, 0.1);
 
           code {
             background: none;
             padding: 0;
-            color: #f8f8f2;
-            font-size: 12px;
+            color: inherit;
+            font-size: 13px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            display: block;
+            white-space: pre;
           }
+        }
+
+        // Lists
+        :deep(ul),
+        :deep(ol) {
+          margin: 8px 0;
+          padding-left: 24px;
+        }
+
+        :deep(li) {
+          margin: 4px 0;
+        }
+
+        :deep(ul) {
+          list-style-type: disc;
+        }
+
+        :deep(ol) {
+          list-style-type: decimal;
+        }
+
+        // Links
+        :deep(a) {
+          color: #667eea;
+          text-decoration: none;
+          border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+          transition: all 0.2s ease;
+
+          &:hover {
+            color: #8b9aff;
+            border-bottom-color: rgba(139, 154, 255, 0.6);
+          }
+        }
+
+        // Blockquotes
+        :deep(blockquote) {
+          margin: 12px 0;
+          padding: 8px 16px;
+          border-left: 4px solid #667eea;
+          background: rgba(102, 126, 234, 0.1);
+          border-radius: 4px;
+          color: #cccccc;
+          font-style: italic;
+        }
+
+        // Horizontal rule
+        :deep(hr) {
+          margin: 16px 0;
+          border: none;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        // Tables
+        :deep(table) {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 12px 0;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 6px;
+          overflow: hidden;
+        }
+
+        :deep(thead) {
+          background: rgba(102, 126, 234, 0.2);
+        }
+
+        :deep(th),
+        :deep(td) {
+          padding: 8px 12px;
+          text-align: left;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        :deep(th) {
+          font-weight: 600;
+          color: #ffffff;
+        }
+
+        :deep(tbody tr:last-child td) {
+          border-bottom: none;
+        }
+
+        :deep(tbody tr:hover) {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        // Images
+        :deep(img) {
+          max-width: 100%;
+          height: auto;
+          border-radius: 6px;
+          margin: 12px 0;
         }
       }
 

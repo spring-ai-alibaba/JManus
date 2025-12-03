@@ -491,12 +491,12 @@ const handleConfig = () => {
 }
 
 const memorySelected = async () => {
-  // Memory sidebar is already closed by selectMemory() calling toggleSidebar()
-  // Load conversation history if a memory is selected
-  if (memoryStore.selectMemoryId) {
-    console.log('[DirectView] Memory selected:', memoryStore.selectMemoryId)
+  // Memory sidebar is already closed by selectConversation() calling toggleSidebar()
+  // Load conversation history if a conversation is selected
+  if (memoryStore.conversationId) {
+    console.log('[DirectView] Conversation selected:', memoryStore.conversationId)
     try {
-      await conversationHistory.loadConversationHistory(memoryStore.selectMemoryId, true, true)
+      await conversationHistory.loadConversationHistory(memoryStore.conversationId, true, true)
     } catch (error) {
       console.error('[DirectView] Failed to load conversation history:', error)
       // Error toast is already shown by loadConversationHistory
@@ -505,8 +505,7 @@ const memorySelected = async () => {
 }
 
 const newChat = () => {
-  memoryStore.clearMemoryId()
-  memoryStore.clearConversationId()
+  memoryStore.clearSelectedConversation()
   // Reset all dialog state including conversationId to start a fresh conversation
   messageDialog.reset()
 }

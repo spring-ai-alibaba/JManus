@@ -436,8 +436,22 @@ public class ModelServiceImpl implements ModelService {
 		log.debug("Setting request headers - Content-Type: application/json, Authorization: Bearer {}",
 				maskApiKey(apiKey));
 
-		// Build request URL
-		String requestUrl = baseUrl + "/v1/models";
+		// Build request URL - normalize baseUrl to avoid duplicate /v1
+		String normalizedBaseUrl = baseUrl.trim();
+		// Remove trailing slash if present
+		if (normalizedBaseUrl.endsWith("/")) {
+			normalizedBaseUrl = normalizedBaseUrl.substring(0, normalizedBaseUrl.length() - 1);
+		}
+		// Check if baseUrl already ends with /v1
+		String requestUrl;
+		if (normalizedBaseUrl.endsWith("/v1")) {
+			// baseUrl already includes /v1, just append /models
+			requestUrl = normalizedBaseUrl + "/models";
+		}
+		else {
+			// baseUrl doesn't include /v1, append /v1/models
+			requestUrl = normalizedBaseUrl + "/v1/models";
+		}
 		log.info("Sending HTTP request to: {}", requestUrl);
 
 		try {

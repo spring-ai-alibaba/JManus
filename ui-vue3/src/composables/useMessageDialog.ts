@@ -257,6 +257,9 @@ export function useMessageDialog() {
   ): Promise<{ success: boolean; planId?: string; conversationId?: string; error?: string }> => {
     let targetDialog: MessageDialog | null = null
     let assistantMessage: ChatMessage | null = null
+    let response:
+      | { planId?: string; conversationId?: string; message?: string; result?: string }
+      | undefined
 
     try {
       // Check if there's an active running task based on our own state
@@ -311,8 +314,6 @@ export function useMessageDialog() {
         serviceGroup?: string
       }
 
-      let response: { planId?: string; conversationId?: string; message?: string; result?: string }
-
       if (extendedQuery.toolName && extendedQuery.replacementParams) {
         // Execute selected tool
         response = (await DirectApiService.executeByToolName(
@@ -324,46 +325,46 @@ export function useMessageDialog() {
           extendedQuery.serviceGroup
         )) as typeof response
 
-      // Update conversationId if present (persisted)
-      if (response.conversationId) {
-        // Maintain conversationId independently (persisted)
-        conversationId.value = response.conversationId
-        // Also set on dialog for reference
-        targetDialog.conversationId = response.conversationId
-        memoryStore.setConversationId(response.conversationId)
-        console.log('[useMessageDialog] Conversation ID set:', response.conversationId)
-      }
-
-      // Update assistant message with response
-      if (response.planId) {
-        // Plan execution mode
-        const newRootPlanId = response.planId
-        // Maintain rootPlanId independently (not persisted)
-        rootPlanId.value = newRootPlanId
-        // Also set on dialog for reference
-        targetDialog.planId = newRootPlanId
-
-        updateMessageInDialog(targetDialog.id, assistantMessage.id, {
-          thinking: 'Planning execution...',
-          planExecution: {
-            currentPlanId: newRootPlanId,
-            rootPlanId: newRootPlanId,
-            status: 'running',
-          },
-          isStreaming: false,
-        })
-
-        // Actively notify usePlanExecution to track this plan
-        planExecution.handlePlanExecutionRequested(newRootPlanId)
-        console.log('[useMessageDialog] Root plan ID set and tracking started:', newRootPlanId)
-      } else {
-        // Direct response mode
-        const updates: Partial<ChatMessage> = {
-          content: response.message || response.result || 'No response received',
-          isStreaming: false,
-            thinking: '',
+        // Update conversationId if present (persisted)
+        if (response?.conversationId) {
+          // Maintain conversationId independently (persisted)
+          conversationId.value = response.conversationId
+          // Also set on dialog for reference
+          targetDialog.conversationId = response.conversationId
+          memoryStore.setConversationId(response.conversationId)
+          console.log('[useMessageDialog] Conversation ID set:', response.conversationId)
         }
-        updateMessageInDialog(targetDialog.id, assistantMessage.id, updates)
+
+        // Update assistant message with response
+        if (response?.planId) {
+          // Plan execution mode
+          const newRootPlanId = response.planId
+          // Maintain rootPlanId independently (not persisted)
+          rootPlanId.value = newRootPlanId
+          // Also set on dialog for reference
+          targetDialog.planId = newRootPlanId
+
+          updateMessageInDialog(targetDialog.id, assistantMessage.id, {
+            thinking: 'Planning execution...',
+            planExecution: {
+              currentPlanId: newRootPlanId,
+              rootPlanId: newRootPlanId,
+              status: 'running',
+            },
+            isStreaming: false,
+          })
+
+          // Actively notify usePlanExecution to track this plan
+          planExecution.handlePlanExecutionRequested(newRootPlanId)
+          console.log('[useMessageDialog] Root plan ID set and tracking started:', newRootPlanId)
+        } else {
+          // Direct response mode
+          const updates: Partial<ChatMessage> = {
+            content: response?.message || response?.result || 'No response received',
+            isStreaming: false,
+            thinking: '',
+          }
+          updateMessageInDialog(targetDialog.id, assistantMessage.id, updates)
         }
       } else {
         // Use simple chat mode with streaming
@@ -374,58 +375,54 @@ export function useMessageDialog() {
         let accumulatedContent = ''
 
         // Handle streaming chunks
-        response = (await DirectApiService.sendChatMessage(
-          query,
-          'VUE_DIALOG',
-          (chunk) => {
-            if (!targetDialog || !assistantMessage) return
+        response = (await DirectApiService.sendChatMessage(query, 'VUE_DIALOG', chunk => {
+          if (!targetDialog || !assistantMessage) return
 
-            if (chunk.type === 'start' && chunk.conversationId) {
-              // Update conversationId if present (persisted)
-              conversationId.value = chunk.conversationId
-              targetDialog.conversationId = chunk.conversationId
-              memoryStore.setConversationId(chunk.conversationId)
-              console.log('[useMessageDialog] Conversation ID set from stream:', chunk.conversationId)
-            } else if (chunk.type === 'chunk' && chunk.content) {
-              // Append chunk to accumulated content
-              accumulatedContent += chunk.content
-              // Update message content incrementally
-              updateMessageInDialog(targetDialog.id, assistantMessage.id, {
-                content: accumulatedContent,
-                isStreaming: true,
-                thinking: '',
-              })
-            } else if (chunk.type === 'done') {
-              // Stop streaming
-              stopStreaming(assistantMessage.id)
-              // Final update
-              updateMessageInDialog(targetDialog.id, assistantMessage.id, {
-                content: accumulatedContent || 'No response received',
-                isStreaming: false,
-                thinking: '',
-              })
-            } else if (chunk.type === 'error') {
-              // Handle error
-              stopStreaming(assistantMessage.id)
-              updateMessageInDialog(targetDialog.id, assistantMessage.id, {
-                content: `Error: ${chunk.message || 'Streaming error occurred'}`,
-                error: chunk.message || 'Streaming error occurred',
-                isStreaming: false,
-              })
-            }
+          if (chunk.type === 'start' && chunk.conversationId) {
+            // Update conversationId if present (persisted)
+            conversationId.value = chunk.conversationId
+            targetDialog.conversationId = chunk.conversationId
+            memoryStore.setConversationId(chunk.conversationId)
+            console.log('[useMessageDialog] Conversation ID set from stream:', chunk.conversationId)
+          } else if (chunk.type === 'chunk' && chunk.content) {
+            // Append chunk to accumulated content
+            accumulatedContent += chunk.content
+            // Update message content incrementally
+            updateMessageInDialog(targetDialog.id, assistantMessage.id, {
+              content: accumulatedContent,
+              isStreaming: true,
+              thinking: '',
+            })
+          } else if (chunk.type === 'done') {
+            // Stop streaming
+            stopStreaming(assistantMessage.id)
+            // Final update
+            updateMessageInDialog(targetDialog.id, assistantMessage.id, {
+              content: accumulatedContent || 'No response received',
+              isStreaming: false,
+              thinking: '',
+            })
+          } else if (chunk.type === 'error') {
+            // Handle error
+            stopStreaming(assistantMessage.id)
+            updateMessageInDialog(targetDialog.id, assistantMessage.id, {
+              content: `Error: ${chunk.message || 'Streaming error occurred'}`,
+              error: chunk.message || 'Streaming error occurred',
+              isStreaming: false,
+            })
           }
-        )) as typeof response
+        })) as typeof response
 
         // Ensure streaming is stopped and final content is set
         stopStreaming(assistantMessage.id)
-        if (response.conversationId) {
+        if (response?.conversationId) {
           conversationId.value = response.conversationId
           targetDialog.conversationId = response.conversationId
           memoryStore.setConversationId(response.conversationId)
         }
         // Final update with complete message
         updateMessageInDialog(targetDialog.id, assistantMessage.id, {
-          content: response.message || accumulatedContent || 'No response received',
+          content: response?.message || accumulatedContent || 'No response received',
           isStreaming: false,
           thinking: '',
         })
@@ -433,8 +430,8 @@ export function useMessageDialog() {
 
       return {
         success: true,
-        ...(response.planId && { planId: response.planId }),
-        ...(response.conversationId && { conversationId: response.conversationId }),
+        ...(response?.planId && { planId: response.planId }),
+        ...(response?.conversationId && { conversationId: response.conversationId }),
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message'
@@ -455,7 +452,12 @@ export function useMessageDialog() {
         error: errorMessage,
       }
     } finally {
-      isLoading.value = false
+      // Only reset isLoading if no plan execution is in progress
+      // If a planId was returned, isLoading will be reset by watchEffect when plan completes
+      if (!response?.planId) {
+        isLoading.value = false
+      }
+      // If planId exists, let watchEffect handle the reset when plan completes
     }
   }
 
