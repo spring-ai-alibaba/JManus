@@ -142,9 +142,11 @@ public class MemoryController {
 	}
 
 	/**
-	 * Get conversation history (plan execution records and chat messages) for a specific conversation ID
+	 * Get conversation history (plan execution records and chat messages) for a specific
+	 * conversation ID
 	 * @param conversationId The conversation ID
-	 * @return List of plan execution records for this conversation, including chat messages
+	 * @return List of plan execution records for this conversation, including chat
+	 * messages
 	 */
 	@GetMapping("/{conversationId}/history")
 	public ResponseEntity<?> getConversationHistory(@PathVariable String conversationId) {
@@ -164,7 +166,8 @@ public class MemoryController {
 						// Retrieve all plan execution records for these rootPlanIds
 						List<PlanExecutionRecord> planRecords = rootPlanIds.stream().map(rootPlanId -> {
 							try {
-								PlanExecutionRecord record = planHierarchyReaderService.readPlanTreeByRootId(rootPlanId);
+								PlanExecutionRecord record = planHierarchyReaderService
+									.readPlanTreeByRootId(rootPlanId);
 								if (record == null) {
 									logger.warn("No plan execution record found for rootPlanId: {}", rootPlanId);
 								}
@@ -201,7 +204,8 @@ public class MemoryController {
 				return LocalDateTime.MIN;
 			}));
 
-			logger.info("Successfully retrieved {} total records ({} plan records + {} chat records) for conversationId: {}",
+			logger.info(
+					"Successfully retrieved {} total records ({} plan records + {} chat records) for conversationId: {}",
 					allRecords.size(), allRecords.size() - chatRecords.size(), chatRecords.size(), conversationId);
 
 			return ResponseEntity.ok(allRecords);

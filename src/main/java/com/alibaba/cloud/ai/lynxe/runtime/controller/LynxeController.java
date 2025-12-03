@@ -154,7 +154,6 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 	@Autowired
 	private com.alibaba.cloud.ai.lynxe.tool.filesystem.UnifiedDirectoryManager unifiedDirectoryManager;
 
-
 	public LynxeController(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 		// Register JavaTimeModule to handle LocalDateTime serialization/deserialization
@@ -1058,16 +1057,20 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 					}
 
 					String ext = fileExtension.toLowerCase().substring(1);
-					String extractedText = processFileWithMarkdownConverter(filePath, ext, tempPlanId, fileInfo.getOriginalName());
+					String extractedText = processFileWithMarkdownConverter(filePath, ext, tempPlanId,
+							fileInfo.getOriginalName());
 
 					if (extractedText != null && !extractedText.trim().isEmpty()) {
-						enhancedInput.append("\n\n--- Content from file: ").append(fileInfo.getOriginalName())
-							.append(" ---\n\n").append(extractedText);
+						enhancedInput.append("\n\n--- Content from file: ")
+							.append(fileInfo.getOriginalName())
+							.append(" ---\n\n")
+							.append(extractedText);
 						logger.info("Extracted {} characters from file: {}", extractedText.length(),
 								fileInfo.getOriginalName());
 					}
 					else {
-						// For image files, if text extraction fails or returns empty, try to add as Media
+						// For image files, if text extraction fails or returns empty, try
+						// to add as Media
 						if (isImageExtension(ext)) {
 							try {
 								Resource fileResource = new FileSystemResource(filePath);
@@ -1079,7 +1082,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 										mimeType);
 							}
 							catch (Exception e) {
-								logger.warn("Failed to create Media object for file: {}", fileInfo.getOriginalName(), e);
+								logger.warn("Failed to create Media object for file: {}", fileInfo.getOriginalName(),
+										e);
 							}
 						}
 						else {
@@ -1114,11 +1118,13 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 			return new UserMessage(input);
 		}
 		catch (IOException e) {
-			logger.warn("Failed to load uploaded files for uploadKey: {}, creating text-only UserMessage", uploadKey, e);
+			logger.warn("Failed to load uploaded files for uploadKey: {}, creating text-only UserMessage", uploadKey,
+					e);
 			return new UserMessage(input);
 		}
 		catch (Exception e) {
-			logger.error("Unexpected error while processing media files for uploadKey: {}, creating text-only UserMessage",
+			logger.error(
+					"Unexpected error while processing media files for uploadKey: {}, creating text-only UserMessage",
 					uploadKey, e);
 			return new UserMessage(input);
 		}

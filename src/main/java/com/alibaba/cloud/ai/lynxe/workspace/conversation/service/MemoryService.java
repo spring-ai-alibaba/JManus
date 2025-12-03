@@ -50,7 +50,8 @@ public interface MemoryService {
 	void addRootPlanIdToConversation(String conversationId, String rootPlanId);
 
 	/**
-	 * Get chat messages from ai_chat_memory table and convert them to PlanExecutionRecord format
+	 * Get chat messages from ai_chat_memory table and convert them to PlanExecutionRecord
+	 * format
 	 * @param conversationId The conversation ID
 	 * @return List of PlanExecutionRecord objects representing chat message pairs
 	 */
