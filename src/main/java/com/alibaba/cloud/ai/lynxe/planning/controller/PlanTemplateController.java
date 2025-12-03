@@ -423,7 +423,6 @@ public class PlanTemplateController {
 					configVO.setTitle(planTemplate.getTitle());
 					configVO.setPlanType(planInterface.getPlanType());
 					configVO.setServiceGroup(planTemplate.getServiceGroup());
-					configVO.setDirectResponse(planInterface.isDirectResponse());
 					configVO.setAccessLevel(planTemplate.getAccessLevel());
 					// Set createTime and updateTime from PlanTemplateConfigVO
 					configVO.setCreateTime(planTemplate.getCreateTime());
@@ -557,7 +556,6 @@ public class PlanTemplateController {
 			configVO.setTitle(planTemplate.getTitle());
 			configVO.setPlanType(planInterface.getPlanType());
 			configVO.setServiceGroup(planTemplate.getServiceGroup());
-			configVO.setDirectResponse(planInterface.isDirectResponse());
 			configVO.setAccessLevel(planTemplate.getAccessLevel());
 			// Set createTime and updateTime from PlanTemplateConfigVO
 			configVO.setCreateTime(planTemplate.getCreateTime());

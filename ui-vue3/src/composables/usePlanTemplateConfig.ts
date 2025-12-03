@@ -33,7 +33,6 @@ export function usePlanTemplateConfig() {
   const config = reactive<PlanTemplateConfigVO>({
     title: '',
     steps: [],
-    directResponse: false,
     planType: 'dynamic_agent',
     planTemplateId: '',
     accessLevel: 'editable',
@@ -149,7 +148,6 @@ export function usePlanTemplateConfig() {
         ...step,
         selectedToolKeys: step.selectedToolKeys ?? [],
       })),
-      directResponse: newConfig.directResponse || false,
       planType: newConfig.planType || 'dynamic_agent',
       planTemplateId: newConfig.planTemplateId || '',
       accessLevel: accessLevel,
@@ -172,7 +170,6 @@ export function usePlanTemplateConfig() {
     Object.assign(config, {
       title: '',
       steps: [],
-      directResponse: false,
       planType: 'dynamic_agent',
       planTemplateId: '',
       accessLevel: 'editable',
@@ -203,7 +200,6 @@ export function usePlanTemplateConfig() {
         // Ensure selectedToolKeys is always an array, not null
         selectedToolKeys: step.selectedToolKeys ?? [],
       })),
-      directResponse: config.directResponse || false,
       planType: config.planType || 'dynamic_agent',
       planTemplateId: config.planTemplateId || '',
       accessLevel: accessLevel,
@@ -370,7 +366,10 @@ export function usePlanTemplateConfig() {
           // Update selectedTemplate if it matches the saved template
           // Check both old and new planTemplateId to handle ID replacement
           const oldPlanTemplateId = selectedTemplate.value?.planTemplateId
-          if (oldPlanTemplateId === actualPlanTemplateId || oldPlanTemplateId === config.planTemplateId) {
+          if (
+            oldPlanTemplateId === actualPlanTemplateId ||
+            oldPlanTemplateId === config.planTemplateId
+          ) {
             const loadedConfig = getConfig()
             selectedTemplate.value = {
               ...selectedTemplate.value,

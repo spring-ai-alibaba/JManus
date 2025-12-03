@@ -112,28 +112,6 @@ public class PlanFinalizer {
 	}
 
 	/**
-	 * Generate direct LLM response for simple requests
-	 */
-	private void generateDirectResponse(ExecutionContext context, PlanExecutionResult result) {
-		validateForGeneration(context, "ExecutionContext or title cannot be null");
-
-		String title = context.getTitle();
-		log.info("Generating direct response for user request: {}", title);
-
-		Map<String, Object> promptVariables = Map.of("title", title);
-
-		String directResponsePrompt = """
-				You are lynxe, an AI assistant capable of responding to user requests. Currently in direct feedback mode, you need to directly respond to the user's simple requests without complex planning and decomposition.
-
-				The current user request is:
-
-				{title}
-				""";
-		generateWithLlm(context, result, directResponsePrompt, promptVariables, "direct response",
-				"Generated direct response: {}");
-	}
-
-	/**
 	 * Core method for generating LLM responses with common logic
 	 */
 	private String generateLlmResponse(ExecutionContext context, String promptName, Map<String, Object> variables,
@@ -216,13 +194,8 @@ public class PlanFinalizer {
 				log.debug("Generating LLM summary for plan: {}", context.getCurrentPlanId());
 				generateSummary(context, result);
 			}
-			// Check if this is a direct response plan
-			else if (context.getPlan() != null && context.getPlan().isDirectResponse()) {
-				log.debug("Generating direct response for plan: {}", context.getCurrentPlanId());
-				generateDirectResponse(context, result);
-			}
 			else {
-				log.debug("No need to generate summary or direct response for plan: {}", context.getCurrentPlanId());
+				log.debug("No need to generate summary for plan: {}", context.getCurrentPlanId());
 				processAndRecordResult(context, result, result.getFinalResult(), "Final result: {}");
 			}
 
@@ -319,18 +292,6 @@ public class PlanFinalizer {
 		result.setFinalResult(llmResult);
 		recordPlanCompletion(context, llmResult);
 		log.info(logTemplate, llmResult);
-	}
-
-	/**
-	 * Unified validation for generation methods
-	 */
-	private void validateForGeneration(ExecutionContext context, String errorMessage) {
-		if (context == null) {
-			throw new IllegalArgumentException(errorMessage);
-		}
-		if (context.getTitle() == null) {
-			throw new IllegalArgumentException("Title cannot be null");
-		}
 	}
 
 	/**

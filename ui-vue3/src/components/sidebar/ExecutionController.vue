@@ -510,7 +510,6 @@ const handleExecutePlan = async () => {
       planData: {
         title: '',
         steps: [],
-        directResponse: false,
       }, // Will be set by the parent component
       params: undefined, // Will be set by the parent component
       replacementParams,
@@ -573,7 +572,6 @@ const proceedWithExecution = async () => {
         terminateColumns: step.terminateColumns || '',
         stepContent: '',
       })),
-      directResponse: config.directResponse || false,
       ...(planTemplateId && { planTemplateId }),
       ...(config.planType && { planType: config.planType }),
     }

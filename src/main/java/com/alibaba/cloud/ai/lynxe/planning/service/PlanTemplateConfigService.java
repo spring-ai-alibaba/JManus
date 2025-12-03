@@ -941,7 +941,6 @@ public class PlanTemplateConfigService {
 					configVO.setTitle(planTemplate.getTitle());
 					configVO.setPlanType(planInterface.getPlanType());
 					configVO.setServiceGroup(planTemplate.getServiceGroup());
-					configVO.setDirectResponse(planInterface.isDirectResponse());
 					configVO.setAccessLevel(planTemplate.getAccessLevel());
 
 					// Convert ExecutionStep list to StepConfig list
