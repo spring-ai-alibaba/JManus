@@ -15,14 +15,18 @@
  */
 package com.alibaba.cloud.ai.lynxe.workspace.conversation.controller;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -36,6 +40,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
+import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.recorder.entity.vo.PlanExecutionRecord;
 import com.alibaba.cloud.ai.lynxe.recorder.service.PlanHierarchyReaderService;
 import com.alibaba.cloud.ai.lynxe.workspace.conversation.entity.vo.Memory;
@@ -59,6 +65,12 @@ public class MemoryController {
 
 	@Autowired
 	private PlanHierarchyReaderService planHierarchyReaderService;
+
+	@Autowired(required = false)
+	private LlmService llmService;
+
+	@Autowired(required = false)
+	private LynxeProperties lynxeProperties;
 
 	@GetMapping
 	public ResponseEntity<MemoryResponse> getAllMemories() {
@@ -155,7 +167,7 @@ public class MemoryController {
 
 			List<PlanExecutionRecord> allRecords = new ArrayList<>();
 
-			// Get plan execution records
+			// Get plan execution records and chat records
 			try {
 				Memory memory = memoryService.singleMemory(conversationId);
 				if (memory != null) {
@@ -163,26 +175,68 @@ public class MemoryController {
 					if (rootPlanIds != null && !rootPlanIds.isEmpty()) {
 						logger.info("Found {} rootPlanIds for conversationId: {}", rootPlanIds.size(), conversationId);
 
-						// Retrieve all plan execution records for these rootPlanIds
-						List<PlanExecutionRecord> planRecords = rootPlanIds.stream().map(rootPlanId -> {
+						// Get chat messages if available
+						List<Message> chatMessages = null;
+						if (llmService != null && lynxeProperties != null
+								&& lynxeProperties.getEnableConversationMemory()) {
 							try {
-								PlanExecutionRecord record = planHierarchyReaderService
-									.readPlanTreeByRootId(rootPlanId);
-								if (record == null) {
-									logger.warn("No plan execution record found for rootPlanId: {}", rootPlanId);
+								org.springframework.ai.chat.memory.ChatMemory conversationMemory = llmService
+										.getConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId);
+								chatMessages = conversationMemory.get(conversationId);
+								if (chatMessages != null) {
+									logger.debug("Retrieved {} chat messages for conversationId: {}",
+											chatMessages.size(), conversationId);
 								}
-								return record;
 							}
 							catch (Exception e) {
-								logger.error("Error retrieving plan record for rootPlanId: {}", rootPlanId, e);
-								return null;
+								logger.warn("Failed to retrieve chat messages for conversationId: {}", conversationId,
+										e);
 							}
-						})
-							.filter(record -> record != null) // Filter out null records
-							.collect(Collectors.toList());
+						}
 
-						allRecords.addAll(planRecords);
-						logger.info("Retrieved {} plan execution records", planRecords.size());
+						// Process each rootPlanId
+						// Use an index to track which chat messages have been used
+						int chatMessageIndex = 0;
+						for (String rootPlanId : rootPlanIds) {
+							if (rootPlanId == null || rootPlanId.trim().isEmpty()) {
+								continue;
+							}
+
+							// Check if it's a chat ID (starts with "chat-")
+							if (rootPlanId.startsWith("chat-")) {
+								// Create PlanExecutionRecord for chat
+								PlanExecutionRecord chatRecord = createChatRecord(rootPlanId, chatMessages,
+										chatMessageIndex);
+								if (chatRecord != null) {
+									allRecords.add(chatRecord);
+									// Increment index to skip the messages used for this chat
+									chatMessageIndex += 2; // User message + Assistant message
+									logger.debug("Created chat record for chatId: {}", rootPlanId);
+								}
+								else {
+									logger.warn("Failed to create chat record for chatId: {}", rootPlanId);
+								}
+							}
+							else {
+								// It's a plan ID, retrieve plan execution record
+								try {
+									PlanExecutionRecord record = planHierarchyReaderService
+											.readPlanTreeByRootId(rootPlanId);
+									if (record != null) {
+										allRecords.add(record);
+									}
+									else {
+										logger.warn("No plan execution record found for rootPlanId: {}", rootPlanId);
+									}
+								}
+								catch (Exception e) {
+									logger.error("Error retrieving plan record for rootPlanId: {}", rootPlanId, e);
+								}
+							}
+						}
+
+						logger.info("Retrieved {} total records (plans + chats) for conversationId: {}",
+								allRecords.size(), conversationId);
 					}
 				}
 			}
@@ -190,11 +244,6 @@ public class MemoryController {
 				logger.debug("No memory found for conversationId: {}, will check for chat messages only",
 						conversationId);
 			}
-
-			// Get chat messages and convert to PlanExecutionRecord format
-			List<PlanExecutionRecord> chatRecords = memoryService.getChatMessagesAsPlanRecords(conversationId);
-			allRecords.addAll(chatRecords);
-			logger.info("Retrieved {} chat message records", chatRecords.size());
 
 			// Sort all records by startTime to maintain chronological order
 			allRecords.sort(Comparator.comparing((PlanExecutionRecord record) -> {
@@ -204,15 +253,124 @@ public class MemoryController {
 				return LocalDateTime.MIN;
 			}));
 
-			logger.info(
-					"Successfully retrieved {} total records ({} plan records + {} chat records) for conversationId: {}",
-					allRecords.size(), allRecords.size() - chatRecords.size(), chatRecords.size(), conversationId);
+			logger.info("Successfully retrieved {} plan execution records for conversationId: {}", allRecords.size(),
+					conversationId);
 
 			return ResponseEntity.ok(allRecords);
 		}
 		catch (Exception e) {
 			logger.error("Error retrieving conversation history for conversationId: {}", conversationId, e);
 			return ResponseEntity.status(500).body("Failed to retrieve conversation history: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Create a PlanExecutionRecord for a chat conversation
+	 * @param chatId The chat ID (format: "chat-{timestamp}_{random}_{threadId}")
+	 * @param chatMessages All chat messages from ChatMemory (can be null)
+	 * @param startIndex Starting index in chatMessages to look for the message pair
+	 * @return PlanExecutionRecord representing the chat, or null if creation fails
+	 */
+	private PlanExecutionRecord createChatRecord(String chatId, List<Message> chatMessages, int startIndex) {
+		try {
+			// Extract timestamp from chat ID (format: "chat-{timestamp}_{random}_{threadId}")
+			long chatTimestamp = extractTimestampFromChatId(chatId);
+
+			PlanExecutionRecord record = new PlanExecutionRecord();
+			record.setCurrentPlanId(chatId);
+			record.setRootPlanId(chatId);
+			record.setCompleted(true);
+			record.setTitle("Chat Conversation");
+
+			// Set start time from chat ID timestamp
+			if (chatTimestamp > 0) {
+				LocalDateTime startTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(chatTimestamp),
+						ZoneId.systemDefault());
+				record.setStartTime(startTime);
+				// Assume chat completed shortly after start (e.g., 5 seconds later)
+				record.setEndTime(startTime.plusSeconds(5));
+			}
+			else {
+				// Fallback to current time if timestamp extraction fails
+				record.setStartTime(LocalDateTime.now());
+				record.setEndTime(LocalDateTime.now());
+			}
+
+			// Try to find user and assistant messages for this chat
+			String userRequest = null;
+			String summary = null;
+
+			if (chatMessages != null && !chatMessages.isEmpty() && startIndex < chatMessages.size()) {
+				// Look for a user-assistant message pair starting from startIndex
+				for (int i = startIndex; i < chatMessages.size(); i++) {
+					Message message = chatMessages.get(i);
+					if (message instanceof UserMessage) {
+						// Check if this user message is followed by an assistant message
+						if (i + 1 < chatMessages.size()
+								&& chatMessages.get(i + 1) instanceof AssistantMessage) {
+							UserMessage userMsg = (UserMessage) message;
+							AssistantMessage assistantMsg = (AssistantMessage) chatMessages.get(i + 1);
+
+							// Use this pair
+							userRequest = userMsg.getText();
+							summary = assistantMsg.getText();
+							break; // Found the pair, stop searching
+						}
+					}
+				}
+			}
+
+			// Set user request and summary
+			if (userRequest != null && !userRequest.trim().isEmpty()) {
+				record.setUserRequest(userRequest);
+			}
+			else {
+				record.setUserRequest("Chat message");
+			}
+
+			if (summary != null && !summary.trim().isEmpty()) {
+				record.setSummary(summary);
+			}
+			else {
+				record.setSummary("Chat response");
+			}
+
+			return record;
+		}
+		catch (Exception e) {
+			logger.error("Error creating chat record for chatId: {}", chatId, e);
+			return null;
+		}
+	}
+
+	/**
+	 * Extract timestamp from chat ID
+	 * Format: "chat-{timestamp}_{random}_{threadId}"
+	 * @param chatId The chat ID
+	 * @return Timestamp in milliseconds, or 0 if extraction fails
+	 */
+	private long extractTimestampFromChatId(String chatId) {
+		try {
+			if (chatId == null || !chatId.startsWith("chat-")) {
+				return 0;
+			}
+
+			// Remove "chat-" prefix
+			String withoutPrefix = chatId.substring(5);
+			// Extract the first number (timestamp) before the first underscore
+			int underscoreIndex = withoutPrefix.indexOf('_');
+			if (underscoreIndex > 0) {
+				String timestampStr = withoutPrefix.substring(0, underscoreIndex);
+				return Long.parseLong(timestampStr);
+			}
+			else {
+				// If no underscore, try to parse the whole string as timestamp
+				return Long.parseLong(withoutPrefix);
+			}
+		}
+		catch (Exception e) {
+			logger.warn("Failed to extract timestamp from chatId: {}", chatId, e);
+			return 0;
 		}
 	}
 

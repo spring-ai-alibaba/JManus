@@ -50,12 +50,13 @@ public interface MemoryService {
 	void addRootPlanIdToConversation(String conversationId, String rootPlanId);
 
 	/**
-	 * Get chat messages from ai_chat_memory table and convert them to PlanExecutionRecord
-	 * format
+	 * Add a chat ID to a conversation's memory with memory name
+	 * This method is specifically for chat scenarios where we need to set a meaningful memory name
+	 * based on the user's input, unlike plan execution which uses plan step requirements
 	 * @param conversationId The conversation ID
-	 * @return List of PlanExecutionRecord objects representing chat message pairs
+	 * @param chatId The chat ID to add (similar to rootPlanId for plan execution)
+	 * @param memoryName The memory name to set (typically derived from user input)
 	 */
-	java.util.List<com.alibaba.cloud.ai.lynxe.recorder.entity.vo.PlanExecutionRecord> getChatMessagesAsPlanRecords(
-			String conversationId);
+	void addChatToConversation(String conversationId, String chatId, String memoryName);
 
 }

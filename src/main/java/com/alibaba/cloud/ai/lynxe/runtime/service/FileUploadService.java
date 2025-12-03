@@ -69,7 +69,7 @@ public class FileUploadService {
 		// 4. Thread ID to handle concurrent uploads
 		long timestamp = System.currentTimeMillis();
 		int randomComponent = (int) (Math.random() * 10000);
-		long threadId = Thread.currentThread().threadId();
+		long threadId = Thread.currentThread().getId();
 
 		String uploadKey = String.format("%s%d_%d_%d", UPLOAD_KEY_PREFIX, timestamp, randomComponent, threadId);
 

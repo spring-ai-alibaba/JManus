@@ -207,7 +207,7 @@ public class PlanIdDispatcher implements IPlanIdDispatcher {
 		// 4. Thread ID to handle concurrent tool calls
 		long timestamp = System.currentTimeMillis();
 		int randomComponent = (int) (Math.random() * 10000);
-		long threadId = Thread.currentThread().threadId();
+		long threadId = Thread.currentThread().getId();
 
 		String toolCallId = String.format("%s%d_%d_%d", toolCallPrefix, timestamp, randomComponent, threadId);
 
@@ -231,7 +231,7 @@ public class PlanIdDispatcher implements IPlanIdDispatcher {
 		// 4. Thread ID to handle concurrent step executions
 		long timestamp = System.currentTimeMillis();
 		int randomComponent = (int) (Math.random() * 10000);
-		long threadId = Thread.currentThread().threadId();
+		long threadId = Thread.currentThread().getId();
 
 		String stepId = String.format("%s%d_%d_%d", stepPrefix, timestamp, randomComponent, threadId);
 
@@ -255,7 +255,7 @@ public class PlanIdDispatcher implements IPlanIdDispatcher {
 		// 4. Thread ID to handle concurrent thinkAct executions
 		long timestamp = System.currentTimeMillis();
 		int randomComponent = (int) (Math.random() * 10000);
-		long threadId = Thread.currentThread().threadId();
+		long threadId = Thread.currentThread().getId();
 
 		String thinkActId = String.format("%s%d_%d_%d", thinkActPrefix, timestamp, randomComponent, threadId);
 
@@ -279,7 +279,7 @@ public class PlanIdDispatcher implements IPlanIdDispatcher {
 		// 4. Thread ID to handle concurrent parallel executions
 		long timestamp = System.currentTimeMillis();
 		int randomComponent = (int) (Math.random() * 10000);
-		long threadId = Thread.currentThread().threadId();
+		long threadId = Thread.currentThread().getId();
 
 		String parallelId = String.format("%s%d_%d_%d", parallelPrefix, timestamp, randomComponent, threadId);
 

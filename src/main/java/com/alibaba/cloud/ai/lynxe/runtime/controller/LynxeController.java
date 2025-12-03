@@ -946,6 +946,35 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 	}
 
 	/**
+	 * Build memory name from chat user input
+	 * @param userInput The user's chat input
+	 * @return Formatted memory name from user input
+	 */
+	private String buildMemoryNameFromChatInput(String userInput) {
+		if (userInput == null || userInput.trim().isEmpty()) {
+			return "Chat Conversation";
+		}
+
+		// Clean up the input
+		String cleaned = userInput.trim();
+
+		// Remove newlines and excessive whitespace
+		cleaned = cleaned.replaceAll("\\s+", " ").trim();
+
+		// Limit length to avoid excessively long names
+		if (cleaned.length() > 50) {
+			cleaned = cleaned.substring(0, 50) + "...";
+		}
+
+		// Ensure it's not empty after cleaning
+		if (cleaned.isEmpty()) {
+			return "Chat Conversation";
+		}
+
+		return cleaned;
+	}
+
+	/**
 	 * Build memory name from plan's step requirements Extracts step requirements and
 	 * joins them with newlines
 	 * @param plan The plan interface
@@ -1304,12 +1333,22 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 			emitter.completeWithError(ex);
 		});
 
+		// Store input for use in completion handler
+		final String userInput = input;
+
+		// Store variables for use in completion handler (using arrays to allow modification in lambda)
+		final String[] conversationIdHolder = new String[1];
+		final long[] chatStartTimeHolder = new long[1];
+
 		// Execute asynchronously
 		CompletableFuture.runAsync(() -> {
 			try {
 				// Validate or generate conversationId
 				String conversationId = validateOrGenerateConversationId((String) request.get("conversationId"),
 						requestSource);
+				conversationIdHolder[0] = conversationId;
+				// Record start time for chat ID generation
+				chatStartTimeHolder[0] = System.currentTimeMillis();
 
 				// Send initial event with conversationId
 				Map<String, Object> startData = new HashMap<>();
@@ -1401,20 +1440,50 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 							finalText = "No response generated";
 						}
 
+						// Get conversationId and chatStartTime from holders
+						String currentConversationId = conversationIdHolder[0];
+						long currentChatStartTime = chatStartTimeHolder[0];
+
 						// Save assistant response to conversation memory
 						if (lynxeProperties != null && lynxeProperties.getEnableConversationMemory()
-								&& conversationId != null && !conversationId.trim().isEmpty()) {
+								&& currentConversationId != null && !currentConversationId.trim().isEmpty()) {
 							try {
 								AssistantMessage assistantMessage = new AssistantMessage(finalText);
 								llmService.addToConversationMemoryWithLimit(lynxeProperties.getMaxMemory(),
-										conversationId, assistantMessage);
+										currentConversationId, assistantMessage);
 								logger.debug("Saved assistant response to conversation memory for conversationId: {}",
-										conversationId);
+										currentConversationId);
 							}
 							catch (Exception e) {
 								logger.warn(
 										"Failed to save assistant response to conversation memory for conversationId: {}",
-										conversationId, e);
+										currentConversationId, e);
+							}
+						}
+
+						// Add chat ID to conversation memory with memory name (similar to how plan execution adds rootPlanId)
+						// This allows the chat conversation to be retrieved in history with a meaningful name
+						if (memoryService != null && currentConversationId != null
+								&& !currentConversationId.trim().isEmpty()) {
+							try {
+								// Generate a unique chat ID similar to rootPlanId format
+								// Format: "chat-{timestamp}_{random}_{threadId}"
+								int randomComponent = (int) (Math.random() * 10000);
+								long threadId = Thread.currentThread().getId();
+								String chatId = String.format("chat-%d_%d_%d", currentChatStartTime, randomComponent,
+										threadId);
+
+								// Build memory name from user input (similar to how plan execution uses step requirements)
+								String memoryName = buildMemoryNameFromChatInput(userInput);
+
+								// Use the new method specifically for chat scenarios
+								memoryService.addChatToConversation(currentConversationId, chatId, memoryName);
+								logger.info("Added chat ID {} to conversation {} with memoryName: {}", chatId,
+										currentConversationId, memoryName);
+							}
+							catch (Exception e) {
+								logger.warn("Failed to add chat ID to conversation memory for conversationId: {}",
+										currentConversationId, e);
 							}
 						}
 

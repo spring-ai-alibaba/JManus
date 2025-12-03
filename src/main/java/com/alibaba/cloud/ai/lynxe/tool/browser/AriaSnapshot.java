@@ -114,7 +114,7 @@ public class AriaSnapshot {
 			String timeoutMessage = String.format(
 					"ARIA snapshot generation timed out after %dms. The page may be too complex or still loading. "
 							+ "You can continue with the available page information (URL, title, tabs).",
-					options.getTimeout() != null ? options.getTimeout() : 180000);
+					options.getTimeout() != null ? options.getTimeout() : 30000);
 			log.warn("ARIA snapshot timeout (non-fatal): {}", e.getMessage());
 			return timeoutMessage;
 		}
