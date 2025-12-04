@@ -1,0 +1,30 @@
+name: "Zsxq Crawler"
+description: "Knowledge planet content crawler tool, supports crawling post content, downloading images and attachments"
+parameters: |
+  {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "description": "Action type: login(login), crawl_post(crawl posts), download_attachments(download attachments)",
+        "enum": ["login", "crawl_post", "download_attachments"]
+      },
+      "group_id": {
+        "type": "string",
+        "description": "Group ID, e.g.: 552521181154"
+      },
+      "topic_id": {
+        "type": "string",
+        "description": "Topic ID for crawling specific post"
+      },
+      "download_path": {
+        "type": "string",
+        "description": "Download path, use default path if not specified"
+      },
+      "max_posts": {
+        "type": "integer",
+        "description": "Maximum number of posts to crawl, default 10"
+      }
+    },
+    "required": ["action"]
+  }
