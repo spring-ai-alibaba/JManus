@@ -84,6 +84,7 @@ import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vu
 import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import { useTaskStop } from '@/composables/useTaskStop'
 import { useTaskStore } from '@/stores/task'
 import type { InputMessage } from '@/types/message-dialog'
 import { Icon } from '@iconify/vue'
@@ -95,6 +96,7 @@ const taskStore = useTaskStore()
 const templateConfig = usePlanTemplateConfigSingleton()
 const messageDialog = useMessageDialogSingleton()
 const planExecution = usePlanExecutionSingleton()
+const { stopTask } = useTaskStop()
 
 // Track if task is running
 const isTaskRunning = computed(() => taskStore.hasRunningTask())
@@ -574,7 +576,7 @@ const handleSend = async () => {
 
 const handleStop = async () => {
   console.log('[InputArea] Stop button clicked')
-  const success = await taskStore.stopCurrentTask()
+  const success = await stopTask()
   if (success) {
     console.log('[InputArea] Task stopped successfully')
   } else {

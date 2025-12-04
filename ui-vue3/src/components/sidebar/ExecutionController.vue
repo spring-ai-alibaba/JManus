@@ -79,9 +79,14 @@
           </div>
         </div>
 
-        <!-- Validation status message -->
+        <!-- Validation status message - only show after user attempts to execute -->
         <div
-          v-if="parameterRequirements.hasParameters && !canExecute && !props.isExecuting"
+          v-if="
+            hasAttemptedExecute &&
+            parameterRequirements.hasParameters &&
+            !canExecute &&
+            !props.isExecuting
+          "
           class="validation-message"
         >
           <Icon icon="carbon:warning" width="14" />
@@ -101,17 +106,32 @@
         @upload-error="handleUploadError"
       />
 
+      <!-- Toggle button: Execute Plan / Stop Task -->
       <button
         class="btn btn-primary execute-btn"
-        @click="handleExecutePlan"
-        :disabled="!canExecute"
+        :class="{ 'stop-button': isPlanRunning }"
+        @click="isPlanRunning ? handleStop() : handleExecutePlan()"
+        :disabled="isPlanRunning ? isStopping : !canExecute"
+        :title="isPlanRunning ? t('sidebar.stopTask') : t('sidebar.executePlan')"
       >
         <Icon
+          v-if="isPlanRunning"
+          icon="carbon:stop-filled"
+          width="16"
+        />
+        <Icon
+          v-else
           :icon="props.isExecuting ? 'carbon:circle-dash' : 'carbon:play'"
           width="16"
           :class="{ spinning: props.isExecuting }"
         />
-        {{ props.isExecuting ? t('sidebar.executing') : t('sidebar.executePlan') }}
+        {{
+          isPlanRunning
+            ? t('sidebar.stopTask')
+            : props.isExecuting
+              ? t('sidebar.executing')
+              : t('sidebar.executePlan')
+        }}
       </button>
       <button
         class="btn publish-mcp-btn"
@@ -224,9 +244,11 @@ import SaveConfirmationDialog from '@/components/sidebar/SaveConfirmationDialog.
 import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
+import { useTaskStop } from '@/composables/useTaskStop'
 import { useToast } from '@/plugins/useToast'
 import { parameterHistoryStore } from '@/stores/parameterHistory'
 import { templateStore } from '@/stores/templateStore'
+import { useTaskStore } from '@/stores/task'
 import type { PlanData, PlanExecutionRequestPayload } from '@/types/plan-execution'
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, ref, watch, watchEffect } from 'vue'
@@ -243,6 +265,10 @@ const messageDialog = useMessageDialogSingleton()
 
 // Plan execution singleton to track execution state
 const planExecution = usePlanExecutionSingleton()
+
+// Task store and stop functionality
+const taskStore = useTaskStore()
+const { stopTask, isStopping } = useTaskStop()
 
 // Props
 interface Props {
@@ -272,6 +298,7 @@ const isExecutingPlan = ref(false) // Flag to prevent parameter reload during ex
 const lastPlanId = ref<string | null>(null) // Track last returned plan ID
 const lastRefreshTimestamp = ref<number>(0) // Track last refresh time for debouncing
 const REFRESH_DEBOUNCE_MS = 500 // Debounce time for parameter refresh
+const hasAttemptedExecute = ref(false) // Track if user has attempted to execute (for validation message)
 
 // Computed property: whether to show publish MCP service button
 const showPublishButton = computed(() => {
@@ -408,6 +435,15 @@ const buttonText = computed(() => {
 // Computed property for disabled state - same as InputArea.vue
 const isDisabled = computed(() => messageDialog.isLoading.value)
 
+// Check if a plan is currently running
+const isPlanRunning = computed(() => {
+  return (
+    taskStore.hasRunningTask() ||
+    planExecution.trackedPlanIds.value.size > 0 ||
+    isExecutingPlan.value
+  )
+})
+
 const canExecute = computed(() => {
   // Disable if messageDialog is loading (same validation as InputArea)
   if (isDisabled.value) {
@@ -477,6 +513,9 @@ const handleUploadError = (error: unknown) => {
 const handleExecutePlan = async () => {
   console.log('[ExecutionController] 🚀 Execute button clicked')
 
+  // Mark that user has attempted to execute (for validation message)
+  hasAttemptedExecute.value = true
+
   // Check if there's already an execution in progress
   if (props.isExecuting || messageDialog.isLoading.value || isExecutingPlan.value) {
     console.log(
@@ -497,6 +536,7 @@ const handleExecutePlan = async () => {
     // Prepare payload but don't execute yet
     if (!validateParameters()) {
       console.log('[ExecutionController] ❌ Parameter validation failed:', parameterErrors.value)
+      // Keep hasAttemptedExecute as true to show validation message
       return
     }
 
@@ -542,8 +582,12 @@ const proceedWithExecution = async () => {
   if (!validateParameters()) {
     console.log('[ExecutionController] ❌ Parameter validation failed:', parameterErrors.value)
     isExecutingPlan.value = false // Reset flag on validation failure
+    // Keep hasAttemptedExecute as true to show validation message
     return
   }
+
+  // Reset validation attempt flag when validation passes and execution starts
+  hasAttemptedExecute.value = false
 
   // Save current parameter set to history before execution
   saveParameterSetToHistory()
@@ -741,6 +785,18 @@ const handlePublishMcpService = () => {
   showPublishMcpModal.value = true
 }
 
+const handleStop = async () => {
+  console.log('[ExecutionController] Stop button clicked')
+  const success = await stopTask()
+  if (success) {
+    console.log('[ExecutionController] Task stopped successfully')
+    toast.success(t('input.stop') || 'Stopped')
+  } else {
+    console.error('[ExecutionController] Failed to stop task')
+    toast.error(t('sidebar.executeFailed') || 'Failed to stop task')
+  }
+}
+
 const clearExecutionParams = () => {
   console.log('[ExecutionController] 🧹 clearExecutionParams called')
   executionParams.value = ''
@@ -929,6 +985,11 @@ const updateParameterValue = (paramName: string, value: string) => {
   // Clear error for this parameter when user starts typing
   if (parameterErrors.value[paramName]) {
     delete parameterErrors.value[paramName]
+  }
+  // Reset validation attempt flag when user starts filling parameters
+  // This hides the validation message as user corrects the issue
+  if (hasAttemptedExecute.value && canExecute.value) {
+    hasAttemptedExecute.value = false
   }
   // Reset tool-level navigation index when user manually types (viewing current, not history)
   const planTemplateId = templateConfig.currentPlanTemplateId.value
@@ -1669,6 +1730,16 @@ defineExpose({
     &:hover:not(:disabled) {
       transform: translateY(-1px);
       box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+  }
+
+  &.stop-button {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
     }
   }
 
