@@ -138,8 +138,6 @@ public class PlanTemplateController {
 		}
 	}
 
-	
-
 	/**
 	 * Get the version history of the plan
 	 * @param request Request containing plan ID
@@ -357,10 +355,10 @@ public class PlanTemplateController {
 			PlanTemplateConfigVO resultConfigVO = planTemplateConfigService
 				.createOrUpdateCoordinatorToolFromPlanTemplateConfig(configVO);
 
-			// Get the actual planTemplateId from result (may be different if frontend sent "new-xxx")
+			// Get the actual planTemplateId from result (may be different if frontend
+			// sent "new-xxx")
 			String actualPlanTemplateId = resultConfigVO != null && resultConfigVO.getPlanTemplateId() != null
-					? resultConfigVO.getPlanTemplateId()
-					: planTemplateId;
+					? resultConfigVO.getPlanTemplateId() : planTemplateId;
 
 			// Build simple response
 			Map<String, Object> response = new HashMap<>();

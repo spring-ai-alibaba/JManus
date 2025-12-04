@@ -109,7 +109,8 @@ public class AriaSnapshot {
 			return snapshot != null ? snapshot : "";
 		}
 		catch (TimeoutError e) {
-			// Handle timeout gracefully - return error message instead of throwing exception
+			// Handle timeout gracefully - return error message instead of throwing
+			// exception
 			// This allows the flow to continue without interruption
 			String timeoutMessage = String.format(
 					"ARIA snapshot generation timed out after %dms. The page may be too complex or still loading. "

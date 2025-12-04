@@ -87,8 +87,10 @@ public class PlanFinalizer {
 		String resultStr = context.getPlan().getResult();
 		String extractedMessage = extractMessageFromJsonIfApplicable(resultStr);
 
-		// If we successfully extracted a message from resultStr, use it directly without calling LLM
-		// extractedMessage will be non-null and different from resultStr if extraction succeeded
+		// If we successfully extracted a message from resultStr, use it directly without
+		// calling LLM
+		// extractedMessage will be non-null and different from resultStr if extraction
+		// succeeded
 		if (extractedMessage != null) {
 			log.debug("Using message from resultStr directly, skipping LLM call");
 			processAndRecordResult(context, result, extractedMessage, "Generated summary: {}");
@@ -243,7 +245,8 @@ public class PlanFinalizer {
 	/**
 	 * Extract message from JSON response if output only contains message key
 	 * @param jsonString The JSON string to parse (may be JSON or plain text)
-	 * @return Extracted message if applicable, null if extraction failed or doesn't match expected structure
+	 * @return Extracted message if applicable, null if extraction failed or doesn't match
+	 * expected structure
 	 */
 	private String extractMessageFromJsonIfApplicable(String jsonString) {
 		if (jsonString == null || jsonString.trim().isEmpty()) {

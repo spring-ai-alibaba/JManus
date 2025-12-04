@@ -248,8 +248,8 @@ public class MemoryServiceImpl implements MemoryService {
 	}
 
 	/**
-	 * Sanitize memory name to ensure it's suitable for display
-	 * Limits length and removes problematic characters
+	 * Sanitize memory name to ensure it's suitable for display Limits length and removes
+	 * problematic characters
 	 * @param memoryName The original memory name
 	 * @return Sanitized memory name
 	 */

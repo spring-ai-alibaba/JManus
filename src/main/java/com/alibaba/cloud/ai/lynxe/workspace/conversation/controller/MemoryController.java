@@ -181,7 +181,7 @@ public class MemoryController {
 								&& lynxeProperties.getEnableConversationMemory()) {
 							try {
 								org.springframework.ai.chat.memory.ChatMemory conversationMemory = llmService
-										.getConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId);
+									.getConversationMemoryWithLimit(lynxeProperties.getMaxMemory(), conversationId);
 								chatMessages = conversationMemory.get(conversationId);
 								if (chatMessages != null) {
 									logger.debug("Retrieved {} chat messages for conversationId: {}",
@@ -209,8 +209,10 @@ public class MemoryController {
 										chatMessageIndex);
 								if (chatRecord != null) {
 									allRecords.add(chatRecord);
-									// Increment index to skip the messages used for this chat
-									chatMessageIndex += 2; // User message + Assistant message
+									// Increment index to skip the messages used for this
+									// chat
+									chatMessageIndex += 2; // User message + Assistant
+															// message
 									logger.debug("Created chat record for chatId: {}", rootPlanId);
 								}
 								else {
@@ -221,7 +223,7 @@ public class MemoryController {
 								// It's a plan ID, retrieve plan execution record
 								try {
 									PlanExecutionRecord record = planHierarchyReaderService
-											.readPlanTreeByRootId(rootPlanId);
+										.readPlanTreeByRootId(rootPlanId);
 									if (record != null) {
 										allRecords.add(record);
 									}
@@ -273,7 +275,8 @@ public class MemoryController {
 	 */
 	private PlanExecutionRecord createChatRecord(String chatId, List<Message> chatMessages, int startIndex) {
 		try {
-			// Extract timestamp from chat ID (format: "chat-{timestamp}_{random}_{threadId}")
+			// Extract timestamp from chat ID (format:
+			// "chat-{timestamp}_{random}_{threadId}")
 			long chatTimestamp = extractTimestampFromChatId(chatId);
 
 			PlanExecutionRecord record = new PlanExecutionRecord();
@@ -306,8 +309,7 @@ public class MemoryController {
 					Message message = chatMessages.get(i);
 					if (message instanceof UserMessage) {
 						// Check if this user message is followed by an assistant message
-						if (i + 1 < chatMessages.size()
-								&& chatMessages.get(i + 1) instanceof AssistantMessage) {
+						if (i + 1 < chatMessages.size() && chatMessages.get(i + 1) instanceof AssistantMessage) {
 							UserMessage userMsg = (UserMessage) message;
 							AssistantMessage assistantMsg = (AssistantMessage) chatMessages.get(i + 1);
 
@@ -344,8 +346,7 @@ public class MemoryController {
 	}
 
 	/**
-	 * Extract timestamp from chat ID
-	 * Format: "chat-{timestamp}_{random}_{threadId}"
+	 * Extract timestamp from chat ID Format: "chat-{timestamp}_{random}_{threadId}"
 	 * @param chatId The chat ID
 	 * @return Timestamp in milliseconds, or 0 if extraction fails
 	 */

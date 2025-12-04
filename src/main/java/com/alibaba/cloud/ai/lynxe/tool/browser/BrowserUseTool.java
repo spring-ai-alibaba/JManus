@@ -499,7 +499,8 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 
 			// Generate ARIA snapshot using the new AriaSnapshot utility with error
 			// handling
-			// Note: AriaSnapshot now returns error messages instead of throwing exceptions
+			// Note: AriaSnapshot now returns error messages instead of throwing
+			// exceptions
 			// for timeouts, so the flow continues normally
 			try {
 				AriaSnapshotOptions snapshotOptions = new AriaSnapshotOptions().setSelector("body")
@@ -513,7 +514,8 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 				String snapshot = AriaElementHelper.parsePageAndAssignRefs(page, snapshotOptions, compressUrl,
 						shortUrlService, rootPlanId);
 				if (snapshot != null && !snapshot.trim().isEmpty()) {
-					// Snapshot may contain error message if timeout occurred, which is fine
+					// Snapshot may contain error message if timeout occurred, which is
+					// fine
 					state.put("interactive_elements", snapshot);
 				}
 				else {
@@ -522,15 +524,13 @@ public class BrowserUseTool extends AbstractBaseTool<BrowserRequestVO> {
 			}
 			catch (PlaywrightException e) {
 				log.warn("Playwright error getting ARIA snapshot: {}", e.getMessage());
-				state.put("interactive_elements",
-						"Error getting interactive elements: " + e.getMessage()
-								+ ". You can continue with available page information (URL, title, tabs).");
+				state.put("interactive_elements", "Error getting interactive elements: " + e.getMessage()
+						+ ". You can continue with available page information (URL, title, tabs).");
 			}
 			catch (Exception e) {
 				log.warn("Unexpected error getting ARIA snapshot: {}", e.getMessage());
-				state.put("interactive_elements",
-						"Error getting interactive elements: " + e.getMessage()
-								+ ". You can continue with available page information (URL, title, tabs).");
+				state.put("interactive_elements", "Error getting interactive elements: " + e.getMessage()
+						+ ". You can continue with available page information (URL, title, tabs).");
 			}
 
 			return state;

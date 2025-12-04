@@ -1336,7 +1336,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 		// Store input for use in completion handler
 		final String userInput = input;
 
-		// Store variables for use in completion handler (using arrays to allow modification in lambda)
+		// Store variables for use in completion handler (using arrays to allow
+		// modification in lambda)
 		final String[] conversationIdHolder = new String[1];
 		final long[] chatStartTimeHolder = new long[1];
 
@@ -1461,8 +1462,10 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 							}
 						}
 
-						// Add chat ID to conversation memory with memory name (similar to how plan execution adds rootPlanId)
-						// This allows the chat conversation to be retrieved in history with a meaningful name
+						// Add chat ID to conversation memory with memory name (similar to
+						// how plan execution adds rootPlanId)
+						// This allows the chat conversation to be retrieved in history
+						// with a meaningful name
 						if (memoryService != null && currentConversationId != null
 								&& !currentConversationId.trim().isEmpty()) {
 							try {
@@ -1473,7 +1476,8 @@ public class LynxeController implements LynxeListener<PlanExceptionEvent> {
 								String chatId = String.format("chat-%d_%d_%d", currentChatStartTime, randomComponent,
 										threadId);
 
-								// Build memory name from user input (similar to how plan execution uses step requirements)
+								// Build memory name from user input (similar to how plan
+								// execution uses step requirements)
 								String memoryName = buildMemoryNameFromChatInput(userInput);
 
 								// Use the new method specifically for chat scenarios

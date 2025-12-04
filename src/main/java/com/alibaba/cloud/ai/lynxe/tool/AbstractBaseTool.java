@@ -117,10 +117,11 @@ public abstract class AbstractBaseTool<I> implements ToolCallBiFunctionDef<I> {
 	 * @return Returns a string describing the current status of the tool
 	 */
 	public abstract String getCurrentToolStateString();
+
 	/**
-	 * Get the current tool state string with unified error handling
-	 * This method wraps getCurrentToolStateString() with error handling to ensure
-	 * exceptions don't interrupt the execution flow
+	 * Get the current tool state string with unified error handling This method wraps
+	 * getCurrentToolStateString() with error handling to ensure exceptions don't
+	 * interrupt the execution flow
 	 * @return Tool state string, or error message if an exception occurs
 	 */
 	public String getCurrentToolStateStringWithErrorHandler() {
