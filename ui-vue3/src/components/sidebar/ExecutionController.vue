@@ -241,6 +241,7 @@ import {
 import FileUploadComponent from '@/components/file-upload/FileUploadComponent.vue'
 import PublishServiceModal from '@/components/publish-service-modal/PublishServiceModal.vue'
 import SaveConfirmationDialog from '@/components/sidebar/SaveConfirmationDialog.vue'
+import { useFileUploadSingleton } from '@/composables/useFileUpload'
 import { useMessageDialogSingleton } from '@/composables/useMessageDialog'
 import { usePlanExecutionSingleton } from '@/composables/usePlanExecution'
 import { usePlanTemplateConfigSingleton } from '@/composables/usePlanTemplateConfig'
@@ -269,6 +270,9 @@ const planExecution = usePlanExecutionSingleton()
 // Task store and stop functionality
 const taskStore = useTaskStore()
 const { stopTask, isStopping } = useTaskStop()
+
+// Shared file upload state
+const fileUpload = useFileUploadSingleton()
 
 // Props
 interface Props {
@@ -305,10 +309,11 @@ const showPublishButton = computed(() => {
   return templateConfig.getCoordinatorToolConfig()
 })
 
-// File upload state
+// File upload state - use shared state
 const fileUploadRef = ref<InstanceType<typeof FileUploadComponent>>()
-const uploadedFiles = ref<string[]>([])
-const uploadKey = ref<string | null>(null)
+// Use shared state from composable
+const uploadedFiles = computed(() => fileUpload.getUploadedFileNames())
+const uploadKey = computed(() => fileUpload.uploadKey.value)
 
 // Save confirmation dialog state
 const showSaveDialog = ref(false)
@@ -480,21 +485,20 @@ const canExecute = computed(() => {
   return true
 })
 
-// File upload event handlers
+// File upload event handlers - state is already updated in shared composable
 const handleFilesUploaded = (files: FileInfo[], key: string | null) => {
-  uploadedFiles.value = files.map(file => file.originalName)
-  uploadKey.value = key
-  console.log('[ExecutionController] Files uploaded:', files.length, 'uploadKey:', key)
+  console.log('[ExecutionController] Files uploaded event received:', files.length, 'uploadKey:', key)
+  // State is already updated in shared composable
 }
 
 const handleFilesRemoved = (files: FileInfo[]) => {
-  uploadedFiles.value = files.map(file => file.originalName)
-  console.log('[ExecutionController] Files removed, remaining:', files.length)
+  console.log('[ExecutionController] Files removed event received, remaining:', files.length)
+  // State is already updated in shared composable
 }
 
 const handleUploadKeyChanged = (key: string | null) => {
-  uploadKey.value = key
   console.log('[ExecutionController] Upload key changed:', key)
+  // State is already updated in shared composable
 }
 
 const handleUploadStarted = () => {
@@ -1284,8 +1288,12 @@ defineExpose({
   loadParameterRequirements,
   refreshParameterRequirements,
   fileUploadRef,
-  uploadedFiles,
-  uploadKey,
+  get uploadedFiles() {
+    return fileUpload.getUploadedFileNames()
+  },
+  get uploadKey() {
+    return fileUpload.uploadKey.value
+  },
 })
 </script>
 
