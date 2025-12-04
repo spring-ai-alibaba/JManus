@@ -98,8 +98,6 @@ const isUploading = ref(false)
 // Use shared state for uploadedFiles and uploadKey
 // uploadedFiles is a reactive array (not a ref), so access directly
 const uploadedFiles = computed(() => Array.from(fileUpload.uploadedFiles))
-// uploadKey is exposed via defineExpose for parent components, but not used in script
-const _uploadKey = computed(() => fileUpload.uploadKey.value)
 
 // Function to reset session when starting a new conversation session
 const resetSession = () => {

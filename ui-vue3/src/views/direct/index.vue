@@ -171,7 +171,8 @@ onMounted(() => {
         }
 
         // Only process if this is the current root plan
-        if (!shouldProcessEventForCurrentPlan(planId, false, planDetails)) {
+        // Cast planDetails to mutable type for function parameter
+        if (!shouldProcessEventForCurrentPlan(planId, false, planDetails as PlanExecutionRecord)) {
           continue
         }
 
