@@ -61,7 +61,11 @@ export function useTaskStop() {
       console.log('[useTaskStop] Task stopped successfully')
 
       // Update task state if requested and it matches the stopped planId
-      if (updateTaskState && taskStore.currentTask && taskStore.currentTask.planId === targetPlanId) {
+      if (
+        updateTaskState &&
+        taskStore.currentTask &&
+        taskStore.currentTask.planId === targetPlanId
+      ) {
         taskStore.currentTask.isRunning = false
       }
 
@@ -80,4 +84,3 @@ export function useTaskStop() {
     canStop,
   }
 }
-

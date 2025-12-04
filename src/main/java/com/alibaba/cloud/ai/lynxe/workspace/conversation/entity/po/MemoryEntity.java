@@ -55,10 +55,10 @@ public class MemoryEntity {
 	private Date createTime;
 
 	/**
-	 * List of plan mappings associated with this conversation
-	 * Each mapping contains a rootPlanId and createTime timestamp
-	 * The rootPlanId corresponds to a complete dialog round (user query + assistant response)
-	 * The plan execution records contain all the actual message content and execution details
+	 * List of plan mappings associated with this conversation Each mapping contains a
+	 * rootPlanId and createTime timestamp The rootPlanId corresponds to a complete dialog
+	 * round (user query + assistant response) The plan execution records contain all the
+	 * actual message content and execution details
 	 */
 	@OneToMany(mappedBy = "memory", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
 	@OrderBy("createTime ASC")
@@ -133,14 +133,12 @@ public class MemoryEntity {
 		if (planMappings == null) {
 			return new ArrayList<>();
 		}
-		return planMappings.stream()
-				.map(MemoryPlanMapping::getRootPlanId)
-				.collect(Collectors.toList());
+		return planMappings.stream().map(MemoryPlanMapping::getRootPlanId).collect(Collectors.toList());
 	}
 
 	/**
-	 * Set root plan IDs (for backward compatibility)
-	 * Creates new mappings with current timestamp for each ID
+	 * Set root plan IDs (for backward compatibility) Creates new mappings with current
+	 * timestamp for each ID
 	 * @param rootPlanIds List of root plan IDs
 	 */
 	public void setRootPlanIds(List<String> rootPlanIds) {
@@ -166,8 +164,7 @@ public class MemoryEntity {
 	public void addRootPlanId(String rootPlanId) {
 		if (rootPlanId != null && !rootPlanId.trim().isEmpty()) {
 			// Check if mapping already exists
-			boolean exists = planMappings.stream()
-					.anyMatch(mapping -> rootPlanId.equals(mapping.getRootPlanId()));
+			boolean exists = planMappings.stream().anyMatch(mapping -> rootPlanId.equals(mapping.getRootPlanId()));
 			if (!exists) {
 				MemoryPlanMapping mapping = new MemoryPlanMapping(this, rootPlanId);
 				planMappings.add(mapping);

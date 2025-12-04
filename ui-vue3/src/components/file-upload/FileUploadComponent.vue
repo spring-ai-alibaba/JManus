@@ -98,7 +98,8 @@ const isUploading = ref(false)
 // Use shared state for uploadedFiles and uploadKey
 // uploadedFiles is a reactive array (not a ref), so access directly
 const uploadedFiles = computed(() => Array.from(fileUpload.uploadedFiles))
-const uploadKey = computed(() => fileUpload.uploadKey.value)
+// uploadKey is exposed via defineExpose for parent components, but not used in script
+const _uploadKey = computed(() => fileUpload.uploadKey.value)
 
 // Function to reset session when starting a new conversation session
 const resetSession = () => {
@@ -184,7 +185,7 @@ const uploadFiles = async (files: File[]) => {
       const finalFiles = Array.from(fileUpload.uploadedFiles)
       const finalKey = fileUpload.uploadKey.value
       console.log('[FileUpload] Updated shared state - files:', finalFiles.length, 'key:', finalKey)
-      
+
       if (finalKey) {
         emit('upload-key-changed', finalKey)
       }
@@ -226,13 +227,12 @@ const removeFile = async (fileToRemove: FileInfo) => {
 
     // Emit events
     const remainingFiles = Array.from(fileUpload.uploadedFiles)
-    const remainingKey = fileUpload.uploadKey.value
-    
+
     if (remainingFiles.length === 0) {
       console.log('[FileUpload] 🧹 All files removed, clearing uploadKey')
       emit('upload-key-changed', null)
     }
-    
+
     emit('files-removed', remainingFiles)
     console.log('🎉 File removal completed, remaining files:', remainingFiles.length)
   } catch (error) {

@@ -139,7 +139,8 @@ const currentPlaceholder = computed(() => {
 })
 // Use shared file upload state
 const uploadedFiles = computed(() => fileUpload.getUploadedFileNames())
-const uploadKey = computed(() => fileUpload.uploadKey.value)
+// uploadKey is not used in script, code accesses fileUpload.uploadKey.value directly
+const _uploadKey = computed(() => fileUpload.uploadKey.value)
 const selectedOption = ref('chat') // Default to chat mode
 const innerToolOptions = ref<InnerToolOption[]>([])
 const isLoadingTools = ref(false)

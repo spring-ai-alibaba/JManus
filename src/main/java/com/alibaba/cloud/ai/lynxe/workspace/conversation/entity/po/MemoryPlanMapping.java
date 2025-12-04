@@ -31,9 +31,9 @@ import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 
 /**
- * Entity for storing plan/chat ID mappings with creation timestamps
- * Tracks when each rootPlanId was added to a conversation
- * 
+ * Entity for storing plan/chat ID mappings with creation timestamps Tracks when each
+ * rootPlanId was added to a conversation
+ *
  * @author dahua
  * @time 2025/12/04
  */
@@ -57,8 +57,8 @@ public class MemoryPlanMapping {
 	private Date createTime;
 
 	/**
-	 * Set createTime before persisting if not already set
-	 * This ensures all records have a creation timestamp
+	 * Set createTime before persisting if not already set This ensures all records have a
+	 * creation timestamp
 	 */
 	@PrePersist
 	protected void onCreate() {
@@ -110,4 +110,3 @@ public class MemoryPlanMapping {
 	}
 
 }
-

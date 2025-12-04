@@ -114,11 +114,7 @@
         :disabled="isPlanRunning ? isStopping : !canExecute"
         :title="isPlanRunning ? t('sidebar.stopTask') : t('sidebar.executePlan')"
       >
-        <Icon
-          v-if="isPlanRunning"
-          icon="carbon:stop-filled"
-          width="16"
-        />
+        <Icon v-if="isPlanRunning" icon="carbon:stop-filled" width="16" />
         <Icon
           v-else
           :icon="props.isExecuting ? 'carbon:circle-dash' : 'carbon:play'"
@@ -487,7 +483,12 @@ const canExecute = computed(() => {
 
 // File upload event handlers - state is already updated in shared composable
 const handleFilesUploaded = (files: FileInfo[], key: string | null) => {
-  console.log('[ExecutionController] Files uploaded event received:', files.length, 'uploadKey:', key)
+  console.log(
+    '[ExecutionController] Files uploaded event received:',
+    files.length,
+    'uploadKey:',
+    key
+  )
   // State is already updated in shared composable
 }
 

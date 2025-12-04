@@ -190,14 +190,18 @@ public class MemoryController {
 						if (memoryEntity != null && memoryEntity.getPlanMappings() != null) {
 							for (MemoryPlanMapping mapping : memoryEntity.getPlanMappings()) {
 								if (mapping.getCreateTime() != null) {
-									LocalDateTime createTime = mapping.getCreateTime().toInstant()
-											.atZone(ZoneId.systemDefault()).toLocalDateTime();
+									LocalDateTime createTime = mapping.getCreateTime()
+										.toInstant()
+										.atZone(ZoneId.systemDefault())
+										.toLocalDateTime();
 									planIdCreateTimeMap.put(mapping.getRootPlanId(), createTime);
 								}
 								else {
-									// For existing records without createTime, use current time as fallback
+									// For existing records without createTime, use
+									// current time as fallback
 									// This handles migration from old schema
-									logger.debug("Mapping for rootPlanId {} has null createTime, using current time as fallback",
+									logger.debug(
+											"Mapping for rootPlanId {} has null createTime, using current time as fallback",
 											mapping.getRootPlanId());
 									planIdCreateTimeMap.put(mapping.getRootPlanId(), LocalDateTime.now());
 								}
@@ -278,7 +282,8 @@ public class MemoryController {
 						conversationId);
 			}
 
-			// Sort all records by startTime (or createTime as fallback) to maintain chronological order
+			// Sort all records by startTime (or createTime as fallback) to maintain
+			// chronological order
 			// Use createTime from memory_plan_mappings if startTime is not available
 			allRecords.sort(Comparator.comparing((PlanExecutionRecord record) -> {
 				// First try to use startTime from plan execution record
@@ -286,8 +291,7 @@ public class MemoryController {
 					return record.getStartTime();
 				}
 				// Fallback to createTime from memory_plan_mappings
-				String rootPlanId = record.getRootPlanId() != null ? record.getRootPlanId()
-						: record.getCurrentPlanId();
+				String rootPlanId = record.getRootPlanId() != null ? record.getRootPlanId() : record.getCurrentPlanId();
 				if (rootPlanId != null && planIdCreateTimeMap.containsKey(rootPlanId)) {
 					LocalDateTime createTime = planIdCreateTimeMap.get(rootPlanId);
 					logger.debug("Using createTime {} for rootPlanId {} (startTime not available)", createTime,

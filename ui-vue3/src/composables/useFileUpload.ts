@@ -37,7 +37,12 @@ export function useFileUpload() {
     uploadedFiles.length = 0
     uploadedFiles.push(...files)
     uploadKey.value = key
-    console.log('[useFileUpload] Updated state - files:', uploadedFiles.length, 'key:', uploadKey.value)
+    console.log(
+      '[useFileUpload] Updated state - files:',
+      uploadedFiles.length,
+      'key:',
+      uploadKey.value
+    )
   }
 
   /**
@@ -60,7 +65,7 @@ export function useFileUpload() {
     if (index !== -1) {
       uploadedFiles.splice(index, 1)
       console.log('[useFileUpload] File removed, remaining:', uploadedFiles.length)
-      
+
       // Clear uploadKey if no files remain
       if (uploadedFiles.length === 0) {
         uploadKey.value = null
@@ -131,4 +136,3 @@ export function useFileUploadSingleton() {
   }
   return singletonInstance
 }
-
