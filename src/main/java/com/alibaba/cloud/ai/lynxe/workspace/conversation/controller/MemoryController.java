@@ -20,7 +20,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +46,11 @@ import com.alibaba.cloud.ai.lynxe.config.LynxeProperties;
 import com.alibaba.cloud.ai.lynxe.llm.LlmService;
 import com.alibaba.cloud.ai.lynxe.recorder.entity.vo.PlanExecutionRecord;
 import com.alibaba.cloud.ai.lynxe.recorder.service.PlanHierarchyReaderService;
+import com.alibaba.cloud.ai.lynxe.workspace.conversation.entity.po.MemoryEntity;
+import com.alibaba.cloud.ai.lynxe.workspace.conversation.entity.po.MemoryPlanMapping;
 import com.alibaba.cloud.ai.lynxe.workspace.conversation.entity.vo.Memory;
 import com.alibaba.cloud.ai.lynxe.workspace.conversation.entity.vo.MemoryResponse;
+import com.alibaba.cloud.ai.lynxe.workspace.conversation.repository.MemoryRepository;
 import com.alibaba.cloud.ai.lynxe.workspace.conversation.service.MemoryService;
 
 /**
@@ -62,6 +67,9 @@ public class MemoryController {
 
 	@Autowired
 	private MemoryService memoryService;
+
+	@Autowired
+	private MemoryRepository memoryRepository;
 
 	@Autowired
 	private PlanHierarchyReaderService planHierarchyReaderService;
@@ -166,6 +174,8 @@ public class MemoryController {
 			logger.info("Retrieving conversation history for conversationId: {}", conversationId);
 
 			List<PlanExecutionRecord> allRecords = new ArrayList<>();
+			// Map to store createTime for each rootPlanId (used for sorting fallback)
+			Map<String, LocalDateTime> planIdCreateTimeMap = new HashMap<>();
 
 			// Get plan execution records and chat records
 			try {
@@ -174,6 +184,27 @@ public class MemoryController {
 					List<String> rootPlanIds = memory.getRootPlanIds();
 					if (rootPlanIds != null && !rootPlanIds.isEmpty()) {
 						logger.info("Found {} rootPlanIds for conversationId: {}", rootPlanIds.size(), conversationId);
+
+						// Get createTime mapping from MemoryEntity for sorting
+						MemoryEntity memoryEntity = memoryRepository.findByConversationId(conversationId);
+						if (memoryEntity != null && memoryEntity.getPlanMappings() != null) {
+							for (MemoryPlanMapping mapping : memoryEntity.getPlanMappings()) {
+								if (mapping.getCreateTime() != null) {
+									LocalDateTime createTime = mapping.getCreateTime().toInstant()
+											.atZone(ZoneId.systemDefault()).toLocalDateTime();
+									planIdCreateTimeMap.put(mapping.getRootPlanId(), createTime);
+								}
+								else {
+									// For existing records without createTime, use current time as fallback
+									// This handles migration from old schema
+									logger.debug("Mapping for rootPlanId {} has null createTime, using current time as fallback",
+											mapping.getRootPlanId());
+									planIdCreateTimeMap.put(mapping.getRootPlanId(), LocalDateTime.now());
+								}
+							}
+							logger.debug("Retrieved {} plan mappings with createTime for conversationId: {}",
+									planIdCreateTimeMap.size(), conversationId);
+						}
 
 						// Get chat messages if available
 						List<Message> chatMessages = null;
@@ -247,11 +278,23 @@ public class MemoryController {
 						conversationId);
 			}
 
-			// Sort all records by startTime to maintain chronological order
+			// Sort all records by startTime (or createTime as fallback) to maintain chronological order
+			// Use createTime from memory_plan_mappings if startTime is not available
 			allRecords.sort(Comparator.comparing((PlanExecutionRecord record) -> {
+				// First try to use startTime from plan execution record
 				if (record.getStartTime() != null) {
 					return record.getStartTime();
 				}
+				// Fallback to createTime from memory_plan_mappings
+				String rootPlanId = record.getRootPlanId() != null ? record.getRootPlanId()
+						: record.getCurrentPlanId();
+				if (rootPlanId != null && planIdCreateTimeMap.containsKey(rootPlanId)) {
+					LocalDateTime createTime = planIdCreateTimeMap.get(rootPlanId);
+					logger.debug("Using createTime {} for rootPlanId {} (startTime not available)", createTime,
+							rootPlanId);
+					return createTime;
+				}
+				// Last resort: use minimum time
 				return LocalDateTime.MIN;
 			}));
 

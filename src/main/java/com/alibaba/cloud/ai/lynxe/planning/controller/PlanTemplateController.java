@@ -42,6 +42,7 @@ import com.alibaba.cloud.ai.lynxe.planning.service.PlanTemplateConfigService;
 import com.alibaba.cloud.ai.lynxe.planning.service.PlanTemplateService;
 import com.alibaba.cloud.ai.lynxe.runtime.entity.vo.ExecutionStep;
 import com.alibaba.cloud.ai.lynxe.runtime.entity.vo.PlanInterface;
+import com.alibaba.cloud.ai.lynxe.runtime.service.PlanIdDispatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -68,6 +69,9 @@ public class PlanTemplateController {
 
 	@Autowired
 	private PlanTemplateConfigService planTemplateConfigService;
+
+	@Autowired
+	private PlanIdDispatcher planIdDispatcher;
 
 	/**
 	 * Save version history
@@ -592,6 +596,24 @@ public class PlanTemplateController {
 		catch (Exception e) {
 			logger.error("Failed to get plan template configuration for planTemplateId: {}", planTemplateId, e);
 			return ResponseEntity.internalServerError().build();
+		}
+	}
+
+	/**
+	 * Generate a new plan template ID
+	 * @return Generated plan template ID
+	 */
+	@GetMapping("/generate-plan-template-id")
+	public ResponseEntity<Map<String, Object>> generatePlanTemplateId() {
+		try {
+			String planTemplateId = planIdDispatcher.generatePlanTemplateId();
+			logger.info("Generated new plan template ID: {}", planTemplateId);
+			return ResponseEntity.ok(Map.of("planTemplateId", planTemplateId));
+		}
+		catch (Exception e) {
+			logger.error("Failed to generate plan template ID", e);
+			return ResponseEntity.internalServerError()
+				.body(Map.of("error", "Failed to generate plan template ID: " + e.getMessage()));
 		}
 	}
 
