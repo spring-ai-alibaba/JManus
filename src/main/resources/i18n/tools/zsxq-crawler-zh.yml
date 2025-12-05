@@ -1,0 +1,30 @@
+name: "知识星球爬虫"
+description: "知识星球内容爬取工具，支持爬取帖子内容、下载图片和附件"
+parameters: |
+  {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "description": "操作类型: login(登录), crawl_post(爬取帖子), download_attachments(下载附件)",
+        "enum": ["login", "crawl_post", "download_attachments"]
+      },
+      "group_id": {
+        "type": "string",
+        "description": "星球ID，例如：552521181154"
+      },
+      "topic_id": {
+        "type": "string",
+        "description": "帖子ID，用于爬取特定帖子"
+      },
+      "download_path": {
+        "type": "string",
+        "description": "下载路径，不指定则使用默认路径"
+      },
+      "max_posts": {
+        "type": "integer",
+        "description": "最大爬取帖子数量，默认10"
+      }
+    },
+    "required": ["action"]
+  }

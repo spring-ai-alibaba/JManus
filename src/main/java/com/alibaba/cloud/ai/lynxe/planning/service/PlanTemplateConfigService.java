@@ -15,19 +15,6 @@
  */
 package com.alibaba.cloud.ai.lynxe.planning.service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.alibaba.cloud.ai.lynxe.planning.exception.PlanTemplateConfigException;
 import com.alibaba.cloud.ai.lynxe.planning.model.enums.PlanTemplateAccessLevel;
 import com.alibaba.cloud.ai.lynxe.planning.model.po.FuncAgentToolEntity;
@@ -35,6 +22,14 @@ import com.alibaba.cloud.ai.lynxe.planning.model.vo.PlanTemplateConfigVO;
 import com.alibaba.cloud.ai.lynxe.planning.repository.FuncAgentToolRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service for processing PlanTemplateConfigVO Handles conversion, validation, and
@@ -663,10 +658,10 @@ public class PlanTemplateConfigService {
 			// If it exists but with different planTemplateId, delete it first
 			if (serviceGroup != null && !serviceGroup.isEmpty()) {
 				// Use the new repository method that respects the unique constraint
-				Optional<FuncAgentToolEntity> existingTool = funcAgentToolRepository
+				Optional<FuncAgentToolEntity> existingToolOpt = funcAgentToolRepository
 					.findByServiceGroupAndToolName(serviceGroup, toolName);
-				if (existingTool.isPresent()) {
-					FuncAgentToolEntity existing = existingTool.get();
+				if (existingToolOpt.isPresent()) {
+					FuncAgentToolEntity existing = existingToolOpt.get();
 					if (existing.getPlanTemplateId() == null
 							|| !existing.getPlanTemplateId().equals(configVO.getPlanTemplateId())) {
 						log.warn(
@@ -774,10 +769,10 @@ public class PlanTemplateConfigService {
 		try {
 			if (serviceGroup != null && !serviceGroup.trim().isEmpty()) {
 				// Use serviceGroup + toolName lookup for precise matching
-				Optional<FuncAgentToolEntity> toolEntity = funcAgentToolRepository
+				Optional<FuncAgentToolEntity> toolEntityOpt = funcAgentToolRepository
 					.findByServiceGroupAndToolName(serviceGroup, toolName);
-				if (toolEntity.isPresent()) {
-					FuncAgentToolEntity entity = toolEntity.get();
+				if (toolEntityOpt.isPresent()) {
+					FuncAgentToolEntity entity = toolEntityOpt.get();
 					return entity.getPlanTemplateId();
 				}
 				return null; // Not found with serviceGroup
